@@ -36,6 +36,7 @@ namespace Hatchit {
 
         bool DXRenderer::VInitialize(const RendererParams& params)
         {
+            m_params = params;
             m_hwnd = (HWND)params.window;
 
             HRESULT hr = S_OK;
@@ -58,7 +59,7 @@ namespace Hatchit {
             {
                 D3D_FEATURE_LEVEL_11_0,
             };
-            size_t numLevels = ARRAYSIZE(featureLevels);
+            uint32_t numLevels = ARRAYSIZE(featureLevels);
 
             for (size_t i = 0; i < numDrivers; i++)
             {
@@ -181,7 +182,7 @@ namespace Hatchit {
 
         void DXRenderer::VSetClearColor(const Color& color)
         {
-            m_clearColor = color;
+            m_params.clearColor = color;
         }
 
         void DXRenderer::VClearBuffer(ClearArgs args)
@@ -190,16 +191,16 @@ namespace Hatchit {
             {
             case ClearArgs::Color:
                 m_context->ClearRenderTargetView(m_renderTargetView,
-                    reinterpret_cast<float*>(&m_clearColor));
+                    reinterpret_cast<float*>(&m_params.clearColor));
                 break;
             case ClearArgs::ColorDepth:
                 m_context->ClearRenderTargetView(m_renderTargetView,
-                    reinterpret_cast<float*>(&m_clearColor));
+                    reinterpret_cast<float*>(&m_params.clearColor));
                 m_context->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0, 0);
                 break;
             case ClearArgs::ColorDepthStencil:
                 m_context->ClearRenderTargetView(m_renderTargetView,
-                    reinterpret_cast<float*>(&m_clearColor));
+                    reinterpret_cast<float*>(&m_params.clearColor));
                 m_context->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0, 0);
                 break;
             case ClearArgs::Depth:

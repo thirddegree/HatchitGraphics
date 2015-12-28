@@ -51,7 +51,7 @@ namespace Hatchit {
             IDXGISwapChain*         m_swapChain;
             DXGI_SWAP_CHAIN_DESC    m_swapChainDesc;
             D3D_FEATURE_LEVEL       m_featureLevel;
-            Color                   m_clearColor;
+            RendererParams          m_params;
             HWND                    m_hwnd;
         };
 

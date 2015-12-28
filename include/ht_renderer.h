@@ -42,6 +42,7 @@ namespace Hatchit {
         {
             RendererType renderer;
             void*        window;
+            Color        clearColor;
         };
 
 

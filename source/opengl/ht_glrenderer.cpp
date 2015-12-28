@@ -13,6 +13,7 @@
 **/
 
 #include <ht_glrenderer.h>
+#include <ht_debug.h>
 
 namespace Hatchit {
 
@@ -30,6 +31,20 @@ namespace Hatchit {
 
         bool GLRenderer::VInitialize(const RendererParams& params)
         {
+            m_params = params;
+
+            /*Initialize GLEW*/
+            GLenum glewErr = glewInit();
+            if (glewErr != GLEW_OK)
+            {
+#ifdef _DEBUG
+                Core::DebugPrintF("[GLRenderer]--Failed to initialize GLEW. Exiting.\n");
+#endif
+                return false;
+            }
+
+            VSetClearColor(m_params.clearColor);
+
             return true;
         }
 
@@ -40,12 +55,37 @@ namespace Hatchit {
 
         void GLRenderer::VSetClearColor(const Color& color)
         {
+            m_params.clearColor = color;
 
+            glClearColor(color.r, color.g, color.b, color.a);
         }
 
         void GLRenderer::VClearBuffer(ClearArgs args)
         {
+            switch (args)
+            {
+            case ClearArgs::Color:
+                glClear(GL_COLOR_BUFFER_BIT);
+                break;
+            case ClearArgs::Depth:
+                glClear(GL_DEPTH_BUFFER_BIT);
+                break;
+            case ClearArgs::Stencil:
+                glClear(GL_STENCIL_BUFFER_BIT);
+                break;
+            case ClearArgs::ColorDepth:
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                break;
+            case ClearArgs::ColorStencil:
+                glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+                break;
+            case ClearArgs::ColorDepthStencil:
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+                break;
 
+            default:
+                break;
+            }
         }
 
         void GLRenderer::VPresent()

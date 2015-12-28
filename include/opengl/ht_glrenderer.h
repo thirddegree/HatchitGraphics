@@ -14,6 +14,7 @@
 
 #include <ht_platform.h>
 #include <ht_renderer.h>
+#include <ht_gl.h>
 
 namespace Hatchit {
 
@@ -39,6 +40,7 @@ namespace Hatchit {
             void VPresent()                                                     override;
 
         private:
+            RendererParams m_params;
         };
 
     }
