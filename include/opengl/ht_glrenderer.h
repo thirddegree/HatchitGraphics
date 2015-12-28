@@ -26,15 +26,17 @@ namespace Hatchit {
 
             ~GLRenderer();
 
-            bool VInitialize()                      override;
+            bool VInitialize(const RendererParams& params)                      override;
 
-            void VDeInitialize()                    override;
+            void VDeInitialize()                                                override;
 
-            void VSetClearColor(const Color& color) override;
+            void VResizeBuffers(uint32_t width, uint32_t height)                override;
 
-            void VClearBuffer(ClearArgs args)       override;
+            void VSetClearColor(const Color& color)                             override;
 
-            void VPresent()                         override;
+            void VClearBuffer(ClearArgs args)                                   override;
+
+            void VPresent()                                                     override;
 
         private:
         };

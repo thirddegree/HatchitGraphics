@@ -28,7 +28,7 @@ namespace Hatchit {
 
         }
 
-        bool GLRenderer::VInitialize()
+        bool GLRenderer::VInitialize(const RendererParams& params)
         {
             return true;
         }
@@ -51,6 +51,11 @@ namespace Hatchit {
         void GLRenderer::VPresent()
         {
         
+        }
+
+        void GLRenderer::VResizeBuffers(uint32_t width, uint32_t height)
+        {
+
         }
 
     }

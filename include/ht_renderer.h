@@ -16,6 +16,7 @@
 
 #include <ht_platform.h>
 #include <ht_color.h>
+#include <ht_types.h>
 
 namespace Hatchit {
 
@@ -31,14 +32,27 @@ namespace Hatchit {
             ColorDepthStencil
         };
 
+        enum RendererType
+        {
+            OPENGL,
+            DIRECTX
+        };
+
+        struct RendererParams
+        {
+            RendererType renderer;
+            void*        window;
+        };
+
 
         class HT_API IRenderer
         {
         public:
             virtual ~IRenderer() { };
 
-            virtual bool VInitialize() = 0;
+            virtual bool VInitialize(const RendererParams& params) = 0;
             virtual void VDeInitialize() = 0;
+            virtual void VResizeBuffers(uint32_t width, uint32_t height) = 0;
 
             virtual void VSetClearColor(const Color& color) = 0;
             virtual void VClearBuffer(ClearArgs args) = 0;

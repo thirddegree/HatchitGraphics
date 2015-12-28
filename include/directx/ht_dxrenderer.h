@@ -14,6 +14,8 @@
 
 #include <ht_platform.h>
 #include <ht_renderer.h>
+#include <ht_directx.h>
+#include <ht_types.h>
 
 namespace Hatchit {
 
@@ -26,17 +28,31 @@ namespace Hatchit {
 
             ~DXRenderer();
 
-            bool VInitialize()                      override;
+            bool VInitialize(const RendererParams& params)          override;
 
-            void VDeInitialize()                    override;
+            void VDeInitialize()                                    override;
 
-            void VSetClearColor(const Color& color) override;
+            void VResizeBuffers(uint32_t width, uint32_t height)    override;
 
-            void VClearBuffer(ClearArgs args)       override;
+            void VSetClearColor(const Color& color)                 override;
 
-            void VPresent()                         override;
+            void VClearBuffer(ClearArgs args)                       override;
+
+            void VPresent()                                         override;
 
         private:
+            bool CreateBuffers(uint32_t width, uint32_t height);
+
+        private:
+            ID3D11Device*           m_device;
+            ID3D11DeviceContext*    m_context;
+            ID3D11RenderTargetView* m_renderTargetView;
+            ID3D11DepthStencilView* m_depthStencilView;
+            IDXGISwapChain*         m_swapChain;
+            DXGI_SWAP_CHAIN_DESC    m_swapChainDesc;
+            D3D_FEATURE_LEVEL       m_featureLevel;
+            Color                   m_clearColor;
+            HWND                    m_hwnd;
         };
 
     }
