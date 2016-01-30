@@ -15,16 +15,16 @@
 #pragma once
 
 #include <ht_platform.h>
-#include <ht_shader.h>
+#include <ht_resource.h>
 
 namespace Hatchit {
 
     namespace Graphics {
 
-        class HT_API IMaterial
+        class HT_API IShader : public Resource::Resource
         {
         public:
-            virtual ~IMaterial();
+            virtual ~IShader();
         };
     }
 }

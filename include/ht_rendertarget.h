@@ -29,6 +29,6 @@ namespace Hatchit {
             virtual void VReadBind();
             virtual void VWriteBind();
             virtual void VFree();
-        }
+        };
     }
 }
