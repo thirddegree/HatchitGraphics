@@ -14,17 +14,19 @@
 
 #pragma once
 
-#include <ht_platform.h>
-#include <ht_resource.h>
+#include <ht_renderpass.h>
 
 namespace Hatchit {
 
-    namespace Graphics {
+	namespace Graphics {
 
-        class HT_API IShader : public Resource::Resource
-        {
-        public:
-			virtual ~IShader() {};
-        };
-    }
+		class HT_API GLRenderPass : public IRenderPass
+		{
+		public:
+			GLRenderPass();
+			virtual ~GLRenderPass();
+
+			virtual void VRender()		override;
+		};
+	}
 }

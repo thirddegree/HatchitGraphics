@@ -24,7 +24,7 @@ namespace Hatchit {
         class HT_API IMaterial
         {
         public:
-            virtual ~IMaterial();
+			virtual ~IMaterial() { };
         };
     }
 }

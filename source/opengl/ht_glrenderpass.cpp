@@ -12,19 +12,26 @@
 **
 **/
 
-#pragma once
-
-#include <ht_platform.h>
-#include <ht_resource.h>
+#include <ht_glrenderpass.h>
+#include <ht_debug.h>
 
 namespace Hatchit {
 
-    namespace Graphics {
+	namespace Graphics {
 
-        class HT_API IShader : public Resource::Resource
-        {
-        public:
-			virtual ~IShader() {};
-        };
-    }
+		GLRenderPass::GLRenderPass()
+		{
+
+		}
+
+		GLRenderPass::~GLRenderPass()
+		{
+
+		}
+
+		void GLRenderPass::VRender()
+		{
+		
+		}
+	}
 }

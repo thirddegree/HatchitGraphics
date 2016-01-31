@@ -14,17 +14,17 @@
 
 #pragma once
 
-#include <ht_platform.h>
-#include <ht_resource.h>
+#include <ht_shader.h>
 
 namespace Hatchit {
 
-    namespace Graphics {
+	namespace Graphics {
 
-        class HT_API IShader : public Resource::Resource
-        {
-        public:
-			virtual ~IShader() {};
-        };
-    }
+		class HT_API GLShader : public IShader
+		{
+		public:
+			GLShader();
+			virtual ~GLShader();
+		};
+	}
 }

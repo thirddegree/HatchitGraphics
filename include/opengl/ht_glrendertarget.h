@@ -14,17 +14,21 @@
 
 #pragma once
 
-#include <ht_platform.h>
-#include <ht_resource.h>
+#include <ht_rendertarget.h>
 
 namespace Hatchit {
 
-    namespace Graphics {
+	namespace Graphics {
 
-        class HT_API IShader : public Resource::Resource
-        {
-        public:
-			virtual ~IShader() {};
-        };
-    }
+		class HT_API GLRenderTarget : public IRenderTarget
+		{
+		public:
+			GLRenderTarget();
+			virtual ~GLRenderTarget();
+
+			virtual void VReadBind()		override;
+			virtual void VWriteBind()		override;
+			virtual void VFree()			override;
+		};
+	}
 }

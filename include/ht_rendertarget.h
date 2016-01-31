@@ -24,11 +24,11 @@ namespace Hatchit {
         class HT_API IRenderTarget
         {
         public:
-            virtual ~IRenderTarget();
+			virtual ~IRenderTarget() { };
 
-            virtual void VReadBind();
-            virtual void VWriteBind();
-            virtual void VFree();
+            virtual void VReadBind() = 0;
+            virtual void VWriteBind() = 0;
+            virtual void VFree() = 0;
         };
     }
 }

@@ -12,19 +12,21 @@
 **
 **/
 
-#pragma once
-
-#include <ht_platform.h>
-#include <ht_resource.h>
+#include <ht_glmaterial.h>
+#include <ht_debug.h>
 
 namespace Hatchit {
 
-    namespace Graphics {
+	namespace Graphics {
 
-        class HT_API IShader : public Resource::Resource
-        {
-        public:
-			virtual ~IShader() {};
-        };
-    }
+		GLMaterial::GLMaterial()
+		{
+
+		}
+
+		GLMaterial::~GLMaterial()
+		{
+
+		}
+	}
 }

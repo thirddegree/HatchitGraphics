@@ -26,18 +26,18 @@ namespace Hatchit {
         class HT_API IRenderPass
         {
         public:
-            virtual ~IRenderPass();
+			virtual ~IRenderPass() { };
 
             //Will this be sent the Objects that it needs to render?
-            virtual VRender();
+            virtual void VRender() = 0;
 
         private:
             //We're going need to send this to the shader
-            Vector3 eyePoint;
+            Math::Vector3 eyePoint;
 
             //Data representing *where* the objects will be viewed from in this pass
-            Matrix4 viewMatrix;
-            Matrix4 projectionMatrix;
+			Math::Matrix4 viewMatrix;
+			Math::Matrix4 projectionMatrix;
 
             //Which material we will be rendering with
             IMaterial* material;
