@@ -12,9 +12,20 @@
 **
 **/
 
+/**
+* \class GLRenderTarget
+* \ingroup HatchitGraphics
+*
+* \brief A class that utilizes FBOs to allow the user to write textures with OpenGL renders
+*
+* An implementation of the IRenderTarget class that utilizes OpenGL and Framebuffer Objects
+* to provide an interface for a texture that can be rendered to
+*/
+
 #pragma once
 
 #include <ht_rendertarget.h>
+#include <ht_gl.h>
 
 namespace Hatchit {
 
@@ -26,9 +37,15 @@ namespace Hatchit {
 			GLRenderTarget();
 			virtual ~GLRenderTarget();
 
+			///Bind the texture for reading
 			virtual void VReadBind()		override;
+			///Bind the FBO to be rendered to
 			virtual void VWriteBind()		override;
+			///Free the texture and FBO from memory
 			virtual void VFree()			override;
+
+		private:
+			GLuint fbo;
 		};
 	}
 }

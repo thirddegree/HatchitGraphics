@@ -12,29 +12,32 @@
 **
 **/
 
-/**
-* \class IShader
-* \ingroup HatchitGraphics
-*
-* \brief An interface for a class that will load a shader with a graphics language
-*
-* This will be extended by another class that will implement its methods to load
-* and compile a shader with a given graphics language
-*/
-
-#pragma once
-
-#include <ht_platform.h>
-#include <ht_resource.h>
+#include <ht_glmeshrenderer.h>
 
 namespace Hatchit {
 
-    namespace Graphics {
+	namespace Graphics {
 
-        class HT_API IShader : public Resource::Resource
-        {
-        public:
-			virtual ~IShader() {};
-        };
-    }
+		GLMeshRenderer::GLMeshRenderer() 
+		{
+		
+		}
+		GLMeshRenderer::~GLMeshRenderer() 
+		{
+		
+		};
+
+		void GLMeshRenderer::VBuffer() 
+		{
+		
+		}
+		void GLMeshRenderer::VRender()
+		{
+		
+		}
+		void GLMeshRenderer::VFree()
+		{
+		
+		}
+	}
 }

@@ -12,6 +12,15 @@
 **
 **/
 
+/**
+* \class GLRenderer
+* \ingroup HatchitGraphics
+*
+* \brief An extension of the IRenderer class that uses OpenGL to render
+*
+* A manager class to render objects to render passes using OpenGL
+*/
+
 #include <ht_platform.h>
 #include <ht_renderer.h>
 #include <ht_gl.h>

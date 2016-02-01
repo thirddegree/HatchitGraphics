@@ -13,29 +13,39 @@
 **/
 
 /**
-* \class GLMaterial
+* \class GLMeshRenderer
 * \ingroup HatchitGraphics
 *
-* \brief A material to draw objects with; implemented in OpenGL
+* \brief An interface for a class that will render a mesh to the screen with OpenGL
 *
-* This is an extension of IMaterial and extends its methods 
-* with ones that will utilize OpenGL calls
+* An extension of the IMeshRenderer class that will implement its methods with 
+* OpenGL calls
 */
 
 #pragma once
 
-#include <ht_material.h>
-#include <ht_glshader.h>
+#include <ht_meshrenderer.h>
+#include <ht_gl.h>
 
 namespace Hatchit {
 
 	namespace Graphics {
 
-		class HT_API GLMaterial : public IMaterial
+		class HT_API GLMeshRenderer : public IMeshRenderer
 		{
 		public:
-			GLMaterial();
-			virtual ~GLMaterial();
+			GLMeshRenderer();
+			virtual ~GLMeshRenderer();
+
+			///Buffer a mesh with OpenGL
+			virtual void VBuffer()		override;
+			///Render a mesh with a OpenGL
+			virtual void VRender()		override;
+			///Gree a mesh from OpenGL
+			virtual void VFree()		override;
+
+		private:
+			GLuint vbo, vao, ibo;
 		};
 	}
 }

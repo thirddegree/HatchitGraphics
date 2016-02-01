@@ -13,28 +13,35 @@
 **/
 
 /**
-* \class IShader
+* \class IObjectRenderer
 * \ingroup HatchitGraphics
 *
-* \brief An interface for a class that will load a shader with a graphics language
+* \brief An interface for a class that will render something to the screen
 *
-* This will be extended by another class that will implement its methods to load
-* and compile a shader with a given graphics language
+* This class will be extended by another interface that will describe methods
+* for buffering and drawing a resource to the screen
 */
 
 #pragma once
 
 #include <ht_platform.h>
-#include <ht_resource.h>
 
 namespace Hatchit {
 
     namespace Graphics {
 
-        class HT_API IShader : public Resource::Resource
+        class HT_API IObjectRenderer
         {
         public:
-			virtual ~IShader() {};
+			virtual ~IObjectRenderer() {};
+
+			///Override to buffer a resource with a graphics language
+			virtual void VBuffer() = 0;
+			///Override to render a resource with a graphics language
+			virtual void VRender() = 0;
+			///Override to free a resource from a graphics language
+			virtual void VFree() = 0;
+			
         };
     }
 }

@@ -12,6 +12,16 @@
 **
 **/
 
+/**
+* \class IRenderTarget
+* \ingroup HatchitGraphics
+*
+* \brief An interface for a class that will render the whole scene from a perspective with a graphics language
+*
+* Used to render a whole scene to an IRenderTexture with a graphics language
+* so that it can be used later to complete the final frame.
+*/
+
 #pragma once
 
 #include <ht_platform.h>
@@ -29,6 +39,7 @@ namespace Hatchit {
 			virtual ~IRenderPass() { };
 
             //Will this be sent the Objects that it needs to render?
+			///Render the scene
             virtual void VRender() = 0;
 
         private:

@@ -12,6 +12,15 @@
 **
 **/
 
+/**
+* \class GLShader
+* \ingroup HatchitGraphics
+*
+* \brief A class that will load a shader with OpenGL
+*
+* This should load and compile a GLSL shader with OpenGL
+*/
+
 #pragma once
 
 #include <ht_shader.h>

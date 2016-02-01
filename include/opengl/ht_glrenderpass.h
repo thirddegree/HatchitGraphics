@@ -12,6 +12,16 @@
 **
 **/
 
+/**
+* \class GLRenderTarget
+* \ingroup HatchitGraphics
+*
+* \brief A class that acts as a way to render a whole scene to a RenderTexture with OpenGL
+*
+* Used to render a whole scene to a RenderTexture with OpenGL so that it can be used later
+* to complete the final frame. 
+*/
+
 #pragma once
 
 #include <ht_renderpass.h>
@@ -26,6 +36,7 @@ namespace Hatchit {
 			GLRenderPass();
 			virtual ~GLRenderPass();
 
+			///Render the pass with OpenGL
 			virtual void VRender()		override;
 		};
 	}
