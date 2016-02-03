@@ -12,28 +12,21 @@
 **
 **/
 
-/**
-* \class GLShader
-* \ingroup HatchitGraphics
-*
-* \brief A class that will load a shader with OpenGL
-*
-* This should load and compile a GLSL shader with OpenGL
-*/
-
-#pragma once
-
-#include <ht_shader.h>
+#include <ht_gltessshader.h>
+#include <ht_debug.h>
 
 namespace Hatchit {
 
 	namespace Graphics {
 
-		class HT_API GLShader : public IShader
+		GLTessShader::GLTessShader()
 		{
-		public:
-			GLShader();
-			virtual ~GLShader();
-		};
+
+		}
+
+		GLTessShader::~GLTessShader()
+		{
+
+		}
 	}
 }

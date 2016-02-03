@@ -12,21 +12,28 @@
 **
 **/
 
-#include <ht_glshader.h>
-#include <ht_debug.h>
+/**
+* \class GSFragShader
+* \ingroup HatchitGraphics
+*
+* \brief A class that will compile and reflect a fragment shader with OpenGL
+*
+* This should compile and reflect a GLSL fragment shader with OpenGL from a blob of character data
+*/
+
+#pragma once
+
+#include <ht_shader.h>
 
 namespace Hatchit {
 
 	namespace Graphics {
 
-		GLShader::GLShader()
+		class HT_API GLFragShader : public IShader
 		{
-
-		}
-
-		GLShader::~GLShader()
-		{
-
-		}
+		public:
+			GLFragShader();
+			virtual ~GLFragShader();
+		};
 	}
 }
