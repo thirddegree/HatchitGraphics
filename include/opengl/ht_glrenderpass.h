@@ -13,7 +13,7 @@
 **/
 
 /**
-* \class GLRenderTarget
+* \class GLRenderPass
 * \ingroup HatchitGraphics
 *
 * \brief A class that acts as a way to render a whole scene to a RenderTexture with OpenGL

@@ -13,32 +13,31 @@
 **/
 
 /**
-* \class GLMaterial
+* \class DXRenderPass
 * \ingroup HatchitGraphics
 *
-* \brief A material to draw objects with; implemented in OpenGL
+* \brief A class that acts as a way to render a whole scene to a RenderTexture with DirectX
 *
-* This is an extension of IMaterial and extends its methods 
-* with ones that will utilize OpenGL calls
+* Used to render a whole scene to a RenderTexture with DirectX so that it can be used later
+* to complete the final frame. 
 */
 
 #pragma once
 
-#include <ht_material.h>
-#include <ht_glvertshader.h>
-#include <ht_glfragshader.h>
-#include <ht_glgeoshader.h>
-#include <ht_gltessshader.h>
+#include <ht_renderpass.h>
 
 namespace Hatchit {
 
 	namespace Graphics {
 
-		class HT_API GLMaterial : public IMaterial
+		class HT_API DXRenderPass : public IRenderPass
 		{
 		public:
-			GLMaterial();
-			virtual ~GLMaterial();
+			DXRenderPass();
+			virtual ~DXRenderPass();
+
+			///Render the pass with DirectX
+			virtual void VRender()		override;
 		};
 	}
 }

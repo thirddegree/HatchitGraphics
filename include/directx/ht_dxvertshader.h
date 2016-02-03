@@ -13,32 +13,27 @@
 **/
 
 /**
-* \class GLMaterial
+* \class DXVertShader
 * \ingroup HatchitGraphics
 *
-* \brief A material to draw objects with; implemented in OpenGL
+* \brief A class that will compile and reflect a vertex shader with DirectX
 *
-* This is an extension of IMaterial and extends its methods 
-* with ones that will utilize OpenGL calls
+* This should compile and reflect an HLSL vertex shader with DirectX from a blob of character data
 */
 
 #pragma once
 
-#include <ht_material.h>
-#include <ht_glvertshader.h>
-#include <ht_glfragshader.h>
-#include <ht_glgeoshader.h>
-#include <ht_gltessshader.h>
+#include <ht_shader.h>
 
 namespace Hatchit {
 
 	namespace Graphics {
 
-		class HT_API GLMaterial : public IMaterial
+		class HT_API DXVertShader : public IShader
 		{
 		public:
-			GLMaterial();
-			virtual ~GLMaterial();
+			DXVertShader();
+			virtual ~DXVertShader();
 		};
 	}
 }

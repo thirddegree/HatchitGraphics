@@ -13,32 +13,39 @@
 **/
 
 /**
-* \class GLMaterial
+* \class DXMeshRenderer
 * \ingroup HatchitGraphics
 *
-* \brief A material to draw objects with; implemented in OpenGL
+* \brief An interface for a class that will render a mesh to the screen with DirectX
 *
-* This is an extension of IMaterial and extends its methods 
-* with ones that will utilize OpenGL calls
+* An extension of the IMeshRenderer class that will implement its methods with 
+* DirectX calls
 */
 
 #pragma once
 
-#include <ht_material.h>
-#include <ht_glvertshader.h>
-#include <ht_glfragshader.h>
-#include <ht_glgeoshader.h>
-#include <ht_gltessshader.h>
+#include <ht_meshrenderer.h>
+#include <ht_directx.h>
 
 namespace Hatchit {
 
 	namespace Graphics {
 
-		class HT_API GLMaterial : public IMaterial
+		class HT_API DXMeshRenderer : public IMeshRenderer
 		{
 		public:
-			GLMaterial();
-			virtual ~GLMaterial();
+			DXMeshRenderer();
+			virtual ~DXMeshRenderer();
+
+			///Buffer a mesh with DirectX
+			virtual void VBuffer()		override;
+			///Render a mesh with a DirectX
+			virtual void VRender()		override;
+			///Gree a mesh from DirectX
+			virtual void VFree()		override;
+
+		private:
+			
 		};
 	}
 }
