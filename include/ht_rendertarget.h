@@ -12,6 +12,16 @@
 **
 **/
 
+/**
+* \class IRenderTarget
+* \ingroup HatchitGraphics
+*
+* \brief An interface for a class that will act as a render target with a given graphics language
+*
+* Imagine this as a template for an implementation of a class that will
+* utilize framebuffer objects with OpenGL or RenderTargets with DirectX
+*/
+
 #pragma once
 
 #include <ht_platform.h>
@@ -24,11 +34,14 @@ namespace Hatchit {
         class HT_API IRenderTarget
         {
         public:
-            virtual ~IRenderTarget();
+			virtual ~IRenderTarget() { };
 
-            virtual void VReadBind();
-            virtual void VWriteBind();
-            virtual void VFree();
+			///Override to bind the render target for reading with a graphics language
+            virtual void VReadBind() = 0;
+			///Override to bind the render target to be written to with a graphics language
+            virtual void VWriteBind() = 0;
+			///Override to free the render target from a graphics language
+            virtual void VFree() = 0;
         };
     }
 }

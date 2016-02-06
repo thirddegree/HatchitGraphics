@@ -13,28 +13,27 @@
 **/
 
 /**
-* \class IMaterial
+* \class GLGeoShader
 * \ingroup HatchitGraphics
 *
-* \brief An interface for a material to draw objects with
+* \brief A class that will compile and reflect a geometry shader with OpenGL
 *
-* This class will be extended by a class that will implement its
-* methods with ones that will make calls to a graphics language
+* This should compile and reflect a GLSL geometry shader with OpenGL from a blob of character data
 */
 
 #pragma once
 
-#include <ht_platform.h>
 #include <ht_shader.h>
 
 namespace Hatchit {
 
-    namespace Graphics {
+	namespace Graphics {
 
-        class HT_API IMaterial
-        {
-        public:
-			virtual ~IMaterial() { };
-        };
-    }
+		class HT_API GLGeoShader : public IShader
+		{
+		public:
+			GLGeoShader();
+			virtual ~GLGeoShader();
+		};
+	}
 }

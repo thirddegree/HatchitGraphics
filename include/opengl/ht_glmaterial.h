@@ -13,28 +13,32 @@
 **/
 
 /**
-* \class IMaterial
+* \class GLMaterial
 * \ingroup HatchitGraphics
 *
-* \brief An interface for a material to draw objects with
+* \brief A material to draw objects with; implemented in OpenGL
 *
-* This class will be extended by a class that will implement its
-* methods with ones that will make calls to a graphics language
+* This is an extension of IMaterial and extends its methods 
+* with ones that will utilize OpenGL calls
 */
 
 #pragma once
 
-#include <ht_platform.h>
-#include <ht_shader.h>
+#include <ht_material.h>
+#include <ht_glvertshader.h>
+#include <ht_glfragshader.h>
+#include <ht_glgeoshader.h>
+#include <ht_gltessshader.h>
 
 namespace Hatchit {
 
-    namespace Graphics {
+	namespace Graphics {
 
-        class HT_API IMaterial
-        {
-        public:
-			virtual ~IMaterial() { };
-        };
-    }
+		class HT_API GLMaterial : public IMaterial
+		{
+		public:
+			GLMaterial();
+			virtual ~GLMaterial();
+		};
+	}
 }

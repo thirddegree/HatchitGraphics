@@ -12,29 +12,22 @@
 **
 **/
 
-/**
-* \class IMaterial
-* \ingroup HatchitGraphics
-*
-* \brief An interface for a material to draw objects with
-*
-* This class will be extended by a class that will implement its
-* methods with ones that will make calls to a graphics language
-*/
-
 #pragma once
 
 #include <ht_platform.h>
-#include <ht_shader.h>
+#include <ht_resource.h>
 
 namespace Hatchit {
 
     namespace Graphics {
-
-        class HT_API IMaterial
+        
+        class HT_API ITexture : public Resource::Resource
         {
         public:
-			virtual ~IMaterial() { };
+            virtual ~ITexture() { }
+        
+            virtual size_t VGetWidth()  const = 0;
+            virtual size_t VGetHeight() const = 0;
         };
     }
 }

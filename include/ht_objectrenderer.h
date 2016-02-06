@@ -13,28 +13,35 @@
 **/
 
 /**
-* \class IMaterial
+* \class IObjectRenderer
 * \ingroup HatchitGraphics
 *
-* \brief An interface for a material to draw objects with
+* \brief An interface for a class that will render something to the screen
 *
-* This class will be extended by a class that will implement its
-* methods with ones that will make calls to a graphics language
+* This class will be extended by another interface that will describe methods
+* for buffering and drawing a resource to the screen
 */
 
 #pragma once
 
 #include <ht_platform.h>
-#include <ht_shader.h>
 
 namespace Hatchit {
 
     namespace Graphics {
 
-        class HT_API IMaterial
+        class HT_API IObjectRenderer
         {
         public:
-			virtual ~IMaterial() { };
+			virtual ~IObjectRenderer() {};
+
+			///Override to buffer a resource with a graphics language
+			virtual void VBuffer() = 0;
+			///Override to render a resource with a graphics language
+			virtual void VRender() = 0;
+			///Override to free a resource from a graphics language
+			virtual void VFree() = 0;
+			
         };
     }
 }

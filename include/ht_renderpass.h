@@ -12,6 +12,16 @@
 **
 **/
 
+/**
+* \class IRenderTarget
+* \ingroup HatchitGraphics
+*
+* \brief An interface for a class that will render the whole scene from a perspective with a graphics language
+*
+* Used to render a whole scene to an IRenderTexture with a graphics language
+* so that it can be used later to complete the final frame.
+*/
+
 #pragma once
 
 #include <ht_platform.h>
@@ -26,18 +36,19 @@ namespace Hatchit {
         class HT_API IRenderPass
         {
         public:
-            virtual ~IRenderPass();
+			virtual ~IRenderPass() { };
 
             //Will this be sent the Objects that it needs to render?
-            virtual VRender();
+			///Render the scene
+            virtual void VRender() = 0;
 
         private:
             //We're going need to send this to the shader
-            Vector3 eyePoint;
+            Math::Vector3 eyePoint;
 
             //Data representing *where* the objects will be viewed from in this pass
-            Matrix4 viewMatrix;
-            Matrix4 projectionMatrix;
+			Math::Matrix4 viewMatrix;
+			Math::Matrix4 projectionMatrix;
 
             //Which material we will be rendering with
             IMaterial* material;

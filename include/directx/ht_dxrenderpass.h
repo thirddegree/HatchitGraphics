@@ -13,28 +13,31 @@
 **/
 
 /**
-* \class IMaterial
+* \class DXRenderPass
 * \ingroup HatchitGraphics
 *
-* \brief An interface for a material to draw objects with
+* \brief A class that acts as a way to render a whole scene to a RenderTexture with DirectX
 *
-* This class will be extended by a class that will implement its
-* methods with ones that will make calls to a graphics language
+* Used to render a whole scene to a RenderTexture with DirectX so that it can be used later
+* to complete the final frame. 
 */
 
 #pragma once
 
-#include <ht_platform.h>
-#include <ht_shader.h>
+#include <ht_renderpass.h>
 
 namespace Hatchit {
 
-    namespace Graphics {
+	namespace Graphics {
 
-        class HT_API IMaterial
-        {
-        public:
-			virtual ~IMaterial() { };
-        };
-    }
+		class HT_API DXRenderPass : public IRenderPass
+		{
+		public:
+			DXRenderPass();
+			virtual ~DXRenderPass();
+
+			///Render the pass with DirectX
+			virtual void VRender()		override;
+		};
+	}
 }

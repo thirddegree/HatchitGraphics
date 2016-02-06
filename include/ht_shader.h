@@ -12,10 +12,22 @@
 **
 **/
 
+/**
+* \class IShader
+* \ingroup HatchitGraphics
+*
+* \brief An interface for a class that will load a shader with a graphics language
+*
+* This will be extended by another class that will implement its methods to load
+* and compile a shader with a given graphics language
+*/
+
 #pragma once
 
 #include <ht_platform.h>
 #include <ht_resource.h>
+#include <ht_texture.h>
+#include <ht_string.h>
 
 namespace Hatchit {
 
@@ -24,7 +36,21 @@ namespace Hatchit {
         class HT_API IShader : public Resource::Resource
         {
         public:
-            virtual ~IShader();
+			virtual ~IShader() {};
+        
+            virtual bool VSetData(std::string name, const void* data, size_t size) = 0;
+            virtual bool VSetInt(std::string name, int data) = 0;
+            virtual bool VSetFloat(std::string name, float data) = 0;
+            virtual bool VSetFloat2(std::string name, const float data[2]) = 0;
+            virtual bool VSetFloat2(std::string name, float x, float y) = 0;
+            virtual bool VSetFloat3(std::string name, const float data[3]) = 0;
+            virtual bool VSetFloat3(std::string name, float x, float y, float z) = 0;
+            virtual bool VSetFloat4(std::string name, const float data[4]) = 0;
+            virtual bool VSetFloat4(std::string name, float x, float y, float z, float w) = 0;
+            virtual bool VSetMatrix4x4(std::string name, const float data[16]) = 0;
+
+            virtual bool VBindTexture(std::string name, ITexture* texture) = 0;
+            virtual bool VUnbindTexture(std::string name, ITexture* texture) = 0;
         };
     }
 }

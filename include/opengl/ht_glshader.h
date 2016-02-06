@@ -12,29 +12,29 @@
 **
 **/
 
-/**
-* \class IMaterial
-* \ingroup HatchitGraphics
-*
-* \brief An interface for a material to draw objects with
-*
-* This class will be extended by a class that will implement its
-* methods with ones that will make calls to a graphics language
-*/
-
 #pragma once
 
 #include <ht_platform.h>
 #include <ht_shader.h>
+#include <ht_gl.h>
+#include <map>
 
 namespace Hatchit {
 
     namespace Graphics {
 
-        class HT_API IMaterial
+        class HT_API GLShader : public IShader
         {
         public:
-			virtual ~IMaterial() { };
+            GLShader();
+
+            virtual ~GLShader();
+
+            bool VInitFromFile(Core::File* file) override;
+
+        private:
+            std::map<std::string, GLuint> m_uniformMap;
+            std::map<std::string, GLuint> m_textureMap;
         };
     }
 }

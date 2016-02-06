@@ -13,28 +13,32 @@
 **/
 
 /**
-* \class IMaterial
+* \class DXMaterial
 * \ingroup HatchitGraphics
 *
-* \brief An interface for a material to draw objects with
+* \brief A material to draw objects with; implemented in DirectX
 *
-* This class will be extended by a class that will implement its
-* methods with ones that will make calls to a graphics language
+* This is an extension of IMaterial and extends its methods 
+* with ones that will utilize DirectX calls
 */
 
 #pragma once
 
-#include <ht_platform.h>
-#include <ht_shader.h>
+#include <ht_material.h>
+#include <ht_dxvertshader.h>
+#include <ht_dxfragshader.h>
+#include <ht_dxgeoshader.h>
+#include <ht_dxtessshader.h>
 
 namespace Hatchit {
 
-    namespace Graphics {
+	namespace Graphics {
 
-        class HT_API IMaterial
-        {
-        public:
-			virtual ~IMaterial() { };
-        };
-    }
+		class HT_API DXMaterial : public IMaterial
+		{
+		public:
+			DXMaterial();
+			virtual ~DXMaterial();
+		};
+	}
 }
