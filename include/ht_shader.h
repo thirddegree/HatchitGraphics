@@ -25,7 +25,7 @@
 #pragma once
 
 #include <ht_platform.h>
-#include <ht_resource.h>
+#include <ht_resourceobject.h>
 #include <ht_texture.h>
 #include <ht_string.h>
 
@@ -33,7 +33,7 @@ namespace Hatchit {
 
     namespace Graphics {
 
-        class HT_API IShader : public Resource::Resource
+        class HT_API IShader : public Resource::ResourceObject
         {
         public:
 			virtual ~IShader() {};
