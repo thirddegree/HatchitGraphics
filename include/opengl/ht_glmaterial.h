@@ -39,6 +39,14 @@ namespace Hatchit {
 		public:
 			GLMaterial();
 			virtual ~GLMaterial();
+
+			void VOnLoaded() override;
+
+		protected:
+			GLuint shaderProgram;
+
+		private:
+			void printProgramLog();
 		};
 	}
 }

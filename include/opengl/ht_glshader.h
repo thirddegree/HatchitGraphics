@@ -25,13 +25,13 @@ namespace Hatchit {
 
         class HT_API GLShader : public IShader
         {
+			friend class GLMaterial;
         public:
             GLShader();
 
             virtual ~GLShader();
 			void VOnLoaded() override;
 			
-
         protected:
 			GLuint shader;
             std::map<std::string, GLuint> m_uniformMap;

@@ -28,5 +28,45 @@ namespace Hatchit {
 		{
 
 		}
+
+		void GLMaterial::VOnLoaded() 
+		{
+			//Take all shaders and compile them into a shader program
+			shaderProgram = glCreateProgram();
+
+			for (unsigned int i = 0; i < 6; i++)
+			{
+				GLShader* glShader = (GLShader*)shaders[i];
+
+				if(glShader != nullptr)
+					glAttachShader(shaderProgram, glShader->shader);
+			}
+
+			glLinkProgram(shaderProgram);
+
+#ifdef _DEBUG
+			printProgramLog();
+#endif
+		}
+
+		void GLMaterial::printProgramLog() 
+		{
+			GLint logLength = 0;
+			GLsizei charsWritten = 0;
+			glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &logLength);
+
+			if (logLength > 0)
+			{
+				logLength++; //to account for the null terminator
+				char* log = new char(logLength);
+
+				glGetProgramInfoLog(shaderProgram, logLength, &charsWritten, log);
+				log[logLength] = '\0';
+
+				Core::DebugPrintF(log);
+
+				delete[] log;
+			}
+		}
 	}
 }

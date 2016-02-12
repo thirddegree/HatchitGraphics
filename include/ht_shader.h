@@ -35,6 +35,8 @@ namespace Hatchit {
 
         class HT_API IShader : public Resource::ResourceObject
         {
+			friend class IMaterial;
+
         public:
 			virtual ~IShader() {};
         
