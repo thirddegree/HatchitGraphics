@@ -12,6 +12,8 @@
 **
 **/
 
+#pragma once
+
 #include <ht_platform.h>
 
 #include <d3d11.h>

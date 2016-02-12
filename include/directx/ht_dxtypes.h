@@ -16,6 +16,8 @@
 #pragma once
 
 #include <ht_directx.h>
+#include <cstdint>
+#include <ht_string.h>
 
 namespace Hatchit {
 
