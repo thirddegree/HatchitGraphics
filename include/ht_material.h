@@ -27,12 +27,16 @@
 #include <ht_platform.h>
 #include <ht_shader.h>
 #include <ht_resourceobject.h>
+#include <ht_shadervariable.h>
+#include <ht_math.h>
+
+#include <vector>
 
 namespace Hatchit {
 
     namespace Graphics {
 
-		enum ShaderSlots 
+		enum ShaderSlot
 		{
 			VERTEX = 0,
 			FRAGMENT,
@@ -48,6 +52,20 @@ namespace Hatchit {
 			virtual ~IMaterial() { };
 
 			virtual void VOnLoaded() = 0;
+
+			virtual bool VSetData(std::string name, const void* data, size_t size) = 0;
+			virtual bool VSetInt(std::string name, int data) = 0;
+			virtual bool VSetFloat(std::string name, float data) = 0;
+			virtual bool VSetFloat2(std::string name, const float data[2]) = 0;
+			virtual bool VSetFloat2(std::string name, float x, float y) = 0;
+			virtual bool VSetFloat3(std::string name, const float data[3]) = 0;
+			virtual bool VSetFloat3(std::string name, float x, float y, float z) = 0;
+			virtual bool VSetFloat4(std::string name, const float data[4]) = 0;
+			virtual bool VSetFloat4(std::string name, float x, float y, float z, float w) = 0;
+			virtual bool VSetMatrix4x4(std::string name, const float data[16]) = 0;
+
+			virtual bool VBindTexture(std::string name, ITexture* texture) = 0;
+			virtual bool VUnbindTexture(std::string name, ITexture* texture) = 0;
 
 		protected:
 			IShader* shaders[6];

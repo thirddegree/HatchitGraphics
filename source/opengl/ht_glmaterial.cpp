@@ -44,10 +44,32 @@ namespace Hatchit {
 
 			glLinkProgram(shaderProgram);
 
+			GLenum error = glGetError();
+			if (error != GL_NO_ERROR)
+			{
 #ifdef _DEBUG
-			printProgramLog();
+				printProgramLog();
 #endif
+				//Do not try to reflect against an improperly compiled shader
+				return;
+			}
+
+			reflectShaderGL();
 		}
+
+		bool GLMaterial::VSetData(std::string name, const void* data, size_t size)			{ return true; } //Eeeeh?
+		bool GLMaterial::VSetInt(std::string name, int data)								{ variables[name] = new IntVariable(data); return true;}
+		bool GLMaterial::VSetFloat(std::string name, float data)							{ variables[name] = new FloatVariable(data); return true;}
+		bool GLMaterial::VSetFloat2(std::string name, const float data[2])					{ variables[name] = new Float2Variable(data[0], data[1]); return true;}
+		bool GLMaterial::VSetFloat2(std::string name, float x, float y)						{ variables[name] = new Float2Variable(x, y); return true;}
+		bool GLMaterial::VSetFloat3(std::string name, const float data[3])					{ variables[name] = new Float3Variable(data[0], data[1], data[2]); return true;}
+		bool GLMaterial::VSetFloat3(std::string name, float x, float y, float z)			{ variables[name] = new Float3Variable(x, y, z); return true;}
+		bool GLMaterial::VSetFloat4(std::string name, const float data[4])					{ variables[name] = new Float4Variable(data[0], data[1], data[2], data[3]); return true;}
+		bool GLMaterial::VSetFloat4(std::string name, float x, float y, float z, float w)	{ variables[name] = new Float4Variable(x, y, z, w); return true;}
+		bool GLMaterial::VSetMatrix4x4(std::string name, const float data[16])				{ return true; }
+
+		bool GLMaterial::VBindTexture(std::string name, ITexture* texture)					{ return true; }
+		bool GLMaterial::VUnbindTexture(std::string name, ITexture* texture)				{ return true; }
 
 		void GLMaterial::printProgramLog() 
 		{
@@ -67,6 +89,11 @@ namespace Hatchit {
 
 				delete[] log;
 			}
+		}
+
+		void GLMaterial::reflectShaderGL() 
+		{
+			
 		}
 	}
 }

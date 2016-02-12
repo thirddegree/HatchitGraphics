@@ -32,6 +32,21 @@ namespace Hatchit {
             virtual void VUnbind(std::string name, IShader* shader) = 0;
         };
 
+		class HT_API IntVariable : public IShaderVariable 
+		{
+		public:
+			IntVariable(int val);
+
+			~IntVariable();
+
+			void SetData(int val);
+			void VBind(std::string name, IShader* shader);
+			void VUnbind(std::string name, IShader* shader);
+
+		private:
+			float m_val;
+		};
+
         class HT_API FloatVariable : public IShaderVariable
         {
         public:

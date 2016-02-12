@@ -41,12 +41,28 @@ namespace Hatchit {
 			virtual ~GLMaterial();
 
 			void VOnLoaded() override;
+			
+			virtual bool VSetData(std::string name, const void* data, size_t size)			override;
+			virtual bool VSetInt(std::string name, int data)								override;
+			virtual bool VSetFloat(std::string name, float data)							override;
+			virtual bool VSetFloat2(std::string name, const float data[2])					override;
+			virtual bool VSetFloat2(std::string name, float x, float y)						override;
+			virtual bool VSetFloat3(std::string name, const float data[3])					override;
+			virtual bool VSetFloat3(std::string name, float x, float y, float z)			override;
+			virtual bool VSetFloat4(std::string name, const float data[4])					override;
+			virtual bool VSetFloat4(std::string name, float x, float y, float z, float w)	override;
+			virtual bool VSetMatrix4x4(std::string name, const float data[16])				override;
 
-		protected:
-			GLuint shaderProgram;
+			virtual bool VBindTexture(std::string name, ITexture* texture)					override;
+			virtual bool VUnbindTexture(std::string name, ITexture* texture)				override;
+
 
 		private:
+			GLuint shaderProgram;
+			std::map <std::string, IShaderVariable*> variables;
+
 			void printProgramLog();
+			void reflectShaderGL();
 		};
 	}
 }

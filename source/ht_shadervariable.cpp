@@ -19,6 +19,37 @@ namespace Hatchit {
 
     namespace Graphics {
         
+		////////////////////////////////////////////////////////////////
+		// IntVariable implementation
+		////////////////////////////////////////////////////////////////
+		IntVariable::IntVariable(int val)
+		{
+			m_val = val;
+		}
+
+		IntVariable::~IntVariable()
+		{
+
+		}
+
+		void IntVariable::SetData(int val)
+		{
+			m_val = val;
+		}
+
+		void IntVariable::VBind(std::string name, IShader* shader)
+		{
+			if (!shader)
+				return;
+
+			shader->VSetFloat(name, m_val);
+		}
+
+		void IntVariable::VUnbind(std::string name, IShader* shader)
+		{
+
+		}
+
         ////////////////////////////////////////////////////////////////
         // FloatVariable implementation
         ////////////////////////////////////////////////////////////////
