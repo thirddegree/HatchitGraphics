@@ -28,5 +28,10 @@ namespace Hatchit {
 		{
 
 		}
+
+		void GLGeoShader::VCompile()
+		{
+			compileGL(GL_GEOMETRY_SHADER);
+		}
 	}
 }

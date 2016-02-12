@@ -23,17 +23,20 @@
 
 #pragma once
 
+#include <ht_glshader.h>
 #include <ht_shader.h>
 
 namespace Hatchit {
 
 	namespace Graphics {
 
-		class HT_API GLVertShader : public IShader
+		class HT_API GLVertShader : public GLShader
 		{
 		public:
 			GLVertShader();
 			virtual ~GLVertShader();
+
+			void VCompile() override;
 		};
 	}
 }

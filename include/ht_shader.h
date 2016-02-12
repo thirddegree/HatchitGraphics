@@ -38,6 +38,9 @@ namespace Hatchit {
         public:
 			virtual ~IShader() {};
         
+			virtual void VOnLoaded() = 0;
+			virtual void VCompile() = 0;
+
             virtual bool VSetData(std::string name, const void* data, size_t size) = 0;
             virtual bool VSetInt(std::string name, int data) = 0;
             virtual bool VSetFloat(std::string name, float data) = 0;

@@ -28,5 +28,10 @@ namespace Hatchit {
 		{
 
 		}
+
+		void GLVertShader::VCompile()
+		{
+			compileGL(GL_VERTEX_SHADER);
+		}
 	}
 }

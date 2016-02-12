@@ -28,5 +28,10 @@ namespace Hatchit {
 		{
 
 		}
+
+		void GLFragShader::VCompile() 
+		{
+			compileGL(GL_FRAGMENT_SHADER);
+		}
 	}
 }

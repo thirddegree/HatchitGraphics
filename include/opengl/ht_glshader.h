@@ -29,12 +29,16 @@ namespace Hatchit {
             GLShader();
 
             virtual ~GLShader();
+			void VOnLoaded() override;
+			
 
-            bool VInitFromFile(Core::File* file) override;
-
-        private:
+        protected:
+			GLuint shader;
             std::map<std::string, GLuint> m_uniformMap;
             std::map<std::string, GLuint> m_textureMap;
+
+			void printShaderLog();
+			void compileGL(GLenum shaderType);
         };
     }
 }

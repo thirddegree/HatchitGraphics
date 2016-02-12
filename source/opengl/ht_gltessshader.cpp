@@ -28,5 +28,10 @@ namespace Hatchit {
 		{
 
 		}
+
+		void GLTessShader::VCompile()
+		{
+			compileGL(GL_TESS_CONTROL_SHADER);
+		}
 	}
 }

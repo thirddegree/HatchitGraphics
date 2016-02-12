@@ -23,17 +23,19 @@
 
 #pragma once
 
-#include <ht_shader.h>
+#include <ht_glshader.h>
 
 namespace Hatchit {
 
 	namespace Graphics {
 
-		class HT_API GLGeoShader : public IShader
+		class HT_API GLGeoShader : public GLShader
 		{
 		public:
 			GLGeoShader();
 			virtual ~GLGeoShader();
+
+			void VCompile() override;
 		};
 	}
 }
