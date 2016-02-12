@@ -42,24 +42,23 @@ namespace Hatchit {
 
 			void VOnLoaded() override;
 			
-			virtual bool VSetData(std::string name, const void* data, size_t size)			override;
 			virtual bool VSetInt(std::string name, int data)								override;
 			virtual bool VSetFloat(std::string name, float data)							override;
-			virtual bool VSetFloat2(std::string name, const float data[2])					override;
-			virtual bool VSetFloat2(std::string name, float x, float y)						override;
-			virtual bool VSetFloat3(std::string name, const float data[3])					override;
-			virtual bool VSetFloat3(std::string name, float x, float y, float z)			override;
-			virtual bool VSetFloat4(std::string name, const float data[4])					override;
-			virtual bool VSetFloat4(std::string name, float x, float y, float z, float w)	override;
-			virtual bool VSetMatrix4x4(std::string name, const float data[16])				override;
+			virtual bool VSetFloat2(std::string name, Math::Vector2 data)					override;
+			virtual bool VSetFloat3(std::string name, Math::Vector3 data)					override;
+			virtual bool VSetFloat4(std::string name, Math::Vector4 data)					override;
+			virtual bool VSetMatrix3(std::string name, Math::Matrix3 data)					override;
+			virtual bool VSetMatrix4(std::string name, Math::Matrix4 data)					override;
 
 			virtual bool VBindTexture(std::string name, ITexture* texture)					override;
 			virtual bool VUnbindTexture(std::string name, ITexture* texture)				override;
 
-
+			void VBind()	override;
+			void VUnbind()  override;
 		private:
 			GLuint shaderProgram;
-			std::map <std::string, IShaderVariable*> variables;
+			std::map <std::string, ShaderVariable*> variables;
+			std::map <std::string, GLuint> variableLocations;
 
 			void printProgramLog();
 			void reflectShaderGL();
