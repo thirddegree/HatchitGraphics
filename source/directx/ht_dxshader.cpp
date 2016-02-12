@@ -38,7 +38,55 @@ namespace Hatchit {
             delete[] m_constantBufferArray;
 
             m_constantBufferCount = 0;
+
+			//clear tables
+			m_constantBufferVarTable.clear();
+			m_textureTable.clear();
+			m_sampleTable.clear();
         }
+
+		ConstantBufferVariable* DXShader::FindVariable(std::string name, size_t size)
+		{
+			ConstantBufferVariableTable::iterator it = m_constantBufferVarTable.find(name);
+			if (it == m_constantBufferVarTable.end())
+				return nullptr;
+
+			ConstantBufferVariable* variable = &it->second;
+			if (variable->size != size)
+				return nullptr;
+
+			return variable;
+		}
+
+		ConstantBuffer* DXShader::FindBuffer(std::string name)
+		{
+			for (uint32_t i = 0; i < m_constantBufferCount; i++)
+			{
+				ConstantBuffer* buffer = &m_constantBufferArray[i];
+				if (buffer->id == name)
+					return buffer;
+			}
+
+			return nullptr;
+		}
+
+		uint32_t DXShader::FindTextureBindIndex(std::string name)
+		{
+			TextureTable::iterator it = m_textureTable.find(name);
+			if (it == m_textureTable.end())
+				return -1;
+
+			return it->second;
+		}
+
+		uint32_t DXShader::FindSampleBindIndex(std::string name)
+		{
+			SampleTable::iterator it = m_sampleTable.find(name);
+			if (it == m_sampleTable.end())
+				return -1;
+
+			return it->second;
+		}
 
         void DXShader::VOnLoaded()
         {
@@ -108,8 +156,71 @@ namespace Hatchit {
 
                 //set up buffer and putits pointer into table
                 m_constantBufferArray[i].bindIndex = bindDesc.BindPoint;
-            
+				
+				//Create this constant buffer
+				D3D11_BUFFER_DESC _newDesc;
+				_newDesc.Usage = D3D11_USAGE_DEFAULT;
+				_newDesc.ByteWidth = bufferDesc.Size;
+				_newDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+				_newDesc.CPUAccessFlags = 0;
+				_newDesc.MiscFlags = 0;
+				_newDesc.StructureByteStride = 0;
+				
+				m_device->CreateBuffer(&_newDesc, 0, &m_constantBufferArray[i].buffer);
+
+				//Setup the data buffer for constant buffer
+				m_constantBufferArray[i].data = new BYTE[bufferDesc.Size];
+				ZeroMemory(&m_constantBufferArray[i].data, bufferDesc.Size);
+				m_constantBufferArray[i].id = bufferDesc.Name;
+
+				//Iterate over all variables in this buffer
+				for (uint32_t i = 0; i < bufferDesc.Variables; i++)
+				{
+					//Get variable
+					ID3D11ShaderReflectionVariable* var = reflectBuffer->GetVariableByIndex(i);
+
+					//Get variable description
+					D3D11_SHADER_VARIABLE_DESC varDesc;
+					var->GetDesc(&varDesc);
+
+					//Create the variable struct
+					ConstantBufferVariable variable;
+					variable.constantBufferIndex = i;
+					variable.byteOffset = varDesc.StartOffset;
+					variable.size = varDesc.Size;
+
+					//Get the string representation
+					std::string name = varDesc.Name;
+
+					//add variable to table
+					m_constantBufferVarTable.insert(std::pair<std::string, ConstantBufferVariable>(name, variable));
+				}
             }
+
         }
+
+		bool DXShader::VSetData(std::string name, const void* data, size_t size)
+		{
+			//grab variable by name
+			ConstantBufferVariable* variable = FindVariable(name, size);
+			if (variable == nullptr)
+				return false;
+
+			//copy data into the buffer
+			memcpy(m_constantBufferArray[variable->constantBufferIndex].data + variable->byteOffset,
+				data, size);
+
+			return true;
+		}
+
+		bool DXShader::VSetInt(std::string name, int data)
+		{
+			return VSetData(name, static_cast<void*>(&data), sizeof(int));
+		}
+
+		bool DXShader::VSetFloat(std::string name, float data)
+		{
+
+		}
     }
 }

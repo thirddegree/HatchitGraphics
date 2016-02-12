@@ -31,6 +31,13 @@ namespace Hatchit {
             std::string     id;
 		};
 
+		struct ConstantBufferVariable
+		{
+			uint32_t		byteOffset;
+			size_t			size;
+			uint32_t		constantBufferIndex;
+		};
+
 		
 	}
 }
