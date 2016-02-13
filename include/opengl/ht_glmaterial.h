@@ -41,6 +41,7 @@ namespace Hatchit {
 			virtual ~GLMaterial();
 
 			void VOnLoaded() override;
+			void VSetShader(ShaderSlot shaderSlot, IShader* shader) override;
 			
 			virtual bool VSetInt(std::string name, int data)								override;
 			virtual bool VSetFloat(std::string name, float data)							override;

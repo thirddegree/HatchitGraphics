@@ -51,6 +51,7 @@ namespace Hatchit {
         public:
 			virtual ~IMaterial() { };
 
+			virtual void VSetShader(ShaderSlot shaderSlot, IShader* shader) = 0;
 			virtual void VOnLoaded() = 0;
 
 			virtual bool VSetInt(std::string name, int data) = 0;

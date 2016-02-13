@@ -21,7 +21,8 @@ namespace Hatchit {
 
 		GLMaterial::GLMaterial()
 		{
-
+			for (int i = 0; i < 6; i++)
+				shaders[i] = nullptr;
 		}
 
 		GLMaterial::~GLMaterial()
@@ -57,13 +58,18 @@ namespace Hatchit {
 			reflectShaderGL();
 		}
 
+		void GLMaterial::VSetShader(ShaderSlot shaderSlot, IShader* shader)
+		{
+			shaders[shaderSlot] = shader;
+		}
+
 		bool GLMaterial::VSetInt(std::string name, int data)								{ variables[name] = new IntVariable(data); return true;}
 		bool GLMaterial::VSetFloat(std::string name, float data)							{ variables[name] = new FloatVariable(data); return true;}
 		bool GLMaterial::VSetFloat2(std::string name, Math::Vector2 data)					{ variables[name] = new Float2Variable(data); return true;}
 		bool GLMaterial::VSetFloat3(std::string name, Math::Vector3 data)					{ variables[name] = new Float3Variable(data); return true;}
 		bool GLMaterial::VSetFloat4(std::string name, Math::Vector4 data)					{ variables[name] = new Float4Variable(data); return true;}
-		bool GLMaterial::VSetMatrix3(std::string name, Math::Matrix3 data)					{ return true; }
-		bool GLMaterial::VSetMatrix4(std::string name, Math::Matrix4 data)					{ return true; }
+		bool GLMaterial::VSetMatrix3(std::string name, Math::Matrix3 data)					{ variables[name] = new Matrix3Variable(data); return true; }
+		bool GLMaterial::VSetMatrix4(std::string name, Math::Matrix4 data)					{ variables[name] = new Matrix4Variable(data); return true; }
 
 		bool GLMaterial::VBindTexture(std::string name, ITexture* texture)					{ return true; }
 		bool GLMaterial::VUnbindTexture(std::string name, ITexture* texture)				{ return true; }
