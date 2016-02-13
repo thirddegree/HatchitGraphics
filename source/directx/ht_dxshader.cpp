@@ -199,6 +199,28 @@ namespace Hatchit {
 
         }
 
+		void DXShader::Activate()
+		{
+			UpdateAllBuffers();
+
+			VBind();
+		}
+
+		void DXShader::DeActivate()
+		{
+			VUnbind();
+		}
+
+		void DXShader::UpdateAllBuffers()
+		{
+			for (uint32_t i = 0; i < m_constantBufferCount; i++)
+			{
+				ConstantBuffer* cb = &m_constantBufferArray[i];
+
+				m_context->UpdateSubresource(cb->buffer, 0, 0, cb->data, 0, 0);
+			}
+		}
+
 		bool DXShader::VSetData(std::string name, const void* data, size_t size)
 		{
 			//grab variable by name
@@ -220,7 +242,32 @@ namespace Hatchit {
 
 		bool DXShader::VSetFloat(std::string name, float data)
 		{
+			return VSetData(name, static_cast<void*>(&data), sizeof(float));
+		}
 
+		bool DXShader::VSetFloat2(std::string name, Math::Vector2 data)
+		{
+			return VSetData(name, static_cast<void*>(data.getAsArray()), sizeof(float) * 2);
+		}
+
+		bool DXShader::VSetFloat3(std::string name, Math::Vector3 data)
+		{
+			return VSetData(name, static_cast<void*>(data.getAsArray()), sizeof(float) * 3);
+		}
+
+		bool DXShader::VSetFloat4(std::string name, Math::Vector4 data)
+		{
+			return VSetData(name, static_cast<void*>(data.getAsArray()), sizeof(float) * 4);
+		}
+
+		bool DXShader::VSetMatrix3(std::string name, Math::Matrix3 data)
+		{
+			return VSetData(name, static_cast<void*>(data.getAsArray()), sizeof(float) * 12);
+		}
+
+		bool DXShader::VSetMatrix4(std::string name, Math::Matrix4 data)
+		{
+			return VSetData(name, static_cast<void*>(data.getAsArray()), sizeof(float) * 16);
 		}
     }
 }

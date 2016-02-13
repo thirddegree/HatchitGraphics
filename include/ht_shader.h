@@ -28,6 +28,7 @@
 #include <ht_resourceobject.h>
 #include <ht_texture.h>
 #include <ht_string.h>
+#include <ht_math.h>
 
 namespace Hatchit {
 
@@ -46,13 +47,11 @@ namespace Hatchit {
             virtual bool VSetData(std::string name, const void* data, size_t size) = 0;
             virtual bool VSetInt(std::string name, int data) = 0;
             virtual bool VSetFloat(std::string name, float data) = 0;
-            virtual bool VSetFloat2(std::string name, const float data[2]) = 0;
-            virtual bool VSetFloat2(std::string name, float x, float y) = 0;
-            virtual bool VSetFloat3(std::string name, const float data[3]) = 0;
-            virtual bool VSetFloat3(std::string name, float x, float y, float z) = 0;
-            virtual bool VSetFloat4(std::string name, const float data[4]) = 0;
-            virtual bool VSetFloat4(std::string name, float x, float y, float z, float w) = 0;
-            virtual bool VSetMatrix4x4(std::string name, const float data[16]) = 0;
+			virtual bool VSetFloat2(std::string name, Math::Vector2 data) = 0;
+			virtual bool VSetFloat3(std::string name, Math::Vector3 data) = 0;
+			virtual bool VSetFloat4(std::string name, Math::Vector4 data) = 0;
+			virtual bool VSetMatrix3(std::string name, Math::Matrix3 data) = 0;
+			virtual bool VSetMatrix4(std::string name, Math::Matrix4 data) = 0;
 
             virtual bool VBindTexture(std::string name, ITexture* texture) = 0;
             virtual bool VUnbindTexture(std::string name, ITexture* texture) = 0;

@@ -35,22 +35,22 @@ namespace Hatchit {
 
 			virtual ~DXShader();
 
-            virtual bool VInitShader() = 0;
-
             void VOnLoaded() override;
 
 			bool VSetData(std::string name, const void* data, size_t size) override;
 			bool VSetInt(std::string name, int data) override;
 			bool VSetFloat(std::string name, float data) override;
-			bool VSetFloat2(std::string name, const float data[2]) override;
-			bool VSetFloat2(std::string name, float x, float y) override;
-			bool VSetFloat3(std::string name, const float data[3]) override;
-			bool VSetFloat3(std::string name, float x, float y, float z) override;
-			bool VSetFloat4(std::string name, const float data[4]) override;
-			bool VSetFloat4(std::string name, float x, float y, float z, float w) override;
-			bool VSetMatrix4x4(std::string name, const float data[16]) override;
+			bool VSetFloat2(std::string name, Math::Vector2 data) override;
+			bool VSetFloat3(std::string name, Math::Vector3 data) override;
+			bool VSetFloat4(std::string name, Math::Vector4 data) override;
+			bool VSetMatrix3(std::string name, Math::Matrix3 data) override;
+			bool VSetMatrix4(std::string name, Math::Matrix4 data) override;
 
-		private:
+			void Activate();
+
+			void DeActivate();
+
+		protected:
 			uint32_t					m_constantBufferCount;
 			ConstantBuffer*				m_constantBufferArray;
 			ConstantBufferVariableTable m_constantBufferVarTable;
@@ -69,6 +69,16 @@ namespace Hatchit {
 			ConstantBuffer*			FindBuffer(std::string name);
 			uint32_t				FindTextureBindIndex(std::string name);
 			uint32_t				FindSampleBindIndex(std::string name);
+
+			void					UpdateAllBuffers();
+
+
+			virtual void			VBind() = 0;
+			virtual void			VUnbind() = 0;
+			virtual bool			VInitShader() = 0;
+
+			virtual bool			VSetShaderResourceView(std::string name, ID3D11ShaderResourceView* rv) = 0;
+			virtual bool			VSetSamplerState(std::string name, ID3D11SamplerState* ss) = 0;
 		};
 
 	}
