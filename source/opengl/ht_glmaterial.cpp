@@ -89,8 +89,20 @@ namespace Hatchit {
 
 				switch(t)
 				{
+				case ShaderVariable::INT:
+					glUniform1i(location, *(GLint*)data);
 				case ShaderVariable::FLOAT:
-					glUniform1f(location, *(float*)data);
+					glUniform1f(location, *(GLfloat*)data);
+				case ShaderVariable::FLOAT2:
+					glUniform2fv(location, 1, (GLfloat*)data);
+				case ShaderVariable::FLOAT3:
+					glUniform3fv(location, 1, (GLfloat*)data);
+				case ShaderVariable::FLOAT4:
+					glUniform4fv(location, 1, (GLfloat*)data);
+				case ShaderVariable::MAT3:
+					glUniformMatrix3fv(location, 1, GL_FALSE, (GLfloat*)data);
+				case ShaderVariable::MAT4:
+					glUniformMatrix4fv(location, 1, GL_FALSE, (GLfloat*)data);
 				}
 			}
 		}
