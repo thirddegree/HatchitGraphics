@@ -34,6 +34,33 @@ namespace Hatchit {
 			VCompile();
 		}
 
+		//TODO: Remove
+		bool GLShader::VInitFromFile(Core::File* file)
+		{
+			return true;
+		}
+
+#ifdef _DEBUG
+		void GLShader::LoadDirectlyFromFile(std::string path)
+		{
+			Core::File shaderFile;
+			shaderFile.Open(path, Core::FileMode::ReadText);
+
+			shaderFile.Seek(0, Core::FileSeek::End);
+			size_t length = shaderFile.Tell() + 1 - 18;
+			shaderFile.Seek(0, Core::FileSeek::Set);
+
+			BYTE* blob = new BYTE[length];
+			shaderFile.Read(blob, length - 1);
+
+			m_data = (void*)blob;
+
+			shaderFile.Close();
+
+			VCompile();
+		}
+#endif
+
 		void GLShader::printShaderLog() 
 		{
 			GLint logLength = 0;
@@ -42,15 +69,13 @@ namespace Hatchit {
 
 			if (logLength > 0)
 			{
-				logLength++; //to account for the null terminator
-				char* log = new char(logLength);
+				std::vector<GLchar> log(logLength);
 				
-				glGetShaderInfoLog(shader, logLength, &charsWritten, log);
-				log[logLength] = '\0';
+				glGetShaderInfoLog(shader, logLength, &charsWritten, &log[0]);
 				
-				Core::DebugPrintF(log);
+				Core::DebugPrintF(&log[0]);
 
-				delete[] log;
+				glDeleteShader(shader);
 			}
 		}
 
@@ -58,8 +83,11 @@ namespace Hatchit {
 		{
 			shader = glCreateShader(shaderType);
 
-			size_t sourceSize = strlen((char*)m_data);
-			glShaderSource(shader, 1, (GLchar**)&m_data, (GLint*)&sourceSize);
+			GLchar* string = (GLchar*)m_data;
+			size_t sourceSize = strlen(string);
+
+			Core::DebugPrintF(string);
+			glShaderSource(shader, 1, (GLchar**)&string, (GLint*)&sourceSize);
 
 			glCompileShader(shader);
 
@@ -69,5 +97,50 @@ namespace Hatchit {
 			//Delete the member data as it is no longer needed
 			delete[] m_data;
 		}
-    }
+    
+		
+		bool GLShader::VSetData(std::string name, const void* data, size_t size)
+		{
+			return true;
+		}
+
+		bool GLShader::VSetInt(std::string name, int data)
+		{
+			return true;
+		}
+
+		bool GLShader::VSetFloat(std::string name, float data)
+		{
+			return true;
+		}
+
+		bool GLShader::VSetFloat2(std::string name, Math::Vector2 data)
+		{
+			return true;
+		}
+
+		bool GLShader::VSetFloat3(std::string name, Math::Vector3 data)
+		{
+			return true;
+		}
+
+		bool GLShader::VSetFloat4(std::string name, Math::Vector4 data)
+		{
+			return true;
+		}
+
+		bool GLShader::VSetMatrix3(std::string name, Math::Matrix3 data)
+		{
+			return true;
+		}
+
+		bool GLShader::VSetMatrix4(std::string name, Math::Matrix4 data)
+		{
+			return true;
+		}
+
+		bool GLShader::VBindTexture(std::string name, ITexture* texture) { return true; }
+		bool GLShader::VUnbindTexture(std::string name, ITexture* texture) { return true; }
+	
+	}
 }

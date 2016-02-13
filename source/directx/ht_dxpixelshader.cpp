@@ -29,6 +29,10 @@ namespace Hatchit {
 
         }
 
+		bool DXPixelShader::VSetShaderResourceView(std::string name, ID3D11ShaderResourceView* rv) { return true; }
+
+		bool DXPixelShader::VSetSamplerState(std::string name, ID3D11SamplerState* ss) { return true; }
+
         bool DXPixelShader::VInitShader()
         {
             HRESULT hr = S_OK;
@@ -72,6 +76,16 @@ namespace Hatchit {
 
             return true;
         }
+
+		void DXPixelShader::VBind()
+		{
+		
+		}
+
+		void DXPixelShader::VUnbind()
+		{
+		
+		}
 
         ID3D11PixelShader* DXPixelShader::GetShader()
         {
