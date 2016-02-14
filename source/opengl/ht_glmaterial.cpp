@@ -30,6 +30,12 @@ namespace Hatchit {
 
 		}
 
+		//TODO: Remove
+		bool GLMaterial::VInitFromFile(Core::File* f)
+		{
+			return true;
+		}
+
 		void GLMaterial::VOnLoaded() 
 		{
 			//Take all shaders and compile them into a shader program
@@ -167,6 +173,8 @@ namespace Hatchit {
 				if(name != nullptr)
 					delete[] name;
 			}
+
+			glUseProgram(0);
 		}
 	}
 }

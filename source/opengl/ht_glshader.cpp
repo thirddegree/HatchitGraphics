@@ -46,12 +46,11 @@ namespace Hatchit {
 			Core::File shaderFile;
 			shaderFile.Open(path, Core::FileMode::ReadText);
 
-			shaderFile.Seek(0, Core::FileSeek::End);
-			size_t length = shaderFile.Tell() + 1 - 18;
-			shaderFile.Seek(0, Core::FileSeek::Set);
+			size_t size = shaderFile.SizeBytes();
 
-			BYTE* blob = new BYTE[length];
-			shaderFile.Read(blob, length - 1);
+			BYTE* blob = new BYTE[size];
+			size_t length = shaderFile.Read(blob, size - 1);
+			blob[length] = '\0';
 
 			m_data = (void*)blob;
 
@@ -86,7 +85,6 @@ namespace Hatchit {
 			GLchar* string = (GLchar*)m_data;
 			size_t sourceSize = strlen(string);
 
-			Core::DebugPrintF(string);
 			glShaderSource(shader, 1, (GLchar**)&string, (GLint*)&sourceSize);
 
 			glCompileShader(shader);
