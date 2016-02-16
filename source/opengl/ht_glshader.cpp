@@ -29,16 +29,23 @@ namespace Hatchit {
 
         }
 
-		void GLShader::VOnLoaded() 
-		{
-			VCompile();
-		}
+        void GLShader::VOnLoaded()
+        {
+            VCompile();
+        }
 
-		//TODO: Remove
-		bool GLShader::VInitFromFile(Core::File* file)
-		{
-			return true;
-		}
+        bool GLShader::VInitFromFile(Core::File* file)
+        {
+            size_t size = file->SizeBytes();
+
+            BYTE* blob = new BYTE[size];
+            size_t length = file->Read(blob, size - 1);
+            blob[length] = '\0';
+
+            m_data = (void*)blob;
+
+            return true;
+        }
 
 #ifdef _DEBUG
 		void GLShader::LoadDirectlyFromFile(std::string path)

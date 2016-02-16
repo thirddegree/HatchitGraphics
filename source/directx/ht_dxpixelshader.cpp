@@ -21,17 +21,35 @@ namespace Hatchit {
         DXPixelShader::DXPixelShader(ID3D11Device* device, ID3D11DeviceContext* context)
             : DXShader(device, context)
         {
-
+            m_shader = nullptr;
         }
 
         DXPixelShader::~DXPixelShader()
         {
-
+            DirectX::ReleaseCOM(m_shader);
         }
 
-		bool DXPixelShader::VSetShaderResourceView(std::string name, ID3D11ShaderResourceView* rv) { return true; }
+		bool DXPixelShader::VSetShaderResourceView(std::string name, ID3D11ShaderResourceView* rv)
+        {
+            int32_t index = FindTextureBindIndex(name);
+            if (index == -1)
+                return false;
 
-		bool DXPixelShader::VSetSamplerState(std::string name, ID3D11SamplerState* ss) { return true; }
+            m_context->PSSetShaderResources(index, 1, &rv);
+
+            return true; 
+        }
+
+		bool DXPixelShader::VSetSamplerState(std::string name, ID3D11SamplerState* ss)
+        {
+            int32_t index = FindTextureBindIndex(name);
+            if (index == -1)
+                return false;
+
+            m_context->PSSetSamplers(index, 1, &ss);
+
+            return true;
+        }
 
         bool DXPixelShader::VInitShader()
         {

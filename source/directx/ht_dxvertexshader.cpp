@@ -160,7 +160,7 @@ namespace Hatchit {
 		bool DXVertexShader::VSetShaderResourceView(std::string name, ID3D11ShaderResourceView* rv)
 		{
 			//Find variable
-			uint32_t index = FindTextureBindIndex(name);
+			int32_t index = FindTextureBindIndex(name);
 			if (index == -1)
 				return false;
 
@@ -173,7 +173,7 @@ namespace Hatchit {
 		bool DXVertexShader::VSetSamplerState(std::string name, ID3D11SamplerState* ss)
 		{
 			//Find variable
-			uint32_t index = FindSampleBindIndex(name);
+			int32_t index = FindSampleBindIndex(name);
 			if (index == -1)
 				return false;
 

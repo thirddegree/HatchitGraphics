@@ -25,10 +25,8 @@
 #pragma once
 
 #include <ht_material.h>
-#include <ht_dxvertshader.h>
-#include <ht_dxfragshader.h>
-#include <ht_dxgeoshader.h>
-#include <ht_dxtessshader.h>
+#include <ht_dxvertexshader.h>
+#include <ht_dxpixelshader.h>
 
 namespace Hatchit {
 
@@ -38,6 +36,7 @@ namespace Hatchit {
 		{
 		public:
 			DXMaterial();
+
 			virtual ~DXMaterial();
 		};
 	}

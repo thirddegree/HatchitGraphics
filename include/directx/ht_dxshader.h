@@ -35,6 +35,8 @@ namespace Hatchit {
 
 			virtual ~DXShader();
 
+            bool VInitFromFile(Core::File* file) override;
+
             void VOnLoaded() override;
 
 			bool VSetData(std::string name, const void* data, size_t size) override;
@@ -67,8 +69,8 @@ namespace Hatchit {
 		protected:
 			ConstantBufferVariable* FindVariable(std::string name, size_t size);
 			ConstantBuffer*			FindBuffer(std::string name);
-			uint32_t				FindTextureBindIndex(std::string name);
-			uint32_t				FindSampleBindIndex(std::string name);
+			int32_t				FindTextureBindIndex(std::string name);
+			int32_t				FindSampleBindIndex(std::string name);
 
 			void					UpdateAllBuffers();
 

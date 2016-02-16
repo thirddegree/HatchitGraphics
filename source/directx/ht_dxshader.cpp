@@ -45,6 +45,15 @@ namespace Hatchit {
 			m_sampleTable.clear();
         }
 
+        bool DXShader::VInitFromFile(Core::File* file)
+        {
+            size_t size = file->SizeBytes();
+            m_data = new BYTE[size];
+            file->Read(static_cast<BYTE*>(m_data), size);
+
+            return true;
+        }
+
 		ConstantBufferVariable* DXShader::FindVariable(std::string name, size_t size)
 		{
 			ConstantBufferVariableTable::iterator it = m_constantBufferVarTable.find(name);
@@ -70,7 +79,7 @@ namespace Hatchit {
 			return nullptr;
 		}
 
-		uint32_t DXShader::FindTextureBindIndex(std::string name)
+		int32_t DXShader::FindTextureBindIndex(std::string name)
 		{
 			TextureTable::iterator it = m_textureTable.find(name);
 			if (it == m_textureTable.end())
@@ -79,7 +88,7 @@ namespace Hatchit {
 			return it->second;
 		}
 
-		uint32_t DXShader::FindSampleBindIndex(std::string name)
+		int32_t DXShader::FindSampleBindIndex(std::string name)
 		{
 			SampleTable::iterator it = m_sampleTable.find(name);
 			if (it == m_sampleTable.end())

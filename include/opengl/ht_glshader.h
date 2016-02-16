@@ -31,6 +31,9 @@ namespace Hatchit {
             GLShader();
 
             virtual ~GLShader();
+
+            bool VInitFromFile(Core::File* file) override;
+
 			void VOnLoaded() override;
 
 			bool VSetData(std::string name, const void* data, size_t size) override;
@@ -44,9 +47,6 @@ namespace Hatchit {
 
 			bool VBindTexture(std::string name, ITexture* texture) override;
 			bool VUnbindTexture(std::string name, ITexture* texture) override;
-
-			//TODO: Remove
-			bool VInitFromFile(Core::File* file) override;
 			
 #ifdef _DEBUG
 			void LoadDirectlyFromFile(std::string path);
