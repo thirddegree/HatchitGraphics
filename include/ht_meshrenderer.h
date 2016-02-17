@@ -26,6 +26,7 @@
 
 #include <ht_objectrenderer.h>
 #include <ht_material.h>
+#include <ht_mesh.h>
 
 namespace Hatchit {
 
@@ -43,7 +44,8 @@ namespace Hatchit {
 			///Override to free a mesh from a graphics language
 			virtual void VFree() = 0;
 
-		private:
+		protected:
+			Resource::MeshPtr mesh;
 			IMaterial* material;
 		};
 	}

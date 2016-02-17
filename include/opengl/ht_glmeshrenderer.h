@@ -25,6 +25,7 @@
 #pragma once
 
 #include <ht_meshrenderer.h>
+#include <ht_glmaterial.h>
 #include <ht_gl.h>
 
 namespace Hatchit {
@@ -34,7 +35,7 @@ namespace Hatchit {
 		class HT_API GLMeshRenderer : public IMeshRenderer
 		{
 		public:
-			GLMeshRenderer();
+			GLMeshRenderer(Resource::MeshPtr mesh, GLMaterial* material);
 			virtual ~GLMeshRenderer();
 
 			///Buffer a mesh with OpenGL
