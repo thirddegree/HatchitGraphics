@@ -24,82 +24,86 @@ namespace Hatchit {
 
 	namespace Graphics {
 
-		class HT_API VKRenderer : public IRenderer
-		{
-		public:
-			VKRenderer();
+        namespace Vulkan {
 
-			~VKRenderer();
+            class HT_API VKRenderer : public IRenderer
+            {
+            public:
+                VKRenderer();
 
-			/** Initialize the renderer
-			* \param params The paramaters to intialize this renderer with
-			*/
-			bool VInitialize(const RendererParams& params) ;
+                ~VKRenderer();
 
-			///Shutdown the renderer
-			void VDeInitialize();
+                /** Initialize the renderer
+                * \param params The paramaters to intialize this renderer with
+                */
+                bool VInitialize(const RendererParams& params);
 
-			/** Resizes the the screen
-			* \param width The new width of the screen
-			* \param height The new height of the screen
-			*/
-			void VResizeBuffers(uint32_t width, uint32_t height);
+                ///Shutdown the renderer
+                void VDeInitialize();
 
-			/** Sets the color that the screen will clear with
-			* \param color The Color to clear the screen with
-			*/
-			void VSetClearColor(const Color& color);
-			/** Clears the screen with the given clear color
-			* \param args Arguments to describe which buffer you want to clear
-			*/
-			void VClearBuffer(ClearArgs args);
+                /** Resizes the the screen
+                * \param width The new width of the screen
+                * \param height The new height of the screen
+                */
+                void VResizeBuffers(uint32_t width, uint32_t height);
 
-			///Present a frame to the screen via a backbuffer
-			void VPresent();
+                /** Sets the color that the screen will clear with
+                * \param color The Color to clear the screen with
+                */
+                void VSetClearColor(const Color& color);
+                /** Clears the screen with the given clear color
+                * \param args Arguments to describe which buffer you want to clear
+                */
+                void VClearBuffer(ClearArgs args);
 
-		private:
-			std::vector<const char*>	m_enabledLayerNames;
-			std::vector<const char*>    m_enabledExtensionNames;
+                ///Present a frame to the screen via a backbuffer
+                void VPresent();
 
-			//Vuklan data structs
-			VkApplicationInfo						m_appInfo;
-			VkInstance								m_instance;
-			VkPhysicalDevice						m_gpu;
-			VkPhysicalDeviceProperties				m_gpuProps;
-			std::vector<VkQueueFamilyProperties>	m_queueProps;
+            private:
+                std::vector<const char*>	m_enabledLayerNames;
+                std::vector<const char*>    m_enabledExtensionNames;
 
-			//Vulkan Callbacks
-			PFN_vkCreateDebugReportCallbackEXT m_createDebugReportCallback;
-			PFN_vkDestroyDebugReportCallbackEXT m_destroyDebugReportCallback;
-			VkDebugReportCallbackEXT msg_callback;
-			PFN_vkDebugReportMessageEXT m_debugReportMessage;
+                //Vuklan data structs
+                VkApplicationInfo						m_appInfo;
+                VkInstance								m_instance;
+                VkPhysicalDevice						m_gpu;
+                VkPhysicalDeviceProperties				m_gpuProps;
+                std::vector<VkQueueFamilyProperties>	m_queueProps;
 
-			static VKAPI_ATTR VkBool32 VKAPI_CALL debugFunction(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType,
-				uint64_t srcObject, size_t location, int32_t msgCode,
-				const char *pLayerPrefix, const char *pMsg, void *pUserData);
+                //Vulkan Callbacks
+                PFN_vkCreateDebugReportCallbackEXT m_createDebugReportCallback;
+                PFN_vkDestroyDebugReportCallbackEXT m_destroyDebugReportCallback;
+                VkDebugReportCallbackEXT msg_callback;
+                PFN_vkDebugReportMessageEXT m_debugReportMessage;
 
-			//Advanced vulkan feature support flags
-			PFN_vkGetPhysicalDeviceSurfaceSupportKHR
-				fpGetPhysicalDeviceSurfaceSupportKHR;
-			PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR
-				fpGetPhysicalDeviceSurfaceCapabilitiesKHR;
-			PFN_vkGetPhysicalDeviceSurfaceFormatsKHR
-				fpGetPhysicalDeviceSurfaceFormatsKHR;
-			PFN_vkGetPhysicalDeviceSurfacePresentModesKHR
-				fpGetPhysicalDeviceSurfacePresentModesKHR;
-			PFN_vkGetSwapchainImagesKHR
-				fpGetSwapchainImagesKHR;
+                static VKAPI_ATTR VkBool32 VKAPI_CALL debugFunction(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType,
+                    uint64_t srcObject, size_t location, int32_t msgCode,
+                    const char *pLayerPrefix, const char *pMsg, void *pUserData);
 
-			bool checkInstanceLayers();
-			bool checkInstanceExtensions();
-			bool enumeratePhysicalDevices();
-			bool checkDeviceLayers();
-			bool checkDeviceExtensions();
-			bool setupDebugCallbacks();
-			bool setupDeviceQueues();
-			bool setupProcAddresses();
+                //Advanced vulkan feature support flags
+                PFN_vkGetPhysicalDeviceSurfaceSupportKHR
+                    fpGetPhysicalDeviceSurfaceSupportKHR;
+                PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR
+                    fpGetPhysicalDeviceSurfaceCapabilitiesKHR;
+                PFN_vkGetPhysicalDeviceSurfaceFormatsKHR
+                    fpGetPhysicalDeviceSurfaceFormatsKHR;
+                PFN_vkGetPhysicalDeviceSurfacePresentModesKHR
+                    fpGetPhysicalDeviceSurfacePresentModesKHR;
+                PFN_vkGetSwapchainImagesKHR
+                    fpGetSwapchainImagesKHR;
 
-			bool checkLayers(std::vector<const char*> layerNames, VkLayerProperties* layers, uint32_t layerCount);
-		};
+                bool checkInstanceLayers();
+                bool checkInstanceExtensions();
+                bool enumeratePhysicalDevices();
+                bool checkDeviceLayers();
+                bool checkDeviceExtensions();
+                bool setupDebugCallbacks();
+                bool setupDeviceQueues();
+                bool setupProcAddresses();
+
+                bool checkLayers(std::vector<const char*> layerNames, VkLayerProperties* layers, uint32_t layerCount);
+            };
+
+        }
 	}
 }

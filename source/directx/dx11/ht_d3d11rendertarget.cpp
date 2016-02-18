@@ -12,32 +12,40 @@
 **
 **/
 
-#include <ht_dxmeshrenderer.h>
+#include <ht_d3d11rendertarget.h>
+#include <ht_debug.h>
 
 namespace Hatchit {
 
 	namespace Graphics {
 
-		DXMeshRenderer::DXMeshRenderer()
-		{
-		
-		}
-		DXMeshRenderer::~DXMeshRenderer()
-		{
-		
-		};
+        namespace DirectX {
 
-		void DXMeshRenderer::VBuffer()
-		{
-		
-		}
-		void DXMeshRenderer::VRender()
-		{
-		
-		}
-		void DXMeshRenderer::VFree()
-		{
-		
-		}
+            D3D11RenderTarget::D3D11RenderTarget()
+            {
+
+            }
+
+            D3D11RenderTarget::~D3D11RenderTarget()
+            {
+
+            }
+
+            void D3D11RenderTarget::VReadBind()
+            {
+
+            }
+
+            void D3D11RenderTarget::VWriteBind()
+            {
+
+            }
+
+            void D3D11RenderTarget::VFree()
+            {
+
+            }
+
+        }
 	}
 }

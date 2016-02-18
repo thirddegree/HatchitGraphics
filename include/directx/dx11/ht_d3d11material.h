@@ -12,32 +12,35 @@
 **
 **/
 
+/**
+* \class DXMaterial
+* \ingroup HatchitGraphics
+*
+* \brief A material to draw objects with; implemented in DirectX
+*
+* This is an extension of IMaterial and extends its methods 
+* with ones that will utilize DirectX calls
+*/
 
 #pragma once
 
-#include <ht_directx.h>
-#include <cstdint>
-#include <ht_string.h>
+#include <ht_material.h>
+#include <ht_d3d11vertexshader.h>
+#include <ht_d3d11pixelshader.h>
 
 namespace Hatchit {
 
 	namespace Graphics {
 
-		struct ConstantBuffer
-		{
-			uint32_t		bindIndex;
-			ID3D11Buffer*   buffer;
-			BYTE*			data;
-            std::string     id;
-		};
+        namespace DirectX
+        {
+            class HT_API D3D11Material : public IMaterial
+            {
+            public:
+                D3D11Material();
 
-		struct ConstantBufferVariable
-		{
-			uint32_t		byteOffset;
-			size_t			size;
-			uint32_t		constantBufferIndex;
-		};
-
-		
+                virtual ~D3D11Material();
+            };
+        }
 	}
 }

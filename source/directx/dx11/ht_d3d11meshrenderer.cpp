@@ -12,26 +12,35 @@
 **
 **/
 
-#include <ht_dxrenderpass.h>
-#include <ht_debug.h>
+#include <ht_d3d11meshrenderer.h>
 
 namespace Hatchit {
 
 	namespace Graphics {
 
-		DXRenderPass::DXRenderPass()
-		{
+        namespace DirectX {
 
-		}
+            D3D11MeshRenderer::D3D11MeshRenderer()
+            {
 
-		DXRenderPass::~DXRenderPass()
-		{
+            }
+            D3D11MeshRenderer::~D3D11MeshRenderer()
+            {
 
-		}
+            };
 
-		void DXRenderPass::VRender()
-		{
-		
-		}
+            void D3D11MeshRenderer::VBuffer()
+            {
+
+            }
+            void D3D11MeshRenderer::VRender()
+            {
+
+            }
+            void D3D11MeshRenderer::VFree()
+            {
+
+            }
+        }
 	}
 }

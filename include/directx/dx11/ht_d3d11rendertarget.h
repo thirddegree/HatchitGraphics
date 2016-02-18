@@ -31,21 +31,25 @@ namespace Hatchit {
 
 	namespace Graphics {
 
-		class HT_API DXRenderTarget : public IRenderTarget
-		{
-		public:
-			DXRenderTarget();
-			virtual ~DXRenderTarget();
+        namespace DirectX {
 
-			///Bind the texture for reading
-			virtual void VReadBind()		override;
-			///Bind the RenderTarget to be rendered to
-			virtual void VWriteBind()		override;
-			///Free the texture and RenderTarget from memory
-			virtual void VFree()			override;
+            class HT_API D3D11RenderTarget : public IRenderTarget
+            {
+            public:
+                D3D11RenderTarget();
+                virtual ~D3D11RenderTarget();
 
-		private:
-			
-		};
+                ///Bind the texture for reading
+                virtual void VReadBind()		override;
+                ///Bind the RenderTarget to be rendered to
+                virtual void VWriteBind()		override;
+                ///Free the texture and RenderTarget from memory
+                virtual void VFree()			override;
+
+            private:
+
+            };
+
+        }
 	}
 }

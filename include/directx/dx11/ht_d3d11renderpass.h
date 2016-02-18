@@ -13,39 +13,34 @@
 **/
 
 /**
-* \class DXMeshRenderer
+* \class DXRenderPass
 * \ingroup HatchitGraphics
 *
-* \brief An interface for a class that will render a mesh to the screen with DirectX
+* \brief A class that acts as a way to render a whole scene to a RenderTexture with DirectX
 *
-* An extension of the IMeshRenderer class that will implement its methods with 
-* DirectX calls
+* Used to render a whole scene to a RenderTexture with DirectX so that it can be used later
+* to complete the final frame. 
 */
 
 #pragma once
 
-#include <ht_meshrenderer.h>
-#include <ht_directx.h>
+#include <ht_renderpass.h>
 
 namespace Hatchit {
 
 	namespace Graphics {
 
-		class HT_API DXMeshRenderer : public IMeshRenderer
-		{
-		public:
-			DXMeshRenderer();
-			virtual ~DXMeshRenderer();
+        namespace DirectX {
 
-			///Buffer a mesh with DirectX
-			virtual void VBuffer()		override;
-			///Render a mesh with a DirectX
-			virtual void VRender()		override;
-			///Gree a mesh from DirectX
-			virtual void VFree()		override;
+            class HT_API D3D11RenderPass : public IRenderPass
+            {
+            public:
+                D3D11RenderPass();
+                virtual ~D3D11RenderPass();
 
-		private:
-			
-		};
+                ///Render the pass with DirectX
+                virtual void VRender()		override;
+            };
+        }
 	}
 }

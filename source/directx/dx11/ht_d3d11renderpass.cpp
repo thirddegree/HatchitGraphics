@@ -12,36 +12,29 @@
 **
 **/
 
-#include <ht_dxrendertarget.h>
+#include <ht_d3d11renderpass.h>
 #include <ht_debug.h>
 
 namespace Hatchit {
 
 	namespace Graphics {
 
-		DXRenderTarget::DXRenderTarget()
-		{
+        namespace DirectX {
 
-		}
+            D3D11RenderPass::D3D11RenderPass()
+            {
 
-		DXRenderTarget::~DXRenderTarget()
-		{
+            }
 
-		}
+            D3D11RenderPass::~D3D11RenderPass()
+            {
 
-		void DXRenderTarget::VReadBind()
-		{
-		
-		}
+            }
 
-		void DXRenderTarget::VWriteBind()
-		{
+            void D3D11RenderPass::VRender()
+            {
 
-		}
-
-		void DXRenderTarget::VFree()
-		{
-
-		}
+            }
+        }
 	}
 }

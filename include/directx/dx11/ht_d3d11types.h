@@ -12,32 +12,34 @@
 **
 **/
 
-/**
-* \class DXRenderPass
-* \ingroup HatchitGraphics
-*
-* \brief A class that acts as a way to render a whole scene to a RenderTexture with DirectX
-*
-* Used to render a whole scene to a RenderTexture with DirectX so that it can be used later
-* to complete the final frame. 
-*/
 
 #pragma once
 
-#include <ht_renderpass.h>
+#include <ht_directx.h>
+#include <cstdint>
+#include <ht_string.h>
 
 namespace Hatchit {
 
 	namespace Graphics {
 
-		class HT_API DXRenderPass : public IRenderPass
-		{
-		public:
-			DXRenderPass();
-			virtual ~DXRenderPass();
+        namespace DirectX {
 
-			///Render the pass with DirectX
-			virtual void VRender()		override;
-		};
+            struct ConstantBuffer
+            {
+                uint32_t		bindIndex;
+                ID3D11Buffer*   buffer;
+                BYTE*			data;
+                std::string     id;
+            };
+
+            struct ConstantBufferVariable
+            {
+                uint32_t		byteOffset;
+                size_t			size;
+                uint32_t		constantBufferIndex;
+            };
+
+        }
 	}
 }

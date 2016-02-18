@@ -51,7 +51,8 @@ namespace Hatchit {
         enum RendererType
         {
             OPENGL,
-            DIRECTX,
+            DIRECTX11,
+            DIRECTX12,
 			VULKAN
         };
 
