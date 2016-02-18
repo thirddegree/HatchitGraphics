@@ -29,7 +29,7 @@ namespace Hatchit {
 		}
 		GLMeshRenderer::~GLMeshRenderer() 
 		{
-		
+			VFree();
 		};
 
 		void GLMeshRenderer::VBuffer() 
@@ -83,11 +83,22 @@ namespace Hatchit {
 		}
 		void GLMeshRenderer::VRender()
 		{
-		
+			material->VBind();
+
+			glBindVertexArray(vao);
+
+			size_t vertexCount = mesh->getVertices().size();
+			glDrawArrays(GL_TRIANGLES, 0, vertexCount);
+
+			glBindVertexArray(0);
+
+			material->VUnbind();
 		}
 		void GLMeshRenderer::VFree()
 		{
-		
+			glDeleteVertexArrays(1, &vao);
+			glDeleteBuffers(1, &vbo);
+			glDeleteBuffers(1, &ibo);
 		}
 	}
 }

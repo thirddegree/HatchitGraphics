@@ -32,6 +32,7 @@
 #include <ht_platform.h>
 #include <ht_color.h>
 #include <ht_types.h>
+#include <ht_string.h>
 
 namespace Hatchit {
 
@@ -50,7 +51,8 @@ namespace Hatchit {
         enum RendererType
         {
             OPENGL,
-            DIRECTX
+            DIRECTX,
+			VULKAN
         };
 
         struct RendererParams
@@ -58,6 +60,7 @@ namespace Hatchit {
             RendererType renderer;
             void*        window;
             Color        clearColor;
+			std::string  applicationName;
         };
 
 
