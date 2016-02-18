@@ -276,7 +276,7 @@ namespace Hatchit {
 
 		bool DXShader::VSetMatrix4(std::string name, Math::Matrix4 data)
 		{
-			return VSetData(name, static_cast<void*>(data.getAsArray()), sizeof(float) * 16);
+			return VSetData(name, static_cast<const void*>(data.getAsArray()), sizeof(float) * 16);
 		}
     }
 }
