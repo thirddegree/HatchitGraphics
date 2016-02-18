@@ -61,13 +61,30 @@ namespace Hatchit {
 			std::vector<const char*>	m_enabledLayerNames;
 			std::vector<const char*>    m_enabledExtensionNames;
 
+			//Vuklan data structs
+			VkApplicationInfo			m_appInfo;
+			VkInstance					m_instance;
+			VkPhysicalDevice			m_gpu;
+			VkPhysicalDeviceProperties	m_gpuProps;
 
-			VkApplicationInfo m_appInfo;
-			VkInstance		  m_instance;
-			VkPhysicalDevice  m_gpu;
+			//Vulkan Callbacks
+			PFN_vkCreateDebugReportCallbackEXT m_createDebugReportCallback;
+			PFN_vkDestroyDebugReportCallbackEXT m_destroyDebugReportCallback;
+			VkDebugReportCallbackEXT msg_callback;
+			PFN_vkDebugReportMessageEXT m_debugReportMessage;
+
+			static VKAPI_ATTR VkBool32 VKAPI_CALL debugFunction(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType,
+				uint64_t srcObject, size_t location, int32_t msgCode,
+				const char *pLayerPrefix, const char *pMsg, void *pUserData);
 
 			bool checkInstanceLayers();
 			bool checkInstanceExtensions();
+			bool enumeratePhysicalDevices();
+			bool checkDeviceLayers();
+			bool checkDeviceExtensions();
+			bool setupDebugCallbacks();
+
+			bool checkLayers(std::vector<const char*> layerNames, VkLayerProperties* layers, uint32_t layerCount);
 		};
 	}
 }
