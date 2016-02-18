@@ -19,19 +19,22 @@ namespace Hatchit {
 
 	namespace Graphics {
 
-		GLTessShader::GLTessShader()
-		{
+        namespace OpenGL {
 
-		}
+            GLTessShader::GLTessShader()
+            {
 
-		GLTessShader::~GLTessShader()
-		{
+            }
 
-		}
+            GLTessShader::~GLTessShader()
+            {
 
-		void GLTessShader::VCompile()
-		{
-			compileGL(GL_TESS_CONTROL_SHADER);
-		}
+            }
+
+            void GLTessShader::VCompile()
+            {
+                compileGL(GL_TESS_CONTROL_SHADER);
+            }
+        }
 	}
 }

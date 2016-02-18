@@ -29,13 +29,16 @@ namespace Hatchit {
 
 	namespace Graphics {
 
-		class HT_API GLGeoShader : public GLShader
-		{
-		public:
-			GLGeoShader();
-			virtual ~GLGeoShader();
+        namespace OpenGL {
 
-			void VCompile() override;
-		};
+            class HT_API GLGeoShader : public GLShader
+            {
+            public:
+                GLGeoShader();
+                virtual ~GLGeoShader();
+
+                void VCompile() override;
+            };
+        }
 	}
 }

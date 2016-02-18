@@ -19,19 +19,22 @@ namespace Hatchit {
 
 	namespace Graphics {
 
-		GLRenderPass::GLRenderPass()
-		{
+        namespace OpenGL {
 
-		}
+            GLRenderPass::GLRenderPass()
+            {
 
-		GLRenderPass::~GLRenderPass()
-		{
+            }
 
-		}
+            GLRenderPass::~GLRenderPass()
+            {
 
-		void GLRenderPass::VRender()
-		{
-		
-		}
+            }
+
+            void GLRenderPass::VRender()
+            {
+
+            }
+        }
 	}
 }

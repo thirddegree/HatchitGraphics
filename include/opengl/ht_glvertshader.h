@@ -30,13 +30,17 @@ namespace Hatchit {
 
 	namespace Graphics {
 
-		class HT_API GLVertShader : public GLShader
-		{
-		public:
-			GLVertShader();
-			virtual ~GLVertShader();
+        namespace OpenGL {
 
-			void VCompile() override;
-		};
+            class HT_API GLVertShader : public GLShader
+            {
+            public:
+                GLVertShader();
+                virtual ~GLVertShader();
+
+                void VCompile() override;
+            };
+        }
+	
 	}
 }

@@ -34,38 +34,41 @@ namespace Hatchit {
 
 	namespace Graphics {
 
-		class HT_API GLMaterial : public IMaterial
-		{
-		public:
-			GLMaterial();
-			virtual ~GLMaterial();
+        namespace OpenGL {
 
-			void VOnLoaded() override;
-			void VSetShader(ShaderSlot shaderSlot, IShader* shader) override;
-			
-			//TODO: Remove
-			bool VInitFromFile(Core::File* file) override;
+            class HT_API GLMaterial : public IMaterial
+            {
+            public:
+                GLMaterial();
+                virtual ~GLMaterial();
 
-			virtual bool VSetInt(std::string name, int data)								override;
-			virtual bool VSetFloat(std::string name, float data)							override;
-			virtual bool VSetFloat2(std::string name, Math::Vector2 data)					override;
-			virtual bool VSetFloat3(std::string name, Math::Vector3 data)					override;
-			virtual bool VSetFloat4(std::string name, Math::Vector4 data)					override;
-			virtual bool VSetMatrix3(std::string name, Math::Matrix3 data)					override;
-			virtual bool VSetMatrix4(std::string name, Math::Matrix4 data)					override;
+                void VOnLoaded() override;
+                void VSetShader(ShaderSlot shaderSlot, IShader* shader) override;
 
-			virtual bool VBindTexture(std::string name, ITexture* texture)					override;
-			virtual bool VUnbindTexture(std::string name, ITexture* texture)				override;
+                //TODO: Remove
+                bool VInitFromFile(Core::File* file) override;
 
-			void VBind()	override;
-			void VUnbind()  override;
-		private:
-			GLuint shaderProgram;
-			std::map <std::string, ShaderVariable*> variables;
-			std::map <std::string, GLuint> variableLocations;
+                virtual bool VSetInt(std::string name, int data)								override;
+                virtual bool VSetFloat(std::string name, float data)							override;
+                virtual bool VSetFloat2(std::string name, Math::Vector2 data)					override;
+                virtual bool VSetFloat3(std::string name, Math::Vector3 data)					override;
+                virtual bool VSetFloat4(std::string name, Math::Vector4 data)					override;
+                virtual bool VSetMatrix3(std::string name, Math::Matrix3 data)					override;
+                virtual bool VSetMatrix4(std::string name, Math::Matrix4 data)					override;
 
-			void printProgramLog();
-			void reflectShaderGL();
-		};
+                virtual bool VBindTexture(std::string name, ITexture* texture)					override;
+                virtual bool VUnbindTexture(std::string name, ITexture* texture)				override;
+
+                void VBind()	override;
+                void VUnbind()  override;
+            private:
+                GLuint shaderProgram;
+                std::map <std::string, ShaderVariable*> variables;
+                std::map <std::string, GLuint> variableLocations;
+
+                void printProgramLog();
+                void reflectShaderGL();
+            };
+        }
 	}
 }

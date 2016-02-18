@@ -19,19 +19,22 @@ namespace Hatchit {
 
 	namespace Graphics {
 
-		GLGeoShader::GLGeoShader()
-		{
+        namespace OpenGL {
 
-		}
+            GLGeoShader::GLGeoShader()
+            {
 
-		GLGeoShader::~GLGeoShader()
-		{
+            }
 
-		}
+            GLGeoShader::~GLGeoShader()
+            {
 
-		void GLGeoShader::VCompile()
-		{
-			compileGL(GL_GEOMETRY_SHADER);
-		}
+            }
+
+            void GLGeoShader::VCompile()
+            {
+                compileGL(GL_GEOMETRY_SHADER);
+            }
+        }
 	}
 }

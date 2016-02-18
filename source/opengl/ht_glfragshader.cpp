@@ -19,19 +19,22 @@ namespace Hatchit {
 
 	namespace Graphics {
 
-		GLFragShader::GLFragShader()
-		{
+        namespace OpenGL {
 
-		}
+            GLFragShader::GLFragShader()
+            {
 
-		GLFragShader::~GLFragShader()
-		{
+            }
 
-		}
+            GLFragShader::~GLFragShader()
+            {
 
-		void GLFragShader::VCompile() 
-		{
-			compileGL(GL_FRAGMENT_SHADER);
-		}
+            }
+
+            void GLFragShader::VCompile()
+            {
+                compileGL(GL_FRAGMENT_SHADER);
+            }
+        }
 	}
 }

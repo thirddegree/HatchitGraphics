@@ -24,41 +24,44 @@ namespace Hatchit {
 
     namespace Graphics {
 
-        class HT_API GLShader : public IShader
-        {
-			friend class GLMaterial;
-        public:
-            GLShader();
+        namespace OpenGL {
 
-            virtual ~GLShader();
+            class HT_API GLShader : public IShader
+            {
+                friend class GLMaterial;
+            public:
+                GLShader();
 
-            bool VInitFromFile(Core::File* file) override;
+                virtual ~GLShader();
 
-			void VOnLoaded() override;
+                bool VInitFromFile(Core::File* file) override;
 
-			bool VSetData(std::string name, const void* data, size_t size) override;
-			bool VSetInt(std::string name, int data) override;
-			bool VSetFloat(std::string name, float data) override;
-			bool VSetFloat2(std::string name, Math::Vector2 data) override;
-			bool VSetFloat3(std::string name, Math::Vector3 data) override;
-			bool VSetFloat4(std::string name, Math::Vector4 data) override;
-			bool VSetMatrix3(std::string name, Math::Matrix3 data) override;
-			bool VSetMatrix4(std::string name, Math::Matrix4 data) override;
+                void VOnLoaded() override;
 
-			bool VBindTexture(std::string name, ITexture* texture) override;
-			bool VUnbindTexture(std::string name, ITexture* texture) override;
-			
+                bool VSetData(std::string name, const void* data, size_t size) override;
+                bool VSetInt(std::string name, int data) override;
+                bool VSetFloat(std::string name, float data) override;
+                bool VSetFloat2(std::string name, Math::Vector2 data) override;
+                bool VSetFloat3(std::string name, Math::Vector3 data) override;
+                bool VSetFloat4(std::string name, Math::Vector4 data) override;
+                bool VSetMatrix3(std::string name, Math::Matrix3 data) override;
+                bool VSetMatrix4(std::string name, Math::Matrix4 data) override;
+
+                bool VBindTexture(std::string name, ITexture* texture) override;
+                bool VUnbindTexture(std::string name, ITexture* texture) override;
+
 #ifdef _DEBUG
-			void LoadDirectlyFromFile(std::string path);
+                void LoadDirectlyFromFile(std::string path);
 #endif
 
-        protected:
-			GLuint shader;
-            std::map<std::string, GLuint> m_uniformMap;
-            std::map<std::string, GLuint> m_textureMap;
+            protected:
+                GLuint shader;
+                std::map<std::string, GLuint> m_uniformMap;
+                std::map<std::string, GLuint> m_textureMap;
 
-			void printShaderLog();
-			void compileGL(GLenum shaderType);
-        };
+                void printShaderLog();
+                void compileGL(GLenum shaderType);
+            };
+        }
     }
 }
