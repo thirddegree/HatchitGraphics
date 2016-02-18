@@ -132,7 +132,14 @@ namespace Hatchit {
 			/*
 			* Device should be valid at this point, get device properties
 			*/
-			vkGetPhysicalDeviceProperties(m_gpu, &m_gpuProps);
+			if (!setupDeviceQueues())
+				return false;
+
+			/*
+			* Query the device for advanced feature support 
+			*/
+			if (!setupProcAddresses())
+				return false;
 
 			return true;
 		}
@@ -462,6 +469,102 @@ namespace Hatchit {
 			}
 
 			return true;
+		}
+
+		bool VKRenderer::setupDeviceQueues() 
+		{
+			vkGetPhysicalDeviceProperties(m_gpu, &m_gpuProps);
+
+			//Call with NULL data to get count
+			uint32_t queueCount;
+			vkGetPhysicalDeviceQueueFamilyProperties(m_gpu, &queueCount, NULL);
+			assert(queueCount >= 1);
+
+			if (queueCount == 0)
+			{
+#ifdef _DEBUG
+				Core::DebugPrintF("VKRenderer::setupDeviceQueues: No queues were found on the device\n");
+#endif
+				return false;
+			}
+
+			m_queueProps = std::vector<VkQueueFamilyProperties>(queueCount);
+			vkGetPhysicalDeviceQueueFamilyProperties(m_gpu, &queueCount, &m_queueProps[0]);
+
+			// Find a queue that supports gfx
+			uint32_t gfxQueueIdx = 0;
+			for (gfxQueueIdx = 0; gfxQueueIdx < queueCount; gfxQueueIdx++) {
+				if (m_queueProps[gfxQueueIdx].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+					break;
+			}
+			assert(gfxQueueIdx < queueCount);
+
+			if (gfxQueueIdx >= queueCount)
+			{
+#ifdef _DEBUG
+				Core::DebugPrintF("VKRenderer::setupDeviceQueues: No graphics queue was found on the device\n");
+#endif
+				return false;
+			}
+		}
+
+		bool VKRenderer::setupProcAddresses() 
+		{
+			// Query fine-grained feature support for this device.
+			//  If app has specific feature requirements it should check supported
+			//  features based on this query
+			VkPhysicalDeviceFeatures physDevFeatures;
+			vkGetPhysicalDeviceFeatures(m_gpu, &physDevFeatures);
+
+			fpGetPhysicalDeviceSurfaceSupportKHR = (PFN_vkGetPhysicalDeviceSurfaceSupportKHR)
+				vkGetInstanceProcAddr(m_instance, "vkGetPhysicalDeviceSurfaceSupportKHR");
+			if (fpGetPhysicalDeviceSurfaceSupportKHR == nullptr)
+			{
+#ifdef _DEBUG
+				Core::DebugPrintF("VKRenderer::setupProcAddresses: vkGetPhysicalDeviceSurfaceSupportKHR not found.\n");
+#endif
+				return false;
+			}
+
+			fpGetPhysicalDeviceSurfaceCapabilitiesKHR = (PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR)
+				vkGetInstanceProcAddr(m_instance, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
+			if (fpGetPhysicalDeviceSurfaceCapabilitiesKHR == nullptr)
+			{
+#ifdef _DEBUG
+				Core::DebugPrintF("VKRenderer::setupProcAddresses: vkGetPhysicalDeviceSurfaceCapabilitiesKHR not found.\n");
+#endif
+				return false;
+			}
+
+			fpGetPhysicalDeviceSurfaceFormatsKHR = (PFN_vkGetPhysicalDeviceSurfaceFormatsKHR)
+				vkGetInstanceProcAddr(m_instance, "vkGetPhysicalDeviceSurfaceFormatsKHR");
+			if (fpGetPhysicalDeviceSurfaceFormatsKHR == nullptr)
+			{
+#ifdef _DEBUG
+				Core::DebugPrintF("VKRenderer::setupProcAddresses: vkGetPhysicalDeviceSurfaceFormatsKHR not found.\n");
+#endif
+				return false;
+			}
+
+			fpGetPhysicalDeviceSurfacePresentModesKHR = (PFN_vkGetPhysicalDeviceSurfacePresentModesKHR)
+				vkGetInstanceProcAddr(m_instance, "vkGetPhysicalDeviceSurfacePresentModesKHR");
+			if (fpGetPhysicalDeviceSurfacePresentModesKHR == nullptr)
+			{
+#ifdef _DEBUG
+				Core::DebugPrintF("VKRenderer::setupProcAddresses: vkGetPhysicalDeviceSurfacePresentModesKHR not found.\n");
+#endif
+				return false;
+			}
+
+			fpGetSwapchainImagesKHR = (PFN_vkGetSwapchainImagesKHR)
+				vkGetInstanceProcAddr(m_instance, "vkGetSwapchainImagesKHR");
+			if (fpGetSwapchainImagesKHR == nullptr)
+			{
+#ifdef _DEBUG
+				Core::DebugPrintF("VKRenderer::setupProcAddresses: vkGetSwapchainImagesKHR not found.\n");
+#endif
+				return false;
+			}
 		}
 
 		VKAPI_ATTR VkBool32 VKAPI_CALL VKRenderer::debugFunction(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType,

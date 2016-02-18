@@ -62,10 +62,11 @@ namespace Hatchit {
 			std::vector<const char*>    m_enabledExtensionNames;
 
 			//Vuklan data structs
-			VkApplicationInfo			m_appInfo;
-			VkInstance					m_instance;
-			VkPhysicalDevice			m_gpu;
-			VkPhysicalDeviceProperties	m_gpuProps;
+			VkApplicationInfo						m_appInfo;
+			VkInstance								m_instance;
+			VkPhysicalDevice						m_gpu;
+			VkPhysicalDeviceProperties				m_gpuProps;
+			std::vector<VkQueueFamilyProperties>	m_queueProps;
 
 			//Vulkan Callbacks
 			PFN_vkCreateDebugReportCallbackEXT m_createDebugReportCallback;
@@ -77,12 +78,26 @@ namespace Hatchit {
 				uint64_t srcObject, size_t location, int32_t msgCode,
 				const char *pLayerPrefix, const char *pMsg, void *pUserData);
 
+			//Advanced vulkan feature support flags
+			PFN_vkGetPhysicalDeviceSurfaceSupportKHR
+				fpGetPhysicalDeviceSurfaceSupportKHR;
+			PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR
+				fpGetPhysicalDeviceSurfaceCapabilitiesKHR;
+			PFN_vkGetPhysicalDeviceSurfaceFormatsKHR
+				fpGetPhysicalDeviceSurfaceFormatsKHR;
+			PFN_vkGetPhysicalDeviceSurfacePresentModesKHR
+				fpGetPhysicalDeviceSurfacePresentModesKHR;
+			PFN_vkGetSwapchainImagesKHR
+				fpGetSwapchainImagesKHR;
+
 			bool checkInstanceLayers();
 			bool checkInstanceExtensions();
 			bool enumeratePhysicalDevices();
 			bool checkDeviceLayers();
 			bool checkDeviceExtensions();
 			bool setupDebugCallbacks();
+			bool setupDeviceQueues();
+			bool setupProcAddresses();
 
 			bool checkLayers(std::vector<const char*> layerNames, VkLayerProperties* layers, uint32_t layerCount);
 		};
