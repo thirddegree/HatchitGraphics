@@ -1014,6 +1014,7 @@ namespace Hatchit {
 					subresourceRange.baseMipLevel = 0;
 					subresourceRange.levelCount = 1;
 					subresourceRange.baseArrayLayer = 0;
+					subresourceRange.layerCount = 1;
 
 					VkImageViewCreateInfo colorImageView;
 					colorImageView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -1054,7 +1055,123 @@ namespace Hatchit {
 				return true;
 			}
 
-			bool VKRenderer::prepareSwapchainDepth() { return true; }
+			bool VKRenderer::prepareSwapchainDepth() 
+			{
+				VkResult err;
+				const VkFormat depthFormat = VK_FORMAT_D16_UNORM;
+
+				VkImageCreateInfo image;
+				image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+				image.pNext = nullptr;
+				image.imageType = VK_IMAGE_TYPE_2D;
+				image.format = depthFormat;
+				image.extent = {m_width, m_height, 1};
+				image.mipLevels = 1;
+				image.arrayLayers = 1;
+				image.samples = VK_SAMPLE_COUNT_1_BIT;
+				image.tiling = VK_IMAGE_TILING_OPTIMAL;
+				image.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+				image.flags = 0;
+				image.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+				image.queueFamilyIndexCount = 0;
+				image.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+				VkComponentMapping components;
+				components.r = VK_COMPONENT_SWIZZLE_R;
+				components.g = VK_COMPONENT_SWIZZLE_G;
+				components.b = VK_COMPONENT_SWIZZLE_B;
+				components.a = VK_COMPONENT_SWIZZLE_A;
+
+				VkImageSubresourceRange depthSubresourceRange;
+				depthSubresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+				depthSubresourceRange.baseMipLevel = 0;
+				depthSubresourceRange.levelCount = 1;
+				depthSubresourceRange.baseArrayLayer = 0;
+				depthSubresourceRange.layerCount = 1;
+
+				VkImageViewCreateInfo view;
+				view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+				view.pNext = nullptr;
+				view.image = VK_NULL_HANDLE;
+				view.format = depthFormat;
+				view.subresourceRange = depthSubresourceRange;
+				view.flags = 0;
+				view.components = components;
+				view.viewType = VK_IMAGE_VIEW_TYPE_2D;
+
+				VkMemoryRequirements memoryRequirements;
+				bool pass;
+
+				//Create image
+				err = vkCreateImage(m_device, &image, nullptr, &m_depthBuffer.image);
+				assert(!err);
+				if (err != VK_SUCCESS)
+				{
+#ifdef _DEBUG
+					Core::DebugPrintF("VKRenderer::prepareSwapchainDepth(): Error, failed to create image\n");
+#endif
+					return false;
+				}
+
+				vkGetImageMemoryRequirements(m_device, m_depthBuffer.image, &memoryRequirements);
+
+				m_depthBuffer.memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+				m_depthBuffer.memAllocInfo.pNext = nullptr;
+				m_depthBuffer.memAllocInfo.allocationSize = memoryRequirements.size;
+				m_depthBuffer.memAllocInfo.memoryTypeIndex = 0;
+				
+				//No requirements
+				pass = memoryTypeFromProperties(memoryRequirements.memoryTypeBits, 0, &m_depthBuffer.memAllocInfo.memoryTypeIndex);
+				assert(pass);
+				if (!pass)
+				{
+#ifdef _DEBUG
+					Core::DebugPrintF("VKRenderer::prepareSwapchainDepth(): Error, failed to get memory type for depth buffer\n");
+#endif
+					return false;
+				}
+
+				//Allocate Memory
+				err = vkAllocateMemory(m_device, &m_depthBuffer.memAllocInfo, nullptr, &m_depthBuffer.memory);
+				assert(!err);
+				if (err != VK_SUCCESS)
+				{
+#ifdef _DEBUG
+					Core::DebugPrintF("VKRenderer::prepareSwapchainDepth(): Error, failed to allocate memory for depth buffer\n");
+#endif
+					return false;
+				}
+
+				//Bind Memory
+				err = vkBindImageMemory(m_device, m_depthBuffer.image, m_depthBuffer.memory, 0);
+				assert(!err);
+				if (err != VK_SUCCESS)
+				{
+#ifdef _DEBUG
+					Core::DebugPrintF("VKRenderer::prepareSwapchainDepth(): Error, failed to bind depth buffer memory\n");
+#endif
+					return false;
+				}
+
+				setImageLayout(m_depthBuffer.image, VK_IMAGE_ASPECT_DEPTH_BIT,
+					VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
+				//Create image view
+				view.image = m_depthBuffer.image;
+				err = vkCreateImageView(m_device, &view, nullptr, &m_depthBuffer.view);
+				assert(!err);
+				if (err != VK_SUCCESS)
+				{
+#ifdef _DEBUG
+					Core::DebugPrintF("VKRenderer::prepareSwapchainDepth(): Error, failed create image view for depth buffer\n");
+#endif
+					return false;
+				}
+
+
+				return true; 
+			}
+
 			bool VKRenderer::prepareDescriptorLayout() { return true; }
 			bool VKRenderer::prepareRenderPass() { return true; }
 			bool VKRenderer::preparePipeline() { return true; }
@@ -1155,6 +1272,26 @@ namespace Hatchit {
 			}
 
 			void VKRenderer::flushCommandBuffer() {}
+
+			bool VKRenderer::memoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, uint32_t* typeIndex)
+			{
+				//Search mem types to find the first index with those properties
+				for (uint32_t i = 0; i < 32; i++)
+				{
+					if ((typeBits & 1) == 1)
+					{
+						//Type exists; does it match properties we're looking for?
+						if ((m_memoryProps.memoryTypes[i].propertyFlags & requirementsMask) == requirementsMask)
+						{
+							*typeIndex = i;
+							return true;
+						}
+					}
+					typeBits >>= 1;
+				}
+				
+				return false; //nothing found
+			}
 
             VKAPI_ATTR VkBool32 VKAPI_CALL VKRenderer::debugFunction(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType,
                 uint64_t srcObject, size_t location, int32_t msgCode,

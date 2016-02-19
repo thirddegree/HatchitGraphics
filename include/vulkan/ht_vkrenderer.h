@@ -66,6 +66,21 @@ namespace Hatchit {
 					VkImageView view;
 				}SwapchainBuffers;
 
+				struct DepthBuffer {
+					VkFormat format;
+					VkImage image;
+					VkMemoryAllocateInfo memAllocInfo;
+					VkDeviceMemory memory;
+					VkImageView view;
+				};
+
+				struct UniformData {
+					VkBuffer buffer;
+					VkMemoryAllocateInfo memAllocInfo;
+					VkDeviceMemory memory;
+					VkDescriptorBufferInfo bufferInfo;
+				};
+
                 std::vector<const char*>	m_enabledLayerNames;
                 std::vector<const char*>    m_enabledExtensionNames;
 
@@ -89,6 +104,7 @@ namespace Hatchit {
 				VkCommandPool							m_commandPool;
 				VkSwapchainKHR							m_swapchain;
 				std::vector<SwapchainBuffers>			m_swapchainBuffers;
+				DepthBuffer								m_depthBuffer;
 
 				VkCommandBuffer							m_commandBuffer;
 				VkClearValue							m_clearColor;
@@ -162,6 +178,7 @@ namespace Hatchit {
                 bool checkLayers(std::vector<const char*> layerNames, VkLayerProperties* layers, uint32_t layerCount);
 				bool setImageLayout(VkImage image, VkImageAspectFlags aspectMask, 
 					VkImageLayout oldImageLayout, VkImageLayout newImageLayout);
+				bool memoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, uint32_t* typeIndex);
 
 				//Used for drawing
 				void flushCommandBuffer();
