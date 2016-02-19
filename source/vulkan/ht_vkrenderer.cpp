@@ -204,7 +204,7 @@ namespace Hatchit {
 				//Get HINSTANCE from HWND
 				HWND window = (HWND)params.window;
 				HINSTANCE instance;
-				instance = (HINSTANCE)GetWindowLongPtr(window, DWLP_USER);
+				instance = (HINSTANCE)GetWindowLongPtr(window, GWLP_HINSTANCE);
 
 				VkWin32SurfaceCreateInfoKHR creationInfo;
 				creationInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
