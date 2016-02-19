@@ -29,7 +29,8 @@ namespace Hatchit {
 
             VKRenderer::VKRenderer()
             {
-
+				m_swapchain = 0;
+				m_commandBuffer = 0;
             }
 
             VKRenderer::~VKRenderer()
@@ -39,10 +40,22 @@ namespace Hatchit {
 
             bool VKRenderer::VInitialize(const RendererParams & params)
             {
+				/*
+				* Initialize Core Vulkan Systems: Driver layers & extensions 
+				*/
 				if (!initVulkan(params))
 					return false;
                             
+				/*
+				* Initialize Vulkan swapchain
+				*/
 				if (!initVulkanSwapchain(params))
+					return false;
+
+				/*
+				* Prepare Vulkan command buffers and memory systems for drawing
+				*/
+				if (!prepareVulkan(params))
 					return false;
 
                 return true;
@@ -58,6 +71,10 @@ namespace Hatchit {
 
             void VKRenderer::VSetClearColor(const Color & color)
             {
+				m_clearColor.color.float32[0] = color.r;
+				m_clearColor.color.float32[1] = color.g;
+				m_clearColor.color.float32[2] = color.b;
+				m_clearColor.color.float32[3] = color.a;
             }
 
             void VKRenderer::VClearBuffer(ClearArgs args)
@@ -781,6 +798,363 @@ namespace Hatchit {
 
 				return true;
 			}
+
+			bool VKRenderer::prepareVulkan(const RendererParams& params)
+			{
+				VkResult err;
+
+				//Create the command pool
+				VkCommandPoolCreateInfo commandPoolInfo;
+				commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+				commandPoolInfo.pNext = nullptr;
+				commandPoolInfo.queueFamilyIndex = m_graphicsQueueNodeIndex;
+				commandPoolInfo.flags = 0;
+
+				err = vkCreateCommandPool(m_device, &commandPoolInfo, nullptr, &m_commandPool);
+
+				if (err != VK_SUCCESS)
+				{
+#ifdef _DEBUG
+					Core::DebugPrintF("VKRenderer::prepareVulkan(): Error creating command pool.\n");
+#endif
+					return false;
+				}
+
+				VkCommandBufferAllocateInfo allocateInfo;
+				allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+				allocateInfo.pNext = nullptr;
+				allocateInfo.commandPool = m_commandPool;
+				allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+				allocateInfo.commandBufferCount = 1;
+
+				/*
+				* Prepare the swapchain buffers
+				*/
+				if (!prepareSwapchainBuffers())
+					return false;
+
+				/*
+				* Prepare the swapchain depth buffer
+				*/
+				if (!prepareSwapchainDepth())
+					return false;
+
+				/*
+				* Prepare the descriptor layout
+				*/
+				if (!prepareDescriptorLayout())
+					return false;
+
+				/*
+				* Prepare the render pass
+				*/
+				if (!prepareRenderPass())
+					return false;
+
+				/*
+				* Prepare pipeline
+				*/
+				if (!preparePipeline())
+					return false;
+
+				return true;
+			}
+
+			bool VKRenderer::prepareSwapchainBuffers() 
+			{
+				VkResult err;
+				VkSwapchainKHR oldSwapchain = m_swapchain;
+
+				//Check surface capabilities and formats
+				
+				VkSurfaceCapabilitiesKHR surfaceCapabilities;
+				err = fpGetPhysicalDeviceSurfaceCapabilitiesKHR(m_gpu, m_surface, &surfaceCapabilities);
+				if (err != VK_SUCCESS)
+				{
+#ifdef _DEBUG
+					Core::DebugPrintF("VKRenderer::preapreSwapchainBuffers(): Failed to get surface capabilities.\n");
+#endif
+					return false;
+				}
+
+				//Get present modes
+				
+				uint32_t presentModeCount;
+				err = fpGetPhysicalDeviceSurfacePresentModesKHR(m_gpu, m_surface, &presentModeCount, nullptr);
+				if (err != VK_SUCCESS)
+				{
+#ifdef _DEBUG
+					Core::DebugPrintF("VKRenderer::preapreSwapchainBuffers(): Failed to get number of present modes.\n");
+#endif
+					return false;
+				}
+
+				VkPresentModeKHR* presentModes = new VkPresentModeKHR[presentModeCount];
+				err = fpGetPhysicalDeviceSurfacePresentModesKHR(m_gpu, m_surface, &presentModeCount, presentModes);
+				if (err != VK_SUCCESS)
+				{
+#ifdef _DEBUG
+					Core::DebugPrintF("VKRenderer::preapreSwapchainBuffers(): Failed to get present modes from device.\n");
+#endif
+					return false;
+				}
+
+				//Get the extent to match the current recorded width and height
+				//Or set the width and height to the bounds of the current extent
+				VkExtent2D swapchainExtent;
+				if (surfaceCapabilities.currentExtent.width == (uint32_t)-1)
+				{
+					swapchainExtent.width = m_width;
+					swapchainExtent.height = m_height;
+				}
+				else
+				{
+					swapchainExtent = surfaceCapabilities.currentExtent;
+					m_width = swapchainExtent.width;
+					m_height = swapchainExtent.height;
+				}
+
+				//Use mailbox mode if available as it's the lowest-latency non-tearing mode
+				//If that's not available try immediate mode which SHOULD be available and is fast but tears
+				//Fall back to FIFO which is always available
+				VkPresentModeKHR swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+				for (size_t i = 0; i < presentModeCount; i++) {
+					if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
+						swapchainPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+						break;
+					}
+					if ((swapchainPresentMode != VK_PRESENT_MODE_MAILBOX_KHR) &&
+						(presentModes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR)) {
+						swapchainPresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+					}
+				}
+
+				//Determine how many VkImages to use in the swap chain
+				//We only own one at a time besides the image being displayed
+				uint32_t desiredNumberOfSwapchainImages = surfaceCapabilities.minImageCount + 1;
+				if ((surfaceCapabilities.maxImageCount > 0) &
+					(desiredNumberOfSwapchainImages > surfaceCapabilities.maxImageCount))
+					desiredNumberOfSwapchainImages = surfaceCapabilities.maxImageCount;
+
+				//Setup transform flags
+				VkSurfaceTransformFlagBitsKHR preTransform;
+				if (surfaceCapabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
+					preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+				else
+					preTransform = surfaceCapabilities.currentTransform;
+
+				//Create swapchain
+
+				VkSwapchainCreateInfoKHR swapchainInfo;
+				swapchainInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+				swapchainInfo.pNext = nullptr;
+				swapchainInfo.surface = m_surface;
+				swapchainInfo.minImageCount = desiredNumberOfSwapchainImages;
+				swapchainInfo.imageFormat = m_format;
+				swapchainInfo.imageColorSpace = m_colorSpace;
+				swapchainInfo.imageExtent = swapchainExtent;
+				swapchainInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+				swapchainInfo.preTransform = preTransform;
+				swapchainInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+				swapchainInfo.imageArrayLayers = 1;
+				swapchainInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+				swapchainInfo.queueFamilyIndexCount = 0;
+				swapchainInfo.pQueueFamilyIndices = nullptr;
+				swapchainInfo.presentMode = swapchainPresentMode;
+				swapchainInfo.oldSwapchain = oldSwapchain;
+				swapchainInfo.clipped = true;
+				swapchainInfo.flags = 0;
+
+				uint32_t i; // About to be used for a bunch of loops
+
+				err = fpCreateSwapchainKHR(m_device, &swapchainInfo, nullptr, &m_swapchain);
+				if (err != VK_SUCCESS)
+				{
+#ifdef _DEBUG
+					Core::DebugPrintF("VKRenderer::prepareSwapchainBuffers(): Failed to create Swapchain.\n");
+#endif
+					return false;
+				}
+
+				//Destroy old swapchain
+				if (oldSwapchain != VK_NULL_HANDLE)
+					fpDestroySwapchainKHR(m_device, oldSwapchain, nullptr);
+
+				//Get the swapchain images
+				uint32_t swapchainImageCount;
+				err = fpGetSwapchainImagesKHR(m_device, m_swapchain, &swapchainImageCount, nullptr);
+				if(err != VK_SUCCESS)
+				{
+#ifdef _DEBUG
+					Core::DebugPrintF("VKRenderer::prepareSwapchainBuffers(): Failed to get swapchain image count.\n");
+#endif
+					return false;
+				}
+
+				VkImage* swapchainImages = new VkImage[swapchainImageCount];
+				err = fpGetSwapchainImagesKHR(m_device, m_swapchain, &swapchainImageCount, swapchainImages);
+				if (err != VK_SUCCESS)
+				{
+#ifdef _DEBUG
+					Core::DebugPrintF("VKRenderer::prepareSwapchainBuffers(): Failed to get swapchain images.\n");
+#endif
+					return false;
+				}
+
+				for (i = 0; i < swapchainImageCount; i++)
+				{
+					VkComponentMapping components;
+					components.r = VK_COMPONENT_SWIZZLE_R;
+					components.g = VK_COMPONENT_SWIZZLE_G;
+					components.b = VK_COMPONENT_SWIZZLE_B;
+					components.a = VK_COMPONENT_SWIZZLE_A;
+
+					VkImageSubresourceRange subresourceRange;
+					subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+					subresourceRange.baseMipLevel = 0;
+					subresourceRange.levelCount = 1;
+					subresourceRange.baseArrayLayer = 0;
+
+					VkImageViewCreateInfo colorImageView;
+					colorImageView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+					colorImageView.pNext = nullptr;
+					colorImageView.format = m_format;
+					colorImageView.components = components;
+					colorImageView.subresourceRange = subresourceRange;
+					colorImageView.viewType = VK_IMAGE_VIEW_TYPE_2D;
+					colorImageView.flags = 0;
+
+					SwapchainBuffers buffer;
+					buffer.image = swapchainImages[i];
+
+					//Render loop will expect image to have been used before
+					//Init image ot the VK_IMAGE_ASPECT_COLOR_BIT state
+					setImageLayout(buffer.image, VK_IMAGE_ASPECT_COLOR_BIT, 
+						VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+					colorImageView.image = buffer.image;
+
+					//Attempt to create the image view
+					err = vkCreateImageView(m_device, &colorImageView, nullptr, &buffer.view);
+
+					if (err != VK_SUCCESS)
+					{
+#ifdef _DEBUG
+						Core::DebugPrintF("VKRenderer::prepareSwapchainBuffers(): Failed to create image view.\n");
+#endif
+						return false;
+					}
+
+					m_swapchainBuffers.push_back(buffer);
+				}
+
+				if (presentModes != nullptr)
+					delete[] presentModes;
+
+				return true;
+			}
+
+			bool VKRenderer::prepareSwapchainDepth() { return true; }
+			bool VKRenderer::prepareDescriptorLayout() { return true; }
+			bool VKRenderer::prepareRenderPass() { return true; }
+			bool VKRenderer::preparePipeline() { return true; }
+			bool VKRenderer::prepareDescriptorPool() { return true; }
+			bool VKRenderer::prepareDescriptorSet() { return true; }
+			bool VKRenderer::prepareFrambuffers() { return true; }
+
+			bool VKRenderer::setImageLayout(VkImage image, VkImageAspectFlags aspectMask,
+				VkImageLayout oldImageLayout, VkImageLayout newImageLayout)
+			{
+				VkResult err;
+
+				//Start up a basic command buffer if we don't have one already
+				if (m_commandBuffer == VK_NULL_HANDLE)
+				{
+					VkCommandBufferAllocateInfo command;
+					command.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+					command.pNext = nullptr;
+					command.commandPool = m_commandPool;
+					command.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+					command.commandBufferCount = 1;
+
+					err = vkAllocateCommandBuffers(m_device, &command, &m_commandBuffer);
+					if(err != VK_SUCCESS)
+					{
+#ifdef _DEBUG
+						Core::DebugPrintF("VKRenderer::setImageLayout(): Failed to allocate command buffer.\n");
+#endif
+						return false;
+					}
+
+					VkCommandBufferInheritanceInfo commandBufferHInfo;
+					commandBufferHInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+					commandBufferHInfo.pNext = nullptr;
+					commandBufferHInfo.renderPass = VK_NULL_HANDLE;
+					commandBufferHInfo.subpass = 0;
+					commandBufferHInfo.framebuffer = VK_NULL_HANDLE;
+					commandBufferHInfo.occlusionQueryEnable = VK_FALSE;
+					commandBufferHInfo.queryFlags = 0;
+					commandBufferHInfo.pipelineStatistics = 0;
+
+					VkCommandBufferBeginInfo commandBufferBeginInfo;
+					commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+					commandBufferBeginInfo.pNext = nullptr;
+					commandBufferBeginInfo.flags = 0;
+					commandBufferBeginInfo.pInheritanceInfo = &commandBufferHInfo;
+
+					err = vkBeginCommandBuffer(m_commandBuffer, &commandBufferBeginInfo);
+					if (err != VK_SUCCESS)
+					{
+#ifdef _DEBUG
+						Core::DebugPrintF("VKRenderer::setImageLayout(): Failed to begin command buffer.\n");
+#endif
+						return false;
+					}
+				}
+
+				VkImageMemoryBarrier imageMemoryBarrier;
+				imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+				imageMemoryBarrier.pNext = nullptr;
+				imageMemoryBarrier.srcAccessMask = 0;
+				imageMemoryBarrier.dstAccessMask = 0;
+				imageMemoryBarrier.oldLayout = oldImageLayout;
+				imageMemoryBarrier.newLayout = newImageLayout;
+				imageMemoryBarrier.image = image;
+				imageMemoryBarrier.subresourceRange = { aspectMask, 0, 1, 0, 1 };
+				imageMemoryBarrier.srcQueueFamilyIndex = 0;
+				imageMemoryBarrier.dstQueueFamilyIndex = 0;
+
+				if (newImageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+					// Make sure anything that was copying from this image has completed
+					imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+				}
+
+				if (newImageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+					imageMemoryBarrier.dstAccessMask =
+						VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+				}
+
+				if (newImageLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+					imageMemoryBarrier.dstAccessMask =
+						VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+				}
+
+				if (newImageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+					// Make sure any Copy or CPU writes to image are flushed
+					imageMemoryBarrier.dstAccessMask =
+						VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+				}
+
+				VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+				VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+				vkCmdPipelineBarrier(m_commandBuffer, srcStages, destStages, 0, 0, nullptr, 0,
+					nullptr, 1, &imageMemoryBarrier);
+
+				return true;
+			}
+
+			void VKRenderer::flushCommandBuffer() {}
 
             VKAPI_ATTR VkBool32 VKAPI_CALL VKRenderer::debugFunction(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType,
                 uint64_t srcObject, size_t location, int32_t msgCode,

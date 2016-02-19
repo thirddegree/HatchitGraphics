@@ -60,8 +60,17 @@ namespace Hatchit {
                 void VPresent();
 
             private:
+				typedef struct _SwapchainBuffers {
+					VkImage image;
+					VkCommandBuffer command;
+					VkImageView view;
+				}SwapchainBuffers;
+
                 std::vector<const char*>	m_enabledLayerNames;
                 std::vector<const char*>    m_enabledExtensionNames;
+
+				uint32_t m_width;
+				uint32_t m_height;
 
                 //Vuklan data structs
                 VkApplicationInfo						m_appInfo;
@@ -76,6 +85,14 @@ namespace Hatchit {
 				VkFormat								m_format;
 				VkColorSpaceKHR							m_colorSpace;
 				VkPhysicalDeviceMemoryProperties		m_memoryProps;
+				
+				VkCommandPool							m_commandPool;
+				VkSwapchainKHR							m_swapchain;
+				std::vector<SwapchainBuffers>			m_swapchainBuffers;
+
+				VkCommandBuffer							m_commandBuffer;
+				VkClearValue							m_clearColor;
+				VkClearValue							m_depthStencil;
 
                 //Vulkan Callbacks
                 PFN_vkCreateDebugReportCallbackEXT m_createDebugReportCallback;
@@ -112,6 +129,7 @@ namespace Hatchit {
 				//Core init methods
 				bool initVulkan(const RendererParams& params);
 				bool initVulkanSwapchain(const RendererParams& params);
+				bool prepareVulkan(const RendererParams& params);
 
 				//Helper init methods
 
@@ -130,8 +148,23 @@ namespace Hatchit {
 				bool createDevice();
 				bool getSupportedFormats();
 
+				//Helpers for prepareVulkan
+				bool prepareSwapchainBuffers();
+				bool prepareSwapchainDepth();
+				bool prepareDescriptorLayout();
+				bool prepareRenderPass();
+				bool preparePipeline();
+				bool prepareDescriptorPool();
+				bool prepareDescriptorSet();
+				bool prepareFrambuffers();
+
 				//Reused helpers
                 bool checkLayers(std::vector<const char*> layerNames, VkLayerProperties* layers, uint32_t layerCount);
+				bool setImageLayout(VkImage image, VkImageAspectFlags aspectMask, 
+					VkImageLayout oldImageLayout, VkImageLayout newImageLayout);
+
+				//Used for drawing
+				void flushCommandBuffer();
             };
 
         }
