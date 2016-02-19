@@ -15,6 +15,11 @@
 #include <ht_d3d12renderer.h>
 #include <ht_debug.h>
 #include <wrl.h>
+#include <ht_file.h>
+#include <ht_os.h>
+#include <ht_math.h>
+
+
 
 namespace Hatchit {
 
@@ -22,9 +27,27 @@ namespace Hatchit {
 
         namespace DirectX {
 
+            struct Vertex
+            {
+                Math::Float3 position;
+                Math::Float4 color;
+            };
+
             D3D12Renderer::D3D12Renderer()
             {
+                m_device = nullptr;
+                m_swapChain = nullptr;
+                m_renderTargetViewHeap = nullptr;
+                m_commandAllocator = nullptr;
+                m_commandList = nullptr;
+                m_commandQueue = nullptr;
                 m_pipelineState = nullptr;
+                m_rootSignature = nullptr;
+                m_fence = nullptr;
+                for (int i = 0; i < NUM_RENDER_TARGETS; i++)
+                    m_renderTargets[i] = nullptr;
+                m_fenceValue = 0;
+                m_frameIndex = 0;
             }
 
             D3D12Renderer::~D3D12Renderer()
@@ -36,7 +59,9 @@ namespace Hatchit {
                 DirectX::ReleaseCOM(m_commandAllocator);
                 DirectX::ReleaseCOM(m_commandList);
                 DirectX::ReleaseCOM(m_pipelineState);
+                DirectX::ReleaseCOM(m_rootSignature);
                 DirectX::ReleaseCOM(m_fence);
+                DirectX::ReleaseCOM(m_vertexBuffer);
                 for (int i = 0; i < NUM_RENDER_TARGETS; i++)
                     DirectX::ReleaseCOM(m_renderTargets[i]);
             }
@@ -44,6 +69,8 @@ namespace Hatchit {
             bool D3D12Renderer::VInitialize(const RendererParams& params)
             {
                 m_clearColor = params.clearColor;
+
+                
 
                 HRESULT hr = S_OK;
 
@@ -121,6 +148,8 @@ namespace Hatchit {
                 GetClientRect((HWND)params.window, &r);
                 UINT width = r.right - r.left;
                 UINT height = r.bottom - r.top;
+
+                m_aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 
                 DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
                 swapChainDesc.BufferCount = NUM_RENDER_TARGETS; //double buffered
@@ -240,6 +269,181 @@ namespace Hatchit {
                 }
 
                 DirectX::ThrowIfFailed(m_commandList->Close());
+                
+                m_viewport.Width = static_cast<float>(width);
+                m_viewport.Height = static_cast<float>(height);
+                m_viewport.TopLeftX = 0.0f;
+                m_viewport.TopLeftY = 0.0f;
+                m_viewport.MinDepth = 0.0f;
+                m_viewport.MaxDepth = 1.0f;
+
+                m_scissorRect.left = 0;
+                m_scissorRect.top = 0;
+                m_scissorRect.right = static_cast<LONG>(width);
+                m_scissorRect.bottom = static_cast<LONG>(height);
+                
+                /*
+                * Create a root signature
+                */
+                CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
+                rootSignatureDesc.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+                ID3DBlob* signature = nullptr;
+                ID3DBlob* error = nullptr;
+                DirectX::ThrowIfFailed(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error));
+                hr = m_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature));
+                if (FAILED(hr))
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create root signature.\n");
+#endif
+                    return false;
+                }
+                DirectX::ReleaseCOM(signature);
+                DirectX::ReleaseCOM(error);
+
+                /*
+                * Create our PSO (Pipeline State Object)
+                */
+                ID3DBlob* vertexShader;
+                ID3DBlob* pixelShader;
+
+                Core::File vShaderFile;
+                Core::File pShaderFile;
+                try
+                {
+                    vShaderFile.Open(Core::os_exec_dir() + "tri_VS.hlsl", Core::FileMode::ReadBinary);
+                    pShaderFile.Open(Core::os_exec_dir() + "tri_PS.hlsl", Core::FileMode::ReadBinary);
+                }
+                catch (std::exception& e)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("%s\n", e.what());
+#endif
+                    return false;
+                }
+
+                BYTE* vShaderData = new BYTE[vShaderFile.SizeBytes()];
+                vShaderFile.Read(vShaderData, vShaderFile.SizeBytes()); //read all of the file into memory
+                
+                DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
+#ifdef _DEBUG
+                // Set the D3DCOMPILE_DEBUG flag to embed debug information in the shaders.
+                // Setting this flag improves the shader debugging experience, but still allows
+                // the shaders to be optimized and to run exactly the way they will run in
+                // the release configuration of this program.
+                dwShaderFlags |= D3DCOMPILE_DEBUG;
+
+                // Disable optimizations to further improve shader debugging
+                dwShaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+#endif
+
+                ID3DBlob* errorBlob = nullptr;
+                hr = D3DCompile2(vShaderData, vShaderFile.SizeBytes(), nullptr, nullptr,
+                    nullptr, "main", "vs_5_0", dwShaderFlags, NULL, NULL, nullptr, NULL,
+                    &vertexShader, &errorBlob);
+                if (FAILED(hr))
+                {
+                    if (errorBlob)
+                    {
+                        OutputDebugStringA(reinterpret_cast<const char*>(errorBlob->GetBufferPointer()));
+                        DirectX::ReleaseCOM(errorBlob);
+                    }
+                    return false;
+                }
+                DirectX::ReleaseCOM(errorBlob);
+                delete[] vShaderData;
+
+
+                BYTE* pShaderData = new BYTE[pShaderFile.SizeBytes()];
+                pShaderFile.Read(pShaderData, pShaderFile.SizeBytes());
+                hr = D3DCompile2(pShaderData, pShaderFile.SizeBytes(), nullptr, nullptr,
+                    nullptr, "main", "ps_5_0", dwShaderFlags, NULL, NULL, nullptr, NULL,
+                    &pixelShader, &errorBlob);
+                if (FAILED(hr))
+                {
+                    if (errorBlob)
+                    {
+                        OutputDebugStringA(reinterpret_cast<const char*>(errorBlob->GetBufferPointer()));
+                        DirectX::ReleaseCOM(errorBlob);
+                    }
+                    return false;
+                }
+                DirectX::ReleaseCOM(errorBlob);
+                delete[] pShaderData;
+
+                // Define the vertex input layout.
+                D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
+                {
+                    { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+                    { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+                };
+
+                D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+                psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
+                psoDesc.pRootSignature = m_rootSignature;
+                psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShader);
+                psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader);
+                psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+                psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+                psoDesc.DepthStencilState.DepthEnable = false;
+                psoDesc.DepthStencilState.StencilEnable = false;
+                psoDesc.SampleMask = UINT_MAX;
+                psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+                psoDesc.NumRenderTargets = 1;
+                psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+                psoDesc.SampleDesc.Count = 1;
+
+                hr = m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pipelineState));
+                if (FAILED(hr))
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create pipeline state object.\n");
+#endif
+                    return false;
+                }
+
+                /*
+                * Create vertex buffer for triangle (DEMO)
+                */
+
+                Vertex triangleVerts[] =
+                {
+                    { { 0.0f, 0.25f * m_aspectRatio, 0.0f }, {1.0f, 0.0f, 0.0f, 1.0f} },
+                    { { 0.25f, -0.25f * m_aspectRatio, 0.0f },{ 0.0f, 1.0f, 0.0f, 1.0f } },
+                    { { -0.25f, -0.25f * m_aspectRatio, 0.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } }
+                };
+                const uint32_t vBufferSize = sizeof(triangleVerts);
+
+                // Note: using upload heaps to transfer static data like vert buffers is not 
+                // recommended. Every time the GPU needs it, the upload heap will be marshalled 
+                // over. Please read up on Default Heap usage. An upload heap is used here for 
+                // code simplicity and because there are very few verts to actually transfer.
+                hr = m_device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+                    D3D12_HEAP_FLAG_NONE,
+                    &CD3DX12_RESOURCE_DESC::Buffer(vBufferSize),
+                    D3D12_RESOURCE_STATE_GENERIC_READ,
+                    nullptr,
+                    IID_PPV_ARGS(&m_vertexBuffer));
+                if (FAILED(hr))
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create vertex buffer.\n");
+#endif
+                    return false;
+                }
+
+                // Copy the triangle data to the vertex buffer.
+                UINT8* pVertexDataBegin;
+                CD3DX12_RANGE readRange(0, 0);		// We do not intend to read from this resource on the CPU.
+                ThrowIfFailed(m_vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
+                memcpy(pVertexDataBegin, triangleVerts, sizeof(triangleVerts));
+                m_vertexBuffer->Unmap(0, nullptr);
+
+                // Initialize the vertex buffer view.
+                m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
+                m_vertexBufferView.StrideInBytes = sizeof(Vertex);
+                m_vertexBufferView.SizeInBytes = vBufferSize;
 
                 /*
                 * Create synchronization objects
@@ -254,13 +458,14 @@ namespace Hatchit {
                 }
                 m_fenceValue = 1;
                 m_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-                if (!m_fenceEvent) 
+                if (!m_fenceEvent)
                 {
                     DirectX::ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()));
                     return false;
                 }
-                    
-                
+
+                waitForFrame();
+
                 return true;
             }
 
@@ -288,14 +493,25 @@ namespace Hatchit {
 
                 DirectX::ThrowIfFailed(m_commandList->Reset(m_commandAllocator, m_pipelineState));
 
+                /*
+                * Set necessaru state
+                */
+                m_commandList->SetGraphicsRootSignature(m_rootSignature);
+                m_commandList->RSSetViewports(1, &m_viewport);
+                m_commandList->RSSetScissorRects(1, &m_scissorRect);
+
                 m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_frameIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
                 CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_renderTargetViewHeap->GetCPUDescriptorHandleForHeapStart(), m_frameIndex, m_renderTargetViewHeapSize);
+                m_commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 
                 /*
                 * Record basic command
                 */
                 m_commandList->ClearRenderTargetView(rtvHandle, reinterpret_cast<float*>(&m_clearColor), 0, nullptr);
+                m_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+                m_commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
+                m_commandList->DrawInstanced(3, 1, 0, 0);
 
                 /*
                 * Indicate that we are using the back buffer to present

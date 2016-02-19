@@ -45,11 +45,14 @@ namespace Hatchit {
                 void VPresent()                                         override;
 
             private:
+                D3D12_VIEWPORT              m_viewport;
+                D3D12_RECT                  m_scissorRect;
                 ID3D12Device*               m_device;
                 IDXGISwapChain3*            m_swapChain;
                 ID3D12CommandQueue*         m_commandQueue;
                 ID3D12CommandAllocator*     m_commandAllocator;
                 ID3D12GraphicsCommandList*  m_commandList;
+                ID3D12RootSignature*        m_rootSignature;
                 ID3D12PipelineState*        m_pipelineState;
                 ID3D12Resource*             m_renderTargets[NUM_RENDER_TARGETS];
                 ID3D12DescriptorHeap*       m_renderTargetViewHeap;
@@ -62,9 +65,16 @@ namespace Hatchit {
                 ID3D12Fence*                m_fence;
                 uint64_t                    m_fenceValue;
 
+                //Demo only
+                float                       m_aspectRatio;
+                ID3D12Resource*             m_vertexBuffer;
+                D3D12_VERTEX_BUFFER_VIEW    m_vertexBufferView;
+
             private:
                 HRESULT checkHardwareAdapter(IDXGIFactory2* pFactory, IDXGIAdapter1** ppAdapter);
                 void    waitForFrame();
+
+                
                 
             };
         }

@@ -43,6 +43,8 @@ namespace Hatchit {
                 if (FAILED(hr))
                     throw;
             }
+
+            
         }
 
     }
