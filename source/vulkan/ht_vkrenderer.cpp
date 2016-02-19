@@ -17,6 +17,10 @@
 
 #include <cassert>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 namespace Hatchit {
 
 	namespace Graphics {
@@ -35,113 +39,11 @@ namespace Hatchit {
 
             bool VKRenderer::VInitialize(const RendererParams & params)
             {
-                bool success = true;
-
-                VkResult err;
-
-                /*
-                * Check Vulkan instance layers
-                */
-                if (!checkInstanceLayers())
-                    return false;
-
-                /*
-                * Check Vulkan instance extensions
-                */
-                if (!checkInstanceExtensions())
-                    return false;
-
-                /*
-                * Setup Vulkan application info structure
-                */
-
-                m_appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-                m_appInfo.pNext = nullptr;
-                m_appInfo.pApplicationName = params.applicationName.c_str();
-                m_appInfo.applicationVersion = 0;
-                m_appInfo.pEngineName = "Hatchit";
-                m_appInfo.engineVersion = 0;
-                m_appInfo.apiVersion = VK_API_VERSION;
-
-                /*
-                * Setup Vulkan instance create info
-                */
-                VkInstanceCreateInfo instanceInfo;
-                instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-                instanceInfo.pNext = nullptr;
-                instanceInfo.pApplicationInfo = &m_appInfo;
-                instanceInfo.enabledLayerCount = static_cast<uint32_t>(m_enabledLayerNames.size());
-                instanceInfo.ppEnabledLayerNames = &m_enabledLayerNames[0];
-                instanceInfo.enabledExtensionCount = static_cast<uint32_t>(m_enabledExtensionNames.size());
-                instanceInfo.ppEnabledExtensionNames = &m_enabledExtensionNames[0];
-
-                /**
-                * Create Vulkan instance handle
-                */
-                err = vkCreateInstance(&instanceInfo, nullptr, &m_instance);
-                switch (err)
-                {
-                case VK_SUCCESS:
-                    break;
-
-                case VK_ERROR_INCOMPATIBLE_DRIVER:
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("Cannot find a compatible Vulkan installable client driver"
-                        "(ICD).\n\nPlease look at the Getting Started guide for "
-                        "additional information.\n"
-                        "vkCreateInstance Failure\n");
-#endif
-                } return false;
-
-                case VK_ERROR_EXTENSION_NOT_PRESENT:
-                {
-                    //TODO: print something
-                } return false;
-
-                default:
-                    return false;
-                }
-
-                /**
-                *
-                * Enumerate available GPU devices for use with Vulkan
-                *
-                */
-                if (!enumeratePhysicalDevices())
-                    return false;
-
-                /*
-                * Check layers that we want against the layers available on the device
-                */
-                if (!checkDeviceLayers())
-                    return false;
-
-                /*
-                * Check extensions that we want against the extensions supported by the device
-                */
-                if (!checkDeviceExtensions())
-                    return false;
-
-                /*
-                * Setup debug callbacks
-                */
-#ifdef _DEBUG
-                if (!setupDebugCallbacks())
-                    return false;
-#endif
-
-                /*
-                * Device should be valid at this point, get device properties
-                */
-                if (!setupDeviceQueues())
-                    return false;
-
-                /*
-                * Query the device for advanced feature support
-                */
-                if (!setupProcAddresses())
-                    return false;
+				if (!initVulkan(params))
+					return false;
+                            
+				if (!initVulkanSwapchain(params))
+					return false;
 
                 return true;
             }
@@ -165,6 +67,185 @@ namespace Hatchit {
             void VKRenderer::VPresent()
             {
             }
+
+			bool VKRenderer::initVulkan(const RendererParams& params) 
+			{
+				VkResult err;
+				/*
+				* Check Vulkan instance layers
+				*/
+				if (!checkInstanceLayers())
+					return false;
+
+				/*
+				* Check Vulkan instance extensions
+				*/
+				if (!checkInstanceExtensions())
+					return false;
+
+				/*
+				* Setup Vulkan application info structure
+				*/
+
+				m_appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+				m_appInfo.pNext = nullptr;
+				m_appInfo.pApplicationName = params.applicationName.c_str();
+				m_appInfo.applicationVersion = 0;
+				m_appInfo.pEngineName = "Hatchit";
+				m_appInfo.engineVersion = 0;
+				m_appInfo.apiVersion = VK_API_VERSION;
+
+				/*
+				* Setup Vulkan instance create info
+				*/
+				VkInstanceCreateInfo instanceInfo;
+				instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+				instanceInfo.pNext = nullptr;
+				instanceInfo.pApplicationInfo = &m_appInfo;
+				instanceInfo.enabledLayerCount = static_cast<uint32_t>(m_enabledLayerNames.size());
+				instanceInfo.ppEnabledLayerNames = &m_enabledLayerNames[0];
+				instanceInfo.enabledExtensionCount = static_cast<uint32_t>(m_enabledExtensionNames.size());
+				instanceInfo.ppEnabledExtensionNames = &m_enabledExtensionNames[0];
+
+				/**
+				* Create Vulkan instance handle
+				*/
+				err = vkCreateInstance(&instanceInfo, nullptr, &m_instance);
+				switch (err)
+				{
+				case VK_SUCCESS:
+					break;
+
+				case VK_ERROR_INCOMPATIBLE_DRIVER:
+				{
+#ifdef _DEBUG
+					Core::DebugPrintF("Cannot find a compatible Vulkan installable client driver"
+						"(ICD).\n\nPlease look at the Getting Started guide for "
+						"additional information.\n"
+						"vkCreateInstance Failure\n");
+#endif
+				} return false;
+
+				case VK_ERROR_EXTENSION_NOT_PRESENT:
+				{
+					//TODO: print something
+				} return false;
+
+				default:
+					return false;
+				}
+
+				/**
+				*
+				* Enumerate available GPU devices for use with Vulkan
+				*
+				*/
+				if (!enumeratePhysicalDevices())
+					return false;
+
+				/*
+				* Check layers that we want against the layers available on the device
+				*/
+				if (!checkDeviceLayers())
+					return false;
+
+				/*
+				* Check extensions that we want against the extensions supported by the device
+				*/
+				if (!checkDeviceExtensions())
+					return false;
+
+				/*
+				* Setup debug callbacks
+				*/
+#ifdef _DEBUG
+				if (!setupDebugCallbacks())
+					return false;
+#endif
+
+				/*
+				* Device should be valid at this point, get device properties
+				*/
+				if (!setupDeviceQueues())
+					return false;
+
+				/*
+				* Query the device for advanced feature support
+				*/
+				if (!setupProcAddresses())
+					return false;
+
+				return true;
+			}
+
+			bool VKRenderer::initVulkanSwapchain(const RendererParams& params)
+			{
+				VkResult err;
+
+				//Hook into the window
+#ifdef _WIN32
+				//Get HINSTANCE from HWND
+				HWND window = (HWND)params.window;
+				HINSTANCE instance;
+				instance = (HINSTANCE)GetWindowLongPtr(window, DWLP_USER);
+
+				VkWin32SurfaceCreateInfoKHR creationInfo;
+				creationInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+				creationInfo.pNext = nullptr;
+				creationInfo.flags = 0; //Unused in Vulkan 1.0.3;
+				creationInfo.hinstance = instance;
+				creationInfo.hwnd = window;
+
+				err = vkCreateWin32SurfaceKHR(m_instance, &creationInfo, nullptr, &m_surface);
+
+				if (err != VK_SUCCESS)
+				{
+#ifdef _DEBUG
+					Core::DebugPrintF("Error creating VkSurface for Win32 window");
+#endif
+					return false;
+				}
+#endif
+				/*
+				* Setup the device queues
+				*/
+				if (!setupQueues())
+					return false;
+
+				/*
+				* Create the device object that is in charge of allocating memory and making draw calls
+				*/
+				if (!createDevice())
+					return false;
+
+				//Setup some function pointers from the device
+
+				//Pointer to function to get function pointers from device
+				PFN_vkGetDeviceProcAddr g_gdpa = (PFN_vkGetDeviceProcAddr)
+					vkGetInstanceProcAddr(m_instance, "vkGetDeviceProcAddr");
+
+				//Get other function pointers
+				fpCreateSwapchainKHR = (PFN_vkCreateSwapchainKHR)g_gdpa(m_device, "vkCreateSwapchainKHR");
+				fpDestroySwapchainKHR = (PFN_vkDestroySwapchainKHR)g_gdpa(m_device, "vkDestroySwapchainKHR");
+				fpGetSwapchainImagesKHR = (PFN_vkGetSwapchainImagesKHR)g_gdpa(m_device, "vkGetSwapchainImagesKHR");
+				fpAcquireNextImageKHR = (PFN_vkAcquireNextImageKHR)g_gdpa(m_device, "vkAcquireNextImageKHR");
+				fpQueuePresentKHR = (PFN_vkQueuePresentKHR)g_gdpa(m_device, "vkQueuePresentKHR");
+
+				//Get Device queue
+				vkGetDeviceQueue(m_device, m_graphicsQueueNodeIndex, 0, &m_queue);
+
+				/*
+				* Get the supported texture format and color space
+				*/
+				if (!getSupportedFormats())
+					return false;
+
+				//Get memory information
+				vkGetPhysicalDeviceMemoryProperties(m_gpu, &m_memoryProps);
+
+				return true;
+			}
+
 
             bool VKRenderer::checkInstanceLayers()
             {
@@ -362,7 +443,7 @@ namespace Hatchit {
                 VkResult err;
                 uint32_t deviceExtensionCount = 0;
                 VkBool32 swapchainExtFound = 0;
-                //memset(extension_names, 0, sizeof(extension_names));
+				m_enabledExtensionNames.clear();
 
                 //Check how many extensions are on the device
                 err = vkEnumerateDeviceExtensionProperties(m_gpu, NULL, &deviceExtensionCount, NULL);
@@ -381,14 +462,13 @@ namespace Hatchit {
                 err = vkEnumerateDeviceExtensionProperties(m_gpu, NULL, &deviceExtensionCount, deviceExtensions);
                 assert(!err);
 
-                uint32_t extensionCount = 0;
                 for (uint32_t i = 0; i < deviceExtensionCount; i++) {
                     if (!strcmp(VK_KHR_SWAPCHAIN_EXTENSION_NAME,
                         deviceExtensions[i].extensionName)) {
                         swapchainExtFound = 1;
-                        m_enabledExtensionNames[extensionCount++] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+                        m_enabledExtensionNames.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
                     }
-                    assert(extensionCount < 64);
+                    assert(m_enabledExtensionNames.size() < 64);
                 }
 
                 delete[] deviceExtensions;
@@ -508,6 +588,8 @@ namespace Hatchit {
 #endif
                     return false;
                 }
+
+				return true;
             }
 
             bool VKRenderer::setupProcAddresses()
@@ -567,7 +649,138 @@ namespace Hatchit {
 #endif
                     return false;
                 }
+
+				return true;
             }
+
+			bool VKRenderer::setupQueues() 
+			{
+				uint32_t i; //we reuse this for all the loops
+
+				//Find which queue we can use to present
+				VkBool32* supportsPresent = new VkBool32[m_queueProps.size()];
+				for (i = 0; i < m_queueProps.size(); i++)
+					fpGetPhysicalDeviceSurfaceSupportKHR(m_gpu, i, m_surface, &supportsPresent[i]);
+
+				//Search for a queue that can both do graphics and presentation
+				uint32_t graphicsQueueNodeIndex = UINT32_MAX;
+				uint32_t presentQueueNodeIndex = UINT32_MAX;
+
+				for (i = 0; i < m_queueProps.size(); i++) {
+					if ((m_queueProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0) {
+						if (graphicsQueueNodeIndex == UINT32_MAX)
+							graphicsQueueNodeIndex = i;
+
+						if (supportsPresent[i] == VK_TRUE) {
+							graphicsQueueNodeIndex = i;
+							presentQueueNodeIndex = i;
+							break;
+						}
+					}
+				}
+				if (presentQueueNodeIndex == UINT32_MAX) {
+					// If didn't find a queue that supports both graphics and present, then
+					// find a separate present queue.
+					for (uint32_t i = 0; i < m_queueProps.size(); ++i) {
+						if (supportsPresent[i] == VK_TRUE) {
+							presentQueueNodeIndex = i;
+							break;
+						}
+					}
+				}
+
+				delete[] supportsPresent;
+
+				// Generate error if could not find both a graphics and a present queue
+				if (graphicsQueueNodeIndex == UINT32_MAX ||
+					presentQueueNodeIndex == UINT32_MAX) {
+#ifdef _DEBUG
+					Core::DebugPrintF("Unable to find a graphics and a present queue.\n");
+#endif
+					return false;
+				}
+
+				//Save the index of the queue we want to use
+				m_graphicsQueueNodeIndex = graphicsQueueNodeIndex;
+
+				return true;
+			}
+
+			//TODO: Support more than one queue / device?
+			bool VKRenderer::createDevice() 
+			{
+				VkResult err;
+				float queuePriorities[1] = { 0.0f };
+
+				VkDeviceQueueCreateInfo queue;
+				queue.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+				queue.pNext = nullptr;
+				queue.queueFamilyIndex = m_graphicsQueueNodeIndex;
+				queue.queueCount = 1;
+				queue.pQueuePriorities = queuePriorities;
+
+				VkDeviceCreateInfo device;
+				device.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+				device.pNext = nullptr;
+				device.queueCreateInfoCount = 1;
+				device.pQueueCreateInfos = &queue;
+				device.enabledLayerCount = static_cast<uint32_t>(m_enabledLayerNames.size());
+				device.ppEnabledLayerNames = &m_enabledLayerNames[0];
+				device.enabledExtensionCount = static_cast<uint32_t>(m_enabledExtensionNames.size());
+				device.ppEnabledExtensionNames = &m_enabledExtensionNames[0];
+				device.pEnabledFeatures = nullptr; //Request specific features here
+
+				err = vkCreateDevice(m_gpu, &device, nullptr, &m_device);
+				if (err != VK_SUCCESS)
+				{
+#ifdef _DEBUG
+					Core::DebugPrintF("Failed to create device. \n");
+#endif
+					return false;
+				}
+
+				return true;
+			}
+
+			bool VKRenderer::getSupportedFormats() 
+			{
+				VkResult err;
+
+				//Get list of supported VkFormats
+				uint32_t formatCount;
+				err = fpGetPhysicalDeviceSurfaceFormatsKHR(m_gpu, m_surface, &formatCount, nullptr);
+
+				if (err != VK_SUCCESS)
+				{
+#ifdef _DEBUG
+					Core::DebugPrintF("VkRenderer::getSupportedFormats(): Error getting number of formats from device.\n");
+#endif
+					return false;
+				}
+
+				//Get format list
+				VkSurfaceFormatKHR* surfaceFormats = new VkSurfaceFormatKHR[formatCount];
+				err = fpGetPhysicalDeviceSurfaceFormatsKHR(m_gpu, m_surface, &formatCount, surfaceFormats);
+				if (err != VK_SUCCESS || formatCount <= 0)
+				{
+#ifdef _DEBUG
+					Core::DebugPrintF("VkRenderer::getSupportedFormats(): Error getting VkSurfaceFormats from device.\n");
+#endif
+					return false;
+				}
+
+				// If the format list includes just one entry of VK_FORMAT_UNDEFINED,
+				// the surface has no preferred format.  Otherwise, at least one
+				// supported format will be returned.
+				if (formatCount == 1 && surfaceFormats[0].format == VK_FORMAT_UNDEFINED)
+					m_format = VK_FORMAT_B8G8R8A8_UNORM;
+				else
+					m_format = surfaceFormats[0].format;
+
+				m_colorSpace = surfaceFormats[0].colorSpace;
+
+				return true;
+			}
 
             VKAPI_ATTR VkBool32 VKAPI_CALL VKRenderer::debugFunction(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType,
                 uint64_t srcObject, size_t location, int32_t msgCode,

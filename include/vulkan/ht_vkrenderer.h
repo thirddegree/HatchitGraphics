@@ -69,6 +69,13 @@ namespace Hatchit {
                 VkPhysicalDevice						m_gpu;
                 VkPhysicalDeviceProperties				m_gpuProps;
                 std::vector<VkQueueFamilyProperties>	m_queueProps;
+				VkSurfaceKHR							m_surface;
+				uint32_t								m_graphicsQueueNodeIndex;
+				VkDevice								m_device; 
+				VkQueue									m_queue;
+				VkFormat								m_format;
+				VkColorSpaceKHR							m_colorSpace;
+				VkPhysicalDeviceMemoryProperties		m_memoryProps;
 
                 //Vulkan Callbacks
                 PFN_vkCreateDebugReportCallbackEXT m_createDebugReportCallback;
@@ -80,7 +87,7 @@ namespace Hatchit {
                     uint64_t srcObject, size_t location, int32_t msgCode,
                     const char *pLayerPrefix, const char *pMsg, void *pUserData);
 
-                //Advanced vulkan feature support flags
+                //Advanced vulkan feature function pointers
                 PFN_vkGetPhysicalDeviceSurfaceSupportKHR
                     fpGetPhysicalDeviceSurfaceSupportKHR;
                 PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR
@@ -89,9 +96,26 @@ namespace Hatchit {
                     fpGetPhysicalDeviceSurfaceFormatsKHR;
                 PFN_vkGetPhysicalDeviceSurfacePresentModesKHR
                     fpGetPhysicalDeviceSurfacePresentModesKHR;
-                PFN_vkGetSwapchainImagesKHR
-                    fpGetSwapchainImagesKHR;
 
+				//Function pointers to device functions
+				PFN_vkCreateSwapchainKHR
+					fpCreateSwapchainKHR;
+				PFN_vkDestroySwapchainKHR
+					fpDestroySwapchainKHR;
+				PFN_vkGetSwapchainImagesKHR
+					fpGetSwapchainImagesKHR;
+				PFN_vkAcquireNextImageKHR
+					fpAcquireNextImageKHR;
+				PFN_vkQueuePresentKHR
+					fpQueuePresentKHR;
+
+				//Core init methods
+				bool initVulkan(const RendererParams& params);
+				bool initVulkanSwapchain(const RendererParams& params);
+
+				//Helper init methods
+
+				//Helper inits for initVulkan
                 bool checkInstanceLayers();
                 bool checkInstanceExtensions();
                 bool enumeratePhysicalDevices();
@@ -101,6 +125,12 @@ namespace Hatchit {
                 bool setupDeviceQueues();
                 bool setupProcAddresses();
 
+				//Helper inits for initVulkanSwapchain
+				bool setupQueues();
+				bool createDevice();
+				bool getSupportedFormats();
+
+				//Reused helpers
                 bool checkLayers(std::vector<const char*> layerNames, VkLayerProperties* layers, uint32_t layerCount);
             };
 

@@ -89,7 +89,7 @@ namespace Hatchit {
 
                 glBindVertexArray(vao);
 
-                size_t vertexCount = mesh->getVertices().size();
+                GLsizei vertexCount = static_cast<GLsizei>(mesh->getVertices().size());
                 glDrawArrays(GL_TRIANGLES, 0, vertexCount);
 
                 glBindVertexArray(0);
