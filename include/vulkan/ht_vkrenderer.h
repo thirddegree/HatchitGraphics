@@ -106,7 +106,17 @@ namespace Hatchit {
 				std::vector<SwapchainBuffers>			m_swapchainBuffers;
 				DepthBuffer								m_depthBuffer;
 
+				//Things that should be loaded from other classes ie textures, meshes, etc.
+				VkDescriptorSetLayout					m_descriptorLayout;
+				VkPipelineLayout						m_pipelineLayout;
+				VkPipelineCache							m_pipelineCache;
+				VkRenderPass							m_renderPass;
+				VkDescriptorPool						m_descriptorPool;
+				uint32_t								m_currentBuffer;
 				VkCommandBuffer							m_commandBuffer;
+				VkPipeline								m_pipeline;
+				std::vector<VkFramebuffer>				m_framebuffers;
+
 				VkClearValue							m_clearColor;
 				VkClearValue							m_depthStencil;
 

@@ -63,6 +63,54 @@ namespace Hatchit {
 
             void VKRenderer::VDeInitialize()
             {
+				uint32_t i;
+
+				for (i = 0; i < m_swapchainBuffers.size(); i++) {
+					vkDestroyFramebuffer(m_device, m_framebuffers[i], nullptr);
+				}
+				m_framebuffers.clear();
+				vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
+
+				vkDestroyPipeline(m_device, m_pipeline, nullptr);
+				vkDestroyPipelineCache(m_device, m_pipelineCache, nullptr);
+				vkDestroyRenderPass(m_device, m_renderPass, nullptr);
+				vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
+				vkDestroyDescriptorSetLayout(m_device, m_descriptorLayout, nullptr);
+
+				//replace this
+				//uint32_t textureCount = 1; 
+				//for (i = 0; i < textureCount; i++) {
+				//	vkDestroyImageView(m_device, demo->textures[i].view, nullptr);
+				//	vkDestroyImage(m_device, demo->textures[i].image, nullptr);
+				//	vkFreeMemory(m_device, demo->textures[i].mem, nullptr);
+				//	vkDestroySampler(m_device, demo->textures[i].sampler, nullptr);
+				//}
+				fpDestroySwapchainKHR(m_device, m_swapchain, nullptr);
+
+				vkDestroyImageView(m_device, m_depthBuffer.view, nullptr);
+				vkDestroyImage(m_device, m_depthBuffer.image, nullptr);
+				vkFreeMemory(m_device, m_depthBuffer.memory, nullptr);
+
+				//Destroy uniform buffers
+				//vkDestroyBuffer(m_device, demo->uniform_data.buf, nullptr);
+				//vkFreeMemory(m_device, demo->uniform_data.mem, nullptr);
+
+				for (i = 0; i < m_swapchainBuffers.size(); i++) {
+					vkDestroyImageView(m_device, m_swapchainBuffers[i].view, nullptr);
+					vkFreeCommandBuffers(m_device, m_commandPool, 1,
+						&m_swapchainBuffers[i].command);
+				}
+				m_swapchainBuffers.clear();
+
+				m_queueProps.clear();
+
+				vkDestroyCommandPool(m_device, m_commandPool, nullptr);
+				vkDestroyDevice(m_device, nullptr);
+
+				m_destroyDebugReportCallback(m_instance, msg_callback, nullptr);
+				
+				vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+				vkDestroyInstance(m_instance, nullptr);
             }
 
             void VKRenderer::VResizeBuffers(uint32_t width, uint32_t height)
@@ -799,6 +847,7 @@ namespace Hatchit {
 				return true;
 			}
 
+			//TODO: Move this functionality to other subclasses
 			bool VKRenderer::prepareVulkan(const RendererParams& params)
 			{
 				VkResult err;
@@ -856,6 +905,29 @@ namespace Hatchit {
 				*/
 				if (!preparePipeline())
 					return false;
+
+				/*
+				* Prepare descriptor pool of all the things we want to draw
+				*/
+				if (!prepareDescriptorPool())
+					return false;
+
+				/*
+				* Prepare descriptor set
+				*/
+				if (!prepareDescriptorSet())
+					return false;
+
+				/*
+				* Prepare frame buffers to draw on
+				*/
+				if (!prepareFrambuffers())
+					return false;
+
+				//Flush the command buffer once
+				flushCommandBuffer();
+
+				
 
 				return true;
 			}
@@ -1099,6 +1171,8 @@ namespace Hatchit {
 				view.components = components;
 				view.viewType = VK_IMAGE_VIEW_TYPE_2D;
 
+				m_depthBuffer.format = depthFormat;
+
 				VkMemoryRequirements memoryRequirements;
 				bool pass;
 
@@ -1172,10 +1246,157 @@ namespace Hatchit {
 				return true; 
 			}
 
-			bool VKRenderer::prepareDescriptorLayout() { return true; }
-			bool VKRenderer::prepareRenderPass() { return true; }
+			bool VKRenderer::prepareDescriptorLayout() 
+			{
+				VkDescriptorSetLayoutBinding layoutBindings[2];
+				layoutBindings[0].binding = 0;
+				layoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				layoutBindings[0].descriptorCount = 1;
+				layoutBindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+				layoutBindings[0].pImmutableSamplers = nullptr;
+
+				layoutBindings[1].binding = 1;
+				layoutBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				layoutBindings[1].descriptorCount = 1; //The number of textures we have
+				layoutBindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+				layoutBindings[1].pImmutableSamplers = nullptr;
+				
+				VkDescriptorSetLayoutCreateInfo descriptorLayoutInfo;
+				descriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+				descriptorLayoutInfo.pNext = nullptr;
+				descriptorLayoutInfo.bindingCount = 2;
+				descriptorLayoutInfo.pBindings = layoutBindings;
+
+				VkResult err;
+				err = vkCreateDescriptorSetLayout(m_device, &descriptorLayoutInfo, nullptr, &m_descriptorLayout);
+				assert(!err);
+				if (err != VK_SUCCESS)
+				{
+#ifdef _DEBUG
+					Core::DebugPrintF("VKRenderer::prepareDescriptorLayout(): Failed to create descriptor layout\n");
+#endif
+					return false;
+				}
+
+				VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo;
+				pPipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+				pPipelineLayoutCreateInfo.pNext = nullptr;
+				pPipelineLayoutCreateInfo.setLayoutCount = 1;
+				pPipelineLayoutCreateInfo.pSetLayouts = &m_descriptorLayout;
+				pPipelineLayoutCreateInfo.pushConstantRangeCount = 0;
+				pPipelineLayoutCreateInfo.pPushConstantRanges = nullptr;
+
+				err = vkCreatePipelineLayout(m_device, &pPipelineLayoutCreateInfo, nullptr, &m_pipelineLayout);
+				assert(!err);
+				if (err != VK_SUCCESS)
+				{
+#ifdef _DEBUG
+					Core::DebugPrintF("VKRenderer::prepareDescriptorLayout(): Failed to create pipeline layout\n");
+#endif
+					return false;
+				}
+
+				return true;
+			}
+
+			//TODO: move render pass creation to a new class
+			bool VKRenderer::prepareRenderPass() 
+			{ 
+				VkAttachmentDescription attachments[2];
+				attachments[0].format = m_format;
+				attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+				attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+				attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+				attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+				attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+				attachments[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+				attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+				attachments[0].flags = 0;
+
+				attachments[1].format = m_depthBuffer.format;
+				attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+				attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+				attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+				attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+				attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; 
+				attachments[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+				attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+				attachments[1].flags = 0;
+				
+				VkAttachmentReference colorReference;
+				colorReference.attachment = 0;
+				colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+				
+				VkAttachmentReference depthReference;
+				depthReference.attachment = 1;
+				depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+				
+				VkSubpassDescription subpass;
+				subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+				subpass.flags = 0;
+				subpass.inputAttachmentCount = 0;
+				subpass.pInputAttachments = nullptr;
+				subpass.colorAttachmentCount = 1;
+				subpass.pColorAttachments = &colorReference;
+				subpass.pResolveAttachments = nullptr;
+				subpass.pDepthStencilAttachment = &depthReference;
+				subpass.preserveAttachmentCount = 0;
+				subpass.pPreserveAttachments = nullptr;
+
+				VkRenderPassCreateInfo renderPassInfo;
+				renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+				renderPassInfo.pNext = nullptr;
+				renderPassInfo.attachmentCount = 2;
+				renderPassInfo.pAttachments = attachments;
+				renderPassInfo.subpassCount = 1;
+				renderPassInfo.pSubpasses = &subpass;
+				renderPassInfo.dependencyCount = 0;
+				renderPassInfo.pDependencies = nullptr;
+				renderPassInfo.flags = 0;
+				
+				VkResult err;
+
+				err = vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass);
+				assert(!err);
+
+				if (err != VK_SUCCESS)
+				{
+#ifdef _DEBUG
+					Core::DebugPrintF("VKRenderer::prepareDescriptorLayout(): Failed to create render pass\n");
+#endif
+					return false;
+				}
+
+				return true; 
+			}
 			bool VKRenderer::preparePipeline() { return true; }
-			bool VKRenderer::prepareDescriptorPool() { return true; }
+			bool VKRenderer::prepareDescriptorPool()
+			{
+				VkDescriptorPoolSize typeCounts[2];
+				typeCounts[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				typeCounts[0].descriptorCount = 1; //Number of uniform buffers we have
+				typeCounts[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				typeCounts[1].descriptorCount = 1; //Number of Textures we have
+
+				VkDescriptorPoolCreateInfo descriptorPoolInfo;
+				descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+				descriptorPoolInfo.pNext = nullptr;
+				descriptorPoolInfo.maxSets = 1;
+				descriptorPoolInfo.poolSizeCount = 2;
+				descriptorPoolInfo.pPoolSizes = typeCounts;
+
+				VkResult err;
+				err = vkCreateDescriptorPool(m_device, &descriptorPoolInfo, nullptr, &m_descriptorPool);
+				if (err != VK_SUCCESS)
+				{
+#ifdef _DEBUG
+					Core::DebugPrintF("VKRenderer::prepareDescriptorPool(): Failed to create descriptor pool\n");
+#endif
+					return false;
+				}
+
+				return true;
+			}
 			bool VKRenderer::prepareDescriptorSet() { return true; }
 			bool VKRenderer::prepareFrambuffers() { return true; }
 
