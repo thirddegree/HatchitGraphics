@@ -17,6 +17,8 @@
 #include <ht_platform.h>
 #include <ht_directx.h>
 #include <ht_renderer.h>
+#include <ht_d3d12vertexbuffer.h>
+#include <ht_d3d12indexbuffer.h>
 
 namespace Hatchit {
 
@@ -68,7 +70,9 @@ namespace Hatchit {
                 //Demo only
                 float                       m_aspectRatio;
                 ID3D12Resource*             m_vertexBuffer;
-                D3D12_VERTEX_BUFFER_VIEW    m_vertexBufferView;
+                D3D12VertexBuffer*          m_vBuffer;
+                D3D12IndexBuffer*           m_iBuffer;
+                uint32_t                    m_indexCount;
 
             private:
                 HRESULT checkHardwareAdapter(IDXGIFactory2* pFactory, IDXGIAdapter1** ppAdapter);

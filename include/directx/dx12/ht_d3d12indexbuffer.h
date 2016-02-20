@@ -15,44 +15,33 @@
 #pragma once
 
 #include <ht_platform.h>
-
-#include <d3d11.h>
-#include <d3d12.h>
-#include <d3dx12.h>
-#include <dxgi1_4.h>
-#include <d3dcompiler.h>
-#include <ht_math.h>
+#include <ht_directx.h>
+#include <cstdint>
 
 namespace Hatchit {
 
     namespace Graphics {
 
-        namespace DirectX
-        {
-            template <typename T>
-            void ReleaseCOM(T* t)
-            {
-                if (t)
-                {
-                    t->Release();
-                    t = nullptr;
-                }
-            }
+        namespace DirectX {
 
-            inline void ThrowIfFailed(HRESULT hr)
+            class HT_API D3D12IndexBuffer
             {
-                if (FAILED(hr))
-                    throw;
-            }
+            public:
+                D3D12IndexBuffer(uint32_t size);
 
-            struct Vertex
-            {
-                Math::Float3 position;
-                Math::Float4 color;
+                ~D3D12IndexBuffer();
+
+                bool Initialize(ID3D12Device* device);
+
+                bool UpdateSubData(uint32_t offset, uint32_t count, const void* data);
+
+                D3D12_INDEX_BUFFER_VIEW GetView();
+
+            private:
+                ID3D12Resource*         m_buffer;
+                D3D12_INDEX_BUFFER_VIEW m_view;
+                uint32_t                m_bufferSize;
             };
-            
         }
-
     }
-
 }
