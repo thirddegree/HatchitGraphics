@@ -21,6 +21,7 @@
 #include <d3dx12.h>
 #include <dxgi1_4.h>
 #include <d3dcompiler.h>
+#include <ht_math.h>
 
 namespace Hatchit {
 
@@ -44,6 +45,11 @@ namespace Hatchit {
                     throw;
             }
 
+            struct Vertex
+            {
+                Math::Float3 position;
+                Math::Float4 color;
+            };
             
         }
 

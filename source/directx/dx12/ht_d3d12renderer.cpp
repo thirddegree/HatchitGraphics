@@ -19,19 +19,13 @@
 #include <ht_os.h>
 #include <ht_math.h>
 
-
+#include <ht_model.h>
 
 namespace Hatchit {
 
     namespace Graphics {
 
         namespace DirectX {
-
-            struct Vertex
-            {
-                Math::Float3 position;
-                Math::Float4 color;
-            };
 
             D3D12Renderer::D3D12Renderer()
             {
@@ -44,6 +38,7 @@ namespace Hatchit {
                 m_pipelineState = nullptr;
                 m_rootSignature = nullptr;
                 m_fence = nullptr;
+                m_vertexBuffer = nullptr;
                 for (int i = 0; i < NUM_RENDER_TARGETS; i++)
                     m_renderTargets[i] = nullptr;
                 m_fenceValue = 0;
@@ -64,6 +59,8 @@ namespace Hatchit {
                 DirectX::ReleaseCOM(m_vertexBuffer);
                 for (int i = 0; i < NUM_RENDER_TARGETS; i++)
                     DirectX::ReleaseCOM(m_renderTargets[i]);
+
+                delete m_vBuffer;
             }
 
             bool D3D12Renderer::VInitialize(const RendererParams& params)
@@ -415,11 +412,28 @@ namespace Hatchit {
                 };
                 const uint32_t vBufferSize = sizeof(triangleVerts);
 
+                Core::File modelFile;
+                try
+                {
+                    modelFile.Open(Core::os_exec_dir() + "monkey.obj", Core::FileMode::ReadBinary);
+                }
+                catch (std::exception& e)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("%s\n", e.what());
+#endif
+                    return false;
+                }
+               
+                m_vBuffer = new D3D12VertexBuffer(3);
+                m_vBuffer->Initialize(m_device);
+                m_vBuffer->UpdateSubData(0, 3, triangleVerts);
+
                 // Note: using upload heaps to transfer static data like vert buffers is not 
                 // recommended. Every time the GPU needs it, the upload heap will be marshalled 
                 // over. Please read up on Default Heap usage. An upload heap is used here for 
                 // code simplicity and because there are very few verts to actually transfer.
-                hr = m_device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+                /*hr = m_device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
                     D3D12_HEAP_FLAG_NONE,
                     &CD3DX12_RESOURCE_DESC::Buffer(vBufferSize),
                     D3D12_RESOURCE_STATE_GENERIC_READ,
@@ -431,19 +445,19 @@ namespace Hatchit {
                     Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create vertex buffer.\n");
 #endif
                     return false;
-                }
+                }*/
 
                 // Copy the triangle data to the vertex buffer.
-                UINT8* pVertexDataBegin;
-                CD3DX12_RANGE readRange(0, 0);		// We do not intend to read from this resource on the CPU.
-                ThrowIfFailed(m_vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
-                memcpy(pVertexDataBegin, triangleVerts, sizeof(triangleVerts));
-                m_vertexBuffer->Unmap(0, nullptr);
+                //UINT8* pVertexDataBegin;
+                //CD3DX12_RANGE readRange(0, 0);		// We do not intend to read from this resource on the CPU.
+                //ThrowIfFailed(m_vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
+                //memcpy(pVertexDataBegin, triangleVerts, sizeof(triangleVerts));
+                //m_vertexBuffer->Unmap(0, nullptr);
 
                 // Initialize the vertex buffer view.
-                m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
-                m_vertexBufferView.StrideInBytes = sizeof(Vertex);
-                m_vertexBufferView.SizeInBytes = vBufferSize;
+                //m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
+                //m_vertexBufferView.StrideInBytes = sizeof(Vertex);
+                //m_vertexBufferView.SizeInBytes = vBufferSize;
 
                 /*
                 * Create synchronization objects
@@ -510,7 +524,7 @@ namespace Hatchit {
                 */
                 m_commandList->ClearRenderTargetView(rtvHandle, reinterpret_cast<float*>(&m_clearColor), 0, nullptr);
                 m_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-                m_commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
+                m_commandList->IASetVertexBuffers(0, 1, &m_vBuffer->GetView());
                 m_commandList->DrawInstanced(3, 1, 0, 0);
 
                 /*
