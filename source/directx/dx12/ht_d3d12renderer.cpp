@@ -20,6 +20,7 @@
 #include <ht_math.h>
 
 #include <ht_model.h>
+#include <ctime>
 
 namespace Hatchit {
 
@@ -39,6 +40,8 @@ namespace Hatchit {
                 m_rootSignature = nullptr;
                 m_fence = nullptr;
                 m_vertexBuffer = nullptr;
+                m_vBuffer = nullptr;
+                m_iBuffer = nullptr;
                 for (int i = 0; i < NUM_RENDER_TARGETS; i++)
                     m_renderTargets[i] = nullptr;
                 m_fenceValue = 0;
@@ -61,6 +64,7 @@ namespace Hatchit {
                     DirectX::ReleaseCOM(m_renderTargets[i]);
 
                 delete m_vBuffer;
+                delete m_iBuffer;
             }
 
             bool D3D12Renderer::VInitialize(const RendererParams& params)
@@ -410,6 +414,11 @@ namespace Hatchit {
                     { { 0.25f, -0.25f * m_aspectRatio, 0.0f },{ 0.0f, 1.0f, 0.0f, 1.0f } },
                     { { -0.25f, -0.25f * m_aspectRatio, 0.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } }
                 };
+
+                uint32_t triangleIndices[] = 
+                {
+                    0, 1, 2
+                };
                 const uint32_t vBufferSize = sizeof(triangleVerts);
 
                 Core::File modelFile;
@@ -424,40 +433,44 @@ namespace Hatchit {
 #endif
                     return false;
                 }
-               
-                m_vBuffer = new D3D12VertexBuffer(3);
-                m_vBuffer->Initialize(m_device);
-                m_vBuffer->UpdateSubData(0, 3, triangleVerts);
 
-                // Note: using upload heaps to transfer static data like vert buffers is not 
-                // recommended. Every time the GPU needs it, the upload heap will be marshalled 
-                // over. Please read up on Default Heap usage. An upload heap is used here for 
-                // code simplicity and because there are very few verts to actually transfer.
-                /*hr = m_device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-                    D3D12_HEAP_FLAG_NONE,
-                    &CD3DX12_RESOURCE_DESC::Buffer(vBufferSize),
-                    D3D12_RESOURCE_STATE_GENERIC_READ,
-                    nullptr,
-                    IID_PPV_ARGS(&m_vertexBuffer));
-                if (FAILED(hr))
+                Resource::Model m;
+                m.VInitFromFile(&modelFile);
+                
+                srand(static_cast <unsigned> (time(0)));
+
+                auto mesh = m.Meshes()[0];
+                std::vector<Vertex> vertices;
+                for (auto vertex : mesh->getVertices())
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create vertex buffer.\n");
-#endif
-                    return false;
-                }*/
+                    Vertex v;
+                    v.position.x = vertex.x;
+                    v.position.y = vertex.y;
+                    v.position.z = vertex.z;
+                    v.color.x = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+                    v.color.y = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+                    v.color.z = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+                    v.color.w = 1.0f;
 
-                // Copy the triangle data to the vertex buffer.
-                //UINT8* pVertexDataBegin;
-                //CD3DX12_RANGE readRange(0, 0);		// We do not intend to read from this resource on the CPU.
-                //ThrowIfFailed(m_vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
-                //memcpy(pVertexDataBegin, triangleVerts, sizeof(triangleVerts));
-                //m_vertexBuffer->Unmap(0, nullptr);
+                    vertices.push_back(v);
+                }
+                
+                std::vector<uint32_t> indices;
+                for (auto index : mesh->getIndices())
+                {
+                    indices.push_back(index.mIndices[0]);
+                    indices.push_back(index.mIndices[1]);
+                    indices.push_back(index.mIndices[2]);
+                }
+                m_indexCount = indices.size();
+               
+                m_vBuffer = new D3D12VertexBuffer(vertices.size());
+                m_vBuffer->Initialize(m_device);
+                m_vBuffer->UpdateSubData(0, vertices.size(), &vertices[0]);
 
-                // Initialize the vertex buffer view.
-                //m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
-                //m_vertexBufferView.StrideInBytes = sizeof(Vertex);
-                //m_vertexBufferView.SizeInBytes = vBufferSize;
+                m_iBuffer = new D3D12IndexBuffer(indices.size());
+                m_iBuffer->Initialize(m_device);
+                m_iBuffer->UpdateSubData(0, indices.size(), &indices[0]);
 
                 /*
                 * Create synchronization objects
@@ -525,7 +538,8 @@ namespace Hatchit {
                 m_commandList->ClearRenderTargetView(rtvHandle, reinterpret_cast<float*>(&m_clearColor), 0, nullptr);
                 m_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
                 m_commandList->IASetVertexBuffers(0, 1, &m_vBuffer->GetView());
-                m_commandList->DrawInstanced(3, 1, 0, 0);
+                m_commandList->IASetIndexBuffer(&m_iBuffer->GetView());
+                m_commandList->DrawIndexedInstanced(m_indexCount, 1, 0, 0, 0);
 
                 /*
                 * Indicate that we are using the back buffer to present
