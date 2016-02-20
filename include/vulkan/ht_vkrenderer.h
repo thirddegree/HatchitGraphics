@@ -20,6 +20,9 @@
 #include <ht_string.h>
 #include <vector>
 
+//Totally remove this
+#include <fstream>
+
 namespace Hatchit {
 
 	namespace Graphics {
@@ -112,10 +115,12 @@ namespace Hatchit {
 				VkPipelineCache							m_pipelineCache;
 				VkRenderPass							m_renderPass;
 				VkDescriptorPool						m_descriptorPool;
+				VkDescriptorSet							m_descriptorSet;
 				uint32_t								m_currentBuffer;
 				VkCommandBuffer							m_commandBuffer;
 				VkPipeline								m_pipeline;
 				std::vector<VkFramebuffer>				m_framebuffers;
+				VkSemaphore								m_presentSemaphore;
 
 				VkClearValue							m_clearColor;
 				VkClearValue							m_depthStencil;
@@ -155,7 +160,7 @@ namespace Hatchit {
 				//Core init methods
 				bool initVulkan(const RendererParams& params);
 				bool initVulkanSwapchain(const RendererParams& params);
-				bool prepareVulkan(const RendererParams& params);
+				bool prepareVulkan();
 
 				//Helper init methods
 
@@ -183,15 +188,21 @@ namespace Hatchit {
 				bool prepareDescriptorPool();
 				bool prepareDescriptorSet();
 				bool prepareFrambuffers();
+				bool allocateCommandBuffers();
 
 				//Reused helpers
                 bool checkLayers(std::vector<const char*> layerNames, VkLayerProperties* layers, uint32_t layerCount);
 				bool setImageLayout(VkImage image, VkImageAspectFlags aspectMask, 
 					VkImageLayout oldImageLayout, VkImageLayout newImageLayout);
 				bool memoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, uint32_t* typeIndex);
+				bool buildCommandBuffer(VkCommandBuffer commandBuffer);
 
 				//Used for drawing
 				void flushCommandBuffer();
+
+				//TOTALLY need to be moved somewhere else
+				char* readFile(const char* filename, size_t* pSize);
+				VkShaderModule loadShaderSPIRV(const char* fileName);
             };
 
         }
