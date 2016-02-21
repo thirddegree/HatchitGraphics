@@ -222,7 +222,7 @@ namespace Hatchit {
 				VkPresentInfoKHR present = {};
 				present.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 				present.pNext = nullptr;
-				present.swapchainCount = static_cast<uint32_t>(m_swapchainBuffers.size());
+				present.swapchainCount = 1;
 				present.pSwapchains = &m_swapchain;
 				present.pImageIndices = &m_currentBuffer;
 
@@ -1962,7 +1962,7 @@ namespace Hatchit {
 				scissor.offset.y = 0;
 				vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-				//vkCmdDraw();
+				vkCmdDraw(commandBuffer, 0, 0, 0, 0);
 				vkCmdEndRenderPass(commandBuffer);
 
 				VkImageMemoryBarrier prePresentBarrier = {};
