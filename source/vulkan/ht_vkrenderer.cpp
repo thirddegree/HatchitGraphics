@@ -35,11 +35,16 @@ namespace Hatchit {
 
             VKRenderer::~VKRenderer()
             {
-                vkDestroyInstance(m_instance, nullptr);
+                
             }
 
             bool VKRenderer::VInitialize(const RendererParams & params)
             {
+				m_clearColor.color.float32[0] = params.clearColor.r;
+				m_clearColor.color.float32[1] = params.clearColor.g;
+				m_clearColor.color.float32[2] = params.clearColor.b;
+				m_clearColor.color.float32[3] = params.clearColor.a;
+
 				/*
 				* Initialize Core Vulkan Systems: Driver layers & extensions 
 				*/
@@ -65,9 +70,9 @@ namespace Hatchit {
             {
 				uint32_t i;
 
-				for (i = 0; i < m_swapchainBuffers.size(); i++) {
+				for (i = 0; i < m_swapchainBuffers.size(); i++) 
 					vkDestroyFramebuffer(m_device, m_framebuffers[i], nullptr);
-				}
+				
 				m_framebuffers.clear();
 				vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
 
@@ -109,7 +114,7 @@ namespace Hatchit {
 
 				m_destroyDebugReportCallback(m_instance, msg_callback, nullptr);
 				
-				vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+				//vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 				vkDestroyInstance(m_instance, nullptr);
             }
 
@@ -153,10 +158,7 @@ namespace Hatchit {
 
             void VKRenderer::VSetClearColor(const Color & color)
             {
-				m_clearColor.color.float32[0] = color.r;
-				m_clearColor.color.float32[1] = color.g;
-				m_clearColor.color.float32[2] = color.b;
-				m_clearColor.color.float32[3] = color.a;
+				
             }
 
             void VKRenderer::VClearBuffer(ClearArgs args)
@@ -1607,6 +1609,10 @@ namespace Hatchit {
 #endif
 					return false;
 				}
+
+				//Delete shader modules; they're in the pipeline and we don't need them anymore
+				vkDestroyShaderModule(m_device, shaderStages[0].module, nullptr);
+				vkDestroyShaderModule(m_device, shaderStages[1].module, nullptr);
 
 				return true; 
 			}
