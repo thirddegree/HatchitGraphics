@@ -25,7 +25,7 @@
 
 namespace Hatchit {
 
-	namespace Graphics {
+    namespace Graphics {
 
         namespace Vulkan {
 
@@ -63,67 +63,67 @@ namespace Hatchit {
                 void VPresent();
 
             private:
-				typedef struct _SwapchainBuffers {
-					VkImage image;
-					VkCommandBuffer command;
-					VkImageView view;
-				}SwapchainBuffers;
+                typedef struct _SwapchainBuffers {
+                    VkImage image;
+                    VkCommandBuffer command;
+                    VkImageView view;
+                }SwapchainBuffers;
 
-				struct DepthBuffer {
-					VkFormat format;
-					VkImage image;
-					VkMemoryAllocateInfo memAllocInfo;
-					VkDeviceMemory memory;
-					VkImageView view;
-				};
+                struct DepthBuffer {
+                    VkFormat format;
+                    VkImage image;
+                    VkMemoryAllocateInfo memAllocInfo;
+                    VkDeviceMemory memory;
+                    VkImageView view;
+                };
 
-				struct UniformData {
-					VkBuffer buffer;
-					VkMemoryAllocateInfo memAllocInfo;
-					VkDeviceMemory memory;
-					VkDescriptorBufferInfo bufferInfo;
-				};
+                struct UniformData {
+                    VkBuffer buffer;
+                    VkMemoryAllocateInfo memAllocInfo;
+                    VkDeviceMemory memory;
+                    VkDescriptorBufferInfo bufferInfo;
+                };
 
-                std::vector<const char*>	m_enabledLayerNames;
+                std::vector<const char*>    m_enabledLayerNames;
                 std::vector<const char*>    m_enabledExtensionNames;
 
-				uint32_t m_width;
-				uint32_t m_height;
+                uint32_t m_width;
+                uint32_t m_height;
 
                 //Vuklan data structs
-                VkApplicationInfo						m_appInfo;
-                VkInstance								m_instance;
-                VkPhysicalDevice						m_gpu;
-                VkPhysicalDeviceProperties				m_gpuProps;
-                std::vector<VkQueueFamilyProperties>	m_queueProps;
-				VkSurfaceKHR							m_surface;
-				uint32_t								m_graphicsQueueNodeIndex;
-				VkDevice								m_device; 
-				VkQueue									m_queue;
-				VkFormat								m_format;
-				VkColorSpaceKHR							m_colorSpace;
-				VkPhysicalDeviceMemoryProperties		m_memoryProps;
-				
-				VkCommandPool							m_commandPool;
-				VkSwapchainKHR							m_swapchain;
-				std::vector<SwapchainBuffers>			m_swapchainBuffers;
-				DepthBuffer								m_depthBuffer;
+                VkApplicationInfo                       m_appInfo;
+                VkInstance                              m_instance;
+                VkPhysicalDevice                        m_gpu;
+                VkPhysicalDeviceProperties              m_gpuProps;
+                std::vector<VkQueueFamilyProperties>    m_queueProps;
+                VkSurfaceKHR                            m_surface;
+                uint32_t                                m_graphicsQueueNodeIndex;
+                VkDevice                                m_device; 
+                VkQueue                                 m_queue;
+                VkFormat                                m_format;
+                VkColorSpaceKHR                         m_colorSpace;
+                VkPhysicalDeviceMemoryProperties        m_memoryProps;
+                
+                VkCommandPool                           m_commandPool;
+                VkSwapchainKHR                          m_swapchain;
+                std::vector<SwapchainBuffers>           m_swapchainBuffers;
+                DepthBuffer                             m_depthBuffer;
 
-				//Things that should be loaded from other classes ie textures, meshes, etc.
-				VkDescriptorSetLayout					m_descriptorLayout;
-				VkPipelineLayout						m_pipelineLayout;
-				VkPipelineCache							m_pipelineCache;
-				VkRenderPass							m_renderPass;
-				VkDescriptorPool						m_descriptorPool;
-				VkDescriptorSet							m_descriptorSet;
-				uint32_t								m_currentBuffer;
-				VkCommandBuffer							m_commandBuffer;
-				VkPipeline								m_pipeline;
-				std::vector<VkFramebuffer>				m_framebuffers;
-				VkSemaphore								m_presentSemaphore;
+                //Things that should be loaded from other classes ie textures, meshes, etc.
+                VkDescriptorSetLayout                   m_descriptorLayout;
+                VkPipelineLayout                        m_pipelineLayout;
+                VkPipelineCache                         m_pipelineCache;
+                VkRenderPass                            m_renderPass;
+                VkDescriptorPool                        m_descriptorPool;
+                VkDescriptorSet                         m_descriptorSet;
+                uint32_t                                m_currentBuffer;
+                VkCommandBuffer                         m_commandBuffer;
+                VkPipeline                              m_pipeline;
+                std::vector<VkFramebuffer>              m_framebuffers;
+                VkSemaphore                             m_presentSemaphore;
 
-				VkClearValue							m_clearColor;
-				VkClearValue							m_depthStencil;
+                VkClearValue                            m_clearColor;
+                VkClearValue                            m_depthStencil;
 
                 //Vulkan Callbacks
                 PFN_vkCreateDebugReportCallbackEXT m_createDebugReportCallback;
@@ -145,26 +145,26 @@ namespace Hatchit {
                 PFN_vkGetPhysicalDeviceSurfacePresentModesKHR
                     fpGetPhysicalDeviceSurfacePresentModesKHR;
 
-				//Function pointers to device functions
-				PFN_vkCreateSwapchainKHR
-					fpCreateSwapchainKHR;
-				PFN_vkDestroySwapchainKHR
-					fpDestroySwapchainKHR;
-				PFN_vkGetSwapchainImagesKHR
-					fpGetSwapchainImagesKHR;
-				PFN_vkAcquireNextImageKHR
-					fpAcquireNextImageKHR;
-				PFN_vkQueuePresentKHR
-					fpQueuePresentKHR;
+                //Function pointers to device functions
+                PFN_vkCreateSwapchainKHR
+                    fpCreateSwapchainKHR;
+                PFN_vkDestroySwapchainKHR
+                    fpDestroySwapchainKHR;
+                PFN_vkGetSwapchainImagesKHR
+                    fpGetSwapchainImagesKHR;
+                PFN_vkAcquireNextImageKHR
+                    fpAcquireNextImageKHR;
+                PFN_vkQueuePresentKHR
+                    fpQueuePresentKHR;
 
-				//Core init methods
-				bool initVulkan(const RendererParams& params);
-				bool initVulkanSwapchain(const RendererParams& params);
-				bool prepareVulkan();
+                //Core init methods
+                bool initVulkan(const RendererParams& params);
+                bool initVulkanSwapchain(const RendererParams& params);
+                bool prepareVulkan();
 
-				//Helper init methods
+                //Helper init methods
 
-				//Helper inits for initVulkan
+                //Helper inits for initVulkan
                 bool checkInstanceLayers();
                 bool checkInstanceExtensions();
                 bool enumeratePhysicalDevices();
@@ -174,37 +174,37 @@ namespace Hatchit {
                 bool setupDeviceQueues();
                 bool setupProcAddresses();
 
-				//Helper inits for initVulkanSwapchain
-				bool setupQueues();
-				bool createDevice();
-				bool getSupportedFormats();
+                //Helper inits for initVulkanSwapchain
+                bool setupQueues();
+                bool createDevice();
+                bool getSupportedFormats();
 
-				//Helpers for prepareVulkan
-				bool prepareSwapchainBuffers();
-				bool prepareSwapchainDepth();
-				bool prepareDescriptorLayout();
-				bool prepareRenderPass();
-				bool preparePipeline();
-				bool prepareDescriptorPool();
-				bool prepareDescriptorSet();
-				bool prepareFrambuffers();
-				bool allocateCommandBuffers();
+                //Helpers for prepareVulkan
+                bool prepareSwapchainBuffers();
+                bool prepareSwapchainDepth();
+                bool prepareDescriptorLayout();
+                bool prepareRenderPass();
+                bool preparePipeline();
+                bool prepareDescriptorPool();
+                bool prepareDescriptorSet();
+                bool prepareFrambuffers();
+                bool allocateCommandBuffers();
 
-				//Reused helpers
+                //Reused helpers
                 bool checkLayers(std::vector<const char*> layerNames, VkLayerProperties* layers, uint32_t layerCount);
-				bool setImageLayout(VkImage image, VkImageAspectFlags aspectMask, 
-					VkImageLayout oldImageLayout, VkImageLayout newImageLayout);
-				bool memoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, uint32_t* typeIndex);
-				bool buildCommandBuffer(VkCommandBuffer commandBuffer);
+                bool setImageLayout(VkImage image, VkImageAspectFlags aspectMask, 
+                    VkImageLayout oldImageLayout, VkImageLayout newImageLayout);
+                bool memoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, uint32_t* typeIndex);
+                bool buildCommandBuffer(VkCommandBuffer commandBuffer);
 
-				//Used for drawing
-				void flushCommandBuffer();
+                //Used for drawing
+                void flushCommandBuffer();
 
-				//TOTALLY need to be moved somewhere else
-				char* readFile(const char* filename, size_t* pSize);
-				VkShaderModule loadShaderSPIRV(const char* fileName);
+                //TOTALLY need to be moved somewhere else
+                char* readFile(const char* filename, size_t* pSize);
+                VkShaderModule loadShaderSPIRV(const char* fileName);
             };
 
         }
-	}
+    }
 }

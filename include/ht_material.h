@@ -36,16 +36,6 @@ namespace Hatchit {
 
     namespace Graphics {
 
-		enum ShaderSlot
-		{
-			VERTEX = 0,
-			FRAGMENT,
-			GEOMETRY,
-			TESS_CONTROL,
-			TESS_EVAL,
-			COMPUTE
-		};
-
         class HT_API IMaterial : Resource::ResourceObject
         {
         public:

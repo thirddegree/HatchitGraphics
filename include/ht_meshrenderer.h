@@ -24,29 +24,38 @@
 
 #pragma once
 
+#include <ht_renderpass.h>
 #include <ht_objectrenderer.h>
 #include <ht_material.h>
 #include <ht_mesh.h>
 
 namespace Hatchit {
 
-	namespace Graphics {
+    namespace Graphics {
 
-		class HT_API IMeshRenderer : public IObjectRenderer
-		{
-		public:
-			virtual ~IMeshRenderer() {};
+        class HT_API IMeshRenderer : public IObjectRenderer
+        {
+        public:
+            virtual ~IMeshRenderer() {};
 
-			///Override to buffer a mesh with a graphics language
-			virtual void VBuffer() = 0;
-			///Override to render a mesh with a graphics language
-			virtual void VRender() = 0;
-			///Override to free a mesh from a graphics language
-			virtual void VFree() = 0;
+            ///Override to buffer a mesh with a graphics language
+            virtual void VBuffer() = 0;
+            
+            /* Set which render pass this will be a part of
+            * \param renderPass A pointer to the render pass that this will be a part of
+            */
+            virtual void VSetRenderPass(IRenderPass* renderPass) = 0;
 
-		protected:
-			Resource::MeshPtr mesh;
-			IMaterial* material;
-		};
-	}
+            ///Override to render a mesh with a graphics language
+            virtual void VRender() = 0;
+
+            ///Override to free a mesh from a graphics language
+            virtual void VFree() = 0;
+
+        protected:
+            Resource::MeshPtr mesh;
+            IMaterial* material;
+            IRenderPass* renderPass;
+        };
+    }
 }
