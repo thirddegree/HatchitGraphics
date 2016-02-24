@@ -434,43 +434,13 @@ namespace Hatchit {
                     return false;
                 }
 
-                Resource::Model m;
-                m.VInitFromFile(&modelFile);
-                
-                srand(static_cast <unsigned> (time(0)));
-
-                auto mesh = m.Meshes()[0];
-                std::vector<Vertex> vertices;
-                for (auto vertex : mesh->getVertices())
-                {
-                    Vertex v;
-                    v.position.x = vertex.x;
-                    v.position.y = vertex.y;
-                    v.position.z = vertex.z;
-                    v.color.x = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-                    v.color.y = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-                    v.color.z = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-                    v.color.w = 1.0f;
-
-                    vertices.push_back(v);
-                }
-                
-                std::vector<uint32_t> indices;
-                for (auto index : mesh->getIndices())
-                {
-                    indices.push_back(index.mIndices[0]);
-                    indices.push_back(index.mIndices[1]);
-                    indices.push_back(index.mIndices[2]);
-                }
-                m_indexCount = indices.size();
-               
-                m_vBuffer = new D3D12VertexBuffer(vertices.size());
+                m_vBuffer = new D3D12VertexBuffer(3);
                 m_vBuffer->Initialize(m_device);
-                m_vBuffer->UpdateSubData(0, vertices.size(), &vertices[0]);
+                m_vBuffer->UpdateSubData(0, 3, &triangleVerts[0]);
 
-                m_iBuffer = new D3D12IndexBuffer(indices.size());
+                m_iBuffer = new D3D12IndexBuffer(3);
                 m_iBuffer->Initialize(m_device);
-                m_iBuffer->UpdateSubData(0, indices.size(), &indices[0]);
+                m_iBuffer->UpdateSubData(0, 3, &triangleIndices[0]);
 
                 /*
                 * Create synchronization objects
@@ -539,7 +509,7 @@ namespace Hatchit {
                 m_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
                 m_commandList->IASetVertexBuffers(0, 1, &m_vBuffer->GetView());
                 m_commandList->IASetIndexBuffer(&m_iBuffer->GetView());
-                m_commandList->DrawIndexedInstanced(m_indexCount, 1, 0, 0, 0);
+                m_commandList->DrawIndexedInstanced(3, 1, 0, 0, 0);
 
                 /*
                 * Indicate that we are using the back buffer to present
