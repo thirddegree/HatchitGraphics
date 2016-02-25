@@ -1,4 +1,3 @@
-#pragma once
 /**
 **    Hatchit Engine
 **    Copyright(c) 2015 Third-Degree
@@ -27,33 +26,40 @@
 
 #include <ht_meshrenderer.h>
 #include <ht_vulkan.h>
+#include <ht_vkrenderpass.h>
+#include <ht_vkmaterial.h>
 
 namespace Hatchit {
 
     namespace Graphics {
 
-        class HT_API VKMeshRenderer : public IMeshRenderer
-        {
-        public:
-            VKMeshRenderer();
-            ~VKMeshRenderer();
+        namespace Vulkan {
 
-            ///Allocates a mesh into Vulkan memory
-            void VBuffer()              override;
+            class HT_API VKMeshRenderer : public IMeshRenderer
+            {
+            public:
+                VKMeshRenderer();
+                ~VKMeshRenderer();
 
-            /* Set which render pass will be bound to this command buffer
-            * \param renderPass A pointer to the render pass that this will be a part of
-            */
-            virtual void VSetRenderPass(IRenderPass* renderPass) = 0;
+                ///Allocates a mesh into Vulkan memory
+                void VBuffer()                                  override;
 
-            ///Submit's a command buffer to the VKRenderer
-            void VRender()              override;
+                /* Set which render pass will be bound to this command buffer
+                * \param renderPass A pointer to the render pass that this will be a part of
+                */
+                void VSetRenderPass(IRenderPass* renderPass)    override;
 
-            ///Cleans up a mesh and material from Vulkan memory
-            void VFree()                override;
+                ///Submit's a command buffer to the VKRenderer
+                void VRender()                                  override;
 
-        protected:
-            VkCommandBuffer m_commandBuffer;
-        };
+                ///Cleans up a mesh and material from Vulkan memory
+                void VFree()                                    override;
+
+            protected:
+                VKRenderPass* m_markedRenderPass;
+                VKMaterial*  m_material;
+                VkCommandBuffer m_commandBuffer;
+            };
+        }
     }
 }

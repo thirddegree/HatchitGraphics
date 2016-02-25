@@ -12,7 +12,7 @@
 **
 **/
 
-#include <ht_vkmeshrenderer.h>
+#include <ht_vkrenderpass.h>
 
 namespace Hatchit {
 
@@ -20,34 +20,21 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKMeshRenderer::VKMeshRenderer()
+            VKRenderPass::VKRenderPass() {}
+            VKRenderPass::~VKRenderPass() {}
+
+            //Will this be sent the Objects that it needs to render?
+            ///Render the scene
+            void VKRenderPass::VRender()
             {
             }
 
-            VKMeshRenderer::~VKMeshRenderer()
+            void VKRenderPass::VSetRenderTarget(IRenderTarget* renderTarget)
             {
-
+                m_renderTarget = renderTarget;
             }
 
-            void VKMeshRenderer::VSetRenderPass(IRenderPass* renderPass)
-            {
-                m_markedRenderPass = (VKRenderPass*)renderPass;
-            }
-
-            void VKMeshRenderer::VBuffer()
-            {
-
-            }
-
-            void VKMeshRenderer::VRender()
-            {
-
-            }
-
-            void VKMeshRenderer::VFree()
-            {
-
-            }
+            VkRenderPass VKRenderPass::GetVkRenderPass() { return m_renderPass; }
         }
     }
 }

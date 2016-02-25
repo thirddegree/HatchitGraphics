@@ -62,6 +62,9 @@ namespace Hatchit {
                 if (!prepareVulkan())
                     return false;
 
+                if (IRenderer::Renderer == nullptr)
+                    IRenderer::Renderer = this;
+
                 return true;
             }
 
@@ -241,6 +244,11 @@ namespace Hatchit {
                 assert(!err);
 
                 vkDestroySemaphore(m_device, m_presentSemaphore, nullptr);
+            }
+
+            VkDevice VKRenderer::GetVKDevice() 
+            {
+                return m_device;
             }
 
             bool VKRenderer::initVulkan(const RendererParams& params) 

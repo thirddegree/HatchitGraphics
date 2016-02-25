@@ -24,28 +24,32 @@
 
 #pragma once
 
-#include <ht_platform.h>
-#include <ht_rendertarget.h>
-#include <ht_math.h>
+#include <ht_renderpass.h>
+#include <ht_vulkan.h>
 
 namespace Hatchit {
 
     namespace Graphics {
 
-        class HT_API IRenderPass
-        {
-        public:
-            virtual ~IRenderPass() { };
+        namespace Vulkan {
 
-            //Will this be sent the Objects that it needs to render?
-            ///Render the the given objects with the given pipeline to a texture
-            virtual void VRender() = 0;
+            class HT_API VKRenderPass : IRenderPass
+            {
+            public:
+                VKRenderPass();
+                ~VKRenderPass();
 
-            virtual void VSetRenderTarget(IRenderTarget* renderTarget) = 0;
+                //Will this be sent the Objects that it needs to render?
+                ///Render the scene
+                void VRender()  override;
 
-        protected:
-            //Output
-            IRenderTarget* m_renderTarget;
-        };
+                void VSetRenderTarget(IRenderTarget* renderTarget)  override;
+
+                VkRenderPass GetVkRenderPass();
+
+            private:
+                VkRenderPass m_renderPass;
+            };
+        }
     }
 }

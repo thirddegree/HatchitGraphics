@@ -62,6 +62,11 @@ namespace Hatchit {
                 ///Present a frame to the screen via a backbuffer
                 void VPresent();
 
+                /* Get the core Vulkan device
+                * \return The VkDevice
+                */
+                VkDevice GetVKDevice();
+
             private:
                 typedef struct _SwapchainBuffers {
                     VkImage image;
