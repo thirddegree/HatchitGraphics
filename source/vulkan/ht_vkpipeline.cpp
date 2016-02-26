@@ -248,8 +248,40 @@ namespace Hatchit {
                 VkResult err;
 
                 //Vertex info state
+                VkVertexInputBindingDescription vertexBindingDescriptions[1] = {};
+
+                vertexBindingDescriptions[0] = {};
+                vertexBindingDescriptions[0].binding = 0;
+                vertexBindingDescriptions[0].stride = sizeof(Vertex);
+                vertexBindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+                VkVertexInputAttributeDescription vertexAttributeDescriptions[3] = {};
+
+                vertexAttributeDescriptions[0] = {};
+                vertexAttributeDescriptions[0].binding = 0;
+                vertexAttributeDescriptions[0].location = 0;
+                vertexAttributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+                vertexAttributeDescriptions[0].offset = 0;
+
+                vertexAttributeDescriptions[1] = {};
+                vertexAttributeDescriptions[1].binding = 0;
+                vertexAttributeDescriptions[1].location = 1;
+                vertexAttributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+                vertexAttributeDescriptions[1].offset = sizeof(float) * 3;
+
+                vertexAttributeDescriptions[2] = {};
+                vertexAttributeDescriptions[2].binding = 0;
+                vertexAttributeDescriptions[2].location = 2;
+                vertexAttributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+                vertexAttributeDescriptions[2].offset = sizeof(float) * 6;
+
                 VkPipelineVertexInputStateCreateInfo vertexInputState = {};
                 vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+                vertexInputState.pNext = nullptr;
+                vertexInputState.vertexBindingDescriptionCount = 1;
+                vertexInputState.vertexAttributeDescriptionCount = 3;
+                vertexInputState.pVertexBindingDescriptions = vertexBindingDescriptions;
+                vertexInputState.pVertexAttributeDescriptions = vertexAttributeDescriptions;
 
                 //Topology
                 VkPipelineInputAssemblyStateCreateInfo inputAssemblyState = {};
