@@ -32,6 +32,8 @@ namespace Hatchit {
             class HT_API VKRenderer : public IRenderer
             {
             public:
+                static VKRenderer* RendererInstance;
+
                 VKRenderer();
 
                 ~VKRenderer();
@@ -66,6 +68,12 @@ namespace Hatchit {
                 * \return The VkDevice
                 */
                 VkDevice GetVKDevice();
+
+                //Reused helpers
+                static bool CheckLayers(std::vector<const char*> layerNames, VkLayerProperties* layers, uint32_t layerCount);
+                static bool SetImageLayout(VkImage image, VkImageAspectFlags aspectMask,
+                    VkImageLayout oldImageLayout, VkImageLayout newImageLayout);
+                static bool MemoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, uint32_t* typeIndex);
 
             private:
                 typedef struct _SwapchainBuffers {
@@ -195,15 +203,10 @@ namespace Hatchit {
                 bool prepareFrambuffers();
                 bool allocateCommandBuffers();
 
-                //Reused helpers
-                bool checkLayers(std::vector<const char*> layerNames, VkLayerProperties* layers, uint32_t layerCount);
-                bool setImageLayout(VkImage image, VkImageAspectFlags aspectMask, 
-                    VkImageLayout oldImageLayout, VkImageLayout newImageLayout);
-                bool memoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, uint32_t* typeIndex);
-                bool buildCommandBuffer(VkCommandBuffer commandBuffer);
-
                 //Used for drawing
                 void flushCommandBuffer();
+
+                bool buildCommandBuffer(VkCommandBuffer commandBuffer);
 
                 //TOTALLY need to be moved somewhere else
                 char* readFile(const char* filename, size_t* pSize);

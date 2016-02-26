@@ -12,17 +12,22 @@
 **
 **/
 
-#include <ht_renderer.h>
+/**
+* \class IMesh
+* \ingroup HatchitGraphics
+*
+* \brief An interface to a mesh that exists on the GPU
+*
+* You must pass this interface a Resource::Mesh which is a collection
+* of data that you want buffered onto the graphics card
+*/
+
+#include <ht_gmesh.h>
 
 namespace Hatchit {
-
     namespace Graphics {
 
-        IRenderer* IRenderer::Renderer;
+        uint32_t IMesh::GetVertexCount() { return m_vertexCount; }
 
-        IRenderer* IRenderer::GetRenderer()
-        {
-            return IRenderer::Renderer;
-        }
     }
 }

@@ -184,7 +184,7 @@ namespace Hatchit {
             bool VKMaterial::VPrepare()
             {
                 //Get the renderer for use later
-                VKRenderer* renderer = (VKRenderer*)IRenderer::GetRenderer();
+                VKRenderer* renderer = VKRenderer::RendererInstance;
 
                 //Get device
                 VkDevice device = renderer->GetVKDevice();

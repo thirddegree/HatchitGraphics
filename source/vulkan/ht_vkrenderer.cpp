@@ -26,6 +26,8 @@ namespace Hatchit {
     namespace Graphics {
 
         namespace Vulkan {
+            VKRenderer* VKRenderer::RendererInstance = nullptr;
+
             VKRenderer::VKRenderer()
             {
                 m_swapchain = 0;
@@ -56,14 +58,15 @@ namespace Hatchit {
                 if (!initVulkanSwapchain(params))
                     return false;
 
+                //We should be able to use the device and instance wherever we want at this point
+                if (RendererInstance == nullptr)
+                    RendererInstance = this;
+
                 /*
                 * Prepare Vulkan command buffers and memory systems for drawing
                 */
                 if (!prepareVulkan())
                     return false;
-
-                if (IRenderer::Renderer == nullptr)
-                    IRenderer::Renderer = this;
 
                 return true;
             }
@@ -200,7 +203,7 @@ namespace Hatchit {
 
             void VKRenderer::VPresent()
             {
-                setImageLayout(m_swapchainBuffers[m_currentBuffer].image,
+                SetImageLayout(m_swapchainBuffers[m_currentBuffer].image,
                     VK_IMAGE_ASPECT_COLOR_BIT, 
                     VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
@@ -459,8 +462,7 @@ namespace Hatchit {
                     err = vkEnumerateInstanceLayerProperties(&instanceLayerCount, instanceLayers);
                     assert(!err);
 
-
-                    bool validated = checkLayers(m_enabledLayerNames, instanceLayers, instanceLayerCount);
+                    bool validated = CheckLayers(m_enabledLayerNames, instanceLayers, instanceLayerCount);
 
                     delete[] instanceLayers;
                     if (!validated)
@@ -580,7 +582,7 @@ namespace Hatchit {
                 err = vkEnumerateDeviceLayerProperties(m_gpu, &deviceLayerCount, deviceLayers);
                 assert(!err);
 
-                bool validated = checkLayers(m_enabledLayerNames, deviceLayers, deviceLayerCount);
+                bool validated = CheckLayers(m_enabledLayerNames, deviceLayers, deviceLayerCount);
                 delete[] deviceLayers;
 
                 if (!validated)
@@ -594,7 +596,7 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKRenderer::checkLayers(std::vector<const char*> layerNames, VkLayerProperties * layers, uint32_t layerCount)
+            bool VKRenderer::CheckLayers(std::vector<const char*> layerNames, VkLayerProperties * layers, uint32_t layerCount)
             {
                 bool validated = true;
                 for (size_t i = 0; i < layerNames.size(); i++)
@@ -1227,7 +1229,7 @@ namespace Hatchit {
 
                     //Render loop will expect image to have been used before
                     //Init image ot the VK_IMAGE_ASPECT_COLOR_BIT state
-                    setImageLayout(buffer.image, VK_IMAGE_ASPECT_COLOR_BIT, 
+                    SetImageLayout(buffer.image, VK_IMAGE_ASPECT_COLOR_BIT, 
                         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
                     colorImageView.image = buffer.image;
@@ -1320,7 +1322,7 @@ namespace Hatchit {
                 m_depthBuffer.memAllocInfo.memoryTypeIndex = 0;
                 
                 //No requirements
-                pass = memoryTypeFromProperties(memoryRequirements.memoryTypeBits, 0, &m_depthBuffer.memAllocInfo.memoryTypeIndex);
+                pass = MemoryTypeFromProperties(memoryRequirements.memoryTypeBits, 0, &m_depthBuffer.memAllocInfo.memoryTypeIndex);
                 assert(pass);
                 if (!pass)
                 {
@@ -1352,7 +1354,7 @@ namespace Hatchit {
                     return false;
                 }
 
-                setImageLayout(m_depthBuffer.image, VK_IMAGE_ASPECT_DEPTH_BIT,
+                SetImageLayout(m_depthBuffer.image, VK_IMAGE_ASPECT_DEPTH_BIT,
                     VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
                 //Create image view
@@ -1763,23 +1765,67 @@ namespace Hatchit {
                 return true;
             }
         
+            void VKRenderer::flushCommandBuffer()
+            {
+                VkResult err;
+                if (m_commandBuffer == VK_NULL_HANDLE)
+                    return;
 
-            bool VKRenderer::setImageLayout(VkImage image, VkImageAspectFlags aspectMask,
+                err = vkEndCommandBuffer(m_commandBuffer);
+                assert(!err);
+
+                const VkCommandBuffer commands[] = { m_commandBuffer };
+                VkFence nullFence = VK_NULL_HANDLE;
+
+                VkSubmitInfo submitInfo = {};
+                submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+                submitInfo.pNext = nullptr;
+                submitInfo.waitSemaphoreCount = 0;
+                submitInfo.pWaitSemaphores = nullptr;
+                submitInfo.pWaitDstStageMask = nullptr;
+                submitInfo.commandBufferCount = 1;
+                submitInfo.pCommandBuffers = commands;
+                submitInfo.signalSemaphoreCount = 0;
+                submitInfo.pSignalSemaphores = nullptr;
+
+                err = vkQueueSubmit(m_queue, 1, &submitInfo, nullFence);
+                assert(!err);
+
+                err = vkQueueWaitIdle(m_queue);
+                assert(!err);
+
+                vkFreeCommandBuffers(m_device, m_commandPool, 1, commands);
+                m_commandBuffer = VK_NULL_HANDLE;
+            }
+
+            bool VKRenderer::SetImageLayout(VkImage image, VkImageAspectFlags aspectMask,
                 VkImageLayout oldImageLayout, VkImageLayout newImageLayout)
             {
                 VkResult err;
 
+                if(RendererInstance == nullptr)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKRenderer::setImageLayout(): Tried to call static before the renderer instance was set.\n");
+#endif
+                    return false;
+                }
+
+                VkDevice& device = RendererInstance->m_device;
+                VkCommandBuffer& commandBuffer = RendererInstance->m_commandBuffer;
+                VkCommandPool& commandPool = RendererInstance->m_commandPool;
+
                 //Start up a basic command buffer if we don't have one already
-                if (m_commandBuffer == VK_NULL_HANDLE)
+                if (commandBuffer == VK_NULL_HANDLE)
                 {
                     VkCommandBufferAllocateInfo command;
                     command.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
                     command.pNext = nullptr;
-                    command.commandPool = m_commandPool;
+                    command.commandPool = commandPool;
                     command.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
                     command.commandBufferCount = 1;
 
-                    err = vkAllocateCommandBuffers(m_device, &command, &m_commandBuffer);
+                    err = vkAllocateCommandBuffers(device, &command, &commandBuffer);
                     if(err != VK_SUCCESS)
                     {
 #ifdef _DEBUG
@@ -1804,11 +1850,11 @@ namespace Hatchit {
                     commandBufferBeginInfo.flags = 0;
                     commandBufferBeginInfo.pInheritanceInfo = &commandBufferHInfo;
 
-                    err = vkBeginCommandBuffer(m_commandBuffer, &commandBufferBeginInfo);
+                    err = vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo);
                     if (err != VK_SUCCESS)
                     {
 #ifdef _DEBUG
-                        Core::DebugPrintF("VKRenderer::setImageLayout(): Failed to begin command buffer.\n");
+                        Core::DebugPrintF("VKRenderer::SetImageLayout(): Failed to begin command buffer.\n");
 #endif
                         return false;
                     }
@@ -1850,54 +1896,31 @@ namespace Hatchit {
                 VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
                 VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
-                vkCmdPipelineBarrier(m_commandBuffer, srcStages, destStages, 0, 0, nullptr, 0,
+                vkCmdPipelineBarrier(commandBuffer, srcStages, destStages, 0, 0, nullptr, 0,
                     nullptr, 1, &imageMemoryBarrier);
 
                 return true;
             }
 
-            void VKRenderer::flushCommandBuffer() 
+            bool VKRenderer::MemoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, uint32_t* typeIndex)
             {
-                VkResult err;
-                if (m_commandBuffer == VK_NULL_HANDLE)
-                    return;
-                
-                err = vkEndCommandBuffer(m_commandBuffer);
-                assert(!err);
+                if (RendererInstance == nullptr)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKRenderer::MemoryTypeFromProperties(): Tried to call static before the renderer instance was set.\n");
+#endif
+                    return false;
+                }
 
-                const VkCommandBuffer commands[] = { m_commandBuffer };
-                VkFence nullFence = VK_NULL_HANDLE;
-                
-                VkSubmitInfo submitInfo = {};
-                submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-                submitInfo.pNext = nullptr;
-                submitInfo.waitSemaphoreCount = 0;
-                submitInfo.pWaitSemaphores = nullptr;
-                submitInfo.pWaitDstStageMask = nullptr;
-                submitInfo.commandBufferCount = 1;
-                submitInfo.pCommandBuffers = commands;
-                submitInfo.signalSemaphoreCount = 0;
-                submitInfo.pSignalSemaphores = nullptr;
+                VkPhysicalDeviceMemoryProperties memoryProps = RendererInstance->m_memoryProps;
 
-                err = vkQueueSubmit(m_queue, 1, &submitInfo, nullFence);
-                assert(!err);
-
-                err = vkQueueWaitIdle(m_queue);
-                assert(!err);
-
-                vkFreeCommandBuffers(m_device, m_commandPool, 1, commands);
-                m_commandBuffer = VK_NULL_HANDLE;
-            }
-
-            bool VKRenderer::memoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, uint32_t* typeIndex)
-            {
                 //Search mem types to find the first index with those properties
                 for (uint32_t i = 0; i < 32; i++)
                 {
                     if ((typeBits & 1) == 1)
                     {
                         //Type exists; does it match properties we're looking for?
-                        if ((m_memoryProps.memoryTypes[i].propertyFlags & requirementsMask) == requirementsMask)
+                        if ((memoryProps.memoryTypes[i].propertyFlags & requirementsMask) == requirementsMask)
                         {
                             *typeIndex = i;
                             return true;

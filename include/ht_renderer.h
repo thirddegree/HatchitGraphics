@@ -33,6 +33,7 @@
 #include <ht_color.h>
 #include <ht_types.h>
 #include <ht_string.h>
+#include <ht_renderpass.h>
 
 namespace Hatchit {
 
@@ -68,8 +69,6 @@ namespace Hatchit {
         class HT_API IRenderer
         {
         public:
-            static IRenderer* GetRenderer();
-
             virtual ~IRenderer() { };
             
             /** Initialize the renderer
@@ -94,6 +93,9 @@ namespace Hatchit {
             virtual void VClearBuffer(ClearArgs args) = 0;
             ///Present a frame to the screen via a backbuffer
             virtual void VPresent() = 0;
+
+            //?
+            //virtual void VExecuteRenderPass(IRenderPass* renderPass) = 0;
 
         protected:
             static IRenderer* Renderer;
