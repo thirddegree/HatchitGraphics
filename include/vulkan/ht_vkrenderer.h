@@ -72,11 +72,15 @@ namespace Hatchit {
                 */
                 VkDevice GetVKDevice();
 
+                VkFormat GetPreferredImageFormat();
+                VkFormat GetPreferredDepthFormat();
+
                 //Reused helpers
                 static bool CheckLayers(std::vector<const char*> layerNames, VkLayerProperties* layers, uint32_t layerCount);
                 static bool SetImageLayout(VkImage image, VkImageAspectFlags aspectMask,
                     VkImageLayout oldImageLayout, VkImageLayout newImageLayout);
                 static bool MemoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, uint32_t* typeIndex);
+                static bool CreateBuffer(VkDevice device, VkBufferUsageFlagBits usage, size_t dataSize, void* data, VkBuffer* buffer, VkDeviceMemory* memory);
 
             private:
                 typedef struct _SwapchainBuffers {
@@ -116,7 +120,7 @@ namespace Hatchit {
                 uint32_t                                m_graphicsQueueNodeIndex;
                 VkDevice                                m_device; 
                 VkQueue                                 m_queue;
-                VkFormat                                m_format;
+                VkFormat                                m_preferredImageFormat;
                 VkColorSpaceKHR                         m_colorSpace;
                 VkPhysicalDeviceMemoryProperties        m_memoryProps;
                 

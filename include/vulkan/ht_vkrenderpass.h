@@ -39,13 +39,16 @@ namespace Hatchit {
                 VKRenderPass();
                 ~VKRenderPass();
 
+                //Prepare the internal VkRenderPass
+                bool VPrepare()   override;
+
                 //Will this be sent the Objects that it needs to render?
                 ///Render the scene
                 void VRender()  override;
 
                 void VSetRenderTarget(IRenderTarget* renderTarget)  override;
 
-                void VPrepare()   override;
+                bool VBuildCommandList() override;
 
                 VkRenderPass GetVkRenderPass();
                 VkCommandBuffer GetVkCommandBuffer();

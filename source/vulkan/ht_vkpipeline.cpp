@@ -87,7 +87,7 @@ namespace Hatchit {
             {
                 VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT;
 
-                switch (sampleCount)
+                switch (multiState.samples)
                 {
                 case SAMPLE_1_BIT:
                     sampleCount = VK_SAMPLE_COUNT_1_BIT;

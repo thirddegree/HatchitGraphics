@@ -47,13 +47,15 @@ namespace Hatchit {
         public:
             virtual ~IRenderPass() { };
 
+            virtual bool VPrepare() = 0;
+
             //Will this be sent the Objects that it needs to render?
             ///Render the the given objects with the given pipeline to a texture
             virtual void VRender() = 0;
 
             virtual void VSetRenderTarget(IRenderTarget* renderTarget) = 0;
 
-            virtual void VPrepare() = 0;
+            virtual bool VBuildCommandList() =  0;
 
             void ScheduleRenderRequest(IPipeline* pipeline, IMaterial* material, IMesh* mesh);
 

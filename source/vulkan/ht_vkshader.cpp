@@ -22,7 +22,12 @@ namespace Hatchit {
         namespace Vulkan {
 
             VKShader::VKShader() {}
-            VKShader::~VKShader() {}
+            VKShader::~VKShader() 
+            {
+                VkDevice device = VKRenderer::RendererInstance->GetVKDevice();
+
+                vkDestroyShaderModule(device, m_shader, nullptr);
+            }
 
             bool VKShader::VInitFromFile(Core::File* file)
             {
@@ -41,9 +46,7 @@ namespace Hatchit {
                 moduleCreateInfo.pCode = (uint32_t*)shaderCode;
                 moduleCreateInfo.flags = 0;
 
-                VkShaderModule shaderModule;
-
-                err = vkCreateShaderModule(device, &moduleCreateInfo, nullptr, &shaderModule);
+                err = vkCreateShaderModule(device, &moduleCreateInfo, nullptr, &m_shader);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {

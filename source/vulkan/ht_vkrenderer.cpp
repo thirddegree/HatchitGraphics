@@ -15,6 +15,7 @@
 #include <ht_vkmesh.h>
 #include <ht_vkrenderer.h>
 #include <ht_vkshader.h>
+#include <ht_vkpipeline.h>
 #include <ht_debug.h>
 
 #include <cassert>
@@ -72,6 +73,7 @@ namespace Hatchit {
 
                 //TODO: remove this test code
                 IRenderPass* renderPass = new VKRenderPass();
+                renderPass->VPrepare();
 
                 Core::File meshFile;
                 meshFile.Open(Core::os_exec_dir() + "monkey.obj", Core::FileMode::ReadBinary);
@@ -90,6 +92,21 @@ namespace Hatchit {
 
                 VKShader fsShader;
                 fsShader.VInitFromFile(&fsFile);
+
+                RasterizerState rasterState = {};
+                rasterState.cullMode = CullMode::FRONT_AND_BACK;
+                rasterState.polygonMode = PolygonMode::FILL;
+
+                MultisampleState multisampleState = {};
+                multisampleState.minSamples = 0;
+                multisampleState.samples = SAMPLE_1_BIT;
+
+                IPipeline* pipeline = new VKPipeline((VKRenderPass*)renderPass);
+                pipeline->VLoadShader(ShaderSlot::VERTEX, &vsShader);
+                pipeline->VLoadShader(ShaderSlot::FRAGMENT, &fsShader);
+                pipeline->VSetRasterState(rasterState);
+                pipeline->VSetMultisampleState(multisampleState);
+                pipeline->VPrepare();
 
                 std::vector<Resource::Mesh*> meshes = model.GetMeshes();
                 IMesh* vkMesh = new VKMesh();
@@ -297,6 +314,15 @@ namespace Hatchit {
             VkDevice VKRenderer::GetVKDevice() 
             {
                 return m_device;
+            }
+
+            VkFormat VKRenderer::GetPreferredImageFormat() 
+            {
+                return m_preferredImageFormat;
+            }
+            VkFormat VKRenderer::GetPreferredDepthFormat() 
+            {
+                return m_depthBuffer.format;
             }
 
             bool VKRenderer::initVulkan(const RendererParams& params) 
@@ -668,6 +694,89 @@ namespace Hatchit {
                 return validated;
             }
 
+            bool VKRenderer::CreateBuffer(VkDevice device, VkBufferUsageFlagBits usage, size_t dataSize, void* data, VkBuffer* buffer, VkDeviceMemory* memory)
+            {
+                VkResult err;
+
+                //Setup Buffer
+
+                VkBufferCreateInfo bufferCreateInfo = {};
+                bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+                bufferCreateInfo.usage = usage;
+                bufferCreateInfo.size = dataSize;
+
+                err = vkCreateBuffer(device, &bufferCreateInfo, nullptr, buffer);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKMesh::createBuffer(): Failed to create buffer\n");
+#endif
+                    return false;
+                }
+
+                //Setup buffer requirements
+                VkMemoryRequirements memReqs;
+                vkGetBufferMemoryRequirements(device, *buffer, &memReqs);
+
+                VkMemoryAllocateInfo memAllocInfo = {};
+                memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+                memAllocInfo.pNext = nullptr;
+                memAllocInfo.allocationSize = memReqs.size;
+                memAllocInfo.memoryTypeIndex = 0;
+
+                bool okay = VKRenderer::RendererInstance->MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memAllocInfo.memoryTypeIndex);
+                assert(okay);
+                if (!okay)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKMesh::createBuffer(): Failed to get memory type\n");
+#endif
+                    return false;
+                }
+
+                //Allocate and fill memory
+                void* pData;
+
+                err = vkAllocateMemory(device, &memAllocInfo, nullptr, memory);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKMesh::createBuffer(): Failed to allocate memory\n");
+#endif
+                    return false;
+                }
+
+                err = vkMapMemory(device, *memory, 0, dataSize, 0, &pData);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKMesh::createBuffer(): Failed to map memory\n");
+#endif
+                    return false;
+                }
+
+                //Actually copy data into location
+                memcpy(pData, data, dataSize);
+
+                //Unmap memory and then bind to the uniform
+                vkUnmapMemory(device, *memory);
+
+                err = vkBindBufferMemory(device, *buffer, *memory, 0);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKMesh::VBuffer(): Failed to bind memory\n");
+#endif
+                    return false;
+                }
+
+                return true;
+            }
+
             bool VKRenderer::checkDeviceExtensions()
             {
                 VkResult err;
@@ -1003,9 +1112,9 @@ namespace Hatchit {
                 // the surface has no preferred format.  Otherwise, at least one
                 // supported format will be returned.
                 if (formatCount == 1 && surfaceFormats[0].format == VK_FORMAT_UNDEFINED)
-                    m_format = VK_FORMAT_B8G8R8A8_UNORM;
+                    m_preferredImageFormat = VK_FORMAT_B8G8R8A8_UNORM;
                 else
-                    m_format = surfaceFormats[0].format;
+                    m_preferredImageFormat = surfaceFormats[0].format;
 
                 m_colorSpace = surfaceFormats[0].colorSpace;
 
@@ -1194,7 +1303,7 @@ namespace Hatchit {
                 swapchainInfo.pNext = nullptr;
                 swapchainInfo.surface = m_surface;
                 swapchainInfo.minImageCount = desiredNumberOfSwapchainImages;
-                swapchainInfo.imageFormat = m_format;
+                swapchainInfo.imageFormat = m_preferredImageFormat;
                 swapchainInfo.imageColorSpace = m_colorSpace;
                 swapchainInfo.imageExtent = swapchainExtent;
                 swapchainInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -1263,7 +1372,7 @@ namespace Hatchit {
                     VkImageViewCreateInfo colorImageView;
                     colorImageView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
                     colorImageView.pNext = nullptr;
-                    colorImageView.format = m_format;
+                    colorImageView.format = m_preferredImageFormat;
                     colorImageView.components = components;
                     colorImageView.subresourceRange = subresourceRange;
                     colorImageView.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -1475,7 +1584,7 @@ namespace Hatchit {
             bool VKRenderer::prepareRenderPass() 
             { 
                 VkAttachmentDescription attachments[2];
-                attachments[0].format = m_format;
+                attachments[0].format = m_preferredImageFormat;
                 attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
                 attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
                 attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
