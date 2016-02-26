@@ -38,7 +38,7 @@ namespace Hatchit {
             class HT_API VKMaterial : IMaterial
             {
             public:
-                VKMaterial(VKRenderPass* renderPass);
+                VKMaterial();
                 ~VKMaterial();
 
                 ///Callback for when this VKMaterial has been loaded from the disk. Used to build shader variable list
@@ -56,46 +56,8 @@ namespace Hatchit {
                 bool VBindTexture(std::string name, ITexture* texture)      override;
                 bool VUnbindTexture(std::string name, ITexture* texture)    override;
 
-                //If we wanted to allow users to control blending states
-                //void VSetColorBlendAttachments(ColorBlendState* colorBlendStates) override;
-
-                /* Set the rasterization state for this pipeline
-                * \param rasterState A struct containing rasterization options
-                */
-                void VSetRasterState(const RasterizerState& rasterState)        override;
-
-                /* Set the multisampling state for this pipeline
-                * \param multiState A struct containing multisampling options
-                */
-                void VSetMultisampleState(const MultisampleState& multiState)   override;
-
-                /* Load a shader into a shader slot for the pipeline
-                * \param shaderSlot The slot that you want the shader in; vertex, fragment etc.
-                * \param shader A pointer to the shader that you want to load to the given shader slot
-                */
-                void VLoadShader(ShaderSlot shaderSlot, IShader* shader)        override;
-
                 ///Prepare this Material by building a descriptor set based off of its shader variables
-                bool VPrepare()                                                 override;
-
-            protected:
-                VKRenderPass* m_renderPass;
-
-                VkPipelineRasterizationStateCreateInfo m_rasterizationState;
-                VkPipelineMultisampleStateCreateInfo m_multisampleState;
-                std::vector<VkPipelineShaderStageCreateInfo> m_shaderStages;
-
-                VkDescriptorSetLayout   m_descriptorLayout;
-                VkPipelineLayout        m_pipelineLayout;
-
-                VkDescriptorSet m_descriptorSet; //Collection of shader variables
-                VkPipelineCache m_pipelineCache;
-                VkPipeline      m_pipeline;
-
-            private:
-                bool PrepareLayouts(VkDevice device);
-                bool PrepareDescriptorSet(VkDevice device);
-                bool PreparePipeline(VkDevice device);
+                bool VPrepare()                                             override;
             };
         }
     }
