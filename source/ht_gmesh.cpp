@@ -27,7 +27,7 @@
 namespace Hatchit {
     namespace Graphics {
 
-        uint32_t IMesh::GetVertexCount() { return m_vertexCount; }
+        uint32_t IMesh::GetIndexCount() { return m_indexCount; }
 
     }
 }

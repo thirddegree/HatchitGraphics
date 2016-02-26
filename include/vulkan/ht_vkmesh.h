@@ -41,10 +41,13 @@ namespace Hatchit {
                 void VFree()                        override;
 
             private:
-                VkMemoryAllocateInfo m_memAllocInfo;
-                VkDeviceMemory m_memory;
-                VkDescriptorBufferInfo m_bufferInfo;
-                VkBuffer m_buffer;
+                VkBuffer m_vertexBuffer;
+                VkDeviceMemory m_vertexMemory;
+
+                VkBuffer m_indexBuffer;
+                VkDeviceMemory m_indexMemory;
+
+                bool createBuffer(VkDevice device, VkBufferUsageFlagBits usage, size_t dataSize, void* data, VkBuffer* buffer, VkDeviceMemory* memory);
             };
 
         }

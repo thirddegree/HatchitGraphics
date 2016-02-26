@@ -30,6 +30,13 @@
 namespace Hatchit {
     namespace Graphics {
 
+        struct Vertex
+        {
+            aiVector3D pos;
+            aiVector3D norm;
+            aiVector2D uv;
+        };
+
         class HT_API IMesh 
         {
         public:
@@ -38,10 +45,10 @@ namespace Hatchit {
             virtual bool VBuffer(Resource::Mesh* mesh) = 0;
             virtual void VFree() = 0;
 
-            uint32_t GetVertexCount();
+            uint32_t GetIndexCount();
 
         protected:
-            uint32_t m_vertexCount;
+            uint32_t m_indexCount;
         };
     }
 }
