@@ -50,9 +50,9 @@ namespace Hatchit {
 
         public:
             virtual ~IShader() {};
-        
-            virtual void VOnLoaded() = 0;
-            virtual void VCompile() = 0;
+            
+            virtual void VOnLoaded() {};
+            virtual bool VInitFromFile(Core::File* file) = 0;
         };
     }
 }

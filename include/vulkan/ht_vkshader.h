@@ -31,21 +31,23 @@ namespace Hatchit {
 
     namespace Graphics {
 
-        class HT_API VKShader : public IShader
-        {
-            friend class IMaterial;
+        namespace Vulkan {
 
-        public:
-            VKShader();
-            ~VKShader();
+            class HT_API VKShader : public IShader
+            {
+                friend class IMaterial;
 
-            void VOnLoaded()            override;
-            void VCompile()             override;
+            public:
+                VKShader();
+                ~VKShader();
 
-            VkShaderModule GetShaderModule();
+                bool VInitFromFile(Core::File* file)    override;
 
-        private:
-            VkShaderModule m_shader;
-        };
+                VkShaderModule GetShaderModule();
+
+            private:
+                VkShaderModule m_shader;
+            };
+        }
     }
 }

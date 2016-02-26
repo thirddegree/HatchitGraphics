@@ -13,24 +13,53 @@
 **/
 
 #include <ht_vkshader.h>
+#include <ht_vkrenderer.h>
 
 namespace Hatchit {
 
     namespace Graphics {
 
-        VKShader::VKShader() {}
-        VKShader::~VKShader() {}
+        namespace Vulkan {
 
-        void VKShader::VOnLoaded()
-        {
-        }
-        void VKShader::VCompile()
-        {
-        }
+            VKShader::VKShader() {}
+            VKShader::~VKShader() {}
 
-        VkShaderModule VKShader::GetShaderModule()
-        {
-            return m_shader;
+            bool VKShader::VInitFromFile(Core::File* file)
+            {
+                VkDevice device = VKRenderer::RendererInstance->GetVKDevice();
+
+                size_t size = file->SizeBytes();
+                BYTE* shaderCode = new BYTE[size];
+                file->Read(shaderCode, size);
+
+                VkResult err;
+
+                VkShaderModuleCreateInfo moduleCreateInfo = {};
+                moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+                moduleCreateInfo.pNext = nullptr;
+                moduleCreateInfo.codeSize = size;
+                moduleCreateInfo.pCode = (uint32_t*)shaderCode;
+                moduleCreateInfo.flags = 0;
+
+                VkShaderModule shaderModule;
+
+                err = vkCreateShaderModule(device, &moduleCreateInfo, nullptr, &shaderModule);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKShader::VInitFromFile(): Error creating shader module\n");
+#endif
+                    return false;
+                }
+
+                return true;
+            }
+
+            VkShaderModule VKShader::GetShaderModule()
+            {
+                return m_shader;
+            }
         }
     }
 }

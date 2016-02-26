@@ -14,6 +14,7 @@
 
 #include <ht_vkmesh.h>
 #include <ht_vkrenderer.h>
+#include <ht_vkshader.h>
 #include <ht_debug.h>
 
 #include <cassert>
@@ -70,15 +71,29 @@ namespace Hatchit {
                     return false;
 
                 //TODO: remove this test code
+                IRenderPass* renderPass = new VKRenderPass();
+
                 Core::File meshFile;
                 meshFile.Open(Core::os_exec_dir() + "monkey.obj", Core::FileMode::ReadBinary);
+
+                Core::File vsFile;
+                vsFile.Open(Core::os_exec_dir() + "tri-vert.spv", Core::FileMode::ReadBinary);
+
+                Core::File fsFile;
+                fsFile.Open(Core::os_exec_dir() + "tri-frag.spv", Core::FileMode::ReadBinary);
 
                 Resource::Model model;
                 model.VInitFromFile(&meshFile);
 
+                VKShader vsShader;
+                vsShader.VInitFromFile(&vsFile);
+
+                VKShader fsShader;
+                fsShader.VInitFromFile(&fsFile);
+
                 std::vector<Resource::Mesh*> meshes = model.GetMeshes();
-                VKMesh vkMesh;
-                vkMesh.VBuffer(meshes[0]);
+                IMesh* vkMesh = new VKMesh();
+                vkMesh->VBuffer(meshes[0]);
 
                 return true;
             }
