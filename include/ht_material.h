@@ -47,7 +47,6 @@ namespace Hatchit {
 
             virtual bool VSetInt(std::string name, int data) = 0;
             virtual bool VSetFloat(std::string name, float data) = 0;
-            virtual bool VSetFloat2(std::string name, Math::Vector2 data) = 0;
             virtual bool VSetFloat3(std::string name, Math::Vector3 data) = 0;
             virtual bool VSetFloat4(std::string name, Math::Vector4 data) = 0;
             virtual bool VSetMatrix4(std::string name, Math::Matrix4 data) = 0;

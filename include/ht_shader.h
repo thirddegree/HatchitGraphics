@@ -34,36 +34,25 @@ namespace Hatchit {
 
     namespace Graphics {
 
-		enum ShaderSlot
-		{
-			VERTEX = 0,
-			FRAGMENT,
-			GEOMETRY,
-			TESS_CONTROL,
-			TESS_EVAL,
-			COMPUTE
-		};
+        enum ShaderSlot
+        {
+            VERTEX = 0,
+            FRAGMENT,
+            GEOMETRY,
+            TESS_CONTROL,
+            TESS_EVAL,
+            COMPUTE
+        };
 
         class HT_API IShader : public Resource::ResourceObject
         {
-			friend class IMaterial;
+            friend class IMaterial;
 
         public:
-			virtual ~IShader() {};
+            virtual ~IShader() {};
         
-			virtual void VOnLoaded() = 0;
-			virtual void VCompile() = 0;
-
-            virtual bool VSetData(std::string name, const void* data, size_t size) = 0;
-            virtual bool VSetInt(std::string name, int data) = 0;
-            virtual bool VSetFloat(std::string name, float data) = 0;
-			virtual bool VSetFloat2(std::string name, Math::Vector2 data) = 0;
-			virtual bool VSetFloat3(std::string name, Math::Vector3 data) = 0;
-			virtual bool VSetFloat4(std::string name, Math::Vector4 data) = 0;
-			virtual bool VSetMatrix4(std::string name, Math::Matrix4 data) = 0;
-
-            virtual bool VBindTexture(std::string name, ITexture* texture) = 0;
-            virtual bool VUnbindTexture(std::string name, ITexture* texture) = 0;
+            virtual void VOnLoaded() = 0;
+            virtual void VCompile() = 0;
         };
     }
 }

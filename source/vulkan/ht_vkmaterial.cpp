@@ -35,10 +35,8 @@ namespace Hatchit {
 
             bool VKMaterial::VSetInt(std::string name, int data) { return true; }
             bool VKMaterial::VSetFloat(std::string name, float data) { return true; }
-            bool VKMaterial::VSetFloat2(std::string name, Math::Vector2 data) { return true; }
             bool VKMaterial::VSetFloat3(std::string name, Math::Vector3 data) { return true; }
             bool VKMaterial::VSetFloat4(std::string name, Math::Vector4 data) { return true; }
-            bool VKMaterial::VSetMatrix3(std::string name, Math::Matrix3 data) { return true; }
             bool VKMaterial::VSetMatrix4(std::string name, Math::Matrix4 data) { return true; }
 
             bool VKMaterial::VBindTexture(std::string name, ITexture* texture) { return true; }

@@ -25,6 +25,7 @@
 #pragma once
 
 #include <ht_platform.h>
+#include <ht_model.h>
 #include <ht_mesh.h>
 
 namespace Hatchit {

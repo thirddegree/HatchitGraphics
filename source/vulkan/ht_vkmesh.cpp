@@ -22,7 +22,7 @@ namespace Hatchit {
 
                 std::vector<aiVector3D> verticies = mesh->getVertices();
                 std::vector<aiVector3D> normals = mesh->getNormals();
-                std::vector<aiVector2D> uvs = mesh->getUVs();
+                std::vector<aiVector3D> uvs = mesh->getUVs();
 
                 size_t vertCount = verticies.size();
                 size_t normalCount = normals.size();
@@ -33,8 +33,10 @@ namespace Hatchit {
                     Vertex vertex;
 
                     vertex.pos = verticies[i];
-                    vertex.norm = normals[i];
-                    vertex.uv = uvs[i];
+                    if (normals.size() > 0)
+                        vertex.norm = normals[i];
+                    if(uvs.size() > 0)
+                        vertex.uv = aiVector2D(uvs[i][0], uvs[i][1]);
 
                     vertexBuffer.push_back(vertex);
                 }
@@ -52,7 +54,7 @@ namespace Hatchit {
                         indexBuffer.push_back(face.mIndices[f]);
                 }
 
-                m_indexCount = indexBuffer.size();
+                m_indexCount = static_cast<uint32_t>(indexBuffer.size());
                 size_t indexBufferSize = m_indexCount * sizeof(uint32_t);
 
                 if (!createBuffer(device, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexBufferSize, vertexBuffer.data(), &m_vertexBuffer, &m_vertexMemory))
@@ -118,7 +120,7 @@ namespace Hatchit {
                 }
 
                 //Allocate and fill memory
-                uint8_t* pData = nullptr;
+                void* pData;
 
                 err = vkAllocateMemory(device, &memAllocInfo, nullptr, memory);
                 assert(!err);
@@ -130,7 +132,7 @@ namespace Hatchit {
                     return false;
                 }
 
-                err = vkMapMemory(device, *memory, 0, memAllocInfo.allocationSize, 0, (void**)pData);
+                err = vkMapMemory(device, *memory, 0, dataSize, 0, &pData);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -141,7 +143,7 @@ namespace Hatchit {
                 }
 
                 //Actually copy data into location
-                memcpy(pData, &data, dataSize);
+                memcpy(pData, data, dataSize);
 
                 //Unmap memory and then bind to the uniform
                 vkUnmapMemory(device, *memory);

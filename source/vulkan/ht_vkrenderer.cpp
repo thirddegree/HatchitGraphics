@@ -12,6 +12,7 @@
 **
 **/
 
+#include <ht_vkmesh.h>
 #include <ht_vkrenderer.h>
 #include <ht_debug.h>
 
@@ -67,6 +68,17 @@ namespace Hatchit {
                 */
                 if (!prepareVulkan())
                     return false;
+
+                //TODO: remove this test code
+                Core::File meshFile;
+                meshFile.Open(Core::os_exec_dir() + "monkey.obj", Core::FileMode::ReadBinary);
+
+                Resource::Model model;
+                model.VInitFromFile(&meshFile);
+
+                std::vector<Resource::Mesh*> meshes = model.GetMeshes();
+                VKMesh vkMesh;
+                vkMesh.VBuffer(meshes[0]);
 
                 return true;
             }
