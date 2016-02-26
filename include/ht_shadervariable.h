@@ -70,46 +70,30 @@ namespace Hatchit {
 		}
 
 		template <>
-		HT_API ShaderVariableTemplate<Math::Vector2>::ShaderVariableTemplate(Math::Vector2 data)
-		{
-			memcpy(m_data, data.getAsArray(), sizeof(float) * 2);
-			m_type = Type::FLOAT2;
-		}
-
-		template <>
 		HT_API ShaderVariableTemplate<Math::Vector3>::ShaderVariableTemplate(Math::Vector3 data)
 		{
-			memcpy(m_data, data.getAsArray(), sizeof(float) * 3);
+			memcpy(m_data, data.m_data, sizeof(float) * 3);
 			m_type = Type::FLOAT3;
 		}
 
 		template <>
 		HT_API ShaderVariableTemplate<Math::Vector4>::ShaderVariableTemplate(Math::Vector4 data)
 		{
-			memcpy(m_data, data.getAsArray(), sizeof(float) * 4);
+			memcpy(m_data, data.data, sizeof(float) * 4);
 			m_type = Type::FLOAT4;
-		}
-
-		template <>
-		HT_API ShaderVariableTemplate<Math::Matrix3>::ShaderVariableTemplate(Math::Matrix3 data)
-		{
-			memcpy(m_data, data.getAsArray(), sizeof(float) * 9);
-			m_type = Type::MAT3;
 		}
 
 		template <>
 		HT_API ShaderVariableTemplate<Math::Matrix4>::ShaderVariableTemplate(Math::Matrix4 data)
 		{
-			memcpy(m_data, data.getAsArray(), sizeof(float) * 16);
+			memcpy(m_data, data.data, sizeof(float) * 16);
 			m_type = Type::MAT4;
 		}
 
 		typedef ShaderVariableTemplate<int>				IntVariable;
 		typedef ShaderVariableTemplate<float>			FloatVariable;
-		typedef ShaderVariableTemplate<Math::Vector2>	Float2Variable;
 		typedef ShaderVariableTemplate<Math::Vector3>	Float3Variable;
 		typedef ShaderVariableTemplate<Math::Vector4>	Float4Variable;
-		typedef ShaderVariableTemplate<Math::Matrix3>	Matrix3Variable;
 		typedef ShaderVariableTemplate<Math::Matrix4>	Matrix4Variable;
 	}
 }

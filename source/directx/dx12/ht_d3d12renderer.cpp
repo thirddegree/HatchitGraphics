@@ -534,6 +534,11 @@ namespace Hatchit {
 
             }
 
+            void D3D12Renderer::VRender()
+            {
+
+            }
+
             HRESULT D3D12Renderer::checkHardwareAdapter(IDXGIFactory2 * pFactory, IDXGIAdapter1 ** ppAdapter)
             {
                 HRESULT hr = S_OK;

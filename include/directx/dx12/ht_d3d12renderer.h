@@ -46,6 +46,8 @@ namespace Hatchit {
 
                 void VPresent()                                         override;
 
+                void VRender()                                          override;
+
             private:
                 D3D12_VIEWPORT              m_viewport;
                 D3D12_RECT                  m_scissorRect;
