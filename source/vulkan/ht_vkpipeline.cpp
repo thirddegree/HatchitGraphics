@@ -174,7 +174,6 @@ namespace Hatchit {
                 if (!PrepareLayouts(device))
                     return false;
 
-                //TODO: Create DescriptorSet
                 if (!PrepareDescriptorSet(device))
                     return false;
 

@@ -26,11 +26,21 @@
 
 #include <ht_platform.h>
 #include <ht_rendertarget.h>
+#include <ht_pipeline.h>
+#include <ht_gmesh.h>
+#include <ht_material.h>
 #include <ht_math.h>
 
 namespace Hatchit {
 
     namespace Graphics {
+
+        struct RenderRequest 
+        {
+            IPipeline*  pipeline;
+            IMaterial*  material;
+            IMesh*      mesh;
+        };
 
         class HT_API IRenderPass
         {
@@ -43,7 +53,14 @@ namespace Hatchit {
 
             virtual void VSetRenderTarget(IRenderTarget* renderTarget) = 0;
 
+            virtual void VPrepare() = 0;
+
+            void ScheduleRenderRequest(IPipeline* pipeline, IMaterial* material, IMesh* mesh);
+
         protected:
+            //Input
+            std::vector<RenderRequest> m_renderRequests;
+
             //Output
             IRenderTarget* m_renderTarget;
         };

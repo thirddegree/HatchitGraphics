@@ -17,6 +17,7 @@
 #include <ht_platform.h>
 #include <ht_vulkan.h>
 #include <ht_renderer.h>
+#include <ht_vkrenderpass.h>
 #include <ht_string.h>
 #include <vector>
 
@@ -41,28 +42,30 @@ namespace Hatchit {
                 /** Initialize the renderer
                 * \param params The paramaters to intialize this renderer with
                 */
-                bool VInitialize(const RendererParams& params);
+                bool VInitialize(const RendererParams& params)  override;
 
                 ///Shutdown the renderer
-                void VDeInitialize();
+                void VDeInitialize()    override;
 
                 /** Resizes the the screen
                 * \param width The new width of the screen
                 * \param height The new height of the screen
                 */
-                void VResizeBuffers(uint32_t width, uint32_t height);
+                void VResizeBuffers(uint32_t width, uint32_t height)    override;
 
                 /** Sets the color that the screen will clear with
                 * \param color The Color to clear the screen with
                 */
-                void VSetClearColor(const Color& color);
+                void VSetClearColor(const Color& color) override;
                 /** Clears the screen with the given clear color
                 * \param args Arguments to describe which buffer you want to clear
                 */
-                void VClearBuffer(ClearArgs args);
+                void VClearBuffer(ClearArgs args)   override;
+
+                void VRender()  override;
 
                 ///Present a frame to the screen via a backbuffer
-                void VPresent();
+                void VPresent() override;
 
                 /* Get the core Vulkan device
                 * \return The VkDevice

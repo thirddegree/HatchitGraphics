@@ -91,14 +91,18 @@ namespace Hatchit {
             * \param args Arguments to describe which buffer you want to clear
             */
             virtual void VClearBuffer(ClearArgs args) = 0;
+            
+            ///Render all render passes
+            virtual void VRender() = 0;
+
             ///Present a frame to the screen via a backbuffer
             virtual void VPresent() = 0;
 
-            //?
-            //virtual void VExecuteRenderPass(IRenderPass* renderPass) = 0;
+            void AddRenderPass(IRenderPass* renderPass);
+            void RemoveRenderPass(uint32_t index);
 
         protected:
-            static IRenderer* Renderer;
+            std::vector<IRenderPass*> m_renderPasses;
         };
 
     }

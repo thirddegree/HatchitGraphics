@@ -33,7 +33,7 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            class HT_API VKRenderPass : IRenderPass
+            class HT_API VKRenderPass : public IRenderPass
             {
             public:
                 VKRenderPass();
@@ -45,10 +45,14 @@ namespace Hatchit {
 
                 void VSetRenderTarget(IRenderTarget* renderTarget)  override;
 
+                void VPrepare()   override;
+
                 VkRenderPass GetVkRenderPass();
+                VkCommandBuffer GetVkCommandBuffer();
 
             private:
                 VkRenderPass m_renderPass;
+                VkCommandBuffer m_commandBuffer;
             };
         }
     }

@@ -13,6 +13,7 @@
 **/
 
 #include <ht_vkrenderpass.h>
+#include <ht_vkrenderer.h>
 
 namespace Hatchit {
 
@@ -33,6 +34,15 @@ namespace Hatchit {
             {
                 m_renderTarget = renderTarget;
             }
+
+            void VKRenderPass::VPrepare() 
+            {
+                //TODO: Construct command buffer
+
+                VKRenderer::RendererInstance->AddRenderPass(this);
+            }
+
+            VkCommandBuffer VKRenderPass::GetVkCommandBuffer() { return m_commandBuffer; }
 
             VkRenderPass VKRenderPass::GetVkRenderPass() { return m_renderPass; }
         }

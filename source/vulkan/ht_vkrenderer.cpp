@@ -201,10 +201,23 @@ namespace Hatchit {
                 }
             }
 
-            void VKRenderer::VPresent()
+            void VKRenderer::VRender() 
             {
+                //TODO: Determine which physical device and thread are best to render with
+
+                //Get list of command buffers
+                std::vector<VkCommandBuffer> commandBuffers;
+                commandBuffers.push_back(m_commandBuffer);
+
+                for (size_t i = 0; i < m_renderPasses.size(); i++)
+                {
+                    VKRenderPass* renderPass = static_cast<VKRenderPass*>(m_renderPasses[i]);
+
+                    commandBuffers.push_back(renderPass->GetVkCommandBuffer());
+                }
+
                 SetImageLayout(m_swapchainBuffers[m_currentBuffer].image,
-                    VK_IMAGE_ASPECT_COLOR_BIT, 
+                    VK_IMAGE_ASPECT_COLOR_BIT,
                     VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
                 flushCommandBuffer();
@@ -218,13 +231,18 @@ namespace Hatchit {
                 submitInfo.waitSemaphoreCount = 1;
                 submitInfo.pWaitSemaphores = &m_presentSemaphore;
                 submitInfo.pWaitDstStageMask = &pipelineStageFlags;
-                submitInfo.commandBufferCount = 1;
-                submitInfo.pCommandBuffers = &m_swapchainBuffers[m_currentBuffer].command;
+                submitInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
+                submitInfo.pCommandBuffers = &m_swapchainBuffers[m_currentBuffer].command;//&commandBuffers[0];
                 submitInfo.signalSemaphoreCount = 0;
                 submitInfo.pSignalSemaphores = nullptr;
 
                 err = vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE);
-                assert(!err);
+                //assert(!err);
+            }
+
+            void VKRenderer::VPresent()
+            {
+                VkResult err;
 
                 VkPresentInfoKHR present = {};
                 present.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
