@@ -35,7 +35,7 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            class HT_API VKMaterial : IMaterial
+            class HT_API VKMaterial : public IMaterial
             {
             public:
                 VKMaterial();
@@ -56,6 +56,25 @@ namespace Hatchit {
 
                 ///Prepare this Material by building a descriptor set based off of its shader variables
                 bool VPrepare()                                             override;
+                bool VUpdate()                                              override;
+
+                VkDescriptorSetLayout GetDescriptorSetLayout();
+                VkDescriptorSet GetDescriptorSet();
+
+            private:
+                VkDescriptorPool m_descriptorPool;
+
+                VkDescriptorSetLayout m_materialLayout;
+
+                VkDescriptorSet m_materialSet;
+
+                UniformBlock m_uniformVSBuffer;
+                UniformBlock m_uniformFSBuffer;
+                std::vector<UniformBlock> m_fragmentTextures;
+
+                bool setupDescriptorSetLayout(VkDevice device);
+                bool setupDescriptorPool(VkDevice device);
+                bool setupDescriptorSet(VkDevice device);
             };
         }
     }

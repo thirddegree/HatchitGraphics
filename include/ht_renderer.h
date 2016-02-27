@@ -65,7 +65,6 @@ namespace Hatchit {
             std::string  applicationName;
         };
 
-
         class HT_API IRenderer
         {
         public:

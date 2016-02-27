@@ -58,10 +58,10 @@ namespace Hatchit {
                 m_indexCount = static_cast<uint32_t>(indexBuffer.size());
                 size_t indexBufferSize = m_indexCount * sizeof(uint32_t);
 
-                if (!renderer->CreateBuffer(device, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexBufferSize, vertexBuffer.data(), &m_vertexBuffer, &m_vertexMemory))
+                if (!renderer->CreateBuffer(device, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexBufferSize, vertexBuffer.data(), &m_vertexBlock))
                     return false;
 
-                if (!renderer->CreateBuffer(device, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indexBufferSize, indexBuffer.data(), &m_indexBuffer, &m_indexMemory))
+                if (!renderer->CreateBuffer(device, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indexBufferSize, indexBuffer.data(), &m_indexBlock))
                     return false;
 
                 return true;
@@ -72,11 +72,11 @@ namespace Hatchit {
                 //Get Device
                 VkDevice device = VKRenderer::RendererInstance->GetVKDevice();
 
-                vkDestroyBuffer(device, m_vertexBuffer, nullptr);
-                vkFreeMemory(device, m_vertexMemory, nullptr);
+                vkDestroyBuffer(device, m_vertexBlock.buffer, nullptr);
+                vkFreeMemory(device, m_vertexBlock.memory, nullptr);
 
-                vkDestroyBuffer(device, m_indexBuffer, nullptr);
-                vkFreeMemory(device, m_indexMemory, nullptr);
+                vkDestroyBuffer(device, m_indexBlock.buffer, nullptr);
+                vkFreeMemory(device, m_indexBlock.memory, nullptr);
             }
 
         }

@@ -20,3 +20,18 @@
 #endif
 
 #include <vulkan/vulkan.h>
+
+namespace Hatchit {
+    namespace Graphics {
+        namespace Vulkan {
+
+            struct UniformBlock
+            {
+                VkBuffer buffer;
+                VkDeviceMemory memory;
+                VkDescriptorBufferInfo descriptor;
+            };
+
+        }
+    }
+}

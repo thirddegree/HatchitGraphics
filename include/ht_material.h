@@ -31,7 +31,7 @@
 #include <ht_math.h>
 #include <ht_debug.h>
 
-#include <vector>
+#include <map>
 
 namespace Hatchit {
 
@@ -55,9 +55,11 @@ namespace Hatchit {
             virtual bool VUnbindTexture(std::string name, ITexture* texture) = 0;
 
             virtual bool VPrepare() = 0;
+            virtual bool VUpdate() = 0;
 
         protected:
-            std::vector<ShaderVariable> shaderVariables;
+            std::map<std::string, ShaderVariable> m_shaderVariables;
+            std::map<std::string, ITexture*> m_textures;
         };
     }
 }

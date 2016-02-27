@@ -16,6 +16,7 @@
 #include <ht_vkrenderer.h>
 #include <ht_vkshader.h>
 #include <ht_vkpipeline.h>
+#include <ht_vkmaterial.h>
 #include <ht_debug.h>
 
 #include <cassert>
@@ -29,6 +30,7 @@ namespace Hatchit {
     namespace Graphics {
 
         namespace Vulkan {
+
             VKRenderer* VKRenderer::RendererInstance = nullptr;
 
             VKRenderer::VKRenderer()
@@ -107,6 +109,9 @@ namespace Hatchit {
                 pipeline->VSetRasterState(rasterState);
                 pipeline->VSetMultisampleState(multisampleState);
                 pipeline->VPrepare();
+
+                IMaterial* material = new VKMaterial();
+                material->VPrepare();
 
                 std::vector<Resource::Mesh*> meshes = model.GetMeshes();
                 IMesh* vkMesh = new VKMesh();
@@ -694,7 +699,7 @@ namespace Hatchit {
                 return validated;
             }
 
-            bool VKRenderer::CreateBuffer(VkDevice device, VkBufferUsageFlagBits usage, size_t dataSize, void* data, VkBuffer* buffer, VkDeviceMemory* memory)
+            bool VKRenderer::CreateBuffer(VkDevice device, VkBufferUsageFlagBits usage, size_t dataSize, void* data, UniformBlock* uniformBlock)
             {
                 VkResult err;
 
@@ -705,7 +710,7 @@ namespace Hatchit {
                 bufferCreateInfo.usage = usage;
                 bufferCreateInfo.size = dataSize;
 
-                err = vkCreateBuffer(device, &bufferCreateInfo, nullptr, buffer);
+                err = vkCreateBuffer(device, &bufferCreateInfo, nullptr, &uniformBlock->buffer);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -717,7 +722,7 @@ namespace Hatchit {
 
                 //Setup buffer requirements
                 VkMemoryRequirements memReqs;
-                vkGetBufferMemoryRequirements(device, *buffer, &memReqs);
+                vkGetBufferMemoryRequirements(device, uniformBlock->buffer, &memReqs);
 
                 VkMemoryAllocateInfo memAllocInfo = {};
                 memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -738,7 +743,7 @@ namespace Hatchit {
                 //Allocate and fill memory
                 void* pData;
 
-                err = vkAllocateMemory(device, &memAllocInfo, nullptr, memory);
+                err = vkAllocateMemory(device, &memAllocInfo, nullptr, &uniformBlock->memory);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -748,23 +753,27 @@ namespace Hatchit {
                     return false;
                 }
 
-                err = vkMapMemory(device, *memory, 0, dataSize, 0, &pData);
-                assert(!err);
-                if (err != VK_SUCCESS)
+                //We may not ask for a buffer that has anything in it
+                if (data != nullptr)
                 {
+                    err = vkMapMemory(device, uniformBlock->memory, 0, dataSize, 0, &pData);
+                    assert(!err);
+                    if (err != VK_SUCCESS)
+                    {
 #ifdef _DEBUG
-                    Core::DebugPrintF("VKMesh::createBuffer(): Failed to map memory\n");
+                        Core::DebugPrintF("VKMesh::createBuffer(): Failed to map memory\n");
 #endif
-                    return false;
+                        return false;
+                    }
+
+                    //Actually copy data into location
+                    memcpy(pData, data, dataSize);
+
+                    //Unmap memory and then bind to the uniform
+                    vkUnmapMemory(device, uniformBlock->memory);
                 }
 
-                //Actually copy data into location
-                memcpy(pData, data, dataSize);
-
-                //Unmap memory and then bind to the uniform
-                vkUnmapMemory(device, *memory);
-
-                err = vkBindBufferMemory(device, *buffer, *memory, 0);
+                err = vkBindBufferMemory(device, uniformBlock->buffer, uniformBlock->memory, 0);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {

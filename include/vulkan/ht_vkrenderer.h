@@ -80,7 +80,7 @@ namespace Hatchit {
                 static bool SetImageLayout(VkImage image, VkImageAspectFlags aspectMask,
                     VkImageLayout oldImageLayout, VkImageLayout newImageLayout);
                 static bool MemoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, uint32_t* typeIndex);
-                static bool CreateBuffer(VkDevice device, VkBufferUsageFlagBits usage, size_t dataSize, void* data, VkBuffer* buffer, VkDeviceMemory* memory);
+                static bool CreateBuffer(VkDevice device, VkBufferUsageFlagBits usage, size_t dataSize, void* data, UniformBlock* uniformBlock);
 
             private:
                 typedef struct _SwapchainBuffers {
