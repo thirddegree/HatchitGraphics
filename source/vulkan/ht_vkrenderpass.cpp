@@ -112,7 +112,109 @@ namespace Hatchit {
 
             bool VKRenderPass::VBuildCommandList() 
             {
+                VkResult err;
+
+                VkCommandBufferInheritanceInfo inheritanceInfo = {};
+                inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+                inheritanceInfo.pNext = nullptr;
+                inheritanceInfo.renderPass = VK_NULL_HANDLE;
+                inheritanceInfo.subpass = 0;
+                inheritanceInfo.framebuffer = VK_NULL_HANDLE;
+                inheritanceInfo.occlusionQueryEnable = VK_FALSE;
+                inheritanceInfo.queryFlags = 0;
+                inheritanceInfo.pipelineStatistics = 0;
+
+                VkCommandBufferBeginInfo beginInfo = {};
+                beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+                beginInfo.pNext = nullptr;
+                beginInfo.flags = 0;
+                beginInfo.pInheritanceInfo = &inheritanceInfo;
+
+                VkClearValue clearValues[2] = {};
+                clearValues[0] = m_clearColor;
+                clearValues[1] = {1.0f, 0.0f};
+
+                /*
+                VkRenderPassBeginInfo renderPassBeginInfo = {};
+                renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+                renderPassBeginInfo.pNext = nullptr;
+                renderPassBeginInfo.renderPass = m_renderPass;
+                renderPassBeginInfo.framebuffer = m_framebuffers[0];
+                renderPassBeginInfo.renderArea.offset.x = 0;
+                renderPassBeginInfo.renderArea.offset.y = 0;
+                renderPassBeginInfo.renderArea.extent.width = m_width;
+                renderPassBeginInfo.renderArea.extent.height = m_height;
+                renderPassBeginInfo.clearValueCount = 2;
+                renderPassBeginInfo.pClearValues = clearValues;
+
+                err = vkBeginCommandBuffer(m_commandBuffer, &beginInfo);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKRenderPass::VBuildCommandList(): Failed to build command buffer.\n");
+#endif
+                    return false;
+                }
+
+                vkCmdBeginRenderPass(m_commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+                vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, );
+                vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    m_pipelineLayout, 0, 1, &m_descriptorSet, 0, nullptr);
+
+                VkViewport viewport = {};
+                viewport.width = static_cast<float>(m_width);
+                viewport.height = static_cast<float>(m_height);
+                viewport.minDepth = 0.0f;
+                viewport.maxDepth = 1.0f;
+                vkCmdSetViewport(m_commandBuffer, 0, 1, &viewport);
+
+                VkRect2D scissor = {};
+                scissor.extent.width = m_width;
+                scissor.extent.height = m_height;
+                scissor.offset.x = 0;
+                scissor.offset.y = 0;
+                vkCmdSetScissor(m_commandBuffer, 0, 1, &scissor);
+
+                vkCmdDraw(m_commandBuffer, 0, 0, 0, 0);
+                vkCmdEndRenderPass(m_commandBuffer);
+
+                VkImageMemoryBarrier prePresentBarrier = {};
+                prePresentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                prePresentBarrier.pNext = nullptr;
+                prePresentBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                prePresentBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+                prePresentBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                prePresentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+                prePresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                prePresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                prePresentBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+
+                prePresentBarrier.image = m_swapchainBuffers[0].image;
+
+                vkCmdPipelineBarrier(m_commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                    VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &prePresentBarrier);
+
+                err = vkEndCommandBuffer(m_commandBuffer);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKRenderPass::VBuildCommandList(): Failed to end command buffer.\n");
+#endif
+                    return false;
+                }
+                */
                 return true;
+            }
+
+            void VKRenderPass::VSetClearColor(Color color)
+            {
+                m_clearColor.color.float32[0] = color.r;
+                m_clearColor.color.float32[1] = color.g;
+                m_clearColor.color.float32[2] = color.b;
+                m_clearColor.color.float32[3] = color.a;
             }
 
             VkCommandBuffer VKRenderPass::GetVkCommandBuffer() { return m_commandBuffer; }

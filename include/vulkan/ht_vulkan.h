@@ -27,9 +27,16 @@ namespace Hatchit {
 
             struct UniformBlock
             {
-                VkBuffer buffer;
-                VkDeviceMemory memory;
-                VkDescriptorBufferInfo descriptor;
+                VkBuffer                buffer;
+                VkDeviceMemory          memory;
+                VkDescriptorBufferInfo  descriptor;
+            };
+
+            struct Image 
+            {
+                VkImage         image;
+                VkImageView     view;
+                VkDeviceMemory  memory;
             };
 
         }

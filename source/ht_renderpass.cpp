@@ -29,5 +29,7 @@ namespace Hatchit {
             m_renderRequests.push_back(renderRequest);
         }
 
+        void IRenderPass::SetWidth(float width) { m_width = width; }
+        void IRenderPass::SetHeight(float height) { m_height = height; }
     }
 }

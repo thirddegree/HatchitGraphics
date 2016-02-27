@@ -50,12 +50,16 @@ namespace Hatchit {
 
                 bool VBuildCommandList() override;
 
+                void VSetClearColor(Color clearColor);
+
                 VkRenderPass GetVkRenderPass();
                 VkCommandBuffer GetVkCommandBuffer();
 
             private:
                 VkRenderPass m_renderPass;
                 VkCommandBuffer m_commandBuffer;
+
+                VkClearValue m_clearColor;
             };
         }
     }

@@ -29,12 +29,12 @@
 
 namespace Hatchit {
 
-	namespace Graphics {
+    namespace Graphics {
 
-		class HT_API VKSwapchain : public ISwapchain
-		{
-		public:
-			bool VInitialize()		override;
-		};
-	}
+        class HT_API VKSwapchain : public ISwapchain
+        {
+        public:
+            bool VInitialize()      override;
+        };
+    }
 }

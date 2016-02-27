@@ -30,6 +30,7 @@
 #include <ht_gmesh.h>
 #include <ht_material.h>
 #include <ht_math.h>
+#include <ht_color.h>
 
 namespace Hatchit {
 
@@ -57,11 +58,18 @@ namespace Hatchit {
 
             virtual bool VBuildCommandList() =  0;
 
+            virtual void VSetClearColor(Color clearColor) = 0;
+
+            void SetWidth(float width);
+            void SetHeight(float height);
+
             void ScheduleRenderRequest(IPipeline* pipeline, IMaterial* material, IMesh* mesh);
 
         protected:
             //Input
             std::vector<RenderRequest> m_renderRequests;
+            float m_width;
+            float m_height;
 
             //Output
             IRenderTarget* m_renderTarget;

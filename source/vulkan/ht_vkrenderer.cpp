@@ -17,6 +17,7 @@
 #include <ht_vkshader.h>
 #include <ht_vkpipeline.h>
 #include <ht_vkmaterial.h>
+#include <ht_vkmeshrenderer.h>
 #include <ht_debug.h>
 
 #include <cassert>
@@ -76,46 +77,50 @@ namespace Hatchit {
                 //TODO: remove this test code
                 IRenderPass* renderPass = new VKRenderPass();
                 renderPass->VPrepare();
-
+                
                 Core::File meshFile;
                 meshFile.Open(Core::os_exec_dir() + "monkey.obj", Core::FileMode::ReadBinary);
-
+                
                 Core::File vsFile;
                 vsFile.Open(Core::os_exec_dir() + "tri-vert.spv", Core::FileMode::ReadBinary);
-
+                
                 Core::File fsFile;
                 fsFile.Open(Core::os_exec_dir() + "tri-frag.spv", Core::FileMode::ReadBinary);
-
+                
                 Resource::Model model;
                 model.VInitFromFile(&meshFile);
-
+                
                 VKShader vsShader;
                 vsShader.VInitFromFile(&vsFile);
-
+                
                 VKShader fsShader;
                 fsShader.VInitFromFile(&fsFile);
-
+                
                 RasterizerState rasterState = {};
                 rasterState.cullMode = CullMode::FRONT_AND_BACK;
                 rasterState.polygonMode = PolygonMode::FILL;
-
+                
                 MultisampleState multisampleState = {};
                 multisampleState.minSamples = 0;
                 multisampleState.samples = SAMPLE_1_BIT;
-
+                
                 IPipeline* pipeline = new VKPipeline((VKRenderPass*)renderPass);
                 pipeline->VLoadShader(ShaderSlot::VERTEX, &vsShader);
                 pipeline->VLoadShader(ShaderSlot::FRAGMENT, &fsShader);
                 pipeline->VSetRasterState(rasterState);
                 pipeline->VSetMultisampleState(multisampleState);
                 pipeline->VPrepare();
-
+                
                 IMaterial* material = new VKMaterial();
                 material->VPrepare();
-
+                
                 std::vector<Resource::Mesh*> meshes = model.GetMeshes();
-                IMesh* vkMesh = new VKMesh();
-                vkMesh->VBuffer(meshes[0]);
+                IMesh* mesh = new VKMesh();
+                mesh->VBuffer(meshes[0]);
+                
+                renderPass->ScheduleRenderRequest(pipeline, material, mesh);
+
+                //renderPass->VBuildCommandList();
 
                 return true;
             }
@@ -256,14 +261,16 @@ namespace Hatchit {
 
                 //Get list of command buffers
                 std::vector<VkCommandBuffer> commandBuffers;
-                commandBuffers.push_back(m_commandBuffer);
 
                 for (size_t i = 0; i < m_renderPasses.size(); i++)
                 {
                     VKRenderPass* renderPass = static_cast<VKRenderPass*>(m_renderPasses[i]);
 
-                    commandBuffers.push_back(renderPass->GetVkCommandBuffer());
+                    //commandBuffers.push_back(renderPass->GetVkCommandBuffer());
                 }
+
+                //Make sure we run the swapchain command
+                commandBuffers.push_back(m_swapchainBuffers[m_currentBuffer].command);
 
                 SetImageLayout(m_swapchainBuffers[m_currentBuffer].image,
                     VK_IMAGE_ASPECT_COLOR_BIT,
@@ -281,7 +288,7 @@ namespace Hatchit {
                 submitInfo.pWaitSemaphores = &m_presentSemaphore;
                 submitInfo.pWaitDstStageMask = &pipelineStageFlags;
                 submitInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
-                submitInfo.pCommandBuffers = &m_swapchainBuffers[m_currentBuffer].command;//&commandBuffers[0];
+                submitInfo.pCommandBuffers = commandBuffers.data();
                 submitInfo.signalSemaphoreCount = 0;
                 submitInfo.pSignalSemaphores = nullptr;
 
@@ -785,7 +792,7 @@ namespace Hatchit {
 
                 return true;
             }
-
+            
             bool VKRenderer::checkDeviceExtensions()
             {
                 VkResult err;

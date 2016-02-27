@@ -27,7 +27,7 @@
 #include <ht_renderpass.h>
 #include <ht_objectrenderer.h>
 #include <ht_material.h>
-#include <ht_mesh.h>
+#include <ht_gmesh.h>
 
 namespace Hatchit {
 
@@ -53,9 +53,10 @@ namespace Hatchit {
             virtual void VFree() = 0;
 
         protected:
-            Resource::MeshPtr mesh;
-            IMaterial* material;
-            IRenderPass* renderPass;
+            IMesh*          m_mesh;
+            IMaterial*      m_material;
+            IPipeline*      m_pipeline;
+            IRenderPass*    m_renderPass;
         };
     }
 }

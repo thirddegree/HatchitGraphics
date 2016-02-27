@@ -24,35 +24,14 @@
 
 #pragma once
 
-#include <ht_platform.h>
-#include <ht_math.h>
+#include <ht_rendertarget.h>
+#include <ht_renderpass.h>
 
 namespace Hatchit {
 
     namespace Graphics {
-        
-        class IRenderPass;
 
-        class HT_API IRenderTarget
-        {
-        public:
-            virtual ~IRenderTarget() { };
+        void IRenderTarget::SetRenderPass(IRenderPass* renderPass) { m_renderPass = renderPass; }
 
-            ///Prepare the render target with a graphics language
-            virtual bool VPrepare() = 0;
-
-            ///Override to bind the render target for reading with a graphics language
-            virtual void VReadBind() = 0;
-            ///Override to bind the render target to be written to with a graphics language
-            virtual void VWriteBind() = 0;
-
-            void SetRenderPass(IRenderPass* renderPass);
-
-        protected:
-            uint32_t m_width;
-            uint32_t m_height;
-
-            IRenderPass* m_renderPass;
-        };
     }
 }
