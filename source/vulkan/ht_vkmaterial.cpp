@@ -76,8 +76,8 @@ namespace Hatchit {
                 VkDevice device = renderer->GetVKDevice();
 
                 //Prepare uniform buffers
-                renderer->CreateBuffer(device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 0, nullptr, &m_uniformVSBuffer);
-                renderer->CreateBuffer(device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 0, nullptr, &m_uniformFSBuffer);
+                renderer->CreateBuffer(device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 128, nullptr, &m_uniformVSBuffer);
+                renderer->CreateBuffer(device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 128, nullptr, &m_uniformFSBuffer);
 
                 if (!setupDescriptorSetLayout(device))
                     return false;
@@ -112,25 +112,29 @@ namespace Hatchit {
                 vertexUniformBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                 vertexUniformBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
                 vertexUniformBinding.binding = 0;
+                vertexUniformBinding.descriptorCount = 1;
 
-                VkDescriptorSetLayoutBinding fragmentUniformBinding;
+                VkDescriptorSetLayoutBinding fragmentUniformBinding = {};
                 fragmentUniformBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                 fragmentUniformBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
                 fragmentUniformBinding.binding = 1;
+                fragmentUniformBinding.descriptorCount = 1;
 
                 layoutBindings.push_back(vertexUniformBinding);
                 layoutBindings.push_back(fragmentUniformBinding);
 
                 for (uint32_t i = 0; i < m_textures.size(); i++)
                 {
-                    VkDescriptorSetLayoutBinding fragmentTextureBinding;
+                    VkDescriptorSetLayoutBinding fragmentTextureBinding = {};
                     fragmentTextureBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                     fragmentTextureBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
                     fragmentTextureBinding.binding = 2 + i;
+                    fragmentTextureBinding.descriptorCount = 1;
                     layoutBindings.push_back(fragmentTextureBinding);
                 }
 
                 VkDescriptorSetLayoutCreateInfo descriptorLayoutInfo = {};
+                descriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
                 descriptorLayoutInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
                 descriptorLayoutInfo.pBindings = layoutBindings.data();
 
@@ -167,6 +171,7 @@ namespace Hatchit {
                 }
 
                 VkDescriptorPoolCreateInfo poolCreateInfo = {};
+                poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
                 poolCreateInfo.pPoolSizes = poolSizes.data();
                 poolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
                 poolCreateInfo.maxSets = static_cast<uint32_t>(2 + m_textures.size());
@@ -189,8 +194,10 @@ namespace Hatchit {
 
                 //Setup the descriptor sets
                 VkDescriptorSetAllocateInfo allocInfo = {};
+                allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
                 allocInfo.descriptorPool = m_descriptorPool;
                 allocInfo.pSetLayouts = &m_materialLayout;
+                allocInfo.descriptorSetCount = 1;
 
                 err = vkAllocateDescriptorSets(device, &allocInfo, &m_materialSet);
                 assert(!err);
@@ -204,19 +211,21 @@ namespace Hatchit {
 
                 std::vector<VkWriteDescriptorSet> descSetWrites = {};
 
-                VkWriteDescriptorSet uniformVSWrite;
+                VkWriteDescriptorSet uniformVSWrite = {};
                 uniformVSWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                 uniformVSWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                 uniformVSWrite.dstSet = m_materialSet;
                 uniformVSWrite.dstBinding = 0;
                 uniformVSWrite.pBufferInfo = &m_uniformVSBuffer.descriptor;
+                uniformVSWrite.descriptorCount = 1;
 
-                VkWriteDescriptorSet uniformFSWrite;
+                VkWriteDescriptorSet uniformFSWrite = {};
                 uniformFSWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                 uniformFSWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                 uniformFSWrite.dstSet = m_materialSet;
-                uniformFSWrite.dstBinding = 0;
+                uniformFSWrite.dstBinding = 1;
                 uniformFSWrite.pBufferInfo = &m_uniformFSBuffer.descriptor;
+                uniformFSWrite.descriptorCount = 1;
 
                 //TODO: Figure out the writes for the textures
 

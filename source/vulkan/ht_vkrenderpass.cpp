@@ -14,6 +14,10 @@
 
 #include <ht_vkrenderpass.h>
 #include <ht_vkrenderer.h>
+#include <ht_vkrendertarget.h>
+#include <ht_vkpipeline.h>
+#include <ht_vkmaterial.h>
+#include <ht_vkmesh.h>
 
 namespace Hatchit {
 
@@ -29,6 +33,7 @@ namespace Hatchit {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
 
                 VkDevice device = renderer->GetVKDevice();
+                VkCommandPool commandPool = renderer->GetVKCommandPool();
 
                 //Setup render pass
 
@@ -96,6 +101,23 @@ namespace Hatchit {
                     return false;
                 }
 
+                //Create internal command buffer
+                VkCommandBufferAllocateInfo cmdBufferAllocInfo = {};
+                cmdBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+                cmdBufferAllocInfo.commandPool = commandPool;
+                cmdBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+                cmdBufferAllocInfo.commandBufferCount = 1;
+                
+                err = vkAllocateCommandBuffers(device, &cmdBufferAllocInfo, &m_commandBuffer);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKRenderer::prepareDescriptorLayout(): Failed to allocate command buffer\n");
+#endif
+                    return false;
+                }
+
                 return true;
             }
 
@@ -105,14 +127,14 @@ namespace Hatchit {
             {
             }
 
-            void VKRenderPass::VSetRenderTarget(IRenderTarget* renderTarget)
-            {
-                m_renderTarget = renderTarget;
-            }
-
             bool VKRenderPass::VBuildCommandList() 
             {
+                //Setup the order of the commands we will issue in the command list
+                BuildRenderRequestHeirarchy();
+
                 VkResult err;
+
+                VKRenderTarget* renderTarget = static_cast<VKRenderTarget*>(m_renderTarget);
 
                 VkCommandBufferInheritanceInfo inheritanceInfo = {};
                 inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
@@ -134,12 +156,11 @@ namespace Hatchit {
                 clearValues[0] = m_clearColor;
                 clearValues[1] = {1.0f, 0.0f};
 
-                /*
                 VkRenderPassBeginInfo renderPassBeginInfo = {};
                 renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
                 renderPassBeginInfo.pNext = nullptr;
                 renderPassBeginInfo.renderPass = m_renderPass;
-                renderPassBeginInfo.framebuffer = m_framebuffers[0];
+                renderPassBeginInfo.framebuffer = renderTarget->GetVKFramebuffer();
                 renderPassBeginInfo.renderArea.offset.x = 0;
                 renderPassBeginInfo.renderArea.offset.y = 0;
                 renderPassBeginInfo.renderArea.extent.width = m_width;
@@ -147,6 +168,18 @@ namespace Hatchit {
                 renderPassBeginInfo.clearValueCount = 2;
                 renderPassBeginInfo.pClearValues = clearValues;
 
+                VkViewport viewport = {};
+                viewport.width = static_cast<float>(m_width);
+                viewport.height = static_cast<float>(m_height);
+                viewport.minDepth = 0.0f;
+                viewport.maxDepth = 1.0f;
+
+                VkRect2D scissor = {};
+                scissor.extent.width = m_width;
+                scissor.extent.height = m_height;
+                scissor.offset.x = 0;
+                scissor.offset.y = 0;
+                
                 err = vkBeginCommandBuffer(m_commandBuffer, &beginInfo);
                 assert(!err);
                 if (err != VK_SUCCESS)
@@ -157,28 +190,62 @@ namespace Hatchit {
                     return false;
                 }
 
+                /*
+                    BEGIN BUFFER COMMANDS
+                */
+
                 vkCmdBeginRenderPass(m_commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-                vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, );
-                vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                    m_pipelineLayout, 0, 1, &m_descriptorSet, 0, nullptr);
-
-                VkViewport viewport = {};
-                viewport.width = static_cast<float>(m_width);
-                viewport.height = static_cast<float>(m_height);
-                viewport.minDepth = 0.0f;
-                viewport.maxDepth = 1.0f;
                 vkCmdSetViewport(m_commandBuffer, 0, 1, &viewport);
-
-                VkRect2D scissor = {};
-                scissor.extent.width = m_width;
-                scissor.extent.height = m_height;
-                scissor.offset.x = 0;
-                scissor.offset.y = 0;
                 vkCmdSetScissor(m_commandBuffer, 0, 1, &scissor);
 
-                vkCmdDraw(m_commandBuffer, 0, 0, 0, 0);
+                std::map<IPipeline*, std::vector<Renderable>>::iterator iterator;
+
+                for (iterator = m_pipelineList.begin(); iterator != m_pipelineList.end(); iterator++)
+                {
+                    VKPipeline* pipeline = static_cast<VKPipeline*>(iterator->first);
+
+                    VkPipeline vkPipeline = pipeline->GetVKPipeline();
+                    VkPipelineLayout vkPipelineLayout = pipeline->GetPipelineLayout();
+
+                    vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetVKPipeline());
+
+                    /*  TODO: Set, get and bind pipeline-wide descriptor sets
+                        VkDescriptorSet descriptorSet = material->GetDescriptorSet();
+
+                        vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            vkPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);                    
+                    */
+
+                    std::vector<Renderable> renderables = iterator->second;
+
+                    VkDeviceSize offsets[] = { 0 };
+
+                    for (uint32_t i = 0; i < renderables.size(); i++)
+                    {
+                        VKMaterial* material = static_cast<VKMaterial*>(renderables[i].material);
+                        VKMesh*     mesh = static_cast<VKMesh*>(renderables[i].mesh);
+
+                        VkDescriptorSet descriptorSet = material->GetDescriptorSet();
+
+                        vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            vkPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+
+                        UniformBlock vertBlock = mesh->GetVertexBlock();
+                        UniformBlock indexBlock = mesh->GetIndexBlock();
+                        uint32_t indexCount = mesh->GetIndexCount();
+
+                        vkCmdBindVertexBuffers(m_commandBuffer, 0, 1, &vertBlock.buffer, offsets);
+                        vkCmdBindIndexBuffer(m_commandBuffer, indexBlock.buffer, 0, VK_INDEX_TYPE_UINT32);
+                        vkCmdDrawIndexed(m_commandBuffer, indexCount, 1, 0, 0, 0);
+                    }
+                }
+
                 vkCmdEndRenderPass(m_commandBuffer);
+
+                /*
+                    END BUFFER COMMANDS
+                */
 
                 VkImageMemoryBarrier prePresentBarrier = {};
                 prePresentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -191,7 +258,7 @@ namespace Hatchit {
                 prePresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                 prePresentBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 
-                prePresentBarrier.image = m_swapchainBuffers[0].image;
+                prePresentBarrier.image = renderTarget->GetVKColor().image;
 
                 vkCmdPipelineBarrier(m_commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                     VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &prePresentBarrier);
@@ -205,7 +272,7 @@ namespace Hatchit {
 #endif
                     return false;
                 }
-                */
+                
                 return true;
             }
 

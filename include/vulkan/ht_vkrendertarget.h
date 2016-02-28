@@ -36,8 +36,7 @@ namespace Hatchit {
             class HT_API VKRenderTarget : public IRenderTarget
             {
             public:
-                VKRenderTarget(uint32_t width, uint32_t height,
-                    VkFormat colorFormat, VkFormat depthFormat);
+                VKRenderTarget(uint32_t width, uint32_t height);
                 ~VKRenderTarget();
 
                 ///Prepare the render target with Vulkan
@@ -46,6 +45,10 @@ namespace Hatchit {
                 void VReadBind()    override;
                 ///Override to bind the render target to be written to with Vulkan
                 void VWriteBind()   override;
+
+                VkFramebuffer   GetVKFramebuffer();
+                Image           GetVKColor();
+                Image           GetVKDepth();
 
             protected:
                 VkFormat m_colorFormat;

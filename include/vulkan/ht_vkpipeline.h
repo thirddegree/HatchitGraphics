@@ -67,6 +67,10 @@ namespace Hatchit {
                 ///Have Vulkan create a pipeline with these settings
                 bool VPrepare()                                                 override;
 
+                VkPipeline GetVKPipeline();
+                VkPipelineLayout GetPipelineLayout();
+
+
             protected:
                 VKRenderPass* m_renderPass;
 

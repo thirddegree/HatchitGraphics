@@ -196,7 +196,7 @@ namespace Hatchit {
                 layoutBindings[0].pImmutableSamplers = nullptr;
 
                 layoutBindings[1].binding = 1;
-                layoutBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                layoutBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                 layoutBindings[1].descriptorCount = 1;
                 layoutBindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
                 layoutBindings[1].pImmutableSamplers = nullptr;
@@ -372,6 +372,8 @@ namespace Hatchit {
                 return true;
             }
 
+            VkPipeline VKPipeline::GetVKPipeline() { return m_pipeline; }
+            VkPipelineLayout VKPipeline::GetPipelineLayout() { return m_pipelineLayout; }
         }
     }
 }

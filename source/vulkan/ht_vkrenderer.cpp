@@ -18,6 +18,7 @@
 #include <ht_vkpipeline.h>
 #include <ht_vkmaterial.h>
 #include <ht_vkmeshrenderer.h>
+#include <ht_vkrendertarget.h>
 #include <ht_debug.h>
 
 #include <cassert>
@@ -76,7 +77,15 @@ namespace Hatchit {
 
                 //TODO: remove this test code
                 IRenderPass* renderPass = new VKRenderPass();
+
+                    //TODO: Get the proper window size
+                IRenderTarget* renderTarget = new VKRenderTarget(1280, 800);
+                renderTarget->SetRenderPass(renderPass);
+
                 renderPass->VPrepare();
+                renderTarget->VPrepare();
+
+                renderPass->SetRenderTarget(renderTarget);
                 
                 Core::File meshFile;
                 meshFile.Open(Core::os_exec_dir() + "monkey.obj", Core::FileMode::ReadBinary);
@@ -119,8 +128,8 @@ namespace Hatchit {
                 mesh->VBuffer(meshes[0]);
                 
                 renderPass->ScheduleRenderRequest(pipeline, material, mesh);
-
-                //renderPass->VBuildCommandList();
+                
+                renderPass->VBuildCommandList();
 
                 return true;
             }
@@ -326,6 +335,11 @@ namespace Hatchit {
             VkDevice VKRenderer::GetVKDevice() 
             {
                 return m_device;
+            }
+
+            VkCommandPool VKRenderer::GetVKCommandPool()
+            {
+                return m_commandPool;
             }
 
             VkFormat VKRenderer::GetPreferredImageFormat() 
@@ -790,6 +804,8 @@ namespace Hatchit {
                     return false;
                 }
 
+                uniformBlock->descriptor.buffer = uniformBlock->buffer;
+
                 return true;
             }
             
@@ -1171,48 +1187,49 @@ namespace Hatchit {
                 if (!prepareSwapchainDepth())
                     return false;
 
+                
                 /*
                 * Describe how the shaders will layout in the pipeline
                 */
                 if (!prepareDescriptorLayout())
                     return false;
-
+                
                 /*
                 * Prepare the render pass; describes which color and depth formats the command buffers will write to
                 */
                 if (!prepareRenderPass())
                     return false;
-
+                
                 /*
                 * Prepare pipeline; contains topology info, shaders, cull mode etc.
                 */
                 if (!preparePipeline())
                     return false;
-
+                
                 /*
                 * Allocate memory for the command buffers
                 */
                 if (!allocateCommandBuffers())
                     return false;
-
+                
                 /*
                 * Prepare descriptor pool of all the things we want to draw during this render pass
                 */
                 if (!prepareDescriptorPool())
                     return false;
-
+                
                 /*
                 * Prepare descriptor set; describes what will be drawn by the command buffer
                 */
                 if (!prepareDescriptorSet())
                     return false;
-
+                
                 /*
                 * Prepare frame buffers to draw on; one for each image in the swapchain
                 */
                 if (!prepareFrambuffers())
                     return false;
-
+                
                 /*
                 * Build all the command buffers for the swapchain
                 */
@@ -1220,6 +1237,7 @@ namespace Hatchit {
                     m_currentBuffer = i;
                     buildCommandBuffer(m_swapchainBuffers[i].command);
                 }
+                
 
                 //Flush the command buffer once
                 flushCommandBuffer();

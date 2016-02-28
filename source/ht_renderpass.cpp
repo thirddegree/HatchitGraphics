@@ -29,7 +29,26 @@ namespace Hatchit {
             m_renderRequests.push_back(renderRequest);
         }
 
-        void IRenderPass::SetWidth(float width) { m_width = width; }
-        void IRenderPass::SetHeight(float height) { m_height = height; }
+        void IRenderPass::SetRenderTarget(IRenderTarget* renderTarget)
+        {
+            m_renderTarget = renderTarget;
+        }
+
+        void IRenderPass::SetWidth(uint32_t width) { m_width = width; }
+        void IRenderPass::SetHeight(uint32_t height) { m_height = height; }
+
+        void IRenderPass::BuildRenderRequestHeirarchy() 
+        {
+            for (uint32_t i = 0; i < m_renderRequests.size(); i++)
+            {
+                RenderRequest renderRequest = m_renderRequests[i];
+
+                IPipeline* pipeline = renderRequest.pipeline;
+                IMaterial* material = renderRequest.material;
+                IMesh* mesh = renderRequest.mesh;
+
+                m_pipelineList[pipeline].push_back({material, mesh});
+            }
+        }
     }
 }

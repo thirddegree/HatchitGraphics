@@ -33,14 +33,10 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKRenderTarget::VKRenderTarget(uint32_t width, uint32_t height,
-                VkFormat colorFormat, VkFormat depthFormat) 
+            VKRenderTarget::VKRenderTarget(uint32_t width, uint32_t height) 
             {
                 m_width = width;
                 m_height = height;
-
-                m_colorFormat = colorFormat;
-                m_depthFormat = depthFormat;
             }
 
             VKRenderTarget::~VKRenderTarget() {} 
@@ -49,6 +45,8 @@ namespace Hatchit {
             {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
                 VkDevice device = renderer->GetVKDevice();
+                m_colorFormat = renderer->GetPreferredImageFormat();
+                m_depthFormat = renderer->GetPreferredDepthFormat();
 
                 VkResult err;
 
@@ -135,10 +133,7 @@ namespace Hatchit {
                 imageInfo.format = m_depthFormat;
                 imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
-                viewInfo.format = m_depthFormat;
-                viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-
-                err = vkCreateImage(device, &imageInfo, nullptr, &m_depth.image);
+                err = vkCreateImage(device, &imageInfo, nullptr, &(m_depth.image));
 
                 assert(!err);
                 if (err != VK_SUCCESS)
@@ -148,6 +143,10 @@ namespace Hatchit {
 #endif
                     return false;
                 }
+
+                viewInfo.format = m_depthFormat;
+                viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                viewInfo.image = m_depth.image;
 
                 vkGetImageMemoryRequirements(device, m_depth.image, &memReqs);
                 memAllocInfo.allocationSize = memReqs.size;
@@ -221,6 +220,10 @@ namespace Hatchit {
             {
             
             }
+
+            VkFramebuffer VKRenderTarget::GetVKFramebuffer() { return m_framebuffer; }
+            Image VKRenderTarget::GetVKColor() { return m_color; }
+            Image VKRenderTarget::GetVKDepth() { return m_depth; }
         }
     }
 }

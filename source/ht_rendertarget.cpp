@@ -12,20 +12,7 @@
 **
 **/
 
-/**
-* \class IRenderTarget
-* \ingroup HatchitGraphics
-*
-* \brief An interface for a class that will act as a render target with a given graphics language
-*
-* Imagine this as a template for an implementation of a class that will
-* utilize framebuffer objects with OpenGL or RenderTargets with DirectX
-*/
-
-#pragma once
-
 #include <ht_rendertarget.h>
-#include <ht_renderpass.h>
 
 namespace Hatchit {
 

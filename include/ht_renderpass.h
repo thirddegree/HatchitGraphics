@@ -43,6 +43,12 @@ namespace Hatchit {
             IMesh*      mesh;
         };
 
+        struct Renderable 
+        {
+            IMaterial*  material;
+            IMesh*      mesh;
+        };
+
         class HT_API IRenderPass
         {
         public:
@@ -54,22 +60,26 @@ namespace Hatchit {
             ///Render the the given objects with the given pipeline to a texture
             virtual void VRender() = 0;
 
-            virtual void VSetRenderTarget(IRenderTarget* renderTarget) = 0;
-
             virtual bool VBuildCommandList() =  0;
 
             virtual void VSetClearColor(Color clearColor) = 0;
 
-            void SetWidth(float width);
-            void SetHeight(float height);
+            void SetWidth(uint32_t width);
+            void SetHeight(uint32_t height);
 
             void ScheduleRenderRequest(IPipeline* pipeline, IMaterial* material, IMesh* mesh);
 
+            void SetRenderTarget(IRenderTarget* renderTarget);
+
         protected:
+            void BuildRenderRequestHeirarchy();
+
             //Input
             std::vector<RenderRequest> m_renderRequests;
-            float m_width;
-            float m_height;
+            std::map<IPipeline*, std::vector<Renderable>> m_pipelineList;
+
+            uint32_t m_width;
+            uint32_t m_height;
 
             //Output
             IRenderTarget* m_renderTarget;

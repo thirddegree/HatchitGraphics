@@ -72,6 +72,11 @@ namespace Hatchit {
                 */
                 VkDevice GetVKDevice();
 
+                /* Get the core Vulkan command pools
+                * \return a vulkan command pool
+                */
+                VkCommandPool GetVKCommandPool();
+
                 VkFormat GetPreferredImageFormat();
                 VkFormat GetPreferredDepthFormat();
 

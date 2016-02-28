@@ -46,8 +46,6 @@ namespace Hatchit {
                 ///Render the scene
                 void VRender()  override;
 
-                void VSetRenderTarget(IRenderTarget* renderTarget)  override;
-
                 bool VBuildCommandList() override;
 
                 void VSetClearColor(Color clearColor);

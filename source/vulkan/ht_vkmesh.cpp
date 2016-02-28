@@ -79,6 +79,9 @@ namespace Hatchit {
                 vkFreeMemory(device, m_indexBlock.memory, nullptr);
             }
 
+            UniformBlock VKMesh::GetVertexBlock() { return m_vertexBlock; }
+            UniformBlock VKMesh::GetIndexBlock() { return m_indexBlock; }
+
         }
     }
 }
