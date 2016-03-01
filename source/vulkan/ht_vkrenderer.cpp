@@ -205,6 +205,20 @@ namespace Hatchit {
                 //Make sure we run the swapchain command
                 commandBuffers.push_back(m_swapchainBuffers[m_currentBuffer].command);
 
+
+                //Example code for rotation
+                Math::Matrix4 rot = Math::MMMatrixRotationY( m_angle += 0.001f);
+                Math::Matrix4 mat = Math::MMMatrixTranslation(Math::Vector3(0, 0, 0)) * rot;
+
+                Math::Matrix4 view = Math::MMMatrixLookAt(Math::Vector3(0, 0, 5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0));
+
+                Math::Matrix4 proj = Math::MMMatrixPerspProj(59.0f, (float)m_width / (float)m_height, 0.1f, 1000.0f);
+
+                Math::Matrix4 mvp = mat * (view * proj);
+                
+                m_material->VSetMatrix4("matricies.model", mvp);
+                m_material->VUpdate();
+
                 VkResult err;
 
                 VkPipelineStageFlags pipelineStageFlags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
@@ -1183,7 +1197,7 @@ namespace Hatchit {
                 pipeline->VSetMultisampleState(multisampleState);
                 pipeline->VPrepare();
 
-                IMaterial* material = new VKMaterial();
+                m_material = new VKMaterial();
 
                 Math::Matrix4 mat = Math::MMMatrixTranslation(Math::Vector3(0, 0, 0));
 
@@ -1193,18 +1207,18 @@ namespace Hatchit {
 
                 Math::Matrix4 mvp = mat * (view * proj);
 
-                material->VSetMatrix4("matricies.model", mvp);
-                material->VPrepare();
-                material->VUpdate();
+                m_material->VSetMatrix4("matricies.model", mvp);
+                m_material->VPrepare();
+                m_material->VUpdate();
 
                 std::vector<Resource::Mesh*> meshes = model.GetMeshes();
                 IMesh* mesh = new VKMesh();
                 mesh->VBuffer(meshes[0]);
 
-                renderPass->ScheduleRenderRequest(pipeline, material, mesh);
+                renderPass->ScheduleRenderRequest(pipeline, m_material, mesh);
                  
                 Renderable renderable;
-                renderable.material = material;
+                renderable.material = m_material;
                 renderable.mesh = mesh;
                 m_pipelineList[pipeline].push_back(renderable);
 
@@ -1359,8 +1373,9 @@ namespace Hatchit {
                     return false;
                 }
 
-                VkImage* swapchainImages = new VkImage[swapchainImageCount];
-                err = fpGetSwapchainImagesKHR(m_device, m_swapchain, &swapchainImageCount, swapchainImages);
+                std::vector<VkImage> swapchainImages;
+                swapchainImages.resize(swapchainImageCount);
+                err = fpGetSwapchainImagesKHR(m_device, m_swapchain, &swapchainImageCount, &swapchainImages[0]);
                 if (err != VK_SUCCESS)
                 {
 #ifdef _DEBUG
@@ -1537,7 +1552,6 @@ namespace Hatchit {
 #endif
                     return false;
                 }
-
 
                 return true; 
             }
@@ -2029,7 +2043,7 @@ namespace Hatchit {
                     }
 
 #ifdef _DEBUG
-                    Core::DebugPrintF("WARNING: [%s] Code %d : %s", pLayerPrefix, msgCode, pMsg);
+                    Core::DebugPrintF("WARNING: [%s] Code %d : %s\n", pLayerPrefix, msgCode, pMsg);
 #endif
                 }
                 else {

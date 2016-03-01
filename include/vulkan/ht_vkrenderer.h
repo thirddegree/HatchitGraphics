@@ -162,6 +162,8 @@ namespace Hatchit {
                 VkClearValue                            m_clearColor;
 
                 IRenderTarget* m_renderTarget;
+                IMaterial* m_material;
+                float m_angle =0;
 
                 //Vulkan Callbacks
                 PFN_vkCreateDebugReportCallbackEXT m_createDebugReportCallback;
