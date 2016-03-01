@@ -34,28 +34,27 @@ namespace Hatchit {
    
         enum PolygonMode
         {
-            FILL,
-            LINE,
-            POINT
+            SOLID,
+            LINE
         };
    
         enum CullMode
         {
             NONE,
             FRONT,
-            BACK,
-            FRONT_AND_BACK
+            BACK
         };
    
         //Describes options for the render state
         //Some options are not available such as front face winding order
         struct RasterizerState
         {
-            PolygonMode polygonMode;    //How we want to render objects
-            CullMode cullMode;          //How we want to cull faces
-            bool depthClampEnable;      //True to use depth clamping, false to clip primitives
-            bool discardEnable;         //True to discard primitives before rasterization
-            float lineWidth;            //How wide to render when using Line polygon mode
+            PolygonMode polygonMode;           //How we want to render objects
+            CullMode    cullMode;              //How we want to cull faces
+            bool        frontCounterClockwise; //Determines if a triangle is front- or back-facing.
+            bool        depthClampEnable;      //True to use depth clamping, false to clip primitives
+            bool        discardEnable;         //True to discard primitives before rasterization
+            float       lineWidth;             //How wide to render when using Line polygon mode
         };
    
         enum SampleCount
@@ -72,9 +71,9 @@ namespace Hatchit {
         //Describes the multisampling state of the pipeline
         struct MultisampleState
         {
-            SampleCount samples;	//How many bits per sample
-            float minSamples;		//Min samples per fragment
-            bool perSampleShading;  //Shades per sample if true, per fragment if false
+            SampleCount samples;	        //How many bits per sample
+            float       minSamples;		    //Min samples per fragment
+            bool        perSampleShading;   //Shades per sample if true, per fragment if false
         };
    
        class HT_API IPipeline

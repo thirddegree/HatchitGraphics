@@ -1199,7 +1199,7 @@ namespace Hatchit {
 
                 RasterizerState rasterState = {};
                 rasterState.cullMode = CullMode::NONE;
-                rasterState.polygonMode = PolygonMode::FILL;
+                rasterState.polygonMode = PolygonMode::SOLID;
 
                 MultisampleState multisampleState = {};
                 multisampleState.minSamples = 0;

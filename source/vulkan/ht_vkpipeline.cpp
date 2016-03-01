@@ -39,13 +39,10 @@ namespace Hatchit {
 
                 switch (rasterState.polygonMode)
                 {
-                case PolygonMode::FILL:
+                case PolygonMode::SOLID:
                     polyMode = VK_POLYGON_MODE_FILL;
                     break;
                 case PolygonMode::LINE:
-                    polyMode = VK_POLYGON_MODE_LINE;
-                    break;
-                case PolygonMode::POINT:
                     polyMode = VK_POLYGON_MODE_LINE;
                     break;
                 default:
@@ -63,9 +60,6 @@ namespace Hatchit {
                     break;
                 case BACK:
                     cullMode = VK_CULL_MODE_BACK_BIT;
-                    break;
-                case FRONT_AND_BACK:
-                    cullMode = VK_CULL_MODE_FRONT_AND_BACK;
                     break;
                 }
 
