@@ -58,8 +58,7 @@ namespace Hatchit {
                 bool VPrepare()                                             override;
                 bool VUpdate()                                              override;
 
-                VkDescriptorSetLayout GetDescriptorSetLayout();
-                VkDescriptorSet GetDescriptorSet();
+                VkDescriptorSet* GetDescriptorSet();
 
             private:
                 VkDescriptorPool m_descriptorPool;

@@ -79,6 +79,7 @@ namespace Hatchit {
         template <>
         HT_API ShaderVariableTemplate<Math::Vector4>::ShaderVariableTemplate(Math::Vector4 data)
         {
+            m_data = new BYTE[sizeof(float) * 4];
             memcpy(m_data, data.data, sizeof(float) * 4);
             m_type = Type::FLOAT4;
         }
@@ -86,6 +87,7 @@ namespace Hatchit {
         template <>
         HT_API ShaderVariableTemplate<Math::Matrix4>::ShaderVariableTemplate(Math::Matrix4 data)
         {
+            m_data = new BYTE[sizeof(float) * 16];
             memcpy(m_data, data.data, sizeof(float) * 16);
             m_type = Type::MAT4;
         }

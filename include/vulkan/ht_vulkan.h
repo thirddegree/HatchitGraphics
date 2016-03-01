@@ -39,6 +39,15 @@ namespace Hatchit {
                 VkDeviceMemory  memory;
             };
 
+            struct Texture 
+            {
+                VkSampler sampler;
+                VkImageLayout layout;
+                Image image;
+                uint32_t width, height;
+                uint32_t mipLevels;
+            };
+
         }
     }
 }

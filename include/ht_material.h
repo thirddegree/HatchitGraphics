@@ -37,6 +37,8 @@ namespace Hatchit {
 
     namespace Graphics {
 
+        class IPipeline;
+
         class HT_API IMaterial : Resource::ResourceObject
         {
         public:

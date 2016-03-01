@@ -44,7 +44,95 @@ namespace Hatchit {
             bool VKRenderTarget::VPrepare()
             {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
+
+                if (!setupFramebuffer(renderer))
+                    return false;
+
+                if (!setupTargetTexture(renderer))
+                    return false;
+
+                return true;
+            }
+
+            void VKRenderTarget::VReadBind()
+            {
+            
+            }
+
+            void VKRenderTarget::VWriteBind()
+            {
+            
+            }
+
+            bool VKRenderTarget::Blit(VkCommandBuffer buffer)
+            {
+                VkResult err;
+                VKRenderer* renderer = VKRenderer::RendererInstance;
+
+                //Make sure color writes to the render target are finished
+                renderer->SetImageLayout(buffer, m_color.image, VK_IMAGE_ASPECT_COLOR_BIT,
+                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+
+                //Transfrom texture target to the transfer source
+                renderer->SetImageLayout(buffer, m_texture.image.image, VK_IMAGE_ASPECT_COLOR_BIT,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+
+                VkImageBlit blit;
+
+                blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                blit.srcSubresource.mipLevel = 0;
+                blit.srcSubresource.baseArrayLayer = 0;
+                blit.srcSubresource.layerCount = 1;
+
+                blit.srcOffsets[0] = { 0,0,0 };
+                blit.srcOffsets[1].x = m_width;
+                blit.srcOffsets[1].y = m_height;
+                blit.srcOffsets[1].z = 1;
+
+                blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                blit.dstSubresource.mipLevel = 0;
+                blit.dstSubresource.baseArrayLayer = 0;
+                blit.dstSubresource.layerCount = 1;
+
+                blit.dstOffsets[0] = { 0,0,0 };
+                blit.dstOffsets[1].x = m_texture.width;
+                blit.dstOffsets[1].y = m_texture.height;
+                blit.dstOffsets[1].z = 1;
+
+                vkCmdBlitImage(buffer, m_color.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                    m_texture.image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
+
+                //Transform textures back
+                renderer->SetImageLayout(buffer, m_color.image, VK_IMAGE_ASPECT_COLOR_BIT,
+                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+                renderer->SetImageLayout(buffer, m_texture.image.image, VK_IMAGE_ASPECT_COLOR_BIT,
+                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+                err = vkEndCommandBuffer(buffer);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKRenderPass::VBuildCommandList(): Failed to end command buffer.\n");
+#endif
+                    return false;
+                }
+
+                return true;
+            }
+
+            VkFramebuffer VKRenderTarget::GetVKFramebuffer() { return m_framebuffer; }
+            Image VKRenderTarget::GetVKColor() { return m_color; }
+            Image VKRenderTarget::GetVKDepth() { return m_depth; }
+            Texture VKRenderTarget::GetVKTexture() { return m_texture; }
+
+
+            bool VKRenderTarget::setupFramebuffer(VKRenderer* renderer) 
+            {
                 VkDevice device = renderer->GetVKDevice();
+                VkCommandBuffer setupCommand = renderer->GetSetupCommandBuffer();
+
                 m_colorFormat = renderer->GetPreferredImageFormat();
                 m_depthFormat = renderer->GetPreferredDepthFormat();
 
@@ -103,7 +191,7 @@ namespace Hatchit {
                     return false;
                 }
 
-                renderer->SetImageLayout(m_color.image, VK_IMAGE_ASPECT_COLOR_BIT,
+                renderer->SetImageLayout(setupCommand, m_color.image, VK_IMAGE_ASPECT_COLOR_BIT,
                     VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
                 VkImageViewCreateInfo viewInfo = {};
@@ -171,7 +259,7 @@ namespace Hatchit {
                     return false;
                 }
 
-                renderer->SetImageLayout(m_depth.image, VK_IMAGE_ASPECT_DEPTH_BIT,
+                renderer->SetImageLayout(setupCommand, m_depth.image, VK_IMAGE_ASPECT_DEPTH_BIT,
                     VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
                 err = vkCreateImageView(device, &viewInfo, nullptr, &m_depth.view);
@@ -208,22 +296,138 @@ namespace Hatchit {
                     return false;
                 }
 
+                renderer->FlushSetupCommandBuffer();
+
                 return true;
             }
-
-            void VKRenderTarget::VReadBind()
-            {
             
-            }
-
-            void VKRenderTarget::VWriteBind()
+            bool VKRenderTarget::setupTargetTexture(VKRenderer* renderer) 
             {
-            
-            }
+                VkResult err;
+                VkPhysicalDevice gpu = renderer->GetVKPhysicalDevice();
 
-            VkFramebuffer VKRenderTarget::GetVKFramebuffer() { return m_framebuffer; }
-            Image VKRenderTarget::GetVKColor() { return m_color; }
-            Image VKRenderTarget::GetVKDepth() { return m_depth; }
+                //Test that the GPU supports blitting
+                VkFormatProperties formatProperties;
+                vkGetPhysicalDeviceFormatProperties(gpu, m_colorFormat, &formatProperties);
+                assert(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT);
+                if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT))
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKRenderTarget::setupTargetTexture(): GPU does not support blitting!\n");
+#endif
+                    return false;
+                }
+
+                VkDevice device = renderer->GetVKDevice();
+
+                m_texture.width = m_width;
+                m_texture.height = m_height;
+
+                VkImageCreateInfo imageCreateInfo = {};
+                imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+                imageCreateInfo.format = m_colorFormat;
+                imageCreateInfo.extent = { m_width, m_height, 1 };
+                imageCreateInfo.mipLevels = 1;
+                imageCreateInfo.arrayLayers = 1;
+                imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+                imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+                imageCreateInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+                imageCreateInfo.flags = 0;
+
+                VkMemoryAllocateInfo memAllocInfo = {};
+                memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+                
+                VkMemoryRequirements memReqs;
+
+                err = vkCreateImage(device, &imageCreateInfo, nullptr, &m_texture.image.image);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKRenderTarget::setupTargetTexture(): Error creating target texture image!\n");
+#endif
+                    return false;
+                }
+
+                vkGetImageMemoryRequirements(device, m_texture.image.image, &memReqs);
+                memAllocInfo.allocationSize = memReqs.size;
+
+                renderer->MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memAllocInfo.memoryTypeIndex);
+
+                err = vkAllocateMemory(device, &memAllocInfo, nullptr, &m_texture.image.memory);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKRenderTarget::setupTargetTexture(): Error allocating target texture image memory!\n");
+#endif
+                    return false;
+                }
+
+                err = vkBindImageMemory(device, m_texture.image.image, m_texture.image.memory, 0);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKRenderTarget::setupTargetTexture(): Error binding target texture image memory!\n");
+#endif
+                    return false;
+                }
+
+                m_texture.layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                VkCommandBuffer setupCommandBuffer = renderer->GetSetupCommandBuffer();
+                renderer->SetImageLayout(setupCommandBuffer, m_texture.image.image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, m_texture.layout);
+
+                //Create a sampler
+                VkSamplerCreateInfo samplerInfo = {};
+                samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+                samplerInfo.magFilter = VK_FILTER_LINEAR;
+                samplerInfo.minFilter = VK_FILTER_LINEAR;
+                samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+                samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                samplerInfo.mipLodBias = 0.0f;
+                samplerInfo.maxAnisotropy = 0;
+                samplerInfo.minLod = 0.0f;
+                samplerInfo.maxLod = 0.0f;
+                samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+                
+                err = vkCreateSampler(device, &samplerInfo, nullptr, &m_texture.sampler);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKRenderTarget::setupTargetTexture(): Error creating target texture sampler\n");
+#endif
+                    return false;
+                }
+
+                //Create image view
+                VkImageViewCreateInfo viewInfo = {};
+                viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+                viewInfo.pNext = nullptr;
+                viewInfo.image = VK_NULL_HANDLE;
+                viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+                viewInfo.format = m_colorFormat;
+                viewInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
+                viewInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+                viewInfo.image = m_texture.image.image;
+
+                err = vkCreateImageView(device, &viewInfo, nullptr, &m_texture.image.view);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKRenderTarget::setupTargetTexture(): Error creating target texture image view\n");
+#endif
+                    return false;
+                }
+
+                renderer->FlushSetupCommandBuffer();
+
+                return true;
+            }
         }
     }
 }

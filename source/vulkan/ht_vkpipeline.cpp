@@ -23,7 +23,7 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKPipeline::VKPipeline(VKRenderPass* renderPass) { m_renderPass = renderPass; }
+            VKPipeline::VKPipeline(VkRenderPass renderPass) { m_renderPass = renderPass; }
             VKPipeline::~VKPipeline() {}
 
             //If we wanted to allow users to control blending states
@@ -188,23 +188,23 @@ namespace Hatchit {
                 VkResult err;
 
                 //TODO: Properly detect and setup layout bindings
-                VkDescriptorSetLayoutBinding layoutBindings[2] = {};
+                VkDescriptorSetLayoutBinding layoutBindings[1] = {};
                 layoutBindings[0].binding = 0;
                 layoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                 layoutBindings[0].descriptorCount = 1;
                 layoutBindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
                 layoutBindings[0].pImmutableSamplers = nullptr;
 
-                layoutBindings[1].binding = 1;
-                layoutBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                layoutBindings[1].descriptorCount = 1;
-                layoutBindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-                layoutBindings[1].pImmutableSamplers = nullptr;
+                //layoutBindings[1].binding = 1;
+                //layoutBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                //layoutBindings[1].descriptorCount = 1;
+                //layoutBindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+                //layoutBindings[1].pImmutableSamplers = nullptr;
 
                 VkDescriptorSetLayoutCreateInfo descriptorLayoutInfo = {};
                 descriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
                 descriptorLayoutInfo.pNext = NULL;
-                descriptorLayoutInfo.bindingCount = 2; //How many binding counts, really?
+                descriptorLayoutInfo.bindingCount = 1; //How many binding counts, really?
                 descriptorLayoutInfo.pBindings = layoutBindings;
 
                 err = vkCreateDescriptorSetLayout(device, &descriptorLayoutInfo, nullptr, &m_descriptorLayout);
@@ -332,8 +332,8 @@ namespace Hatchit {
                 VkGraphicsPipelineCreateInfo pipelineInfo = {};
                 pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
                 pipelineInfo.layout = m_pipelineLayout;
-                pipelineInfo.renderPass = m_renderPass->GetVkRenderPass();
-                pipelineInfo.stageCount = 2;
+                pipelineInfo.renderPass = m_renderPass;
+                pipelineInfo.stageCount = static_cast<uint32_t>(m_shaderStages.size());
                 pipelineInfo.pVertexInputState = &vertexInputState;
                 pipelineInfo.pInputAssemblyState = &inputAssemblyState;
                 pipelineInfo.pRasterizationState = &m_rasterizationState;
@@ -374,6 +374,7 @@ namespace Hatchit {
 
             VkPipeline VKPipeline::GetVKPipeline() { return m_pipeline; }
             VkPipelineLayout VKPipeline::GetPipelineLayout() { return m_pipelineLayout; }
+            VkDescriptorSetLayout VKPipeline::GetDescriptorSetLayout() { return m_descriptorLayout; }
         }
     }
 }

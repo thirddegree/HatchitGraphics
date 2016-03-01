@@ -33,6 +33,8 @@ namespace Hatchit {
 
         namespace Vulkan {
 
+            class VKRenderer;
+
             class HT_API VKRenderTarget : public IRenderTarget
             {
             public:
@@ -46,9 +48,13 @@ namespace Hatchit {
                 ///Override to bind the render target to be written to with Vulkan
                 void VWriteBind()   override;
 
+                bool Blit(VkCommandBuffer commandBuffer);
+
                 VkFramebuffer   GetVKFramebuffer();
                 Image           GetVKColor();
                 Image           GetVKDepth();
+
+                Texture         GetVKTexture();
 
             protected:
                 VkFormat m_colorFormat;
@@ -57,6 +63,11 @@ namespace Hatchit {
                 Image m_color;
                 Image m_depth;
                 VkFramebuffer m_framebuffer;
+
+                Texture m_texture;
+
+                bool setupFramebuffer(VKRenderer* renderer);
+                bool setupTargetTexture(VKRenderer* renderer);
             };
         }
     }

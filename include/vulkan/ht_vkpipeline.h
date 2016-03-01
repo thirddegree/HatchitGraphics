@@ -42,7 +42,7 @@ namespace Hatchit {
             class HT_API VKPipeline : public IPipeline
             {
             public:
-                VKPipeline(VKRenderPass* renderPass);
+                VKPipeline(VkRenderPass renderPass);
                 ~VKPipeline();
 
                 //If we wanted to allow users to control blending states
@@ -69,10 +69,10 @@ namespace Hatchit {
 
                 VkPipeline GetVKPipeline();
                 VkPipelineLayout GetPipelineLayout();
-
+                VkDescriptorSetLayout GetDescriptorSetLayout();
 
             protected:
-                VKRenderPass* m_renderPass;
+                VkRenderPass m_renderPass;
 
                 VkPipelineRasterizationStateCreateInfo m_rasterizationState;
                 VkPipelineMultisampleStateCreateInfo m_multisampleState;

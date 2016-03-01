@@ -67,6 +67,11 @@ namespace Hatchit {
                 ///Present a frame to the screen via a backbuffer
                 void VPresent() override;
 
+                /* Get the physical vulkan device
+                * \return A physical vulkan device
+                */
+                VkPhysicalDevice GetVKPhysicalDevice();
+
                 /* Get the core Vulkan device
                 * \return The VkDevice
                 */
@@ -77,12 +82,16 @@ namespace Hatchit {
                 */
                 VkCommandPool GetVKCommandPool();
 
+                VkCommandBuffer GetSetupCommandBuffer();
+
                 VkFormat GetPreferredImageFormat();
                 VkFormat GetPreferredDepthFormat();
 
+                void FlushSetupCommandBuffer();
+
                 //Reused helpers
                 static bool CheckLayers(std::vector<const char*> layerNames, VkLayerProperties* layers, uint32_t layerCount);
-                static bool SetImageLayout(VkImage image, VkImageAspectFlags aspectMask,
+                static bool SetImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageAspectFlags aspectMask,
                     VkImageLayout oldImageLayout, VkImageLayout newImageLayout);
                 static bool MemoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, uint32_t* typeIndex);
                 static bool CreateBuffer(VkDevice device, VkBufferUsageFlagBits usage, size_t dataSize, void* data, UniformBlock* uniformBlock);
@@ -115,6 +124,8 @@ namespace Hatchit {
                 uint32_t m_width;
                 uint32_t m_height;
 
+                std::map<IPipeline*, std::vector<Renderable>> m_pipelineList;
+
                 //Vuklan data structs
                 VkApplicationInfo                       m_appInfo;
                 VkInstance                              m_instance;
@@ -142,13 +153,15 @@ namespace Hatchit {
                 VkDescriptorPool                        m_descriptorPool;
                 VkDescriptorSet                         m_descriptorSet;
                 uint32_t                                m_currentBuffer;
-                VkCommandBuffer                         m_commandBuffer;
+                VkCommandBuffer                         m_setupCommandBuffer;
                 VkPipeline                              m_pipeline;
                 std::vector<VkFramebuffer>              m_framebuffers;
                 VkSemaphore                             m_presentSemaphore;
 
                 VkClearValue                            m_clearColor;
-                VkClearValue                            m_depthStencil;
+
+                float m_angle = 0.0f;
+                IMaterial* m_material;
 
                 //Vulkan Callbacks
                 PFN_vkCreateDebugReportCallbackEXT m_createDebugReportCallback;
@@ -207,22 +220,12 @@ namespace Hatchit {
                 //Helpers for prepareVulkan
                 bool prepareSwapchainBuffers();
                 bool prepareSwapchainDepth();
-                bool prepareDescriptorLayout();
                 bool prepareRenderPass();
-                bool preparePipeline();
-                bool prepareDescriptorPool();
-                bool prepareDescriptorSet();
                 bool prepareFrambuffers();
                 bool allocateCommandBuffers();
 
                 //Used for drawing
-                void flushCommandBuffer();
-
                 bool buildCommandBuffer(VkCommandBuffer commandBuffer);
-
-                //TOTALLY need to be moved somewhere else
-                char* readFile(const char* filename, size_t* pSize);
-                VkShaderModule loadShaderSPIRV(const char* fileName);
             };
 
         }

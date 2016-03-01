@@ -51,7 +51,7 @@ namespace Hatchit {
                 attachments[1].format = renderer->GetPreferredDepthFormat();
                 attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
                 attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-                attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+                attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
                 attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
                 attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
                 attachments[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -134,6 +134,7 @@ namespace Hatchit {
 
                 VkResult err;
 
+                VKRenderer* renderer = VKRenderer::RendererInstance;
                 VKRenderTarget* renderTarget = static_cast<VKRenderTarget*>(m_renderTarget);
 
                 VkCommandBufferInheritanceInfo inheritanceInfo = {};
@@ -226,10 +227,10 @@ namespace Hatchit {
                         VKMaterial* material = static_cast<VKMaterial*>(renderables[i].material);
                         VKMesh*     mesh = static_cast<VKMesh*>(renderables[i].mesh);
 
-                        VkDescriptorSet descriptorSet = material->GetDescriptorSet();
+                        VkDescriptorSet* descriptorSet = material->GetDescriptorSet();
 
                         vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            vkPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+                            vkPipelineLayout, 0, 1, descriptorSet, 0, nullptr);
 
                         UniformBlock vertBlock = mesh->GetVertexBlock();
                         UniformBlock indexBlock = mesh->GetIndexBlock();
@@ -247,31 +248,10 @@ namespace Hatchit {
                     END BUFFER COMMANDS
                 */
 
-                VkImageMemoryBarrier prePresentBarrier = {};
-                prePresentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                prePresentBarrier.pNext = nullptr;
-                prePresentBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-                prePresentBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-                prePresentBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                prePresentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-                prePresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                prePresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                prePresentBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+                //Blit to render target
 
-                prePresentBarrier.image = renderTarget->GetVKColor().image;
-
-                vkCmdPipelineBarrier(m_commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                    VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &prePresentBarrier);
-
-                err = vkEndCommandBuffer(m_commandBuffer);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderPass::VBuildCommandList(): Failed to end command buffer.\n");
-#endif
+                if (!renderTarget->Blit(m_commandBuffer))
                     return false;
-                }
                 
                 return true;
             }

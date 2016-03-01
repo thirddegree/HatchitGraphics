@@ -38,7 +38,7 @@ namespace Hatchit {
             VKRenderer::VKRenderer()
             {
                 m_swapchain = 0;
-                m_commandBuffer = 0;
+                m_setupCommandBuffer = 0;
             }
 
             VKRenderer::~VKRenderer()
@@ -75,62 +75,6 @@ namespace Hatchit {
                 if (!prepareVulkan())
                     return false;
 
-                //TODO: remove this test code
-                IRenderPass* renderPass = new VKRenderPass();
-
-                    //TODO: Get the proper window size
-                IRenderTarget* renderTarget = new VKRenderTarget(1280, 800);
-                renderTarget->SetRenderPass(renderPass);
-
-                renderPass->VPrepare();
-                renderTarget->VPrepare();
-
-                renderPass->SetRenderTarget(renderTarget);
-                
-                Core::File meshFile;
-                meshFile.Open(Core::os_exec_dir() + "monkey.obj", Core::FileMode::ReadBinary);
-                
-                Core::File vsFile;
-                vsFile.Open(Core::os_exec_dir() + "tri-vert.spv", Core::FileMode::ReadBinary);
-                
-                Core::File fsFile;
-                fsFile.Open(Core::os_exec_dir() + "tri-frag.spv", Core::FileMode::ReadBinary);
-                
-                Resource::Model model;
-                model.VInitFromFile(&meshFile);
-                
-                VKShader vsShader;
-                vsShader.VInitFromFile(&vsFile);
-                
-                VKShader fsShader;
-                fsShader.VInitFromFile(&fsFile);
-                
-                RasterizerState rasterState = {};
-                rasterState.cullMode = CullMode::FRONT_AND_BACK;
-                rasterState.polygonMode = PolygonMode::FILL;
-                
-                MultisampleState multisampleState = {};
-                multisampleState.minSamples = 0;
-                multisampleState.samples = SAMPLE_1_BIT;
-                
-                IPipeline* pipeline = new VKPipeline((VKRenderPass*)renderPass);
-                pipeline->VLoadShader(ShaderSlot::VERTEX, &vsShader);
-                pipeline->VLoadShader(ShaderSlot::FRAGMENT, &fsShader);
-                pipeline->VSetRasterState(rasterState);
-                pipeline->VSetMultisampleState(multisampleState);
-                pipeline->VPrepare();
-                
-                IMaterial* material = new VKMaterial();
-                material->VPrepare();
-                
-                std::vector<Resource::Mesh*> meshes = model.GetMeshes();
-                IMesh* mesh = new VKMesh();
-                mesh->VBuffer(meshes[0]);
-                
-                renderPass->ScheduleRenderRequest(pipeline, material, mesh);
-                
-                renderPass->VBuildCommandList();
-
                 return true;
             }
 
@@ -144,8 +88,6 @@ namespace Hatchit {
                 m_framebuffers.clear();
                 vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
 
-                vkDestroyPipeline(m_device, m_pipeline, nullptr);
-                vkDestroyPipelineCache(m_device, m_pipelineCache, nullptr);
                 vkDestroyRenderPass(m_device, m_renderPass, nullptr);
                 vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
                 vkDestroyDescriptorSetLayout(m_device, m_descriptorLayout, nullptr);
@@ -278,14 +220,25 @@ namespace Hatchit {
                     //commandBuffers.push_back(renderPass->GetVkCommandBuffer());
                 }
 
+                Math::Matrix4 mat = Math::MMMatrixTranslation(Math::Vector3(0, 0, 0));
+
+                Math::Matrix4 view = Math::MMMatrixLookAt(Math::Vector3(0, 0, 5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0));
+
+                Math::Matrix4 proj = Math::MMMatrixPerspProj(45.0f, (float)m_width / (float)m_height, 0.1f, 1000.0f);
+
+                Math::Matrix4 mvp = mat * (view * proj);
+
+                m_material->VSetMatrix4("matricies.model", mvp);
+                m_material->VUpdate();
+
                 //Make sure we run the swapchain command
                 commandBuffers.push_back(m_swapchainBuffers[m_currentBuffer].command);
 
-                SetImageLayout(m_swapchainBuffers[m_currentBuffer].image,
+                SetImageLayout(m_setupCommandBuffer, m_swapchainBuffers[m_currentBuffer].image,
                     VK_IMAGE_ASPECT_COLOR_BIT,
                     VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-                flushCommandBuffer();
+                FlushSetupCommandBuffer();
 
                 VkResult err;
 
@@ -302,7 +255,7 @@ namespace Hatchit {
                 submitInfo.pSignalSemaphores = nullptr;
 
                 err = vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE);
-                //assert(!err);
+                assert(!err);
             }
 
             void VKRenderer::VPresent()
@@ -332,6 +285,11 @@ namespace Hatchit {
                 vkDestroySemaphore(m_device, m_presentSemaphore, nullptr);
             }
 
+            VkPhysicalDevice VKRenderer::GetVKPhysicalDevice() 
+            {
+                return m_gpu;
+            }
+
             VkDevice VKRenderer::GetVKDevice() 
             {
                 return m_device;
@@ -340,6 +298,11 @@ namespace Hatchit {
             VkCommandPool VKRenderer::GetVKCommandPool()
             {
                 return m_commandPool;
+            }
+
+            VkCommandBuffer VKRenderer::GetSetupCommandBuffer() 
+            {
+                return m_setupCommandBuffer;
             }
 
             VkFormat VKRenderer::GetPreferredImageFormat() 
@@ -1186,24 +1149,11 @@ namespace Hatchit {
                 */
                 if (!prepareSwapchainDepth())
                     return false;
-
-                
-                /*
-                * Describe how the shaders will layout in the pipeline
-                */
-                if (!prepareDescriptorLayout())
-                    return false;
                 
                 /*
                 * Prepare the render pass; describes which color and depth formats the command buffers will write to
                 */
                 if (!prepareRenderPass())
-                    return false;
-                
-                /*
-                * Prepare pipeline; contains topology info, shaders, cull mode etc.
-                */
-                if (!preparePipeline())
                     return false;
                 
                 /*
@@ -1213,23 +1163,81 @@ namespace Hatchit {
                     return false;
                 
                 /*
-                * Prepare descriptor pool of all the things we want to draw during this render pass
-                */
-                if (!prepareDescriptorPool())
-                    return false;
-                
-                /*
-                * Prepare descriptor set; describes what will be drawn by the command buffer
-                */
-                if (!prepareDescriptorSet())
-                    return false;
-                
-                /*
                 * Prepare frame buffers to draw on; one for each image in the swapchain
                 */
                 if (!prepareFrambuffers())
                     return false;
                 
+                //TODO: remove this test code
+                //IRenderPass* renderPass = new VKRenderPass();
+
+                //m_renderTarget = new VKRenderTarget(m_width, m_height);
+                //m_renderTarget->SetRenderPass(renderPass);
+
+                //renderPass->VPrepare();
+                //m_renderTarget->VPrepare();
+
+                //renderPass->SetRenderTarget(m_renderTarget);
+
+                Core::File meshFile;
+                meshFile.Open(Core::os_exec_dir() + "monkey.obj", Core::FileMode::ReadBinary);
+
+                Core::File vsFile;
+                vsFile.Open(Core::os_exec_dir() + "monkey_VS.spv", Core::FileMode::ReadBinary);
+
+                Core::File fsFile;
+                fsFile.Open(Core::os_exec_dir() + "monkey_FS.spv", Core::FileMode::ReadBinary);
+
+                Resource::Model model;
+                model.VInitFromFile(&meshFile);
+
+                VKShader vsShader;
+                vsShader.VInitFromFile(&vsFile);
+
+                VKShader fsShader;
+                fsShader.VInitFromFile(&fsFile);
+
+                RasterizerState rasterState = {};
+                rasterState.cullMode = CullMode::NONE;
+                rasterState.polygonMode = PolygonMode::FILL;
+
+                MultisampleState multisampleState = {};
+                multisampleState.minSamples = 0;
+                multisampleState.samples = SAMPLE_1_BIT;
+
+                IPipeline* pipeline = new VKPipeline(m_renderPass);
+                pipeline->VLoadShader(ShaderSlot::VERTEX, &vsShader);
+                pipeline->VLoadShader(ShaderSlot::FRAGMENT, &fsShader);
+                pipeline->VSetRasterState(rasterState);
+                pipeline->VSetMultisampleState(multisampleState);
+                pipeline->VPrepare();
+
+                m_material = new VKMaterial();
+
+                //Math::Matrix4 mat = Math::MMMatrixTranslation(Math::Vector3(0, 0, 0));
+
+                //Math::Matrix4 view = Math::MMMatrixLookAt(Math::Vector3(0, 0, 0), Math::Vector3(0, 0, 5), Math::Vector3(0, -1, 0));
+
+                //Math::Matrix4 proj = Math::MMMatrixPerspProj(60.0f, (float)m_width / (float)m_height, 0.1f, 100.0f);
+
+                //Math::Matrix4 mvp = mat * (view * proj);
+
+                m_material->VPrepare();
+                m_material->VUpdate();
+
+                std::vector<Resource::Mesh*> meshes = model.GetMeshes();
+                IMesh* mesh = new VKMesh();
+                mesh->VBuffer(meshes[0]);
+
+                //renderPass->ScheduleRenderRequest(pipeline, material, mesh);
+                 
+                Renderable renderable;
+                renderable.material = m_material;
+                renderable.mesh = mesh;
+                m_pipelineList[pipeline].push_back(renderable);
+
+                //renderPass->VBuildCommandList();
+
                 /*
                 * Build all the command buffers for the swapchain
                 */
@@ -1238,9 +1246,8 @@ namespace Hatchit {
                     buildCommandBuffer(m_swapchainBuffers[i].command);
                 }
                 
-
                 //Flush the command buffer once
-                flushCommandBuffer();
+                FlushSetupCommandBuffer();
 
                 m_currentBuffer = 0;
 
@@ -1417,7 +1424,7 @@ namespace Hatchit {
 
                     //Render loop will expect image to have been used before
                     //Init image ot the VK_IMAGE_ASPECT_COLOR_BIT state
-                    SetImageLayout(buffer.image, VK_IMAGE_ASPECT_COLOR_BIT, 
+                    SetImageLayout(m_setupCommandBuffer, buffer.image, VK_IMAGE_ASPECT_COLOR_BIT,
                         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
                     colorImageView.image = buffer.image;
@@ -1457,7 +1464,7 @@ namespace Hatchit {
                 image.arrayLayers = 1;
                 image.samples = VK_SAMPLE_COUNT_1_BIT;
                 image.tiling = VK_IMAGE_TILING_OPTIMAL;
-                image.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+                image.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
                 image.flags = 0;
                 image.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
                 image.queueFamilyIndexCount = 0;
@@ -1470,7 +1477,7 @@ namespace Hatchit {
                 components.a = VK_COMPONENT_SWIZZLE_A;
 
                 VkImageSubresourceRange depthSubresourceRange;
-                depthSubresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                depthSubresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT ;
                 depthSubresourceRange.baseMipLevel = 0;
                 depthSubresourceRange.levelCount = 1;
                 depthSubresourceRange.baseArrayLayer = 0;
@@ -1542,7 +1549,7 @@ namespace Hatchit {
                     return false;
                 }
 
-                SetImageLayout(m_depthBuffer.image, VK_IMAGE_ASPECT_DEPTH_BIT,
+                SetImageLayout(m_setupCommandBuffer, m_depthBuffer.image, VK_IMAGE_ASPECT_DEPTH_BIT,
                     VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
                 //Create image view
@@ -1559,59 +1566,6 @@ namespace Hatchit {
 
 
                 return true; 
-            }
-
-            bool VKRenderer::prepareDescriptorLayout() 
-            {
-                VkDescriptorSetLayoutBinding layoutBindings[2];
-                layoutBindings[0].binding = 0;
-                layoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                layoutBindings[0].descriptorCount = 1;
-                layoutBindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-                layoutBindings[0].pImmutableSamplers = nullptr;
-
-                layoutBindings[1].binding = 1;
-                layoutBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                layoutBindings[1].descriptorCount = 1; //The number of textures we have
-                layoutBindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-                layoutBindings[1].pImmutableSamplers = nullptr;
-                
-                VkDescriptorSetLayoutCreateInfo descriptorLayoutInfo;
-                descriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-                descriptorLayoutInfo.pNext = nullptr;
-                descriptorLayoutInfo.bindingCount = 2;
-                descriptorLayoutInfo.pBindings = layoutBindings;
-
-                VkResult err;
-                err = vkCreateDescriptorSetLayout(m_device, &descriptorLayoutInfo, nullptr, &m_descriptorLayout);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::prepareDescriptorLayout(): Failed to create descriptor layout\n");
-#endif
-                    return false;
-                }
-
-                VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo;
-                pPipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-                pPipelineLayoutCreateInfo.pNext = nullptr;
-                pPipelineLayoutCreateInfo.setLayoutCount = 1;
-                pPipelineLayoutCreateInfo.pSetLayouts = &m_descriptorLayout;
-                pPipelineLayoutCreateInfo.pushConstantRangeCount = 0;
-                pPipelineLayoutCreateInfo.pPushConstantRanges = nullptr;
-
-                err = vkCreatePipelineLayout(m_device, &pPipelineLayoutCreateInfo, nullptr, &m_pipelineLayout);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::prepareDescriptorLayout(): Failed to create pipeline layout\n");
-#endif
-                    return false;
-                }
-
-                return true;
             }
 
             //TODO: move render pass creation to a new class
@@ -1631,7 +1585,7 @@ namespace Hatchit {
                 attachments[1].format = m_depthBuffer.format;
                 attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
                 attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-                attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+                attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
                 attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
                 attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; 
                 attachments[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -1680,212 +1634,6 @@ namespace Hatchit {
 #endif
                     return false;
                 }
-
-                return true; 
-            }
-            // In reality we will have many many more pipelines
-            //Sets up the old state info that OpenGL used to do with a huge state-machine
-            //Sets topology, cull mode, polygon fill mode etc.
-            bool VKRenderer::preparePipeline()
-            {
-                VkResult err;
-
-                //Vertex info state
-                VkPipelineVertexInputStateCreateInfo vertexInputState = {};
-                vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-
-                //Topology
-                VkPipelineInputAssemblyStateCreateInfo inputAssemblyState = {};
-                inputAssemblyState.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-                inputAssemblyState.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-
-                //Rasterizer info; cull modes etc.
-                VkPipelineRasterizationStateCreateInfo rasterizationState = {};
-                rasterizationState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-                rasterizationState.polygonMode = VK_POLYGON_MODE_FILL;
-                rasterizationState.cullMode = VK_CULL_MODE_NONE;
-                rasterizationState.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-                rasterizationState.depthClampEnable = VK_FALSE;
-                rasterizationState.rasterizerDiscardEnable = VK_FALSE;
-                rasterizationState.depthBiasEnable = VK_FALSE;
-
-                //Only one blend attachment state; not using blend right now
-                VkPipelineColorBlendAttachmentState blendAttachmentState[1] = {};
-                blendAttachmentState[0].colorWriteMask = 0xf;
-                blendAttachmentState[0].blendEnable = VK_FALSE;
-
-                //Color blends and masks
-                VkPipelineColorBlendStateCreateInfo colorBlendState = {};
-                colorBlendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-                colorBlendState.pAttachments = blendAttachmentState;
-                colorBlendState.attachmentCount = 1;
-
-                //Viewport
-                VkPipelineViewportStateCreateInfo viewportState = {};
-                viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-                viewportState.viewportCount = 1;
-                viewportState.scissorCount = 1;
-
-                //Enable dynamic states
-                VkDynamicState dynamicStateEnables[] = { VK_DYNAMIC_STATE_VIEWPORT , VK_DYNAMIC_STATE_SCISSOR };
-
-                VkPipelineDynamicStateCreateInfo dynamicState = {};
-                dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-                dynamicState.pNext = nullptr;
-                dynamicState.pDynamicStates = dynamicStateEnables;
-                dynamicState.dynamicStateCount = 2;
-
-                //Depth and stencil states
-                VkPipelineDepthStencilStateCreateInfo depthStencilState = {};
-                depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-                depthStencilState.pNext = &vertexInputState;
-                depthStencilState.depthTestEnable = VK_TRUE;
-                depthStencilState.depthWriteEnable = VK_TRUE;
-                depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
-                depthStencilState.depthBoundsTestEnable = VK_FALSE;
-                depthStencilState.back.failOp = VK_STENCIL_OP_KEEP;
-                depthStencilState.back.passOp = VK_STENCIL_OP_KEEP;
-                depthStencilState.back.compareOp = VK_COMPARE_OP_ALWAYS;
-                depthStencilState.stencilTestEnable = VK_FALSE;
-                depthStencilState.front = depthStencilState.back;
-
-                //Multisampling state (none used)
-                VkPipelineMultisampleStateCreateInfo mulisampleState = {};
-                mulisampleState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-                mulisampleState.pNext = nullptr;
-                mulisampleState.pSampleMask = nullptr;
-                mulisampleState.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-
-                //Load Shaders for this pipeline
-                VkPipelineShaderStageCreateInfo shaderStages[2] = {};
-                shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-                shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-                shaderStages[0].module = loadShaderSPIRV("../../bin/Debug/tri-vert.spv");
-                shaderStages[0].pName = "main";
-
-                shaderStages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-                shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-                shaderStages[1].module = loadShaderSPIRV("../../bin/Debug/tri-frag.spv");
-                shaderStages[1].pName = "main";
-
-                //Finalize pipeline
-                VkGraphicsPipelineCreateInfo pipelineInfo = {};
-                pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-                pipelineInfo.layout = m_pipelineLayout;
-                pipelineInfo.renderPass = m_renderPass;
-                pipelineInfo.stageCount = 2;
-                pipelineInfo.pVertexInputState = &vertexInputState;
-                pipelineInfo.pInputAssemblyState = &inputAssemblyState;
-                pipelineInfo.pRasterizationState = &rasterizationState;
-                pipelineInfo.pColorBlendState = &colorBlendState;
-                pipelineInfo.pMultisampleState = &mulisampleState;
-                pipelineInfo.pViewportState = &viewportState;
-                pipelineInfo.pDepthStencilState = &depthStencilState;
-                pipelineInfo.pStages = shaderStages;
-                pipelineInfo.renderPass = m_renderPass;
-                pipelineInfo.pDynamicState = &dynamicState;
-
-                VkPipelineCacheCreateInfo pipelineCacheInfo = {};
-                pipelineCacheInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-                err = vkCreatePipelineCache(m_device, &pipelineCacheInfo, nullptr, &m_pipelineCache);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::preparePipeline(): Failed to create pipeline cache\n");
-#endif
-                    return false;
-                }
-
-                err = vkCreateGraphicsPipelines(m_device, m_pipelineCache, 1, &pipelineInfo, nullptr, &m_pipeline);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::preparePipeline(): Failed to create pipeline\n");
-#endif
-                    return false;
-                }
-
-                //Delete shader modules; they're in the pipeline and we don't need them anymore
-                vkDestroyShaderModule(m_device, shaderStages[0].module, nullptr);
-                vkDestroyShaderModule(m_device, shaderStages[1].module, nullptr);
-
-                return true; 
-            }
-            bool VKRenderer::prepareDescriptorPool()
-            {
-                VkDescriptorPoolSize typeCounts[2];
-                typeCounts[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                typeCounts[0].descriptorCount = 1; //Number of uniform buffers we have
-                typeCounts[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                typeCounts[1].descriptorCount = 1; //Number of Textures we have
-
-                VkDescriptorPoolCreateInfo descriptorPoolInfo = {};
-                descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-                descriptorPoolInfo.pNext = nullptr;
-                descriptorPoolInfo.maxSets = 1;
-                descriptorPoolInfo.poolSizeCount = 2;
-                descriptorPoolInfo.pPoolSizes = typeCounts;
-
-                VkResult err;
-                err = vkCreateDescriptorPool(m_device, &descriptorPoolInfo, nullptr, &m_descriptorPool);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::prepareDescriptorPool(): Failed to create descriptor pool\n");
-#endif
-                    return false;
-                }
-
-                return true;
-            }
-            bool VKRenderer::prepareDescriptorSet() 
-            {
-                VkWriteDescriptorSet writes[2] = {};
-                VkResult err;
-
-                VkDescriptorSetAllocateInfo allocInfo = {};
-                allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-                allocInfo.pNext = NULL;
-                allocInfo.descriptorPool = m_descriptorPool;
-                allocInfo.descriptorSetCount = 1;
-                allocInfo.pSetLayouts = &m_descriptorLayout;
-                err = vkAllocateDescriptorSets(m_device, &allocInfo, &m_descriptorSet);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::prepareDescriptorSet(): Failed to allocate descriptor set\n");
-#endif
-                    return false;
-                }
-
-                //Set textures
-                //memset(&tex_descs, 0, sizeof(tex_descs));
-                //for (uint32_t i = 0; i < 1; i++) {
-                //	tex_descs[i].sampler = demo->textures[i].sampler;
-                //	tex_descs[i].imageView = demo->textures[i].view;
-                //	tex_descs[i].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-                //}
-                //
-                //memset(&writes, 0, sizeof(writes));
-
-                writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                writes[0].dstSet = m_descriptorSet;
-                writes[0].descriptorCount = 1;
-                writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                writes[0].pBufferInfo = nullptr;//Set uniform data
-
-                writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                writes[1].dstSet = m_descriptorSet;
-                writes[1].dstBinding = 1;
-                writes[1].descriptorCount = 1;
-                writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                writes[1].pImageInfo = nullptr; //textures
-
-                //vkUpdateDescriptorSets(m_device, 2, writes, 0, nullptr);
 
                 return true; 
             }
@@ -1953,16 +1701,16 @@ namespace Hatchit {
                 return true;
             }
         
-            void VKRenderer::flushCommandBuffer()
+            void VKRenderer::FlushSetupCommandBuffer()
             {
                 VkResult err;
-                if (m_commandBuffer == VK_NULL_HANDLE)
+                if (m_setupCommandBuffer == VK_NULL_HANDLE)
                     return;
 
-                err = vkEndCommandBuffer(m_commandBuffer);
+                err = vkEndCommandBuffer(m_setupCommandBuffer);
                 assert(!err);
 
-                const VkCommandBuffer commands[] = { m_commandBuffer };
+                const VkCommandBuffer commands[] = { m_setupCommandBuffer };
                 VkFence nullFence = VK_NULL_HANDLE;
 
                 VkSubmitInfo submitInfo = {};
@@ -1983,10 +1731,10 @@ namespace Hatchit {
                 assert(!err);
 
                 vkFreeCommandBuffers(m_device, m_commandPool, 1, commands);
-                m_commandBuffer = VK_NULL_HANDLE;
+                m_setupCommandBuffer = VK_NULL_HANDLE;
             }
 
-            bool VKRenderer::SetImageLayout(VkImage image, VkImageAspectFlags aspectMask,
+            bool VKRenderer::SetImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageAspectFlags aspectMask,
                 VkImageLayout oldImageLayout, VkImageLayout newImageLayout)
             {
                 VkResult err;
@@ -2000,7 +1748,6 @@ namespace Hatchit {
                 }
 
                 VkDevice& device = RendererInstance->m_device;
-                VkCommandBuffer& commandBuffer = RendererInstance->m_commandBuffer;
                 VkCommandPool& commandPool = RendererInstance->m_commandPool;
 
                 //Start up a basic command buffer if we don't have one already
@@ -2142,7 +1889,7 @@ namespace Hatchit {
 
                 VkClearValue clearValues[2] = {};
                 clearValues[0] = m_clearColor;
-                clearValues[1] = m_depthStencil;
+                clearValues[1] = {1.0f, 0};
 
                 VkRenderPassBeginInfo renderPassBeginInfo = {};
                 renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -2166,27 +1913,65 @@ namespace Hatchit {
                     return false;
                 }
 
-                vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
-                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, 
-                    m_pipelineLayout, 0, 1, &m_descriptorSet, 0, nullptr);
-
                 VkViewport viewport = {};
                 viewport.width = static_cast<float>(m_width);
                 viewport.height = static_cast<float>(m_height);
                 viewport.minDepth = 0.0f;
                 viewport.maxDepth = 1.0f;
-                vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
                 VkRect2D scissor = {};
                 scissor.extent.width = m_width;
                 scissor.extent.height = m_height;
                 scissor.offset.x = 0;
                 scissor.offset.y = 0;
+
+                vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+                vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
                 vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-                vkCmdDraw(commandBuffer, 0, 0, 0, 0);
+                std::map<IPipeline*, std::vector<Renderable>>::iterator iterator;
+
+                for (iterator = m_pipelineList.begin(); iterator != m_pipelineList.end(); iterator++)
+                {
+                    VKPipeline* pipeline = static_cast<VKPipeline*>(iterator->first);
+
+                    VkPipeline vkPipeline = pipeline->GetVKPipeline();
+                    VkPipelineLayout vkPipelineLayout = pipeline->GetPipelineLayout();
+
+                    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetVKPipeline());
+
+                    /*  TODO: Set, get and bind pipeline-wide descriptor sets
+                    VkDescriptorSet descriptorSet = material->GetDescriptorSet();
+
+                    vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    vkPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+                    */
+
+                    std::vector<Renderable> renderables = iterator->second;
+
+                    VkDeviceSize offsets[] = { 0 };
+
+                    for (uint32_t i = 0; i < renderables.size(); i++)
+                    {
+                        VKMaterial* material = static_cast<VKMaterial*>(renderables[i].material);
+                        VKMesh*     mesh = static_cast<VKMesh*>(renderables[i].mesh);
+
+                        VkDescriptorSet* descriptorSet = material->GetDescriptorSet();
+                        
+                        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            vkPipelineLayout, 0, 1, descriptorSet, 0, nullptr);
+
+                        UniformBlock vertBlock = mesh->GetVertexBlock();
+                        UniformBlock indexBlock = mesh->GetIndexBlock();
+                        uint32_t indexCount = mesh->GetIndexCount();
+
+                        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertBlock.buffer, offsets);
+                        vkCmdBindIndexBuffer(commandBuffer, indexBlock.buffer, 0, VK_INDEX_TYPE_UINT32);
+                        vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
+                    }
+                }
+
                 vkCmdEndRenderPass(commandBuffer);
 
                 VkImageMemoryBarrier prePresentBarrier = {};
@@ -2203,7 +1988,7 @@ namespace Hatchit {
                 prePresentBarrier.image = m_swapchainBuffers[m_currentBuffer].image;
 
                 vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                    VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &prePresentBarrier);
+                    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &prePresentBarrier);
 
                 err = vkEndCommandBuffer(commandBuffer);
                 assert(!err);
@@ -2254,51 +2039,6 @@ namespace Hatchit {
                 * keep that behavior here.
                 */
                 return false;
-            }
-
-            char* VKRenderer::readFile(const char* fileName, size_t* pSize) 
-            {
-                long int size;
-                size_t retval;
-                void *shaderCode;
-
-                FILE *fp = fopen(fileName, "rb");
-                if (!fp) return NULL;
-
-                fseek(fp, 0L, SEEK_END);
-                size = ftell(fp);
-
-                fseek(fp, 0L, SEEK_SET);
-
-                shaderCode = new char[size];
-                retval = fread(shaderCode, size, 1, fp);
-                assert(retval == 1);
-
-                *pSize = size;
-                return (char*)shaderCode;
-            }
-
-            VkShaderModule VKRenderer::loadShaderSPIRV(const char* fileName) 
-            {
-                size_t size;
-                const char* shaderCode = readFile(fileName, &size);
-                assert(size > 0);
-
-                VkResult err;
-
-                VkShaderModuleCreateInfo moduleCreateInfo = {};
-                moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-                moduleCreateInfo.pNext = nullptr;
-                moduleCreateInfo.codeSize = size;
-                moduleCreateInfo.pCode = (uint32_t*)shaderCode;
-                moduleCreateInfo.flags = 0;
-
-                VkShaderModule shaderModule;
-
-                err = vkCreateShaderModule(m_device, &moduleCreateInfo, nullptr, &shaderModule);
-                assert(!err);
-
-                return shaderModule;
             }
         }
     }
