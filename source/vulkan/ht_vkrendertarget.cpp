@@ -125,6 +125,10 @@ namespace Hatchit {
                 m_colorFormat = renderer->GetPreferredImageFormat();
                 m_depthFormat = renderer->GetPreferredDepthFormat();
 
+                renderer->CreateSetupCommandBuffer();
+
+                setupCommand = renderer->GetSetupCommandBuffer();
+
                 VkResult err;
 
                 //Color attachment
@@ -180,14 +184,8 @@ namespace Hatchit {
                     return false;
                 }
 
-                renderer->CreateSetupCommandBuffer();
-
-                setupCommand = renderer->GetSetupCommandBuffer();
-
                 renderer->SetImageLayout(setupCommand, m_color.image, VK_IMAGE_ASPECT_COLOR_BIT,
                     VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
-                renderer->FlushSetupCommandBuffer();
 
                 VkImageViewCreateInfo viewInfo = {};
                 viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -254,14 +252,8 @@ namespace Hatchit {
                     return false;
                 }
 
-                renderer->CreateSetupCommandBuffer();
-
-                setupCommand = renderer->GetSetupCommandBuffer();
-
                 renderer->SetImageLayout(setupCommand, m_depth.image, VK_IMAGE_ASPECT_DEPTH_BIT,
                     VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-
-                renderer->FlushSetupCommandBuffer();
 
                 err = vkCreateImageView(device, &viewInfo, nullptr, &m_depth.view);
                 if (err != VK_SUCCESS)
@@ -321,6 +313,10 @@ namespace Hatchit {
 
                 VkDevice device = renderer->GetVKDevice();
 
+                renderer->CreateSetupCommandBuffer();
+
+                VkCommandBuffer setupCommandBuffer = renderer->GetSetupCommandBuffer();
+
                 m_texture.width = m_width;
                 m_texture.height = m_height;
 
@@ -378,10 +374,6 @@ namespace Hatchit {
 
                 m_texture.layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 
-                renderer->CreateSetupCommandBuffer();
-
-                VkCommandBuffer setupCommandBuffer = renderer->GetSetupCommandBuffer();
-
                 renderer->SetImageLayout(setupCommandBuffer, m_texture.image.image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, m_texture.layout);
 
                 //Create a sampler
@@ -395,6 +387,7 @@ namespace Hatchit {
                 samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
                 samplerInfo.mipLodBias = 0.0f;
                 samplerInfo.maxAnisotropy = 0;
+                samplerInfo.compareOp = VK_COMPARE_OP_NEVER;
                 samplerInfo.minLod = 0.0f;
                 samplerInfo.maxLod = 0.0f;
                 samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
@@ -413,7 +406,6 @@ namespace Hatchit {
                 VkImageViewCreateInfo viewInfo = {};
                 viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
                 viewInfo.pNext = nullptr;
-                viewInfo.image = VK_NULL_HANDLE;
                 viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
                 viewInfo.format = m_colorFormat;
                 viewInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };

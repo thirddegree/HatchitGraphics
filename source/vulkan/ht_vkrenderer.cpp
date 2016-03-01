@@ -199,7 +199,7 @@ namespace Hatchit {
                 {
                     VKRenderPass* renderPass = static_cast<VKRenderPass*>(m_renderPasses[i]);
 
-                    //commandBuffers.push_back(renderPass->GetVkCommandBuffer());
+                    commandBuffers.push_back(renderPass->GetVkCommandBuffer());
                 }
 
                 //Make sure we run the swapchain command
@@ -1103,6 +1103,8 @@ namespace Hatchit {
                     return false;
                 }
 
+                CreateSetupCommandBuffer();
+
                 /*
                 * Prepare the swapchain buffers
                 */
@@ -1133,8 +1135,12 @@ namespace Hatchit {
                 if (!prepareFrambuffers())
                     return false;
                 
+                FlushSetupCommandBuffer();
+
                 //TODO: remove this test code
                 IRenderPass* renderPass = new VKRenderPass();
+                renderPass->SetWidth(m_width);
+                renderPass->SetHeight(m_height);
 
                 m_renderTarget = new VKRenderTarget(m_width, m_height);
                 m_renderTarget->SetRenderPass(renderPass);
@@ -1390,14 +1396,10 @@ namespace Hatchit {
                     SwapchainBuffers buffer;
                     buffer.image = swapchainImages[i];
 
-                    CreateSetupCommandBuffer();
-
                     //Render loop will expect image to have been used before
                     //Init image ot the VK_IMAGE_ASPECT_COLOR_BIT state
                     SetImageLayout(m_setupCommandBuffer, buffer.image, VK_IMAGE_ASPECT_COLOR_BIT,
                         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-
-                    FlushSetupCommandBuffer();
 
                     colorImageView.image = buffer.image;
 
@@ -1521,12 +1523,8 @@ namespace Hatchit {
                     return false;
                 }
 
-                CreateSetupCommandBuffer();
-
                 SetImageLayout(m_setupCommandBuffer, m_depthBuffer.image, VK_IMAGE_ASPECT_DEPTH_BIT,
                     VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-
-                FlushSetupCommandBuffer();
 
                 //Create image view
                 view.image = m_depthBuffer.image;
@@ -1757,9 +1755,12 @@ namespace Hatchit {
                 imageMemoryBarrier.oldLayout = oldImageLayout;
                 imageMemoryBarrier.newLayout = newImageLayout;
                 imageMemoryBarrier.image = image;
-                imageMemoryBarrier.subresourceRange = { aspectMask, 0, 1, 0, 1 };
-                imageMemoryBarrier.srcQueueFamilyIndex = 0;
-                imageMemoryBarrier.dstQueueFamilyIndex = 0;
+                imageMemoryBarrier.subresourceRange.aspectMask = aspectMask;
+                imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
+                imageMemoryBarrier.subresourceRange.layerCount = 1;
+                imageMemoryBarrier.subresourceRange.levelCount = 1;
+                imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
                 // Undefined layout
                 // Only allowed as initial layout!
@@ -1830,10 +1831,12 @@ namespace Hatchit {
                     imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
                 }
 
-                VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-                VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
-                vkCmdPipelineBarrier(commandBuffer, srcStages, destStages, 0, 0, nullptr, 0,
+                // Put barrier on top
+                VkPipelineStageFlags srcStageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                VkPipelineStageFlags destStageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+                vkCmdPipelineBarrier(commandBuffer, srcStageFlags, destStageFlags, 0, 0, nullptr, 0,
                     nullptr, 1, &imageMemoryBarrier);
 
                 return true;
