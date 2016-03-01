@@ -253,6 +253,16 @@ namespace Hatchit {
                 if (!renderTarget->Blit(m_commandBuffer))
                     return false;
                 
+                err = vkEndCommandBuffer(m_commandBuffer);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKRenderPass::VBuildCommandList(): Failed to end command buffer.\n");
+#endif
+                    return false;
+                }
+
                 return true;
             }
 

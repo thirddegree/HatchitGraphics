@@ -86,29 +86,14 @@ namespace Hatchit {
                     vkDestroyFramebuffer(m_device, m_framebuffers[i], nullptr);
                 
                 m_framebuffers.clear();
-                vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
 
                 vkDestroyRenderPass(m_device, m_renderPass, nullptr);
-                vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
-                vkDestroyDescriptorSetLayout(m_device, m_descriptorLayout, nullptr);
 
-                //replace this
-                //uint32_t textureCount = 1; 
-                //for (i = 0; i < textureCount; i++) {
-                //	vkDestroyImageView(m_device, demo->textures[i].view, nullptr);
-                //	vkDestroyImage(m_device, demo->textures[i].image, nullptr);
-                //	vkFreeMemory(m_device, demo->textures[i].mem, nullptr);
-                //	vkDestroySampler(m_device, demo->textures[i].sampler, nullptr);
-                //}
                 fpDestroySwapchainKHR(m_device, m_swapchain, nullptr);
 
                 vkDestroyImageView(m_device, m_depthBuffer.view, nullptr);
                 vkDestroyImage(m_device, m_depthBuffer.image, nullptr);
                 vkFreeMemory(m_device, m_depthBuffer.memory, nullptr);
-
-                //Destroy uniform buffers
-                //vkDestroyBuffer(m_device, demo->uniform_data.buf, nullptr);
-                //vkFreeMemory(m_device, demo->uniform_data.mem, nullptr);
 
                 for (i = 0; i < m_swapchainBuffers.size(); i++) {
                     vkDestroyImageView(m_device, m_swapchainBuffers[i].view, nullptr);
@@ -136,12 +121,9 @@ namespace Hatchit {
                     vkDestroyFramebuffer(m_device, m_framebuffers[i], nullptr);
                 m_framebuffers.clear();
 
-                vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
-
                 vkDestroyPipeline(m_device, m_pipeline, nullptr);
                 vkDestroyPipelineCache(m_device, m_pipelineCache, nullptr);
                 vkDestroyRenderPass(m_device, m_renderPass, nullptr);
-                vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
                 vkDestroyDescriptorSetLayout(m_device, m_descriptorLayout, nullptr);
 
                 //TODO: Destroy textures
@@ -220,25 +202,8 @@ namespace Hatchit {
                     //commandBuffers.push_back(renderPass->GetVkCommandBuffer());
                 }
 
-                Math::Matrix4 mat = Math::MMMatrixTranslation(Math::Vector3(0, 0, 0));
-
-                Math::Matrix4 view = Math::MMMatrixLookAt(Math::Vector3(0, 0, 5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0));
-
-                Math::Matrix4 proj = Math::MMMatrixPerspProj(45.0f, (float)m_width / (float)m_height, 0.1f, 1000.0f);
-
-                Math::Matrix4 mvp = mat * (view * proj);
-
-                m_material->VSetMatrix4("matricies.model", mvp);
-                m_material->VUpdate();
-
                 //Make sure we run the swapchain command
                 commandBuffers.push_back(m_swapchainBuffers[m_currentBuffer].command);
-
-                SetImageLayout(m_setupCommandBuffer, m_swapchainBuffers[m_currentBuffer].image,
-                    VK_IMAGE_ASPECT_COLOR_BIT,
-                    VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-                FlushSetupCommandBuffer();
 
                 VkResult err;
 
@@ -1155,7 +1120,7 @@ namespace Hatchit {
                 */
                 if (!prepareRenderPass())
                     return false;
-                
+
                 /*
                 * Allocate memory for the command buffers
                 */
@@ -1169,15 +1134,15 @@ namespace Hatchit {
                     return false;
                 
                 //TODO: remove this test code
-                //IRenderPass* renderPass = new VKRenderPass();
+                IRenderPass* renderPass = new VKRenderPass();
 
-                //m_renderTarget = new VKRenderTarget(m_width, m_height);
-                //m_renderTarget->SetRenderPass(renderPass);
+                m_renderTarget = new VKRenderTarget(m_width, m_height);
+                m_renderTarget->SetRenderPass(renderPass);
 
-                //renderPass->VPrepare();
-                //m_renderTarget->VPrepare();
+                renderPass->VPrepare();
+                m_renderTarget->VPrepare();
 
-                //renderPass->SetRenderTarget(m_renderTarget);
+                renderPass->SetRenderTarget(m_renderTarget);
 
                 Core::File meshFile;
                 meshFile.Open(Core::os_exec_dir() + "monkey.obj", Core::FileMode::ReadBinary);
@@ -1212,31 +1177,34 @@ namespace Hatchit {
                 pipeline->VSetMultisampleState(multisampleState);
                 pipeline->VPrepare();
 
-                m_material = new VKMaterial();
+                IMaterial* material = new VKMaterial();
 
-                //Math::Matrix4 mat = Math::MMMatrixTranslation(Math::Vector3(0, 0, 0));
+                Math::Matrix4 mat = Math::MMMatrixTranslation(Math::Vector3(0, 0, 0));
 
-                //Math::Matrix4 view = Math::MMMatrixLookAt(Math::Vector3(0, 0, 0), Math::Vector3(0, 0, 5), Math::Vector3(0, -1, 0));
+                Math::Matrix4 view = Math::MMMatrixLookAt(Math::Vector3(0, 0, 5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0));
 
-                //Math::Matrix4 proj = Math::MMMatrixPerspProj(60.0f, (float)m_width / (float)m_height, 0.1f, 100.0f);
+                Math::Matrix4 proj = Math::MMMatrixPerspProj(45.0f, (float)m_width / (float)m_height, 0.1f, 1000.0f);
 
-                //Math::Matrix4 mvp = mat * (view * proj);
+                Math::Matrix4 mvp = mat * (view * proj);
 
-                m_material->VPrepare();
-                m_material->VUpdate();
+                material->VSetMatrix4("matricies.model", mvp);
+                material->VPrepare();
+                material->VUpdate();
 
                 std::vector<Resource::Mesh*> meshes = model.GetMeshes();
                 IMesh* mesh = new VKMesh();
                 mesh->VBuffer(meshes[0]);
 
-                //renderPass->ScheduleRenderRequest(pipeline, material, mesh);
+                renderPass->ScheduleRenderRequest(pipeline, material, mesh);
                  
                 Renderable renderable;
-                renderable.material = m_material;
+                renderable.material = material;
                 renderable.mesh = mesh;
                 m_pipelineList[pipeline].push_back(renderable);
 
-                //renderPass->VBuildCommandList();
+                renderPass->VBuildCommandList();
+
+                m_renderPasses.push_back(renderPass);
 
                 /*
                 * Build all the command buffers for the swapchain
@@ -1422,10 +1390,14 @@ namespace Hatchit {
                     SwapchainBuffers buffer;
                     buffer.image = swapchainImages[i];
 
+                    CreateSetupCommandBuffer();
+
                     //Render loop will expect image to have been used before
                     //Init image ot the VK_IMAGE_ASPECT_COLOR_BIT state
                     SetImageLayout(m_setupCommandBuffer, buffer.image, VK_IMAGE_ASPECT_COLOR_BIT,
                         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+                    FlushSetupCommandBuffer();
 
                     colorImageView.image = buffer.image;
 
@@ -1549,8 +1521,12 @@ namespace Hatchit {
                     return false;
                 }
 
+                CreateSetupCommandBuffer();
+
                 SetImageLayout(m_setupCommandBuffer, m_depthBuffer.image, VK_IMAGE_ASPECT_DEPTH_BIT,
                     VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
+                FlushSetupCommandBuffer();
 
                 //Create image view
                 view.image = m_depthBuffer.image;
@@ -1701,6 +1677,42 @@ namespace Hatchit {
                 return true;
             }
         
+            void VKRenderer::CreateSetupCommandBuffer() 
+            {
+                if (m_setupCommandBuffer != VK_NULL_HANDLE)
+                {
+                    vkFreeCommandBuffers(m_device, m_commandPool, 1, &m_setupCommandBuffer);
+                    m_setupCommandBuffer = VK_NULL_HANDLE;
+                }
+
+                VkResult err;
+
+                //Start up a basic command buffer if we don't have one already
+                if (m_setupCommandBuffer == VK_NULL_HANDLE)
+                {
+                    VkCommandBufferAllocateInfo command;
+                    command.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+                    command.pNext = nullptr;
+                    command.commandPool = m_commandPool;
+                    command.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+                    command.commandBufferCount = 1;
+
+                    err = vkAllocateCommandBuffers(m_device, &command, &m_setupCommandBuffer);
+                    if (err != VK_SUCCESS)
+                    {
+#ifdef _DEBUG
+                        Core::DebugPrintF("VKRenderer::CreateSetupCommandBuffer(): Failed to allocate command buffer.\n");
+#endif
+                    }
+                }
+
+                VkCommandBufferBeginInfo cmdBufInfo = {};
+                cmdBufInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+                err = vkBeginCommandBuffer(m_setupCommandBuffer, &cmdBufInfo);
+                assert(!err);
+            }
+
             void VKRenderer::FlushSetupCommandBuffer()
             {
                 VkResult err;
@@ -1737,64 +1749,6 @@ namespace Hatchit {
             bool VKRenderer::SetImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageAspectFlags aspectMask,
                 VkImageLayout oldImageLayout, VkImageLayout newImageLayout)
             {
-                VkResult err;
-
-                if(RendererInstance == nullptr)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::setImageLayout(): Tried to call static before the renderer instance was set.\n");
-#endif
-                    return false;
-                }
-
-                VkDevice& device = RendererInstance->m_device;
-                VkCommandPool& commandPool = RendererInstance->m_commandPool;
-
-                //Start up a basic command buffer if we don't have one already
-                if (commandBuffer == VK_NULL_HANDLE)
-                {
-                    VkCommandBufferAllocateInfo command;
-                    command.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-                    command.pNext = nullptr;
-                    command.commandPool = commandPool;
-                    command.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-                    command.commandBufferCount = 1;
-
-                    err = vkAllocateCommandBuffers(device, &command, &commandBuffer);
-                    if(err != VK_SUCCESS)
-                    {
-#ifdef _DEBUG
-                        Core::DebugPrintF("VKRenderer::setImageLayout(): Failed to allocate command buffer.\n");
-#endif
-                        return false;
-                    }
-
-                    VkCommandBufferInheritanceInfo commandBufferHInfo;
-                    commandBufferHInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
-                    commandBufferHInfo.pNext = nullptr;
-                    commandBufferHInfo.renderPass = VK_NULL_HANDLE;
-                    commandBufferHInfo.subpass = 0;
-                    commandBufferHInfo.framebuffer = VK_NULL_HANDLE;
-                    commandBufferHInfo.occlusionQueryEnable = VK_FALSE;
-                    commandBufferHInfo.queryFlags = 0;
-                    commandBufferHInfo.pipelineStatistics = 0;
-
-                    VkCommandBufferBeginInfo commandBufferBeginInfo;
-                    commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-                    commandBufferBeginInfo.pNext = nullptr;
-                    commandBufferBeginInfo.flags = 0;
-                    commandBufferBeginInfo.pInheritanceInfo = &commandBufferHInfo;
-
-                    err = vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo);
-                    if (err != VK_SUCCESS)
-                    {
-#ifdef _DEBUG
-                        Core::DebugPrintF("VKRenderer::SetImageLayout(): Failed to begin command buffer.\n");
-#endif
-                        return false;
-                    }
-                }
-
                 VkImageMemoryBarrier imageMemoryBarrier;
                 imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
                 imageMemoryBarrier.pNext = nullptr;
@@ -1807,25 +1761,73 @@ namespace Hatchit {
                 imageMemoryBarrier.srcQueueFamilyIndex = 0;
                 imageMemoryBarrier.dstQueueFamilyIndex = 0;
 
-                if (newImageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-                    // Make sure anything that was copying from this image has completed
+                // Undefined layout
+                // Only allowed as initial layout!
+                // Make sure any writes to the image have been finished
+                if (oldImageLayout == VK_IMAGE_LAYOUT_UNDEFINED)
+                {
+                    imageMemoryBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+                }
+
+                // Old layout is color attachment
+                // Make sure any writes to the color buffer have been finished
+                if (oldImageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+                {
+                    imageMemoryBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                }
+
+                // Old layout is transfer source
+                // Make sure any reads from the image have been finished
+                if (oldImageLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+                {
+                    imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                }
+
+                // Old layout is shader read (sampler, input attachment)
+                // Make sure any shader reads from the image have been finished
+                if (oldImageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+                {
+                    imageMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                }
+
+                // Target layouts (new)
+
+                // New layout is transfer destination (copy, blit)
+                // Make sure any copyies to the image have been finished
+                if (newImageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+                {
+                    imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                }
+
+                // New layout is transfer source (copy, blit)
+                // Make sure any reads from and writes to the image have been finished
+                if (newImageLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+                {
+                    imageMemoryBarrier.srcAccessMask = imageMemoryBarrier.srcAccessMask | VK_ACCESS_TRANSFER_READ_BIT;
                     imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
                 }
 
-                if (newImageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
-                    imageMemoryBarrier.dstAccessMask =
-                        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                // New layout is color attachment
+                // Make sure any writes to the color buffer hav been finished
+                if (newImageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+                {
+                    imageMemoryBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                    imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
                 }
 
-                if (newImageLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
-                    imageMemoryBarrier.dstAccessMask =
-                        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+                // New layout is depth attachment
+                // Make sure any writes to depth/stencil buffer have been finished
+                if (newImageLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+                {
+                    imageMemoryBarrier.dstAccessMask = imageMemoryBarrier.dstAccessMask | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
                 }
 
-                if (newImageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-                    // Make sure any Copy or CPU writes to image are flushed
-                    imageMemoryBarrier.dstAccessMask =
-                        VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+                // New layout is shader read (sampler, input attachment)
+                // Make sure any writes to the image have been finished
+                if (newImageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+                {
+                    imageMemoryBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+                    imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
                 }
 
                 VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;

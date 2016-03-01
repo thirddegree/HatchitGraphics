@@ -87,6 +87,7 @@ namespace Hatchit {
                 VkFormat GetPreferredImageFormat();
                 VkFormat GetPreferredDepthFormat();
 
+                void CreateSetupCommandBuffer();
                 void FlushSetupCommandBuffer();
 
                 //Reused helpers
@@ -160,8 +161,7 @@ namespace Hatchit {
 
                 VkClearValue                            m_clearColor;
 
-                float m_angle = 0.0f;
-                IMaterial* m_material;
+                IRenderTarget* m_renderTarget;
 
                 //Vulkan Callbacks
                 PFN_vkCreateDebugReportCallbackEXT m_createDebugReportCallback;

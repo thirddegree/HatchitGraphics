@@ -66,7 +66,6 @@ namespace Hatchit {
 
             bool VKRenderTarget::Blit(VkCommandBuffer buffer)
             {
-                VkResult err;
                 VKRenderer* renderer = VKRenderer::RendererInstance;
 
                 //Make sure color writes to the render target are finished
@@ -109,16 +108,6 @@ namespace Hatchit {
                 renderer->SetImageLayout(buffer, m_texture.image.image, VK_IMAGE_ASPECT_COLOR_BIT,
                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-                err = vkEndCommandBuffer(buffer);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderPass::VBuildCommandList(): Failed to end command buffer.\n");
-#endif
-                    return false;
-                }
-
                 return true;
             }
 
@@ -131,7 +120,7 @@ namespace Hatchit {
             bool VKRenderTarget::setupFramebuffer(VKRenderer* renderer) 
             {
                 VkDevice device = renderer->GetVKDevice();
-                VkCommandBuffer setupCommand = renderer->GetSetupCommandBuffer();
+                VkCommandBuffer setupCommand;
 
                 m_colorFormat = renderer->GetPreferredImageFormat();
                 m_depthFormat = renderer->GetPreferredDepthFormat();
@@ -191,8 +180,14 @@ namespace Hatchit {
                     return false;
                 }
 
+                renderer->CreateSetupCommandBuffer();
+
+                setupCommand = renderer->GetSetupCommandBuffer();
+
                 renderer->SetImageLayout(setupCommand, m_color.image, VK_IMAGE_ASPECT_COLOR_BIT,
                     VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+                renderer->FlushSetupCommandBuffer();
 
                 VkImageViewCreateInfo viewInfo = {};
                 viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -259,8 +254,14 @@ namespace Hatchit {
                     return false;
                 }
 
+                renderer->CreateSetupCommandBuffer();
+
+                setupCommand = renderer->GetSetupCommandBuffer();
+
                 renderer->SetImageLayout(setupCommand, m_depth.image, VK_IMAGE_ASPECT_DEPTH_BIT,
-                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
+                renderer->FlushSetupCommandBuffer();
 
                 err = vkCreateImageView(device, &viewInfo, nullptr, &m_depth.view);
                 if (err != VK_SUCCESS)
@@ -325,6 +326,7 @@ namespace Hatchit {
 
                 VkImageCreateInfo imageCreateInfo = {};
                 imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+                imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
                 imageCreateInfo.format = m_colorFormat;
                 imageCreateInfo.extent = { m_width, m_height, 1 };
                 imageCreateInfo.mipLevels = 1;
@@ -375,7 +377,11 @@ namespace Hatchit {
                 }
 
                 m_texture.layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+
+                renderer->CreateSetupCommandBuffer();
+
                 VkCommandBuffer setupCommandBuffer = renderer->GetSetupCommandBuffer();
+
                 renderer->SetImageLayout(setupCommandBuffer, m_texture.image.image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, m_texture.layout);
 
                 //Create a sampler
