@@ -212,7 +212,7 @@ namespace Hatchit {
 
                 Math::Matrix4 view = Math::MMMatrixLookAt(Math::Vector3(0, 0, 5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0));
 
-                Math::Matrix4 proj = Math::MMMatrixPerspProj(59.0f, (float)m_width / (float)m_height, 0.1f, 1000.0f);
+                Math::Matrix4 proj = Math::MMMatrixPerspProj(90.0f, (float)m_width / (float)m_height, 0.1f, 1000.0f);
 
                 Math::Matrix4 mvp = mat * (view * proj);
                 
