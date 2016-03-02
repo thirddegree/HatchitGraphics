@@ -37,7 +37,6 @@ namespace Hatchit {
 
             VKRenderer::VKRenderer()
             {
-                m_swapchain = 0;
                 m_setupCommandBuffer = 0;
             }
 
@@ -80,29 +79,9 @@ namespace Hatchit {
 
             void VKRenderer::VDeInitialize()
             {
-                uint32_t i;
-
-                for (i = 0; i < m_swapchainBuffers.size(); i++) 
-                    vkDestroyFramebuffer(m_device, m_framebuffers[i], nullptr);
-                
-                m_framebuffers.clear();
-
-                vkDestroyRenderPass(m_device, m_renderPass, nullptr);
-
-                fpDestroySwapchainKHR(m_device, m_swapchain, nullptr);
-
-                vkDestroyImageView(m_device, m_depthBuffer.view, nullptr);
-                vkDestroyImage(m_device, m_depthBuffer.image, nullptr);
-                vkFreeMemory(m_device, m_depthBuffer.memory, nullptr);
-
-                for (i = 0; i < m_swapchainBuffers.size(); i++) {
-                    vkDestroyImageView(m_device, m_swapchainBuffers[i].view, nullptr);
-                    vkFreeCommandBuffers(m_device, m_commandPool, 1,
-                        &m_swapchainBuffers[i].command);
-                }
-                m_swapchainBuffers.clear();
-
                 m_queueProps.clear();
+
+                delete m_swapchain;
 
                 vkDestroyCommandPool(m_device, m_commandPool, nullptr);
                 vkDestroyDevice(m_device, nullptr);
@@ -115,33 +94,6 @@ namespace Hatchit {
 
             void VKRenderer::VResizeBuffers(uint32_t width, uint32_t height)
             {
-                uint32_t i;
-
-                for (i = 0; i < m_swapchainBuffers.size(); i++)
-                    vkDestroyFramebuffer(m_device, m_framebuffers[i], nullptr);
-                m_framebuffers.clear();
-
-                vkDestroyPipeline(m_device, m_pipeline, nullptr);
-                vkDestroyPipelineCache(m_device, m_pipelineCache, nullptr);
-                vkDestroyRenderPass(m_device, m_renderPass, nullptr);
-                vkDestroyDescriptorSetLayout(m_device, m_descriptorLayout, nullptr);
-
-                //TODO: Destroy textures
-
-                vkDestroyImageView(m_device, m_depthBuffer.view, nullptr);
-                vkDestroyImage(m_device, m_depthBuffer.image, nullptr);
-                vkFreeMemory(m_device, m_depthBuffer.memory, nullptr);
-
-                //TODO: Destroy uniform info
-
-                for (i = 0; i < m_swapchainBuffers.size(); i++)
-                {
-                    vkDestroyImageView(m_device, m_swapchainBuffers[i].view, nullptr);
-                    vkFreeCommandBuffers(m_device, m_commandPool, 1, &m_swapchainBuffers[i].command);
-                }
-                vkDestroyCommandPool(m_device, m_commandPool, nullptr);
-                m_swapchainBuffers.clear();
-
                 //Recreate the swapchain
                 m_width = width;
                 m_height = height;
@@ -169,7 +121,7 @@ namespace Hatchit {
 
                 //Get the next image to draw on
                 //TODO: Actually use fences
-                err = fpAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, m_presentSemaphore, nullFence, &m_currentBuffer);
+                err = m_swapchain->VKGetNextImage(m_presentSemaphore);
                 if (err == VK_ERROR_OUT_OF_DATE_KHR)
                 {
                     //Resize!
@@ -203,8 +155,7 @@ namespace Hatchit {
                 }
 
                 //Make sure we run the swapchain command
-                commandBuffers.push_back(m_swapchainBuffers[m_currentBuffer].command);
-
+                commandBuffers.push_back(m_swapchain->GetCurrentCommand());
 
                 //Example code for rotation
                 Math::Matrix4 rot = Math::MMMatrixRotationY( m_angle += 0.001f);
@@ -241,14 +192,7 @@ namespace Hatchit {
             {
                 VkResult err;
 
-                VkPresentInfoKHR present = {};
-                present.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-                present.pNext = nullptr;
-                present.swapchainCount = 1;
-                present.pSwapchains = &m_swapchain;
-                present.pImageIndices = &m_currentBuffer;
-
-                err = fpQueuePresentKHR(m_queue, &present);
+                err = m_swapchain->VKPresent(m_queue);
                 if (err == VK_ERROR_OUT_OF_DATE_KHR)
                     VResizeBuffers(m_width, m_height);
                 else if (err == VK_SUBOPTIMAL_KHR)
@@ -274,6 +218,11 @@ namespace Hatchit {
                 return m_device;
             }
 
+            VkInstance VKRenderer::GetVKInstance() 
+            {
+                return m_instance;
+            }
+
             VkCommandPool VKRenderer::GetVKCommandPool()
             {
                 return m_commandPool;
@@ -290,7 +239,7 @@ namespace Hatchit {
             }
             VkFormat VKRenderer::GetPreferredDepthFormat() 
             {
-                return m_depthBuffer.format;
+                return VK_FORMAT_D16_UNORM;
             }
 
             bool VKRenderer::initVulkan(const RendererParams& params) 
@@ -441,20 +390,7 @@ namespace Hatchit {
                 * Create the device object that is in charge of allocating memory and making draw calls
                 */
                 if (!createDevice())
-                    return false;
-
-                //Setup some function pointers from the device
-
-                //Pointer to function to get function pointers from device
-                PFN_vkGetDeviceProcAddr g_gdpa = (PFN_vkGetDeviceProcAddr)
-                    vkGetInstanceProcAddr(m_instance, "vkGetDeviceProcAddr");
-
-                //Get other function pointers
-                fpCreateSwapchainKHR = (PFN_vkCreateSwapchainKHR)g_gdpa(m_device, "vkCreateSwapchainKHR");
-                fpDestroySwapchainKHR = (PFN_vkDestroySwapchainKHR)g_gdpa(m_device, "vkDestroySwapchainKHR");
-                fpGetSwapchainImagesKHR = (PFN_vkGetSwapchainImagesKHR)g_gdpa(m_device, "vkGetSwapchainImagesKHR");
-                fpAcquireNextImageKHR = (PFN_vkAcquireNextImageKHR)g_gdpa(m_device, "vkAcquireNextImageKHR");
-                fpQueuePresentKHR = (PFN_vkQueuePresentKHR)g_gdpa(m_device, "vkQueuePresentKHR");
+                    return false;                
 
                 //Get Device queue
                 vkGetDeviceQueue(m_device, m_graphicsQueueNodeIndex, 0, &m_queue);
@@ -467,6 +403,8 @@ namespace Hatchit {
 
                 //Get memory information
                 vkGetPhysicalDeviceMemoryProperties(m_gpu, &m_memoryProps);
+
+                m_swapchain = new VKSwapchain(&m_instance, &m_device, &m_commandPool);
 
                 return true;
             }
@@ -953,16 +891,6 @@ namespace Hatchit {
                     return false;
                 }
 
-                fpGetSwapchainImagesKHR = (PFN_vkGetSwapchainImagesKHR)
-                    vkGetInstanceProcAddr(m_instance, "vkGetSwapchainImagesKHR");
-                if (fpGetSwapchainImagesKHR == nullptr)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::setupProcAddresses: vkGetSwapchainImagesKHR not found.\n");
-#endif
-                    return false;
-                }
-
                 return true;
             }
 
@@ -1122,39 +1050,16 @@ namespace Hatchit {
                 /*
                 * Prepare the swapchain buffers
                 */
-                if (!prepareSwapchainBuffers())
-                    return false;
-
-                /*
-                * Prepare the swapchain depth buffer
-                */
-                if (!prepareSwapchainDepth())
-                    return false;
-                
-                /*
-                * Prepare the render pass; describes which color and depth formats the command buffers will write to
-                */
-                if (!prepareRenderPass())
-                    return false;
-
-                /*
-                * Allocate memory for the command buffers
-                */
-                if (!allocateCommandBuffers())
-                    return false;
-                
-                /*
-                * Prepare frame buffers to draw on; one for each image in the swapchain
-                */
-                if (!prepareFrambuffers())
+                if (!prepareSwapchain())
                     return false;
                 
                 FlushSetupCommandBuffer();
 
                 //TODO: remove this test code
-                IRenderPass* renderPass = new VKRenderPass();
+                VKRenderPass* renderPass = new VKRenderPass();
                 renderPass->SetWidth(m_width);
                 renderPass->SetHeight(m_height);
+                renderPass->VSetClearColor(Color(m_clearColor.color.float32[0], m_clearColor.color.float32[1], m_clearColor.color.float32[2], m_clearColor.color.float32[3]));
 
                 m_renderTarget = new VKRenderTarget(m_width, m_height);
                 m_renderTarget->SetRenderPass(renderPass);
@@ -1190,7 +1095,7 @@ namespace Hatchit {
                 multisampleState.minSamples = 0;
                 multisampleState.samples = SAMPLE_1_BIT;
 
-                IPipeline* pipeline = new VKPipeline(m_renderPass);
+                IPipeline* pipeline = new VKPipeline(renderPass->GetVkRenderPass());
                 pipeline->VLoadShader(ShaderSlot::VERTEX, &vsShader);
                 pipeline->VLoadShader(ShaderSlot::FRAGMENT, &fsShader);
                 pipeline->VSetRasterState(rasterState);
@@ -1226,29 +1131,20 @@ namespace Hatchit {
 
                 m_renderPasses.push_back(renderPass);
 
-                /*
-                * Build all the command buffers for the swapchain
-                */
-                for (uint32_t i = 0; i < m_swapchainBuffers.size(); i++) {
-                    m_currentBuffer = i;
-                    buildCommandBuffer(m_swapchainBuffers[i].command);
-                }
+                m_swapchain->BuildSwapchain(m_clearColor);
                 
                 //Flush the command buffer once
                 FlushSetupCommandBuffer();
 
-                m_currentBuffer = 0;
-
                 return true;
             }
 
-            bool VKRenderer::prepareSwapchainBuffers() 
+            bool VKRenderer::prepareSwapchain() 
             {
                 VkResult err;
-                VkSwapchainKHR oldSwapchain = m_swapchain;
 
                 //Check surface capabilities and formats
-                
+
                 VkSurfaceCapabilitiesKHR surfaceCapabilities;
                 err = fpGetPhysicalDeviceSurfaceCapabilitiesKHR(m_gpu, m_surface, &surfaceCapabilities);
                 if (err != VK_SUCCESS)
@@ -1260,7 +1156,7 @@ namespace Hatchit {
                 }
 
                 //Get present modes
-                
+
                 uint32_t presentModeCount;
                 err = fpGetPhysicalDeviceSurfacePresentModesKHR(m_gpu, m_surface, &presentModeCount, nullptr);
                 if (err != VK_SUCCESS)
@@ -1295,142 +1191,8 @@ namespace Hatchit {
                     m_width = swapchainExtent.width;
                     m_height = swapchainExtent.height;
                 }
-
-                //Use mailbox mode if available as it's the lowest-latency non-tearing mode
-                //If that's not available try immediate mode which SHOULD be available and is fast but tears
-                //Fall back to FIFO which is always available
-                VkPresentModeKHR swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
-                for (size_t i = 0; i < presentModeCount; i++) {
-                    if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
-                        swapchainPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
-                        break;
-                    }
-                    if ((swapchainPresentMode != VK_PRESENT_MODE_MAILBOX_KHR) &&
-                        (presentModes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR)) {
-                        swapchainPresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
-                    }
-                }
-
-                //Determine how many VkImages to use in the swap chain
-                //We only own one at a time besides the image being displayed
-                uint32_t desiredNumberOfSwapchainImages = surfaceCapabilities.minImageCount + 1;
-                if ((surfaceCapabilities.maxImageCount > 0) &
-                    (desiredNumberOfSwapchainImages > surfaceCapabilities.maxImageCount))
-                    desiredNumberOfSwapchainImages = surfaceCapabilities.maxImageCount;
-
-                //Setup transform flags
-                VkSurfaceTransformFlagBitsKHR preTransform;
-                if (surfaceCapabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
-                    preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-                else
-                    preTransform = surfaceCapabilities.currentTransform;
-
-                //Create swapchain
-
-                VkSwapchainCreateInfoKHR swapchainInfo;
-                swapchainInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-                swapchainInfo.pNext = nullptr;
-                swapchainInfo.surface = m_surface;
-                swapchainInfo.minImageCount = desiredNumberOfSwapchainImages;
-                swapchainInfo.imageFormat = m_preferredImageFormat;
-                swapchainInfo.imageColorSpace = m_colorSpace;
-                swapchainInfo.imageExtent = swapchainExtent;
-                swapchainInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-                swapchainInfo.preTransform = preTransform;
-                swapchainInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-                swapchainInfo.imageArrayLayers = 1;
-                swapchainInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-                swapchainInfo.queueFamilyIndexCount = 0;
-                swapchainInfo.pQueueFamilyIndices = nullptr;
-                swapchainInfo.presentMode = swapchainPresentMode;
-                swapchainInfo.oldSwapchain = oldSwapchain;
-                swapchainInfo.clipped = true;
-                swapchainInfo.flags = 0;
-
-                uint32_t i; // About to be used for a bunch of loops
-
-                err = fpCreateSwapchainKHR(m_device, &swapchainInfo, nullptr, &m_swapchain);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::prepareSwapchainBuffers(): Failed to create Swapchain.\n");
-#endif
-                    return false;
-                }
-
-                //Destroy old swapchain
-                if (oldSwapchain != VK_NULL_HANDLE)
-                    fpDestroySwapchainKHR(m_device, oldSwapchain, nullptr);
-
-                //Get the swapchain images
-                uint32_t swapchainImageCount;
-                err = fpGetSwapchainImagesKHR(m_device, m_swapchain, &swapchainImageCount, nullptr);
-                if(err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::prepareSwapchainBuffers(): Failed to get swapchain image count.\n");
-#endif
-                    return false;
-                }
-
-                std::vector<VkImage> swapchainImages;
-                swapchainImages.resize(swapchainImageCount);
-                err = fpGetSwapchainImagesKHR(m_device, m_swapchain, &swapchainImageCount, &swapchainImages[0]);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::prepareSwapchainBuffers(): Failed to get swapchain images.\n");
-#endif
-                    return false;
-                }
-
-                for (i = 0; i < swapchainImageCount; i++)
-                {
-                    VkComponentMapping components;
-                    components.r = VK_COMPONENT_SWIZZLE_R;
-                    components.g = VK_COMPONENT_SWIZZLE_G;
-                    components.b = VK_COMPONENT_SWIZZLE_B;
-                    components.a = VK_COMPONENT_SWIZZLE_A;
-
-                    VkImageSubresourceRange subresourceRange;
-                    subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                    subresourceRange.baseMipLevel = 0;
-                    subresourceRange.levelCount = 1;
-                    subresourceRange.baseArrayLayer = 0;
-                    subresourceRange.layerCount = 1;
-
-                    VkImageViewCreateInfo colorImageView;
-                    colorImageView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-                    colorImageView.pNext = nullptr;
-                    colorImageView.format = m_preferredImageFormat;
-                    colorImageView.components = components;
-                    colorImageView.subresourceRange = subresourceRange;
-                    colorImageView.viewType = VK_IMAGE_VIEW_TYPE_2D;
-                    colorImageView.flags = 0;
-
-                    SwapchainBuffers buffer;
-                    buffer.image = swapchainImages[i];
-
-                    //Render loop will expect image to have been used before
-                    //Init image ot the VK_IMAGE_ASPECT_COLOR_BIT state
-                    SetImageLayout(m_setupCommandBuffer, buffer.image, VK_IMAGE_ASPECT_COLOR_BIT,
-                        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-
-                    colorImageView.image = buffer.image;
-
-                    //Attempt to create the image view
-                    err = vkCreateImageView(m_device, &colorImageView, nullptr, &buffer.view);
-
-                    if (err != VK_SUCCESS)
-                    {
-#ifdef _DEBUG
-                        Core::DebugPrintF("VKRenderer::prepareSwapchainBuffers(): Failed to create image view.\n");
-#endif
-                        return false;
-                    }
-
-                    m_swapchainBuffers.push_back(buffer);
-                }
+                
+                m_swapchain->VKPrepare(m_surface, m_colorSpace, presentModes, presentModeCount, surfaceCapabilities, swapchainExtent);
 
                 if (presentModes != nullptr)
                     delete[] presentModes;
@@ -1438,256 +1200,6 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKRenderer::prepareSwapchainDepth() 
-            {
-                VkResult err;
-                const VkFormat depthFormat = VK_FORMAT_D16_UNORM;
-
-                VkImageCreateInfo image;
-                image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-                image.pNext = nullptr;
-                image.imageType = VK_IMAGE_TYPE_2D;
-                image.format = depthFormat;
-                image.extent = {m_width, m_height, 1};
-                image.mipLevels = 1;
-                image.arrayLayers = 1;
-                image.samples = VK_SAMPLE_COUNT_1_BIT;
-                image.tiling = VK_IMAGE_TILING_OPTIMAL;
-                image.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-                image.flags = 0;
-                image.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-                image.queueFamilyIndexCount = 0;
-                image.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-                VkComponentMapping components;
-                components.r = VK_COMPONENT_SWIZZLE_R;
-                components.g = VK_COMPONENT_SWIZZLE_G;
-                components.b = VK_COMPONENT_SWIZZLE_B;
-                components.a = VK_COMPONENT_SWIZZLE_A;
-
-                VkImageSubresourceRange depthSubresourceRange;
-                depthSubresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT ;
-                depthSubresourceRange.baseMipLevel = 0;
-                depthSubresourceRange.levelCount = 1;
-                depthSubresourceRange.baseArrayLayer = 0;
-                depthSubresourceRange.layerCount = 1;
-
-                VkImageViewCreateInfo view;
-                view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-                view.pNext = nullptr;
-                view.image = VK_NULL_HANDLE;
-                view.format = depthFormat;
-                view.subresourceRange = depthSubresourceRange;
-                view.flags = 0;
-                view.components = components;
-                view.viewType = VK_IMAGE_VIEW_TYPE_2D;
-
-                m_depthBuffer.format = depthFormat;
-
-                VkMemoryRequirements memoryRequirements;
-                bool pass;
-
-                //Create image
-                err = vkCreateImage(m_device, &image, nullptr, &m_depthBuffer.image);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::prepareSwapchainDepth(): Error, failed to create image\n");
-#endif
-                    return false;
-                }
-
-                vkGetImageMemoryRequirements(m_device, m_depthBuffer.image, &memoryRequirements);
-
-                m_depthBuffer.memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-                m_depthBuffer.memAllocInfo.pNext = nullptr;
-                m_depthBuffer.memAllocInfo.allocationSize = memoryRequirements.size;
-                m_depthBuffer.memAllocInfo.memoryTypeIndex = 0;
-                
-                //No requirements
-                pass = MemoryTypeFromProperties(memoryRequirements.memoryTypeBits, 0, &m_depthBuffer.memAllocInfo.memoryTypeIndex);
-                assert(pass);
-                if (!pass)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::prepareSwapchainDepth(): Error, failed to get memory type for depth buffer\n");
-#endif
-                    return false;
-                }
-
-                //Allocate Memory
-                err = vkAllocateMemory(m_device, &m_depthBuffer.memAllocInfo, nullptr, &m_depthBuffer.memory);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::prepareSwapchainDepth(): Error, failed to allocate memory for depth buffer\n");
-#endif
-                    return false;
-                }
-
-                //Bind Memory
-                err = vkBindImageMemory(m_device, m_depthBuffer.image, m_depthBuffer.memory, 0);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::prepareSwapchainDepth(): Error, failed to bind depth buffer memory\n");
-#endif
-                    return false;
-                }
-
-                SetImageLayout(m_setupCommandBuffer, m_depthBuffer.image, VK_IMAGE_ASPECT_DEPTH_BIT,
-                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-
-                //Create image view
-                view.image = m_depthBuffer.image;
-                err = vkCreateImageView(m_device, &view, nullptr, &m_depthBuffer.view);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::prepareSwapchainDepth(): Error, failed create image view for depth buffer\n");
-#endif
-                    return false;
-                }
-
-                return true; 
-            }
-
-            //TODO: move render pass creation to a new class
-            bool VKRenderer::prepareRenderPass() 
-            { 
-                VkAttachmentDescription attachments[2];
-                attachments[0].format = m_preferredImageFormat;
-                attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
-                attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-                attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-                attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-                attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-                attachments[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                attachments[0].flags = 0;
-
-                attachments[1].format = m_depthBuffer.format;
-                attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
-                attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-                attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-                attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-                attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; 
-                attachments[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-                attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-                attachments[1].flags = 0;
-                
-                VkAttachmentReference colorReference;
-                colorReference.attachment = 0;
-                colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                
-                VkAttachmentReference depthReference;
-                depthReference.attachment = 1;
-                depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-                
-                VkSubpassDescription subpass;
-                subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-                subpass.flags = 0;
-                subpass.inputAttachmentCount = 0;
-                subpass.pInputAttachments = nullptr;
-                subpass.colorAttachmentCount = 1;
-                subpass.pColorAttachments = &colorReference;
-                subpass.pResolveAttachments = nullptr;
-                subpass.pDepthStencilAttachment = &depthReference;
-                subpass.preserveAttachmentCount = 0;
-                subpass.pPreserveAttachments = nullptr;
-
-                VkRenderPassCreateInfo renderPassInfo;
-                renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-                renderPassInfo.pNext = nullptr;
-                renderPassInfo.attachmentCount = 2;
-                renderPassInfo.pAttachments = attachments;
-                renderPassInfo.subpassCount = 1;
-                renderPassInfo.pSubpasses = &subpass;
-                renderPassInfo.dependencyCount = 0;
-                renderPassInfo.pDependencies = nullptr;
-                renderPassInfo.flags = 0;
-                
-                VkResult err;
-
-                err = vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::prepareDescriptorLayout(): Failed to create render pass\n");
-#endif
-                    return false;
-                }
-
-                return true; 
-            }
-            bool VKRenderer::prepareFrambuffers() 
-            { 
-                VkResult err;
-
-                VkImageView attachments[2] = {};
-                attachments[1] = m_depthBuffer.view;
-
-                VkFramebufferCreateInfo framebufferInfo = {};
-                framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-                framebufferInfo.pNext = nullptr;
-                framebufferInfo.renderPass = m_renderPass;
-                framebufferInfo.attachmentCount = 2;
-                framebufferInfo.pAttachments = attachments;
-                framebufferInfo.width = m_width;
-                framebufferInfo.height = m_height;
-                framebufferInfo.layers = 1;
-
-                for (uint32_t i = 0; i < m_swapchainBuffers.size(); i++)
-                {
-                    attachments[0] = m_swapchainBuffers[i].view;
-                    VkFramebuffer framebuffer;
-                    err = vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &framebuffer);
-
-                    if (err != VK_SUCCESS)
-                    {
-#ifdef _DEBUG
-                        Core::DebugPrintF("VKRenderer::prepareFrambuffers(): Failed to create framebuffer at index:%d \n", i);
-#endif
-                        return false;
-                    }
-
-                    m_framebuffers.push_back(framebuffer);
-                }
-
-                return true; 
-            }
-            bool VKRenderer::allocateCommandBuffers() 
-            {
-                VkResult err;
-
-                VkCommandBufferAllocateInfo allocateInfo;
-                allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-                allocateInfo.pNext = nullptr;
-                allocateInfo.commandPool = m_commandPool;
-                allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-                allocateInfo.commandBufferCount = 1;
-
-                for (uint32_t i = 0; i < m_swapchainBuffers.size(); i++)
-                {
-                    err = vkAllocateCommandBuffers(m_device, &allocateInfo, &m_swapchainBuffers[i].command);
-                    assert(!err);
-
-                    if (err != VK_SUCCESS)
-                    {
-#ifdef _DEBUG
-                        Core::DebugPrintF("VKRenderer::allocateCommandBuffers(): Failed to allocate for command buffer at index:%d \n", i);
-#endif
-                        return false;
-                    }
-                }
-
-                return true;
-            }
         
             void VKRenderer::CreateSetupCommandBuffer() 
             {
@@ -1884,142 +1396,6 @@ namespace Hatchit {
                 }
                 
                 return false; //nothing found
-            }
-
-            bool VKRenderer::buildCommandBuffer(VkCommandBuffer commandBuffer) 
-            {
-                VkResult err;
-
-                VkCommandBufferInheritanceInfo inheritanceInfo = {};
-                inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
-                inheritanceInfo.pNext = nullptr;
-                inheritanceInfo.renderPass = VK_NULL_HANDLE;
-                inheritanceInfo.subpass = 0;
-                inheritanceInfo.framebuffer = VK_NULL_HANDLE;
-                inheritanceInfo.occlusionQueryEnable = VK_FALSE;
-                inheritanceInfo.queryFlags = 0;
-                inheritanceInfo.pipelineStatistics = 0;
-
-                VkCommandBufferBeginInfo beginInfo = {};
-                beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-                beginInfo.pNext = nullptr;
-                beginInfo.flags = 0;
-                beginInfo.pInheritanceInfo = &inheritanceInfo;
-
-                VkClearValue clearValues[2] = {};
-                clearValues[0] = m_clearColor;
-                clearValues[1] = {1.0f, 0};
-
-                VkRenderPassBeginInfo renderPassBeginInfo = {};
-                renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-                renderPassBeginInfo.pNext = nullptr;
-                renderPassBeginInfo.renderPass = m_renderPass;
-                renderPassBeginInfo.framebuffer = m_framebuffers[m_currentBuffer];
-                renderPassBeginInfo.renderArea.offset.x = 0;
-                renderPassBeginInfo.renderArea.offset.y = 0;
-                renderPassBeginInfo.renderArea.extent.width = m_width;
-                renderPassBeginInfo.renderArea.extent.height = m_height;
-                renderPassBeginInfo.clearValueCount = 2;
-                renderPassBeginInfo.pClearValues = clearValues;
-
-                err = vkBeginCommandBuffer(commandBuffer, &beginInfo);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::buildCommandBuffer(): Failed to build command buffer.\n");
-#endif
-                    return false;
-                }
-
-                VkViewport viewport = {};
-                viewport.width = static_cast<float>(m_width);
-                viewport.height = static_cast<float>(m_height);
-                viewport.minDepth = 0.0f;
-                viewport.maxDepth = 1.0f;
-
-                VkRect2D scissor = {};
-                scissor.extent.width = m_width;
-                scissor.extent.height = m_height;
-                scissor.offset.x = 0;
-                scissor.offset.y = 0;
-
-                vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-                vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-                vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-                std::map<IPipeline*, std::vector<Renderable>>::iterator iterator;
-
-                for (iterator = m_pipelineList.begin(); iterator != m_pipelineList.end(); iterator++)
-                {
-                    VKPipeline* pipeline = static_cast<VKPipeline*>(iterator->first);
-
-                    VkPipeline vkPipeline = pipeline->GetVKPipeline();
-                    VkPipelineLayout vkPipelineLayout = pipeline->GetPipelineLayout();
-
-                    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetVKPipeline());
-
-                    /*  TODO: Set, get and bind pipeline-wide descriptor sets
-                    VkDescriptorSet descriptorSet = material->GetDescriptorSet();
-
-                    vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                    vkPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
-                    */
-
-                    std::vector<Renderable> renderables = iterator->second;
-
-                    VkDeviceSize offsets[] = { 0 };
-
-                    for (uint32_t i = 0; i < renderables.size(); i++)
-                    {
-                        VKMaterial* material = static_cast<VKMaterial*>(renderables[i].material);
-                        VKMesh*     mesh = static_cast<VKMesh*>(renderables[i].mesh);
-
-                        VkDescriptorSet* descriptorSet = material->GetDescriptorSet();
-                        
-                        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            vkPipelineLayout, 0, 1, descriptorSet, 0, nullptr);
-
-                        UniformBlock vertBlock = mesh->GetVertexBlock();
-                        UniformBlock indexBlock = mesh->GetIndexBlock();
-                        uint32_t indexCount = mesh->GetIndexCount();
-
-                        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertBlock.buffer, offsets);
-                        vkCmdBindIndexBuffer(commandBuffer, indexBlock.buffer, 0, VK_INDEX_TYPE_UINT32);
-                        vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
-                    }
-                }
-
-                vkCmdEndRenderPass(commandBuffer);
-
-                VkImageMemoryBarrier prePresentBarrier = {};
-                prePresentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                prePresentBarrier.pNext = nullptr;
-                prePresentBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-                prePresentBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-                prePresentBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                prePresentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-                prePresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                prePresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                prePresentBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-
-                prePresentBarrier.image = m_swapchainBuffers[m_currentBuffer].image;
-
-                vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &prePresentBarrier);
-
-                err = vkEndCommandBuffer(commandBuffer);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::buildCommandBuffer(): Failed to end command buffer.\n");
-#endif
-                    return false;
-                }
-
-                return true;
             }
 
             VKAPI_ATTR VkBool32 VKAPI_CALL VKRenderer::debugFunction(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType,

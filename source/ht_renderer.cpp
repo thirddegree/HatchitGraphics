@@ -28,5 +28,8 @@ namespace Hatchit {
             m_renderPasses.erase(m_renderPasses.begin() + index);
         }
 
+        uint32_t IRenderer::GetWidth() { return m_width; }
+        uint32_t IRenderer::GetHeight() { return m_height; }
+
     }
 }

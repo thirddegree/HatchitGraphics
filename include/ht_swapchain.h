@@ -26,15 +26,27 @@
 #pragma once
 
 #include <ht_platform.h>
+#include <ht_rendertarget.h>
+#include <ht_pipeline.h>
+#include <ht_renderer.h>
 
 namespace Hatchit {
 
-	namespace Graphics {
+    namespace Graphics {
 
-		class HT_API ISwapchain
-		{
-		public:
-			virtual bool VInitialize() = 0;
-		};
-	}
+        class HT_API ISwapchain
+        {
+        public:
+            virtual ~ISwapchain() {}
+
+        protected:
+            //Input
+            IRenderTarget* m_inputTexture;
+
+            //For rendering
+            IPipeline* m_pipeline;
+            uint32_t m_currentBuffer;
+            uint32_t m_width, m_height;
+        };
+    }
 }

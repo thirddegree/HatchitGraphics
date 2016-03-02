@@ -13,28 +13,96 @@
 **/
 
 /**
-* \class ISwapchain
+* \class VKSwapchain
 * \ingroup HatchitGraphics
 *
-* \brief An interface to a swapchain system that can be extended an implemented in a graphics language
+* \brief A Vulkan based swapchain
 *
-* This class will be extended by another class that will implement a swapchain.
-* A swapchain is the chain of swapbuffers used for drawing to. Each buffer will need
-* a framebuffer that actually gets written to.
+* This acts as a specialized render pass that is the final pass
+* which outputs the the screen.
 */
 
 #pragma once
 
 #include <ht_swapchain.h>
+#include <ht_vulkan.h>
 
 namespace Hatchit {
 
     namespace Graphics {
 
-        class HT_API VKSwapchain : public ISwapchain
-        {
-        public:
-            bool VInitialize()      override;
-        };
+        namespace Vulkan {
+
+            struct SwapchainBuffer {
+                VkImage image;
+                VkCommandBuffer command;
+                VkImageView view;
+            };
+
+            struct DepthBuffer {
+                VkFormat format;
+                VkImage image;
+                VkMemoryAllocateInfo memAllocInfo;
+                VkDeviceMemory memory;
+                VkImageView view;
+            };
+
+            class VKRenderer;
+
+            class HT_API VKSwapchain : public ISwapchain
+            {
+            public:
+                VKSwapchain(VkInstance* instance, VkDevice* device, VkCommandPool* commandPool);
+                ~VKSwapchain();
+                
+                bool VKPrepare(VkSurfaceKHR surface, VkColorSpaceKHR colorSpace, VkPresentModeKHR* presentModes, uint32_t presentModeCount, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D extents);
+
+                bool BuildSwapchain(VkClearValue clearColor);
+
+                VkResult VKGetNextImage(VkSemaphore presentSemaphore);
+                VkResult VKPresent(VkQueue queue);
+
+                VkCommandBuffer GetCurrentCommand();
+
+            private:
+                VkInstance*      m_instance;
+                VkDevice*        m_device;
+                VkCommandPool*   m_commandPool;
+                
+                VkRenderPass m_renderPass;
+
+                VkSwapchainKHR               m_swapchain;
+                std::vector<SwapchainBuffer> m_swapchainBuffers;
+                std::vector<VkFramebuffer>   m_framebuffers;
+                DepthBuffer                  m_depthBuffer;
+
+                void setupFunctionPointers();
+
+                bool prepareSwapchain(VKRenderer* renderer, VkFormat preferredColorFormat, VkSurfaceKHR surface, VkColorSpaceKHR colorSpace, VkPresentModeKHR* presentModes, uint32_t presentModeCount, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D surfaceExtents);
+
+                bool prepareSwapchainDepth(VKRenderer* renderer, VkExtent2D extent);
+
+                //Prepare the internal render pass
+                bool prepareRenderPass(VkFormat preferredColorFormat);
+
+                //Prepare the framebuffers for the swapchain images
+                bool prepareFramebuffers(VkExtent2D extents);
+
+                //Allocate the command buffers
+                bool allocateCommandBuffers();
+
+                //Function pointers to swapchain related functionality
+                PFN_vkCreateSwapchainKHR
+                    fpCreateSwapchainKHR;
+                PFN_vkDestroySwapchainKHR
+                    fpDestroySwapchainKHR;
+                PFN_vkGetSwapchainImagesKHR
+                    fpGetSwapchainImagesKHR;
+                PFN_vkAcquireNextImageKHR
+                    fpAcquireNextImageKHR;
+                PFN_vkQueuePresentKHR
+                    fpQueuePresentKHR;
+            };
+        }
     }
 }

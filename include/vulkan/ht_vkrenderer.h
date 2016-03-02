@@ -18,6 +18,7 @@
 #include <ht_vulkan.h>
 #include <ht_renderer.h>
 #include <ht_vkrenderpass.h>
+#include <ht_vkswapchain.h>
 #include <ht_string.h>
 #include <vector>
 
@@ -77,6 +78,11 @@ namespace Hatchit {
                 */
                 VkDevice GetVKDevice();
 
+                /* Get the core Vulkan instance
+                * \return The VkInstance for the app
+                */
+                VkInstance GetVKInstance();
+
                 /* Get the core Vulkan command pools
                 * \return a vulkan command pool
                 */
@@ -98,19 +104,6 @@ namespace Hatchit {
                 static bool CreateBuffer(VkDevice device, VkBufferUsageFlagBits usage, size_t dataSize, void* data, UniformBlock* uniformBlock);
 
             private:
-                typedef struct _SwapchainBuffers {
-                    VkImage image;
-                    VkCommandBuffer command;
-                    VkImageView view;
-                }SwapchainBuffers;
-
-                struct DepthBuffer {
-                    VkFormat format;
-                    VkImage image;
-                    VkMemoryAllocateInfo memAllocInfo;
-                    VkDeviceMemory memory;
-                    VkImageView view;
-                };
 
                 struct UniformData {
                     VkBuffer buffer;
@@ -121,9 +114,6 @@ namespace Hatchit {
 
                 std::vector<const char*>    m_enabledLayerNames;
                 std::vector<const char*>    m_enabledExtensionNames;
-
-                uint32_t m_width;
-                uint32_t m_height;
 
                 std::map<IPipeline*, std::vector<Renderable>> m_pipelineList;
 
@@ -141,22 +131,11 @@ namespace Hatchit {
                 VkColorSpaceKHR                         m_colorSpace;
                 VkPhysicalDeviceMemoryProperties        m_memoryProps;
                 
-                VkCommandPool                           m_commandPool;
-                VkSwapchainKHR                          m_swapchain;
-                std::vector<SwapchainBuffers>           m_swapchainBuffers;
-                DepthBuffer                             m_depthBuffer;
+                VKSwapchain* m_swapchain;
 
-                //Things that should be loaded from other classes ie textures, meshes, etc.
-                VkDescriptorSetLayout                   m_descriptorLayout;
-                VkPipelineLayout                        m_pipelineLayout;
-                VkPipelineCache                         m_pipelineCache;
-                VkRenderPass                            m_renderPass;
-                VkDescriptorPool                        m_descriptorPool;
-                VkDescriptorSet                         m_descriptorSet;
-                uint32_t                                m_currentBuffer;
                 VkCommandBuffer                         m_setupCommandBuffer;
-                VkPipeline                              m_pipeline;
-                std::vector<VkFramebuffer>              m_framebuffers;
+                VkCommandPool                           m_commandPool;
+                
                 VkSemaphore                             m_presentSemaphore;
 
                 VkClearValue                            m_clearColor;
@@ -185,18 +164,6 @@ namespace Hatchit {
                 PFN_vkGetPhysicalDeviceSurfacePresentModesKHR
                     fpGetPhysicalDeviceSurfacePresentModesKHR;
 
-                //Function pointers to device functions
-                PFN_vkCreateSwapchainKHR
-                    fpCreateSwapchainKHR;
-                PFN_vkDestroySwapchainKHR
-                    fpDestroySwapchainKHR;
-                PFN_vkGetSwapchainImagesKHR
-                    fpGetSwapchainImagesKHR;
-                PFN_vkAcquireNextImageKHR
-                    fpAcquireNextImageKHR;
-                PFN_vkQueuePresentKHR
-                    fpQueuePresentKHR;
-
                 //Core init methods
                 bool initVulkan(const RendererParams& params);
                 bool initVulkanSwapchain(const RendererParams& params);
@@ -220,14 +187,7 @@ namespace Hatchit {
                 bool getSupportedFormats();
 
                 //Helpers for prepareVulkan
-                bool prepareSwapchainBuffers();
-                bool prepareSwapchainDepth();
-                bool prepareRenderPass();
-                bool prepareFrambuffers();
-                bool allocateCommandBuffers();
-
-                //Used for drawing
-                bool buildCommandBuffer(VkCommandBuffer commandBuffer);
+                bool prepareSwapchain();
             };
 
         }

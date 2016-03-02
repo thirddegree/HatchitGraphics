@@ -100,8 +100,14 @@ namespace Hatchit {
             void AddRenderPass(IRenderPass* renderPass);
             void RemoveRenderPass(uint32_t index);
 
+            uint32_t GetWidth();
+            uint32_t GetHeight();
+
         protected:
             std::vector<IRenderPass*> m_renderPasses;
+
+            uint32_t m_width;
+            uint32_t m_height;
         };
 
     }
