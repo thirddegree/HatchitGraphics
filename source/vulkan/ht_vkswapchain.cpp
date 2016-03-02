@@ -12,7 +12,6 @@
 **
 **/
 
-
 #include <ht_vkswapchain.h>
 #include <ht_vkrenderer.h>
 #include <ht_vkrenderer.h>
@@ -23,43 +22,42 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKSwapchain::VKSwapchain(VkInstance* instance, VkDevice* device, VkCommandPool* commandPool)
+            VKSwapchain::VKSwapchain(VkInstance& instance, VkPhysicalDevice& gpu, VkDevice& device, VkCommandPool& commandPool) :
+                m_instance(instance), m_gpu(gpu), m_device(device), m_commandPool(commandPool)
             {
                 m_swapchain = 0;
 
                 m_instance = instance;
+                m_gpu = gpu;
                 m_device = device;
                 m_commandPool = commandPool;
             }
 
             VKSwapchain::~VKSwapchain()
             {
-                VkDevice device = *m_device;
-                VkCommandPool commandPool = *m_commandPool;
-
                 //TODO: Destroy any sort of descriptor sets or layouts
 
                 //Destroy depth
-                vkDestroyImageView(device, m_depthBuffer.view, nullptr);
-                vkDestroyImage(device, m_depthBuffer.image, nullptr);
-                vkFreeMemory(device, m_depthBuffer.memory, nullptr);
+                vkDestroyImageView(m_device, m_depthBuffer.view, nullptr);
+                vkDestroyImage(m_device, m_depthBuffer.image, nullptr);
+                vkFreeMemory(m_device, m_depthBuffer.memory, nullptr);
 
                 //Clear out framebuffers and swapchain buffer commands
                 uint32_t i;
                 for (i = 0; i < m_swapchainBuffers.size(); i++)
-                    vkDestroyFramebuffer(device, m_framebuffers[i], nullptr);
+                    vkDestroyFramebuffer(m_device, m_framebuffers[i], nullptr);
                 m_framebuffers.clear();
 
                 for (i = 0; i < m_swapchainBuffers.size(); i++)
                 {
                     //vkDestroyImage(device, m_swapchainBuffers[i].image, nullptr);
-                    vkDestroyImageView(device, m_swapchainBuffers[i].view, nullptr);
-                    vkFreeCommandBuffers(device, commandPool, 1, &m_swapchainBuffers[i].command);
+                    vkDestroyImageView(m_device, m_swapchainBuffers[i].view, nullptr);
+                    vkFreeCommandBuffers(m_device, m_commandPool, 1, &m_swapchainBuffers[i].command);
                 }
 
-                vkDestroyRenderPass(device, m_renderPass, nullptr);
+                vkDestroyRenderPass(m_device, m_renderPass, nullptr);
 
-                fpDestroySwapchainKHR(device, m_swapchain, nullptr);
+                fpDestroySwapchainKHR(m_device, m_swapchain, nullptr);
 
                 m_swapchainBuffers.clear();
             }
@@ -69,26 +67,88 @@ namespace Hatchit {
                 return m_swapchainBuffers[m_currentBuffer].command;
             }
 
-            bool VKSwapchain::VKPrepare(const VkSurfaceKHR* surface, VkColorSpaceKHR colorSpace, VkPresentModeKHR* presentModes, uint32_t presentModeCount, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D extents)
+            bool VKSwapchain::VKPrepare(VkSurfaceKHR surface, VkColorSpaceKHR colorSpace)
             {
-                //Setup function pointers that we'll need
-                setupFunctionPointers();
+                VkResult err;
 
-                m_width = extents.width;
-                m_height = extents.height;
+                // Get physical device surface properties and formats
+                VkSurfaceCapabilitiesKHR surfCaps;
+                err = fpGetPhysicalDeviceSurfaceCapabilitiesKHR(m_gpu, surface, &surfCaps);
+                assert(!err);
+
+                // Get available present modes
+                uint32_t presentModeCount;
+                err = fpGetPhysicalDeviceSurfacePresentModesKHR(m_gpu, surface, &presentModeCount, NULL);
+                assert(!err);
+                assert(presentModeCount > 0);
+
+                std::vector<VkPresentModeKHR> presentModes(presentModeCount);
+
+                err = fpGetPhysicalDeviceSurfacePresentModesKHR(m_gpu, surface, &presentModeCount, presentModes.data());
+                assert(!err);
+
+                VkExtent2D swapchainExtent = {};
+                // width and height are either both -1, or both not -1.
+                if (surfCaps.currentExtent.width == -1)
+                {
+                    // If the surface size is undefined, the size is set to
+                    // the size of the images requested.
+                    swapchainExtent.width = m_width;
+                    swapchainExtent.height = m_height;
+                }
+                else
+                {
+                    // If the surface size is defined, the swap chain size must match
+                    swapchainExtent = surfCaps.currentExtent;
+                    m_width = surfCaps.currentExtent.width;
+                    m_height = surfCaps.currentExtent.height;
+                }
+
+                // Prefer mailbox mode if present, it's the lowest latency non-tearing present  mode
+                VkPresentModeKHR swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+                for (size_t i = 0; i < presentModeCount; i++)
+                {
+                    if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR)
+                    {
+                        swapchainPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+                        break;
+                    }
+                    if ((swapchainPresentMode != VK_PRESENT_MODE_MAILBOX_KHR) && (presentModes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR))
+                    {
+                        swapchainPresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+                    }
+                }
+
+                // Determine the number of images
+                uint32_t desiredNumberOfSwapchainImages = surfCaps.minImageCount + 1;
+                if ((surfCaps.maxImageCount > 0) && (desiredNumberOfSwapchainImages > surfCaps.maxImageCount))
+                {
+                    desiredNumberOfSwapchainImages = surfCaps.maxImageCount;
+                }
+
+                VkSurfaceTransformFlagsKHR preTransform;
+                if (surfCaps.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
+                {
+                    preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+                }
+                else
+                {
+                    preTransform = surfCaps.currentTransform;
+                }
 
                 VKRenderer* renderer = VKRenderer::RendererInstance;
                 VkFormat preferredColorFormat = renderer->GetPreferredImageFormat();
                 /*
                     Prepare Color
                 */
-                if (!prepareSwapchain(renderer, preferredColorFormat, surface, colorSpace, presentModes, presentModeCount, surfaceCapabilities, extents))
+                if (!prepareSwapchain(renderer, surface, preferredColorFormat, colorSpace,
+                    presentModes, surfCaps, swapchainExtent))
                     return false;
 
                 /*
                     Prepare depth
                 */
-                if (!prepareSwapchainDepth(renderer, extents))
+                if (!prepareSwapchainDepth(renderer, swapchainExtent))
                     return false;
                 
                 /*
@@ -100,7 +160,7 @@ namespace Hatchit {
                 /*
                     Prepare framebuffers
                 */
-                if (!prepareFramebuffers(extents))
+                if (!prepareFramebuffers(swapchainExtent))
                     return false;
 
                 /*
@@ -236,33 +296,16 @@ namespace Hatchit {
                 Private Methods
             */
 
-            void VKSwapchain::setupFunctionPointers()
-            {
-                //Pointer to function to get function pointers from device
-                PFN_vkGetDeviceProcAddr g_gdpa = (PFN_vkGetDeviceProcAddr)
-                    vkGetInstanceProcAddr(*m_instance, "vkGetDeviceProcAddr");
-
-                VkDevice device = *m_device;
-
-                fpCreateSwapchainKHR = (PFN_vkCreateSwapchainKHR)g_gdpa(device, "vkCreateSwapchainKHR");
-                fpDestroySwapchainKHR = (PFN_vkDestroySwapchainKHR)g_gdpa(device, "vkDestroySwapchainKHR");
-                fpGetSwapchainImagesKHR = (PFN_vkGetSwapchainImagesKHR)g_gdpa(device, "vkGetSwapchainImagesKHR");
-                fpAcquireNextImageKHR = (PFN_vkAcquireNextImageKHR)g_gdpa(device, "vkAcquireNextImageKHR");
-                fpQueuePresentKHR = (PFN_vkQueuePresentKHR)g_gdpa(device, "vkQueuePresentKHR");
-            }
-
-            bool VKSwapchain::prepareSwapchain(VKRenderer* renderer, VkFormat preferredColorFormat, const VkSurfaceKHR* surface, VkColorSpaceKHR colorSpace, VkPresentModeKHR* presentModes, uint32_t presentModeCount, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D surfaceExtents)
+            bool VKSwapchain::prepareSwapchain(VKRenderer* renderer, VkSurfaceKHR surface, VkFormat preferredColorFormat, VkColorSpaceKHR colorSpace, std::vector<VkPresentModeKHR> presentModes, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D surfaceExtents)
             {
                 VkResult err;
                 VkSwapchainKHR oldSwapchain = m_swapchain;
-
-                VkDevice device = *m_device;
 
                 //Use mailbox mode if available as it's the lowest-latency non-tearing mode
                 //If that's not available try immediate mode which SHOULD be available and is fast but tears
                 //Fall back to FIFO which is always available
                 VkPresentModeKHR swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
-                for (size_t i = 0; i < presentModeCount; i++) {
+                for (size_t i = 0; i < presentModes.size(); i++) {
                     if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
                         swapchainPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
                         break;
@@ -292,7 +335,7 @@ namespace Hatchit {
                 VkSwapchainCreateInfoKHR swapchainInfo;
                 swapchainInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
                 swapchainInfo.pNext = nullptr;
-                swapchainInfo.surface = *surface;
+                swapchainInfo.surface = surface;
                 swapchainInfo.minImageCount = desiredNumberOfSwapchainImages;
                 swapchainInfo.imageFormat = preferredColorFormat;
                 swapchainInfo.imageColorSpace = colorSpace;
@@ -311,7 +354,7 @@ namespace Hatchit {
 
                 uint32_t i; // About to be used for a bunch of loops
 
-                err = fpCreateSwapchainKHR(device, &swapchainInfo, nullptr, &m_swapchain);
+                err = fpCreateSwapchainKHR(m_device, &swapchainInfo, nullptr, &m_swapchain);
                 if (err != VK_SUCCESS)
                 {
 #ifdef _DEBUG
@@ -322,11 +365,11 @@ namespace Hatchit {
 
                 //Destroy old swapchain
                 if (oldSwapchain != VK_NULL_HANDLE)
-                    fpDestroySwapchainKHR(device, oldSwapchain, nullptr);
+                    fpDestroySwapchainKHR(m_device, oldSwapchain, nullptr);
 
                 //Get the swapchain images
                 uint32_t swapchainImageCount;
-                err = fpGetSwapchainImagesKHR(device, m_swapchain, &swapchainImageCount, nullptr);
+                err = fpGetSwapchainImagesKHR(m_device, m_swapchain, &swapchainImageCount, nullptr);
                 if (err != VK_SUCCESS)
                 {
 #ifdef _DEBUG
@@ -337,7 +380,7 @@ namespace Hatchit {
 
                 std::vector<VkImage> swapchainImages;
                 swapchainImages.resize(swapchainImageCount);
-                err = fpGetSwapchainImagesKHR(device, m_swapchain, &swapchainImageCount, &swapchainImages[0]);
+                err = fpGetSwapchainImagesKHR(m_device, m_swapchain, &swapchainImageCount, &swapchainImages[0]);
                 if (err != VK_SUCCESS)
                 {
 #ifdef _DEBUG
@@ -382,7 +425,7 @@ namespace Hatchit {
                     colorImageView.image = buffer.image;
 
                     //Attempt to create the image view
-                    err = vkCreateImageView(device, &colorImageView, nullptr, &buffer.view);
+                    err = vkCreateImageView(m_device, &colorImageView, nullptr, &buffer.view);
 
                     if (err != VK_SUCCESS)
                     {
@@ -402,8 +445,6 @@ namespace Hatchit {
             {
                 VkResult err;
                 const VkFormat depthFormat = renderer->GetPreferredDepthFormat();
-
-                VkDevice device = *m_device;
 
                 VkImageCreateInfo image;
                 image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -450,7 +491,7 @@ namespace Hatchit {
                 bool pass;
 
                 //Create image
-                err = vkCreateImage(device, &image, nullptr, &m_depthBuffer.image);
+                err = vkCreateImage(m_device, &image, nullptr, &m_depthBuffer.image);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -460,7 +501,7 @@ namespace Hatchit {
                     return false;
                 }
 
-                vkGetImageMemoryRequirements(device, m_depthBuffer.image, &memoryRequirements);
+                vkGetImageMemoryRequirements(m_device, m_depthBuffer.image, &memoryRequirements);
 
                 m_depthBuffer.memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
                 m_depthBuffer.memAllocInfo.pNext = nullptr;
@@ -479,7 +520,7 @@ namespace Hatchit {
                 }
 
                 //Allocate Memory
-                err = vkAllocateMemory(device, &m_depthBuffer.memAllocInfo, nullptr, &m_depthBuffer.memory);
+                err = vkAllocateMemory(m_device, &m_depthBuffer.memAllocInfo, nullptr, &m_depthBuffer.memory);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -490,7 +531,7 @@ namespace Hatchit {
                 }
 
                 //Bind Memory
-                err = vkBindImageMemory(device, m_depthBuffer.image, m_depthBuffer.memory, 0);
+                err = vkBindImageMemory(m_device, m_depthBuffer.image, m_depthBuffer.memory, 0);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -506,7 +547,7 @@ namespace Hatchit {
 
                 //Create image view
                 view.image = m_depthBuffer.image;
-                err = vkCreateImageView(device, &view, nullptr, &m_depthBuffer.view);
+                err = vkCreateImageView(m_device, &view, nullptr, &m_depthBuffer.view);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -575,7 +616,7 @@ namespace Hatchit {
 
                 VkResult err;
 
-                err = vkCreateRenderPass(*m_device, &renderPassInfo, nullptr, &m_renderPass);
+                err = vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -609,7 +650,7 @@ namespace Hatchit {
                 {
                     attachments[0] = m_swapchainBuffers[i].view;
                     VkFramebuffer framebuffer;
-                    err = vkCreateFramebuffer(*m_device, &framebufferInfo, nullptr, &framebuffer);
+                    err = vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &framebuffer);
 
                     if (err != VK_SUCCESS)
                     {
@@ -632,13 +673,13 @@ namespace Hatchit {
                 VkCommandBufferAllocateInfo allocateInfo;
                 allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
                 allocateInfo.pNext = nullptr;
-                allocateInfo.commandPool = *m_commandPool;
+                allocateInfo.commandPool = m_commandPool;
                 allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
                 allocateInfo.commandBufferCount = 1;
 
                 for (uint32_t i = 0; i < m_swapchainBuffers.size(); i++)
                 {
-                    err = vkAllocateCommandBuffers(*m_device, &allocateInfo, &m_swapchainBuffers[i].command);
+                    err = vkAllocateCommandBuffers(m_device, &allocateInfo, &m_swapchainBuffers[i].command);
                     assert(!err);
 
                     if (err != VK_SUCCESS)

@@ -146,16 +146,6 @@ namespace Hatchit {
                     uint64_t srcObject, size_t location, int32_t msgCode,
                     const char *pLayerPrefix, const char *pMsg, void *pUserData);
 
-                //Advanced vulkan feature function pointers
-                PFN_vkGetPhysicalDeviceSurfaceSupportKHR
-                    fpGetPhysicalDeviceSurfaceSupportKHR;
-                PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR
-                    fpGetPhysicalDeviceSurfaceCapabilitiesKHR;
-                PFN_vkGetPhysicalDeviceSurfaceFormatsKHR
-                    fpGetPhysicalDeviceSurfaceFormatsKHR;
-                PFN_vkGetPhysicalDeviceSurfacePresentModesKHR
-                    fpGetPhysicalDeviceSurfacePresentModesKHR;
-
                 //Core init methods
                 bool initVulkan(const RendererParams& params);
                 bool initVulkanSwapchain(const RendererParams& params);
@@ -177,9 +167,6 @@ namespace Hatchit {
                 bool setupQueues();
                 bool createDevice();
                 bool getSupportedFormats();
-
-                //Helpers for prepareVulkan
-                bool prepareSwapchain();
             };
 
         }

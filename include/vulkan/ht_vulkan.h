@@ -12,7 +12,6 @@
 **
 **/
 
-
 #pragma once
 
 #ifdef _WIN32
@@ -47,6 +46,26 @@ namespace Hatchit {
                 uint32_t width, height;
                 uint32_t mipLevels;
             };
+
+            extern PFN_vkGetPhysicalDeviceSurfaceSupportKHR
+                fpGetPhysicalDeviceSurfaceSupportKHR;
+            extern PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR
+                fpGetPhysicalDeviceSurfaceCapabilitiesKHR;
+            extern PFN_vkGetPhysicalDeviceSurfaceFormatsKHR
+                fpGetPhysicalDeviceSurfaceFormatsKHR;
+            extern PFN_vkGetPhysicalDeviceSurfacePresentModesKHR
+                fpGetPhysicalDeviceSurfacePresentModesKHR;
+
+            extern PFN_vkCreateSwapchainKHR
+                fpCreateSwapchainKHR;
+            extern  PFN_vkDestroySwapchainKHR
+                fpDestroySwapchainKHR;
+            extern PFN_vkGetSwapchainImagesKHR
+                fpGetSwapchainImagesKHR;
+            extern PFN_vkAcquireNextImageKHR
+                fpAcquireNextImageKHR;
+            extern PFN_vkQueuePresentKHR
+                fpQueuePresentKHR;
 
         }
     }
