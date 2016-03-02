@@ -44,7 +44,6 @@ namespace Hatchit {
             virtual ~IMesh() {};
 
             virtual bool VBuffer(Resource::Mesh* mesh) = 0;
-            virtual void VFree() = 0;
 
             uint32_t GetIndexCount();
 

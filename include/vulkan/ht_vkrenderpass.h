@@ -50,7 +50,7 @@ namespace Hatchit {
 
                 void VSetClearColor(Color clearColor);
 
-                VkRenderPass GetVkRenderPass();
+                const VkRenderPass* GetVkRenderPass();
                 VkCommandBuffer GetVkCommandBuffer();
 
             private:

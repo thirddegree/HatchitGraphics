@@ -26,7 +26,25 @@ namespace Hatchit {
         namespace Vulkan {
 
             VKMaterial::VKMaterial() { }
-            VKMaterial::~VKMaterial() {}
+            VKMaterial::~VKMaterial() 
+            {
+                VKRenderer* renderer = VKRenderer::RendererInstance;
+
+                VkDevice device = renderer->GetVKDevice();
+
+                //Free descriptors
+                vkFreeDescriptorSets(device, m_descriptorPool, 1, &m_materialSet);
+                vkDestroyDescriptorSetLayout(device, m_materialLayout, nullptr);
+                vkDestroyDescriptorPool(device, m_descriptorPool, nullptr);
+
+                //Destroy unifrom blocks
+                vkFreeMemory(device, m_uniformVSBuffer.memory, nullptr);
+                vkDestroyBuffer(device, m_uniformVSBuffer.buffer, nullptr);
+
+                //TODO: Destroy FS buffer
+
+                //TODO: Destroy textures
+            }
 
             void VKMaterial::VOnLoaded()
             {
@@ -199,6 +217,7 @@ namespace Hatchit {
                 poolCreateInfo.pPoolSizes = poolSizes.data();
                 poolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
                 poolCreateInfo.maxSets = static_cast<uint32_t>(1 + m_textures.size());
+                poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
                 err = vkCreateDescriptorPool(device, &poolCreateInfo, nullptr, &m_descriptorPool);
                 assert(!err);

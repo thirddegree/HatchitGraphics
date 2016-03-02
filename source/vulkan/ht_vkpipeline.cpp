@@ -23,8 +23,20 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKPipeline::VKPipeline(VkRenderPass renderPass) { m_renderPass = renderPass; }
-            VKPipeline::~VKPipeline() {}
+            VKPipeline::VKPipeline(const VkRenderPass* renderPass) { m_renderPass = renderPass; }
+            VKPipeline::~VKPipeline() 
+            {
+                VKRenderer* renderer = VKRenderer::RendererInstance;
+
+                VkDevice device = renderer->GetVKDevice();
+
+                vkDestroyPipeline(device, m_pipeline, nullptr);
+                vkDestroyPipelineLayout(device, m_pipelineLayout, nullptr);
+                vkDestroyPipelineCache(device, m_pipelineCache, nullptr);
+
+                //vkFreeDescriptorSets(m_device, );
+                vkDestroyDescriptorSetLayout(device, m_descriptorLayout, nullptr);
+            }
 
             //If we wanted to allow users to control blending states
             //void VSetColorBlendAttachments(ColorBlendState* colorBlendStates) override;
@@ -326,7 +338,7 @@ namespace Hatchit {
                 VkGraphicsPipelineCreateInfo pipelineInfo = {};
                 pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
                 pipelineInfo.layout = m_pipelineLayout;
-                pipelineInfo.renderPass = m_renderPass;
+                pipelineInfo.renderPass = *m_renderPass;
                 pipelineInfo.stageCount = static_cast<uint32_t>(m_shaderStages.size());
                 pipelineInfo.pVertexInputState = &vertexInputState;
                 pipelineInfo.pInputAssemblyState = &inputAssemblyState;

@@ -104,14 +104,6 @@ namespace Hatchit {
                 static bool CreateBuffer(VkDevice device, VkBufferUsageFlagBits usage, size_t dataSize, void* data, UniformBlock* uniformBlock);
 
             private:
-
-                struct UniformData {
-                    VkBuffer buffer;
-                    VkMemoryAllocateInfo memAllocInfo;
-                    VkDeviceMemory memory;
-                    VkDescriptorBufferInfo bufferInfo;
-                };
-
                 std::vector<const char*>    m_enabledLayerNames;
                 std::vector<const char*>    m_enabledExtensionNames;
 

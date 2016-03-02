@@ -38,7 +38,6 @@ namespace Hatchit {
                 ~VKMesh();
 
                 bool VBuffer(Resource::Mesh* mesh)  override;
-                void VFree()                        override;
 
                 UniformBlock GetVertexBlock();
                 UniformBlock GetIndexBlock();

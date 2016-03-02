@@ -55,7 +55,7 @@ namespace Hatchit {
                 VKSwapchain(VkInstance* instance, VkDevice* device, VkCommandPool* commandPool);
                 ~VKSwapchain();
                 
-                bool VKPrepare(VkSurfaceKHR surface, VkColorSpaceKHR colorSpace, VkPresentModeKHR* presentModes, uint32_t presentModeCount, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D extents);
+                bool VKPrepare(const VkSurfaceKHR* surface, VkColorSpaceKHR colorSpace, VkPresentModeKHR* presentModes, uint32_t presentModeCount, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D extents);
 
                 bool BuildSwapchain(VkClearValue clearColor);
 
@@ -78,7 +78,7 @@ namespace Hatchit {
 
                 void setupFunctionPointers();
 
-                bool prepareSwapchain(VKRenderer* renderer, VkFormat preferredColorFormat, VkSurfaceKHR surface, VkColorSpaceKHR colorSpace, VkPresentModeKHR* presentModes, uint32_t presentModeCount, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D surfaceExtents);
+                bool prepareSwapchain(VKRenderer* renderer, VkFormat preferredColorFormat, const VkSurfaceKHR* surface, VkColorSpaceKHR colorSpace, VkPresentModeKHR* presentModes, uint32_t presentModeCount, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D surfaceExtents);
 
                 bool prepareSwapchainDepth(VKRenderer* renderer, VkExtent2D extent);
 

@@ -39,7 +39,27 @@ namespace Hatchit {
                 m_height = height;
             }
 
-            VKRenderTarget::~VKRenderTarget() {} 
+            VKRenderTarget::~VKRenderTarget() 
+            {
+                VKRenderer* renderer = VKRenderer::RendererInstance;
+                VkDevice device = renderer->GetVKDevice();
+
+                vkFreeMemory(device, m_color.memory, nullptr);
+                vkDestroyImage(device, m_color.image, nullptr);
+                vkDestroyImageView(device, m_color.view, nullptr);
+
+                vkFreeMemory(device, m_depth.memory, nullptr);
+                vkDestroyImage(device, m_depth.image, nullptr);
+                vkDestroyImageView(device, m_depth.view, nullptr);
+
+                vkDestroyFramebuffer(device, m_framebuffer, nullptr);
+
+                vkFreeMemory(device, m_texture.image.memory, nullptr);
+                vkDestroyImage(device, m_texture.image.image, nullptr);
+                vkDestroyImageView(device, m_texture.image.view, nullptr);
+
+                vkDestroySampler(device, m_texture.sampler, nullptr);
+            } 
 
             bool VKRenderTarget::VPrepare()
             {
@@ -273,7 +293,7 @@ namespace Hatchit {
                 framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
                 framebufferInfo.pNext = nullptr;
                 framebufferInfo.flags = 0;
-                framebufferInfo.renderPass = ((VKRenderPass*)m_renderPass)->GetVkRenderPass();
+                framebufferInfo.renderPass = *((VKRenderPass*)m_renderPass)->GetVkRenderPass();
                 framebufferInfo.attachmentCount = 2;
                 framebufferInfo.pAttachments = attachments;
                 framebufferInfo.width = m_width;

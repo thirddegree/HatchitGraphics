@@ -42,7 +42,7 @@ namespace Hatchit {
 
             VKRenderer::~VKRenderer()
             {
-                
+
             }
 
             bool VKRenderer::VInitialize(const RendererParams & params)
@@ -82,13 +82,48 @@ namespace Hatchit {
                 m_queueProps.clear();
 
                 delete m_swapchain;
+                //vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+
+                delete m_renderTarget;
+                
+                std::map<IPipeline*, std::vector<Renderable>>::iterator it;
+                for (it = m_pipelineList.begin(); it != m_pipelineList.end(); it++)
+                {
+                    delete it->first;
+
+                    std::vector<Renderable> renderables = it->second;
+
+                    for (uint32_t i = 0; i < renderables.size(); i++)
+                    {
+                        Renderable r = renderables[i];
+
+                        if (r.material != nullptr)
+                        {
+                            delete r.material;
+                            r.material = nullptr;
+                        }
+
+                        if (r.mesh != nullptr)
+                        {
+                            delete r.mesh;
+                            r.mesh = nullptr;
+                        }
+                    }
+                    it->second.clear();
+                }
+                m_pipelineList.clear();
+
+
+                for (uint32_t i = 0; i < m_renderPasses.size(); i++)
+                    delete m_renderPasses[i];
+                
+                m_renderPasses.clear();
 
                 vkDestroyCommandPool(m_device, m_commandPool, nullptr);
                 vkDestroyDevice(m_device, nullptr);
 
                 m_destroyDebugReportCallback(m_instance, msg_callback, nullptr);
-                
-                //vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+
                 vkDestroyInstance(m_instance, nullptr);
             }
 
@@ -1192,7 +1227,7 @@ namespace Hatchit {
                     m_height = swapchainExtent.height;
                 }
                 
-                m_swapchain->VKPrepare(m_surface, m_colorSpace, presentModes, presentModeCount, surfaceCapabilities, swapchainExtent);
+                m_swapchain->VKPrepare(&m_surface, m_colorSpace, presentModes, presentModeCount, surfaceCapabilities, swapchainExtent);
 
                 if (presentModes != nullptr)
                     delete[] presentModes;

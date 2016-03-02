@@ -37,22 +37,30 @@ namespace Hatchit {
                 VkDevice device = *m_device;
                 VkCommandPool commandPool = *m_commandPool;
 
+                //TODO: Destroy any sort of descriptor sets or layouts
+
+                //Destroy depth
                 vkDestroyImageView(device, m_depthBuffer.view, nullptr);
                 vkDestroyImage(device, m_depthBuffer.image, nullptr);
                 vkFreeMemory(device, m_depthBuffer.memory, nullptr);
 
+                //Clear out framebuffers and swapchain buffer commands
                 uint32_t i;
-
                 for (i = 0; i < m_swapchainBuffers.size(); i++)
                     vkDestroyFramebuffer(device, m_framebuffers[i], nullptr);
                 m_framebuffers.clear();
 
                 for (i = 0; i < m_swapchainBuffers.size(); i++)
                 {
+                    //vkDestroyImage(device, m_swapchainBuffers[i].image, nullptr);
                     vkDestroyImageView(device, m_swapchainBuffers[i].view, nullptr);
                     vkFreeCommandBuffers(device, commandPool, 1, &m_swapchainBuffers[i].command);
                 }
-                vkDestroyCommandPool(device, commandPool, nullptr);
+
+                vkDestroyRenderPass(device, m_renderPass, nullptr);
+
+                fpDestroySwapchainKHR(device, m_swapchain, nullptr);
+
                 m_swapchainBuffers.clear();
             }
 
@@ -61,7 +69,7 @@ namespace Hatchit {
                 return m_swapchainBuffers[m_currentBuffer].command;
             }
 
-            bool VKSwapchain::VKPrepare(VkSurfaceKHR surface, VkColorSpaceKHR colorSpace, VkPresentModeKHR* presentModes, uint32_t presentModeCount, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D extents)
+            bool VKSwapchain::VKPrepare(const VkSurfaceKHR* surface, VkColorSpaceKHR colorSpace, VkPresentModeKHR* presentModes, uint32_t presentModeCount, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D extents)
             {
                 //Setup function pointers that we'll need
                 setupFunctionPointers();
@@ -243,7 +251,7 @@ namespace Hatchit {
                 fpQueuePresentKHR = (PFN_vkQueuePresentKHR)g_gdpa(device, "vkQueuePresentKHR");
             }
 
-            bool VKSwapchain::prepareSwapchain(VKRenderer* renderer, VkFormat preferredColorFormat, VkSurfaceKHR surface, VkColorSpaceKHR colorSpace, VkPresentModeKHR* presentModes, uint32_t presentModeCount, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D surfaceExtents)
+            bool VKSwapchain::prepareSwapchain(VKRenderer* renderer, VkFormat preferredColorFormat, const VkSurfaceKHR* surface, VkColorSpaceKHR colorSpace, VkPresentModeKHR* presentModes, uint32_t presentModeCount, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D surfaceExtents)
             {
                 VkResult err;
                 VkSwapchainKHR oldSwapchain = m_swapchain;
@@ -284,7 +292,7 @@ namespace Hatchit {
                 VkSwapchainCreateInfoKHR swapchainInfo;
                 swapchainInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
                 swapchainInfo.pNext = nullptr;
-                swapchainInfo.surface = surface;
+                swapchainInfo.surface = *surface;
                 swapchainInfo.minImageCount = desiredNumberOfSwapchainImages;
                 swapchainInfo.imageFormat = preferredColorFormat;
                 swapchainInfo.imageColorSpace = colorSpace;

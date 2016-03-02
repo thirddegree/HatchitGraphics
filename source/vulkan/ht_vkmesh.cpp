@@ -9,7 +9,14 @@ namespace Hatchit {
             VKMesh::VKMesh() {}
             VKMesh::~VKMesh() 
             {
-                VFree();
+                //Get Device
+                VkDevice device = VKRenderer::RendererInstance->GetVKDevice();
+
+                vkDestroyBuffer(device, m_vertexBlock.buffer, nullptr);
+                vkFreeMemory(device, m_vertexBlock.memory, nullptr);
+
+                vkDestroyBuffer(device, m_indexBlock.buffer, nullptr);
+                vkFreeMemory(device, m_indexBlock.memory, nullptr);
             }
 
             bool VKMesh::VBuffer(Resource::Mesh* mesh) 
@@ -66,17 +73,6 @@ namespace Hatchit {
 
                 return true;
 
-            }
-            void VKMesh::VFree() 
-            {
-                //Get Device
-                VkDevice device = VKRenderer::RendererInstance->GetVKDevice();
-
-                vkDestroyBuffer(device, m_vertexBlock.buffer, nullptr);
-                vkFreeMemory(device, m_vertexBlock.memory, nullptr);
-
-                vkDestroyBuffer(device, m_indexBlock.buffer, nullptr);
-                vkFreeMemory(device, m_indexBlock.memory, nullptr);
             }
 
             UniformBlock VKMesh::GetVertexBlock() { return m_vertexBlock; }

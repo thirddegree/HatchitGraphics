@@ -26,7 +26,20 @@ namespace Hatchit {
         namespace Vulkan {
 
             VKRenderPass::VKRenderPass() {}
-            VKRenderPass::~VKRenderPass() {}
+            VKRenderPass::~VKRenderPass() 
+            {
+                VKRenderer* renderer = VKRenderer::RendererInstance;
+
+                VkDevice device = renderer->GetVKDevice();
+                VkCommandPool commandPool = renderer->GetVKCommandPool();
+
+                //Destroy the command buffers
+                if(m_commandBuffer != VK_NULL_HANDLE)
+                    vkFreeCommandBuffers(device, commandPool, 1, &m_commandBuffer);
+
+                //Destroy the render pass
+                vkDestroyRenderPass(device, m_renderPass, nullptr);
+            }
 
             bool VKRenderPass::VPrepare()
             {
@@ -276,7 +289,7 @@ namespace Hatchit {
 
             VkCommandBuffer VKRenderPass::GetVkCommandBuffer() { return m_commandBuffer; }
 
-            VkRenderPass VKRenderPass::GetVkRenderPass() { return m_renderPass; }
+            const VkRenderPass* VKRenderPass::GetVkRenderPass() { return &m_renderPass; }
         }
     }
 }
