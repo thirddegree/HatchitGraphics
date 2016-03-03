@@ -25,7 +25,13 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKMaterial::VKMaterial() { }
+            VKMaterial::VKMaterial() 
+            { 
+                m_shaderVariables["matricies.model"] = new Matrix4Variable();
+
+
+                static_cast<Matrix4Variable*>(m_shaderVariables["matricies.model"])->SetData(Math::Matrix4());
+            }
             VKMaterial::~VKMaterial() 
             {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
@@ -49,32 +55,36 @@ namespace Hatchit {
             void VKMaterial::VOnLoaded()
             {
                 //TODO: Read the material file and set the appropriate shader variables
+
+                
+
             }
             bool VKMaterial::VInitFromFile(Core::File* file) { return true; }
 
             bool VKMaterial::VSetInt(std::string name, int data)
             {
-                m_shaderVariables[name] = IntVariable(data);
+                static_cast<IntVariable*>(m_shaderVariables[name])->SetData(data);
                 return true;
             }
             bool VKMaterial::VSetFloat(std::string name, float data)
             {
-                m_shaderVariables[name] = FloatVariable(data);
+                static_cast<FloatVariable*>(m_shaderVariables[name])->SetData(data);
                 return true;
             }
             bool VKMaterial::VSetFloat3(std::string name, Math::Vector3 data)
             {
-                m_shaderVariables[name] = Float3Variable(data);
+                static_cast<Float3Variable*>(m_shaderVariables[name])->SetData(data);
                 return true;
             }
             bool VKMaterial::VSetFloat4(std::string name, Math::Vector4 data) 
             {
-                m_shaderVariables[name] = Float4Variable(data);
+                static_cast<Float4Variable*>(m_shaderVariables[name])->SetData(data);
                 return true;
             }
             bool VKMaterial::VSetMatrix4(std::string name, Math::Matrix4 data) 
             {
-                m_shaderVariables[name] = Matrix4Variable(data);
+                Matrix4Variable* var = static_cast<Matrix4Variable*>(m_shaderVariables[name]);
+                var->SetData(data);
                 return true;
             }
 
@@ -127,9 +137,9 @@ namespace Hatchit {
                 
                 std::vector<Math::Matrix4> variableList;
 
-                std::map <std::string, ShaderVariable>::iterator it;
+                std::map <std::string, ShaderVariable*>::iterator it;
                 for (it = m_shaderVariables.begin(); it != m_shaderVariables.end(); it++)
-                    variableList.push_back(*(Math::Matrix4*)(it->second.GetData()));
+                    variableList.push_back(*(Math::Matrix4*)(it->second->GetData()));
                 
                 VkResult err = vkMapMemory(device, m_uniformVSBuffer.memory, 0, sizeof(m_shaderVariables), 0, (void**)&pData);
                 assert(!err);

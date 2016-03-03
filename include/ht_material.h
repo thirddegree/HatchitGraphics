@@ -60,7 +60,7 @@ namespace Hatchit {
             virtual bool VUpdate() = 0;
 
         protected:
-            std::map<std::string, ShaderVariable> m_shaderVariables;
+            std::map<std::string, ShaderVariable*> m_shaderVariables;
             std::map<std::string, ITexture*> m_textures;
         };
     }

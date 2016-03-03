@@ -27,7 +27,13 @@ namespace Hatchit {
         class HT_API ShaderVariable 
         {
         public:
-            virtual ~ShaderVariable() { };
+            virtual ~ShaderVariable() {
+                if (m_data != nullptr)
+                {
+                    delete[] m_data;
+                    m_data = nullptr;
+                }
+            };
             enum Type
             {
                 INT,
@@ -45,52 +51,144 @@ namespace Hatchit {
 
         protected:
             Type m_type;
-            void* m_data;
+            void* m_data = nullptr;
         };
 
         template<typename T>
         class HT_API ShaderVariableTemplate : public ShaderVariable
         {
         public:
+            inline ShaderVariableTemplate();
             inline ShaderVariableTemplate(T t);
+            
+            inline void SetData(T t);
         };
+
+        template <>
+        HT_API ShaderVariableTemplate<int>::ShaderVariableTemplate()
+        {
+            SetData(0);
+            m_type = Type::INT;
+        }
 
         template <>
         HT_API ShaderVariableTemplate<int>::ShaderVariableTemplate(int data)
         {
-            memcpy(m_data, &data, sizeof(int));
+            SetData(data);
             m_type = Type::INT;
+        }
+
+        template<>
+        void HT_API ShaderVariableTemplate<int>::SetData(int data)
+        {
+            memcpy(m_data, &data, sizeof(int));
+        }
+
+
+
+
+
+
+
+
+        template <>
+        HT_API ShaderVariableTemplate<float>::ShaderVariableTemplate()
+        {
+            SetData(0.0f);
+            m_type = Type::FLOAT;
         }
 
         template <>
         HT_API ShaderVariableTemplate<float>::ShaderVariableTemplate(float data)
         {
-            memcpy(m_data, &data, sizeof(float));
+            SetData(data);
             m_type = Type::FLOAT;
+        }
+
+        template<>
+        void HT_API ShaderVariableTemplate<float>::SetData(float data)
+        {
+            memcpy(m_data, &data, sizeof(float));
+        }
+
+
+
+
+        template <>
+        HT_API ShaderVariableTemplate<Math::Vector3>::ShaderVariableTemplate()
+        {
+            SetData(Math::Vector3());
+            m_type = Type::FLOAT3;
         }
 
         template <>
         HT_API ShaderVariableTemplate<Math::Vector3>::ShaderVariableTemplate(Math::Vector3 data)
         {
-            memcpy(m_data, data.m_data, sizeof(float) * 3);
+            SetData(data);
             m_type = Type::FLOAT3;
+        }
+
+        template<>
+        void HT_API ShaderVariableTemplate<Math::Vector3>::SetData(Math::Vector3 data)
+        {
+            memcpy(m_data, data.m_data, sizeof(float) * 3);
+        }
+
+
+
+
+        template <>
+        HT_API ShaderVariableTemplate<Math::Vector4>::ShaderVariableTemplate()
+        {
+            m_data = new BYTE[sizeof(float) * 4];
+            SetData(Math::Vector4());
+            m_type = Type::FLOAT4;
         }
 
         template <>
         HT_API ShaderVariableTemplate<Math::Vector4>::ShaderVariableTemplate(Math::Vector4 data)
         {
             m_data = new BYTE[sizeof(float) * 4];
-            memcpy(m_data, data.data, sizeof(float) * 4);
+            SetData(data);
             m_type = Type::FLOAT4;
+        }
+
+        template<>
+        void HT_API ShaderVariableTemplate<Math::Vector4>::SetData(Math::Vector4 data)
+        {
+            memcpy(m_data, data.data, sizeof(float) * 4);
+        }
+
+
+
+
+
+
+        template <>
+        HT_API ShaderVariableTemplate<Math::Matrix4>::ShaderVariableTemplate()
+        {
+            m_data = new BYTE[sizeof(float) * 16];
+            SetData(Math::Matrix4());
+            m_type = Type::MAT4;
         }
 
         template <>
         HT_API ShaderVariableTemplate<Math::Matrix4>::ShaderVariableTemplate(Math::Matrix4 data)
         {
             m_data = new BYTE[sizeof(float) * 16];
-            memcpy(m_data, data.data, sizeof(float) * 16);
+            SetData(data);
             m_type = Type::MAT4;
         }
+
+        template<>
+        void HT_API ShaderVariableTemplate<Math::Matrix4>::SetData(Math::Matrix4 data)
+        {
+            memcpy(this->m_data, data.data, sizeof(float) * 16);
+        }
+
+
+
+
 
         typedef ShaderVariableTemplate<int>             IntVariable;
         typedef ShaderVariableTemplate<float>           FloatVariable;
