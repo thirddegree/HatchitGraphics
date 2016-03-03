@@ -168,7 +168,7 @@ namespace Hatchit {
                 m_shaderStages.push_back(shaderStage);
             }
 
-            ///Have Vulkan create a material with these settings
+            ///Have Vulkan create a pipeline with these settings
             bool VKPipeline::VPrepare()
             {
                 //Get the renderer for use later
@@ -189,38 +189,47 @@ namespace Hatchit {
                 return true;
             }
 
+            void VKPipeline::SetVKDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout)
+            {
+                useGivenLayout = true;
+                m_descriptorLayout = descriptorSetLayout;
+            }
+
             bool VKPipeline::PrepareLayouts(VkDevice device)
             {
                 VkResult err;
 
-                //TODO: Properly detect and setup layout bindings
-                VkDescriptorSetLayoutBinding layoutBindings[1] = {};
-                layoutBindings[0].binding = 0;
-                layoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                layoutBindings[0].descriptorCount = 1;
-                layoutBindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-                layoutBindings[0].pImmutableSamplers = nullptr;
-
-                //layoutBindings[1].binding = 1;
-                //layoutBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                //layoutBindings[1].descriptorCount = 1;
-                //layoutBindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-                //layoutBindings[1].pImmutableSamplers = nullptr;
-
-                VkDescriptorSetLayoutCreateInfo descriptorLayoutInfo = {};
-                descriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-                descriptorLayoutInfo.pNext = NULL;
-                descriptorLayoutInfo.bindingCount = 1; //How many binding counts, really?
-                descriptorLayoutInfo.pBindings = layoutBindings;
-
-                err = vkCreateDescriptorSetLayout(device, &descriptorLayoutInfo, nullptr, &m_descriptorLayout);
-                assert(!err);
-                if (err != VK_SUCCESS)
+                if (!useGivenLayout)
                 {
+                    //TODO: Properly detect and setup layout bindings
+                    VkDescriptorSetLayoutBinding layoutBindings[1] = {};
+                    layoutBindings[0].binding = 0;
+                    layoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                    layoutBindings[0].descriptorCount = 1;
+                    layoutBindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+                    layoutBindings[0].pImmutableSamplers = nullptr;
+
+                    //layoutBindings[1].binding = 1;
+                    //layoutBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                    //layoutBindings[1].descriptorCount = 1;
+                    //layoutBindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+                    //layoutBindings[1].pImmutableSamplers = nullptr;
+
+                    VkDescriptorSetLayoutCreateInfo descriptorLayoutInfo = {};
+                    descriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+                    descriptorLayoutInfo.pNext = NULL;
+                    descriptorLayoutInfo.bindingCount = 1; //How many binding counts, really?
+                    descriptorLayoutInfo.pBindings = layoutBindings;
+
+                    err = vkCreateDescriptorSetLayout(device, &descriptorLayoutInfo, nullptr, &m_descriptorLayout);
+                    assert(!err);
+                    if (err != VK_SUCCESS)
+                    {
 #ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::preparePipeline(): Failed to create descriptor layout\n");
+                        Core::DebugPrintF("VKRenderer::preparePipeline(): Failed to create descriptor layout\n");
 #endif
-                    return false;
+                        return false;
+                    }
                 }
 
                 //Pipeline layout 

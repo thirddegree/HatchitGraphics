@@ -67,6 +67,9 @@ namespace Hatchit {
                 ///Have Vulkan create a pipeline with these settings
                 bool VPrepare()                                                 override;
 
+                //TODO: Remove this when we can just reflect shaders instead
+                void SetVKDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout);
+
                 VkPipeline GetVKPipeline();
                 VkPipelineLayout GetPipelineLayout();
                 VkDescriptorSetLayout GetDescriptorSetLayout();
@@ -79,6 +82,7 @@ namespace Hatchit {
                 VkPipelineMultisampleStateCreateInfo m_multisampleState;
                 std::vector<VkPipelineShaderStageCreateInfo> m_shaderStages;
 
+                bool useGivenLayout = false;
                 VkDescriptorSetLayout   m_descriptorLayout;
                 VkPipelineLayout        m_pipelineLayout;
 

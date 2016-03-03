@@ -42,7 +42,6 @@ namespace Hatchit {
 
             VKRenderer::~VKRenderer()
             {
-
             }
 
             bool VKRenderer::VInitialize(const RendererParams & params)
@@ -1096,7 +1095,7 @@ namespace Hatchit {
 
                 m_width = m_swapchain->GetWidth();
                 m_height = m_swapchain->GetHeight();
-                
+
                 FlushSetupCommandBuffer();
 
                 //TODO: remove this test code
@@ -1112,6 +1111,8 @@ namespace Hatchit {
                 m_renderTarget->VPrepare();
 
                 renderPass->SetRenderTarget(m_renderTarget);
+
+                m_swapchain->SetIncomingRenderTarget(m_renderTarget);
 
                 Core::File meshFile;
                 meshFile.Open(Core::os_exec_dir() + "monkey.obj", Core::FileMode::ReadBinary);
@@ -1175,9 +1176,10 @@ namespace Hatchit {
 
                 m_renderPasses.push_back(renderPass);
 
+                CreateSetupCommandBuffer();
+
                 m_swapchain->BuildSwapchain(m_clearColor);
                 
-                //Flush the command buffer once
                 FlushSetupCommandBuffer();
 
                 return true;

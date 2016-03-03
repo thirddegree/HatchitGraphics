@@ -134,7 +134,7 @@ namespace Hatchit {
             VkFramebuffer VKRenderTarget::GetVKFramebuffer() { return m_framebuffer; }
             Image VKRenderTarget::GetVKColor() { return m_color; }
             Image VKRenderTarget::GetVKDepth() { return m_depth; }
-            Texture VKRenderTarget::GetVKTexture() { return m_texture; }
+            Texture& VKRenderTarget::GetVKTexture() { return m_texture; }
 
 
             bool VKRenderTarget::setupFramebuffer(VKRenderer* renderer) 

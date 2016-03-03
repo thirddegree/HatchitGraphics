@@ -54,7 +54,7 @@ namespace Hatchit {
                 Image           GetVKColor();
                 Image           GetVKDepth();
 
-                Texture         GetVKTexture();
+                Texture&        GetVKTexture();
 
             protected:
                 VkFormat m_colorFormat;

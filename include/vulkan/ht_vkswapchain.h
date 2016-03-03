@@ -25,7 +25,9 @@
 #pragma once
 
 #include <ht_swapchain.h>
-#include <ht_vulkan.h>
+
+#include <ht_vkpipeline.h>  
+#include <ht_vkrendertarget.h>
 
 namespace Hatchit {
 
@@ -70,16 +72,24 @@ namespace Hatchit {
                 VkDevice&           m_device;
                 VkCommandPool&      m_commandPool;
 
-                VkRenderPass m_renderPass;
+                VkRenderPass            m_renderPass;
+                VKPipeline*             m_pipeline;
+                VkDescriptorSetLayout   m_descriptorSetLayout;
+                VkDescriptorPool        m_descriptorPool;
+                VkDescriptorSet         m_descriptorSet;
 
                 VkSwapchainKHR               m_swapchain;
                 std::vector<SwapchainBuffer> m_swapchainBuffers;
                 std::vector<VkFramebuffer>   m_framebuffers;
                 DepthBuffer                  m_depthBuffer;
 
+                UniformBlock    m_vertexBuffer;
+
+                //Prepare the swapchain base
                 bool prepareSwapchain(VKRenderer* renderer, VkSurfaceKHR surface, VkFormat preferredColorFormat, VkColorSpaceKHR colorSpace,
                     std::vector<VkPresentModeKHR> presentModes, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D surfaceExtents);
 
+                //Prepare the swapchain depth buffer
                 bool prepareSwapchainDepth(VKRenderer* renderer, VkExtent2D extent);
 
                 //Prepare the internal render pass
@@ -88,9 +98,11 @@ namespace Hatchit {
                 //Prepare the framebuffers for the swapchain images
                 bool prepareFramebuffers(VkExtent2D extents);
 
+                //Setup pipeline, etc
+                bool prepareResources();
+
                 //Allocate the command buffers
                 bool allocateCommandBuffers();
-                
             };
         }
     }

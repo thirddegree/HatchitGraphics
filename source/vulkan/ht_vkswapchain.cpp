@@ -36,6 +36,13 @@ namespace Hatchit {
             VKSwapchain::~VKSwapchain()
             {
                 //TODO: Destroy any sort of descriptor sets or layouts
+                delete m_pipeline;
+
+                vkFreeMemory(m_device, m_vertexBuffer.memory, nullptr);
+                vkDestroyBuffer(m_device, m_vertexBuffer.buffer, nullptr);
+
+                vkFreeDescriptorSets(m_device, m_descriptorPool, 1, &m_descriptorSet);
+                vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
 
                 //Destroy depth
                 vkDestroyImageView(m_device, m_depthBuffer.view, nullptr);
@@ -174,6 +181,12 @@ namespace Hatchit {
 
             bool VKSwapchain::BuildSwapchain(VkClearValue clearColor)
             {
+                /*
+                    Prepare pipeline, descriptor sets etc.
+                */
+                if (!prepareResources())
+                    return false;
+
                 VkResult err;
 
                 VkCommandBufferInheritanceInfo inheritanceInfo = {};
@@ -217,7 +230,7 @@ namespace Hatchit {
                     if (err != VK_SUCCESS)
                     {
 #ifdef _DEBUG
-                        Core::DebugPrintF("VKRenderer::buildCommandBuffer(): Failed to build command buffer.\n");
+                        Core::DebugPrintF("VKSwapchain::BuildSwapchain(): Failed to build command buffer.\n");
 #endif
                         return false;
                     }
@@ -239,7 +252,14 @@ namespace Hatchit {
                     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
                     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-                    //TODO: Draw fullscreen Tri
+                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline->GetPipelineLayout(),
+                        0, 1, &m_descriptorSet, 0, nullptr);
+                    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline->GetVKPipeline());
+
+                    //Draw fullscreen Tri; geometry created in shader
+                    VkDeviceSize offsets = { 0 };
+                    vkCmdBindVertexBuffers(commandBuffer, 0, 1, &m_vertexBuffer.buffer, &offsets);
+                    vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
                     vkCmdEndRenderPass(commandBuffer);
 
@@ -264,7 +284,7 @@ namespace Hatchit {
                     if (err != VK_SUCCESS)
                     {
 #ifdef _DEBUG
-                        Core::DebugPrintF("VKRenderer::buildCommandBuffer(): Failed to end command buffer.\n");
+                        Core::DebugPrintF("VKSwapchain::BuildSwapchain(): Failed to end command buffer.\n");
 #endif
                         return false;
                     }
@@ -666,6 +686,134 @@ namespace Hatchit {
                 return true;
             }
 
+            bool VKSwapchain::prepareResources()
+            {
+                VKRenderer* renderer = VKRenderer::RendererInstance;
+
+                VkResult err;
+
+                //Setup pipeline
+                Core::File vsFile;
+                vsFile.Open(Core::os_exec_dir() + "screen_VS.spv", Core::FileMode::ReadBinary);
+
+                Core::File fsFile;
+                fsFile.Open(Core::os_exec_dir() + "screen_FS.spv", Core::FileMode::ReadBinary);
+
+                VKShader vsShader;
+                vsShader.VInitFromFile(&vsFile);
+
+                VKShader fsShader;
+                fsShader.VInitFromFile(&fsFile);
+
+                RasterizerState rasterState = {};
+                rasterState.cullMode = CullMode::NONE;
+                rasterState.polygonMode = PolygonMode::SOLID;
+
+                MultisampleState multisampleState = {};
+                multisampleState.minSamples = 0;
+                multisampleState.samples = SAMPLE_1_BIT;
+
+                m_pipeline = new VKPipeline(&m_renderPass);
+                m_pipeline->VLoadShader(ShaderSlot::VERTEX, &vsShader);
+                m_pipeline->VLoadShader(ShaderSlot::FRAGMENT, &fsShader);
+                m_pipeline->VSetRasterState(rasterState);
+                m_pipeline->VSetMultisampleState(multisampleState);
+
+                //Setup the descriptor pool
+
+                VkDescriptorPoolSize samplerSize = {};
+                samplerSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                samplerSize.descriptorCount = 1;
+
+                VkDescriptorPoolCreateInfo poolCreateInfo = {};
+                poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+                poolCreateInfo.pPoolSizes = &samplerSize;
+                poolCreateInfo.poolSizeCount = 1;
+                poolCreateInfo.maxSets = 1;
+                poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+
+                err = vkCreateDescriptorPool(m_device, &poolCreateInfo, nullptr, &m_descriptorPool);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKSwapchain::prepareResources: Failed to create descriptor pool\n");
+#endif
+                    return false;
+                }
+
+                //Prepare descriptor set layout
+
+                VkDescriptorSetLayoutBinding textureBinding = {};
+                textureBinding.binding = 0;
+                textureBinding.descriptorCount = 1;
+                textureBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                textureBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+                VkDescriptorSetLayoutCreateInfo descriptorLayoutInfo = {};
+                descriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+                descriptorLayoutInfo.bindingCount = 1;
+                descriptorLayoutInfo.pBindings = &textureBinding;
+
+                err = vkCreateDescriptorSetLayout(m_device, &descriptorLayoutInfo, nullptr, &m_descriptorSetLayout);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKSwapchain::prepareResources: Failed to create descriptor set layout\n");
+#endif
+                    return false;
+                }
+
+                m_pipeline->SetVKDescriptorSetLayout(m_descriptorSetLayout);
+                m_pipeline->VPrepare();
+
+                //Setup the descriptor sets
+                VkDescriptorSetAllocateInfo allocInfo = {};
+                allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+                allocInfo.descriptorPool = m_descriptorPool;
+                allocInfo.pSetLayouts = &m_descriptorSetLayout;
+                allocInfo.descriptorSetCount = 1;
+
+                err = vkAllocateDescriptorSets(m_device, &allocInfo, &m_descriptorSet);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKSwapchain::prepareResources: Failed to allocate descriptor set\n");
+#endif
+                    return false;
+                }
+
+                Texture inputTexture = ((VKRenderTarget*)m_inputTexture)->GetVKTexture();
+
+                // Image descriptor for the color map texture
+                VkDescriptorImageInfo texDescriptor = {};
+                texDescriptor.sampler = inputTexture.sampler;
+                texDescriptor.imageView = inputTexture.image.view;
+                texDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+                VkWriteDescriptorSet uniformSampler2DWrite = {};
+                uniformSampler2DWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                uniformSampler2DWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                uniformSampler2DWrite.dstSet = m_descriptorSet;
+                uniformSampler2DWrite.dstBinding = 0;
+                uniformSampler2DWrite.pImageInfo = &texDescriptor;
+                uniformSampler2DWrite.descriptorCount = 1;
+
+                vkUpdateDescriptorSets(m_device, 1, &uniformSampler2DWrite, 0, nullptr);
+
+                //Buffer 3 blank points
+                float blank[9] = {0,0,0,0,0,0,0,0,0};
+                if (!renderer->CreateBuffer(m_device, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 9, blank, &m_vertexBuffer))
+                    return false;
+
+                m_vertexBuffer.descriptor.offset = 0;
+                m_vertexBuffer.descriptor.range = 9;
+
+                return true;
+            }
+
             bool VKSwapchain::allocateCommandBuffers() 
             {
                 VkResult err;
@@ -693,6 +841,7 @@ namespace Hatchit {
 
                 return true;
             }
+
         }
     }
 }
