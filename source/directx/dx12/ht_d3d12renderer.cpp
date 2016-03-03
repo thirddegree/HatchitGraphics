@@ -434,13 +434,39 @@ namespace Hatchit {
                     return false;
                 }
 
-                m_vBuffer = new D3D12VertexBuffer(3);
-                m_vBuffer->Initialize(m_device);
-                m_vBuffer->UpdateSubData(0, 3, &triangleVerts[0]);
+                Resource::Model model;
+                model.VInitFromFile(&modelFile);
 
-                m_iBuffer = new D3D12IndexBuffer(3);
+                std::vector<Vertex> vertices;
+                std::vector<uint32_t> indices;
+                auto mesh = model.GetMeshes()[0];
+                for (aiVector3D vertex : mesh->getVertices())
+                {
+                    Vertex v;
+                    v.position.x = vertex.x;
+                    v.position.y = vertex.y;
+                    v.position.z = vertex.z;
+                    v.color.x = 1.0f;
+                    v.color.y = 0.0f;
+                    v.color.z = 0.0f;
+                    v.color.w = 1.0f;
+                    vertices.push_back(v);
+                }
+                for (aiFace index : mesh->getIndices())
+                {
+                    indices.push_back(index.mIndices[0]);
+                    indices.push_back(index.mIndices[1]);
+                    indices.push_back(index.mIndices[2]);
+                }
+                m_indexCount = indices.size();
+
+                m_vBuffer = new D3D12VertexBuffer(vertices.size());
+                m_vBuffer->Initialize(m_device);
+                m_vBuffer->UpdateSubData(0, vertices.size(), &vertices[0]);
+
+                m_iBuffer = new D3D12IndexBuffer(indices.size());
                 m_iBuffer->Initialize(m_device);
-                m_iBuffer->UpdateSubData(0, 3, &triangleIndices[0]);
+                m_iBuffer->UpdateSubData(0, indices.size(), &indices[0]);
 
                 /*
                 * Create synchronization objects
@@ -509,7 +535,7 @@ namespace Hatchit {
                 m_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
                 m_commandList->IASetVertexBuffers(0, 1, &m_vBuffer->GetView());
                 m_commandList->IASetIndexBuffer(&m_iBuffer->GetView());
-                m_commandList->DrawIndexedInstanced(3, 1, 0, 0, 0);
+                m_commandList->DrawIndexedInstanced(m_indexCount, 1, 0, 0, 0);
 
                 /*
                 * Indicate that we are using the back buffer to present

@@ -43,6 +43,8 @@ namespace Hatchit {
 
                 bool VInitFromFile(Core::File* file)    override;
 
+                void VOnLoaded() override;
+
                 VkShaderModule GetShaderModule();
 
             private:

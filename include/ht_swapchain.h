@@ -39,6 +39,9 @@ namespace Hatchit {
         public:
             virtual ~ISwapchain() {}
 
+            uint32_t GetWidth();
+            uint32_t GetHeight();
+
         protected:
             //Input
             IRenderTarget* m_inputTexture;

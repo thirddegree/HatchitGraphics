@@ -52,10 +52,10 @@ namespace Hatchit {
             class HT_API VKSwapchain : public ISwapchain
             {
             public:
-                VKSwapchain(VkInstance* instance, VkDevice* device, VkCommandPool* commandPool);
+                VKSwapchain(VkInstance& instance, VkPhysicalDevice& gpu, VkDevice& device, VkCommandPool& commandPool);
                 ~VKSwapchain();
                 
-                bool VKPrepare(const VkSurfaceKHR* surface, VkColorSpaceKHR colorSpace, VkPresentModeKHR* presentModes, uint32_t presentModeCount, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D extents);
+                bool VKPrepare(VkSurfaceKHR surface, VkColorSpaceKHR colorSpace);
 
                 bool BuildSwapchain(VkClearValue clearColor);
 
@@ -65,10 +65,11 @@ namespace Hatchit {
                 VkCommandBuffer GetCurrentCommand();
 
             private:
-                VkInstance*      m_instance;
-                VkDevice*        m_device;
-                VkCommandPool*   m_commandPool;
-                
+                VkInstance&         m_instance;
+                VkPhysicalDevice&   m_gpu;
+                VkDevice&           m_device;
+                VkCommandPool&      m_commandPool;
+
                 VkRenderPass m_renderPass;
 
                 VkSwapchainKHR               m_swapchain;
@@ -76,9 +77,8 @@ namespace Hatchit {
                 std::vector<VkFramebuffer>   m_framebuffers;
                 DepthBuffer                  m_depthBuffer;
 
-                void setupFunctionPointers();
-
-                bool prepareSwapchain(VKRenderer* renderer, VkFormat preferredColorFormat, const VkSurfaceKHR* surface, VkColorSpaceKHR colorSpace, VkPresentModeKHR* presentModes, uint32_t presentModeCount, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D surfaceExtents);
+                bool prepareSwapchain(VKRenderer* renderer, VkSurfaceKHR surface, VkFormat preferredColorFormat, VkColorSpaceKHR colorSpace,
+                    std::vector<VkPresentModeKHR> presentModes, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D surfaceExtents);
 
                 bool prepareSwapchainDepth(VKRenderer* renderer, VkExtent2D extent);
 
@@ -90,18 +90,7 @@ namespace Hatchit {
 
                 //Allocate the command buffers
                 bool allocateCommandBuffers();
-
-                //Function pointers to swapchain related functionality
-                PFN_vkCreateSwapchainKHR
-                    fpCreateSwapchainKHR;
-                PFN_vkDestroySwapchainKHR
-                    fpDestroySwapchainKHR;
-                PFN_vkGetSwapchainImagesKHR
-                    fpGetSwapchainImagesKHR;
-                PFN_vkAcquireNextImageKHR
-                    fpAcquireNextImageKHR;
-                PFN_vkQueuePresentKHR
-                    fpQueuePresentKHR;
+                
             };
         }
     }

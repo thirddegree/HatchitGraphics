@@ -439,7 +439,7 @@ namespace Hatchit {
                 //Get memory information
                 vkGetPhysicalDeviceMemoryProperties(m_gpu, &m_memoryProps);
 
-                m_swapchain = new VKSwapchain(&m_instance, &m_device, &m_commandPool);
+                m_swapchain = new VKSwapchain(m_instance, m_gpu, m_device, m_commandPool);
 
                 return true;
             }
@@ -1015,6 +1015,16 @@ namespace Hatchit {
                     return false;
                 }
 
+                //Pointer to function to get function pointers from device
+                PFN_vkGetDeviceProcAddr g_gdpa = (PFN_vkGetDeviceProcAddr)
+                    vkGetInstanceProcAddr(m_instance, "vkGetDeviceProcAddr");
+
+                fpCreateSwapchainKHR = (PFN_vkCreateSwapchainKHR)g_gdpa(m_device, "vkCreateSwapchainKHR");
+                fpDestroySwapchainKHR = (PFN_vkDestroySwapchainKHR)g_gdpa(m_device, "vkDestroySwapchainKHR");
+                fpGetSwapchainImagesKHR = (PFN_vkGetSwapchainImagesKHR)g_gdpa(m_device, "vkGetSwapchainImagesKHR");
+                fpAcquireNextImageKHR = (PFN_vkAcquireNextImageKHR)g_gdpa(m_device, "vkAcquireNextImageKHR");
+                fpQueuePresentKHR = (PFN_vkQueuePresentKHR)g_gdpa(m_device, "vkQueuePresentKHR");
+
                 return true;
             }
 
@@ -1078,15 +1088,14 @@ namespace Hatchit {
                     Core::DebugPrintF("VKRenderer::prepareVulkan(): Error creating command pool.\n");
 #endif
                     return false;
-                }
+                }                
 
                 CreateSetupCommandBuffer();
 
-                /*
-                * Prepare the swapchain buffers
-                */
-                if (!prepareSwapchain())
-                    return false;
+                m_swapchain->VKPrepare(m_surface, m_colorSpace);
+
+                m_width = m_swapchain->GetWidth();
+                m_height = m_swapchain->GetHeight();
                 
                 FlushSetupCommandBuffer();
 
@@ -1173,68 +1182,6 @@ namespace Hatchit {
 
                 return true;
             }
-
-            bool VKRenderer::prepareSwapchain() 
-            {
-                VkResult err;
-
-                //Check surface capabilities and formats
-
-                VkSurfaceCapabilitiesKHR surfaceCapabilities;
-                err = fpGetPhysicalDeviceSurfaceCapabilitiesKHR(m_gpu, m_surface, &surfaceCapabilities);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::preapreSwapchainBuffers(): Failed to get surface capabilities.\n");
-#endif
-                    return false;
-                }
-
-                //Get present modes
-
-                uint32_t presentModeCount;
-                err = fpGetPhysicalDeviceSurfacePresentModesKHR(m_gpu, m_surface, &presentModeCount, nullptr);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::preapreSwapchainBuffers(): Failed to get number of present modes.\n");
-#endif
-                    return false;
-                }
-
-                VkPresentModeKHR* presentModes = new VkPresentModeKHR[presentModeCount];
-                err = fpGetPhysicalDeviceSurfacePresentModesKHR(m_gpu, m_surface, &presentModeCount, presentModes);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::preapreSwapchainBuffers(): Failed to get present modes from device.\n");
-#endif
-                    return false;
-                }
-
-                //Get the extent to match the current recorded width and height
-                //Or set the width and height to the bounds of the current extent
-                VkExtent2D swapchainExtent;
-                if (surfaceCapabilities.currentExtent.width == (uint32_t)-1)
-                {
-                    swapchainExtent.width = m_width;
-                    swapchainExtent.height = m_height;
-                }
-                else
-                {
-                    swapchainExtent = surfaceCapabilities.currentExtent;
-                    m_width = swapchainExtent.width;
-                    m_height = swapchainExtent.height;
-                }
-                
-                m_swapchain->VKPrepare(&m_surface, m_colorSpace, presentModes, presentModeCount, surfaceCapabilities, swapchainExtent);
-
-                if (presentModes != nullptr)
-                    delete[] presentModes;
-
-                return true;
-            }
-
         
             void VKRenderer::CreateSetupCommandBuffer() 
             {
