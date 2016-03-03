@@ -59,6 +59,10 @@ namespace Hatchit {
                 return true;
             }
 
+            void VKShader::VOnLoaded()
+            {
+            }
+
             VkShaderModule VKShader::GetShaderModule()
             {
                 return m_shader;

@@ -51,7 +51,7 @@ namespace Hatchit {
         public:
             virtual ~IShader() {};
             
-            virtual void VOnLoaded() {};
+            virtual void VOnLoaded() = 0;
             virtual bool VInitFromFile(Core::File* file) = 0;
         };
     }
