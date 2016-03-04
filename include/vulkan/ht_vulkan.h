@@ -14,8 +14,14 @@
 
 #pragma once
 
-#ifdef _WIN32
+#include <ht_platform.h>
+
+#ifdef HT_SYS_WINDOWS
 #define VK_USE_PLATFORM_WIN32_KHR 1
+#endif
+
+#ifdef HT_SYS_LINUX
+#define VK_USE_PLATFORM_XLIB_KHR 1
 #endif
 
 #include <vulkan/vulkan.h>

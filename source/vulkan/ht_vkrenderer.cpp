@@ -23,8 +23,12 @@
 
 #include <cassert>
 
-#ifdef _WIN32
+#ifdef HT_SYS_WINDOWS
 #include <windows.h>
+#endif
+
+#ifdef HT_SYS_LINUX
+#include <X11/Xlib.h>
 #endif
 
 namespace Hatchit {
@@ -414,6 +418,25 @@ namespace Hatchit {
                     return false;
                 }
 #endif
+
+#ifdef HT_SYS_LINUX
+		        VkXlibSurfaceCreateInfoKHR creationInfo;
+		        creationInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+		        creationInfo.pNext = nullptr;
+		        creationInfo.flags = 0;
+                creationInfo.dpy = (Display*)params.display;
+		        creationInfo.window = (Window)params.window;
+
+		        err = vkCreateXlibSurfaceKHR(m_instance, &creationInfo, nullptr, &m_surface);
+
+		        if(err != VK_SUCCESS)
+		        {
+		            Core::DebugPrintF("Error creating VkSurface for Xlib window");
+		
+		            return false;
+		        }
+#endif
+
                 /*
                 * Setup the device queues
                 */
@@ -517,10 +540,16 @@ namespace Hatchit {
                             surfaceExtFound = 1;
                             m_enabledExtensionNames.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
                         }
-#ifdef _WIN32
+#ifdef HT_SYS_WINDOWS
                         if (!strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, instanceExtensions[i].extensionName)) {
                             platformSurfaceExtFound = 1;
                             m_enabledExtensionNames.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+                        }
+#elif defined(HT_SYS_LINUX)
+                        if (!strcmp(VK_KHR_XLIB_SURFACE_EXTENSION_NAME, instanceExtensions[i].extensionName))
+                        {
+                            platformSurfaceExtFound = 1;
+                            m_enabledExtensionNames.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
                         }
 #endif
 

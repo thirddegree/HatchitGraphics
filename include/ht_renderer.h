@@ -61,6 +61,7 @@ namespace Hatchit {
         {
             RendererType renderer;
             void*        window;
+            void*        display;
             Color        clearColor;
             std::string  applicationName;
         };
