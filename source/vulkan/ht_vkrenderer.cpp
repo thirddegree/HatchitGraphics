@@ -28,7 +28,8 @@
 #endif
 
 #ifdef HT_SYS_LINUX
-#include <X11/Xlib.h>
+#include <xcb/xcb.h>
+#include <xcb/xproto.h>
 #endif
 
 namespace Hatchit {
@@ -420,18 +421,18 @@ namespace Hatchit {
 #endif
 
 #ifdef HT_SYS_LINUX
-		        VkXlibSurfaceCreateInfoKHR creationInfo;
-		        creationInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+		        VkXcbSurfaceCreateInfoKHR creationInfo;
+		        creationInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
 		        creationInfo.pNext = nullptr;
 		        creationInfo.flags = 0;
-                creationInfo.dpy = (Display*)params.display;
-		        creationInfo.window = (Window)params.window;
+                creationInfo.connection = (xcb_connection_t*)params.display;
+		        creationInfo.window = *(uint32_t*)params.window;
 
-		        err = vkCreateXlibSurfaceKHR(m_instance, &creationInfo, nullptr, &m_surface);
+		        err = vkCreateXcbSurfaceKHR(m_instance, &creationInfo, nullptr, &m_surface);
 
 		        if(err != VK_SUCCESS)
 		        {
-		            Core::DebugPrintF("Error creating VkSurface for Xlib window");
+		            Core::DebugPrintF("Error creating VkSurface for Xcb window");
 		
 		            return false;
 		        }
@@ -546,10 +547,10 @@ namespace Hatchit {
                             m_enabledExtensionNames.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
                         }
 #elif defined(HT_SYS_LINUX)
-                        if (!strcmp(VK_KHR_XLIB_SURFACE_EXTENSION_NAME, instanceExtensions[i].extensionName))
+                        if (!strcmp(VK_KHR_XCB_SURFACE_EXTENSION_NAME, instanceExtensions[i].extensionName))
                         {
                             platformSurfaceExtFound = 1;
-                            m_enabledExtensionNames.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
+                            m_enabledExtensionNames.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
                         }
 #endif
 
