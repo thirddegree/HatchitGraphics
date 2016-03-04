@@ -94,7 +94,7 @@ namespace Hatchit {
                 GLchar* string = (GLchar*)m_data;
                 size_t sourceSize = strlen(string);
 
-                glShaderSource(shader, 1, (GLchar**)&string, (GLint*)&sourceSize);
+                glShaderSource(shader, 1, (const GLchar**)&string, (GLint*)&sourceSize);
 
                 glCompileShader(shader);
 
@@ -105,50 +105,6 @@ namespace Hatchit {
                 delete[] m_data;
             }
 
-
-            bool GLShader::VSetData(std::string name, const void* data, size_t size)
-            {
-                return true;
-            }
-
-            bool GLShader::VSetInt(std::string name, int data)
-            {
-                return true;
-            }
-
-            bool GLShader::VSetFloat(std::string name, float data)
-            {
-                return true;
-            }
-
-            bool GLShader::VSetFloat2(std::string name, Math::Vector2 data)
-            {
-                return true;
-            }
-
-            bool GLShader::VSetFloat3(std::string name, Math::Vector3 data)
-            {
-                return true;
-            }
-
-            bool GLShader::VSetFloat4(std::string name, Math::Vector4 data)
-            {
-                return true;
-            }
-
-            bool GLShader::VSetMatrix3(std::string name, Math::Matrix3 data)
-            {
-                return true;
-            }
-
-            bool GLShader::VSetMatrix4(std::string name, Math::Matrix4 data)
-            {
-                return true;
-            }
-
-            bool GLShader::VBindTexture(std::string name, ITexture* texture) { return true; }
-            bool GLShader::VUnbindTexture(std::string name, ITexture* texture) { return true; }
-        }
-	
-	}
+        }	
+    }
 }
