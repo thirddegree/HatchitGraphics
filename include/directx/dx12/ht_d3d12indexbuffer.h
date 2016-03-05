@@ -33,12 +33,13 @@ namespace Hatchit {
 
                 bool Initialize(ID3D12Device* device);
 
-                bool UpdateSubData(uint32_t offset, uint32_t count, const void* data);
+                bool UpdateSubData(ID3D12GraphicsCommandList* commandList, uint32_t offset, uint32_t count, const void* data);
 
                 D3D12_INDEX_BUFFER_VIEW GetView();
 
             private:
                 ID3D12Resource*         m_buffer;
+                ID3D12Resource*         m_bufferUploadHeap;
                 D3D12_INDEX_BUFFER_VIEW m_view;
                 uint32_t                m_bufferSize;
             };

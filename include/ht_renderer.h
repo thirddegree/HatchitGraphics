@@ -61,6 +61,8 @@ namespace Hatchit {
         {
             RendererType renderer;
             void*        window;
+            uint32_t     viewportWidth;
+            uint32_t     viewportHeight;
             void*        display;
             Color        clearColor;
             std::string  applicationName;

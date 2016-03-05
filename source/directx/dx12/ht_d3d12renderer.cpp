@@ -145,17 +145,14 @@ namespace Hatchit {
                     return false;
                 }
 
-                RECT r;
-                GetClientRect((HWND)params.window, &r);
-                UINT width = r.right - r.left;
-                UINT height = r.bottom - r.top;
+                
 
-                m_aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+                m_aspectRatio = static_cast<float>(params.viewportWidth) / static_cast<float>(params.viewportHeight);
 
                 DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
                 swapChainDesc.BufferCount = NUM_RENDER_TARGETS; //double buffered
-                swapChainDesc.BufferDesc.Width = width;
-                swapChainDesc.BufferDesc.Height = height;
+                swapChainDesc.BufferDesc.Width = params.viewportWidth;
+                swapChainDesc.BufferDesc.Height = params.viewportHeight;
                 swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
                 swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
                 swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
@@ -269,10 +266,10 @@ namespace Hatchit {
                     return false;
                 }
 
-                DirectX::ThrowIfFailed(m_commandList->Close());
+                //DirectX::ThrowIfFailed(m_commandList->Close());
                 
-                m_viewport.Width = static_cast<float>(width);
-                m_viewport.Height = static_cast<float>(height);
+                m_viewport.Width = static_cast<float>(params.viewportWidth);
+                m_viewport.Height = static_cast<float>(params.viewportHeight);
                 m_viewport.TopLeftX = 0.0f;
                 m_viewport.TopLeftY = 0.0f;
                 m_viewport.MinDepth = 0.0f;
@@ -280,14 +277,18 @@ namespace Hatchit {
 
                 m_scissorRect.left = 0;
                 m_scissorRect.top = 0;
-                m_scissorRect.right = static_cast<LONG>(width);
-                m_scissorRect.bottom = static_cast<LONG>(height);
+                m_scissorRect.right = static_cast<LONG>(params.viewportWidth);
+                m_scissorRect.bottom = static_cast<LONG>(params.viewportHeight);
                 
                 /*
                 * Create a root signature
                 */
                 CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-                rootSignatureDesc.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+                rootSignatureDesc.Init(0, nullptr, 0, nullptr,  D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+                                                                D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
+                                                                D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
+                                                                D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
+                                                                D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS);
 
                 ID3DBlob* signature = nullptr;
                 ID3DBlob* error = nullptr;
@@ -434,7 +435,7 @@ namespace Hatchit {
                     return false;
                 }
 
-                Resource::Model model;
+                /*Resource::Model model;
                 model.VInitFromFile(&modelFile);
 
                 std::vector<Vertex> vertices;
@@ -457,16 +458,31 @@ namespace Hatchit {
                     indices.push_back(index.mIndices[0]);
                     indices.push_back(index.mIndices[1]);
                     indices.push_back(index.mIndices[2]);
-                }
-                m_indexCount = indices.size();
+                }*/
+                
 
+                m_indexCount = 3;
+                m_vBuffer = new D3D12VertexBuffer(3);
+                m_vBuffer->Initialize(m_device);
+                m_vBuffer->UpdateSubData(m_commandList, 0, 3, &triangleVerts[0]);
+
+                m_iBuffer = new D3D12IndexBuffer(3);
+                m_iBuffer->Initialize(m_device);
+                m_iBuffer->UpdateSubData(m_commandList, 0, 3, &triangleIndices[0]);
+
+                
+                /*m_indexCount = indices.size();
                 m_vBuffer = new D3D12VertexBuffer(vertices.size());
                 m_vBuffer->Initialize(m_device);
-                m_vBuffer->UpdateSubData(0, vertices.size(), &vertices[0]);
+                m_vBuffer->UpdateSubData(m_commandList, 0, vertices.size(), &vertices[0]);
 
                 m_iBuffer = new D3D12IndexBuffer(indices.size());
                 m_iBuffer->Initialize(m_device);
-                m_iBuffer->UpdateSubData(0, indices.size(), &indices[0]);
+                m_iBuffer->UpdateSubData(m_commandList, 0, indices.size(), &indices[0]);*/
+                
+                m_commandList->Close();
+                ID3D12CommandList* ppCommandLists[] = { m_commandList };
+                m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
                 /*
                 * Create synchronization objects
