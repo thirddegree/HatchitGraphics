@@ -20,7 +20,7 @@
 namespace Hatchit {
     namespace Graphics {
 
-        namespace DirectX
+        namespace DX
         {
             class HT_API D3D12DeviceResources
             {
@@ -43,6 +43,11 @@ namespace Hatchit {
                 ID3D12Resource*         GetDepthStencil();
                 ID3D12CommandAllocator* GetCommandAllocator();
                 ID3D12CommandQueue*     GetCommandQueue();
+                D3D12_VIEWPORT          GetScreenViewport();
+                uint32_t                GetCurrentFrameIndex();
+
+                CD3DX12_CPU_DESCRIPTOR_HANDLE GetRenderTargetView();
+                CD3DX12_CPU_DESCRIPTOR_HANDLE GetDepthStencilView();
             private:
                 bool                        m_deviceRemoved;
                 uint32_t                    m_currentFrame;
@@ -60,6 +65,7 @@ namespace Hatchit {
                 ID3D12Resource*             m_depthStencil;
                 ID3D12DescriptorHeap*       m_renderTargetViewHeap;
                 uint32_t                    m_renderTargetViewHeapSize;
+                ID3D12DescriptorHeap*       m_depthStencilHeap;
 
             private:
                 bool        CreateDeviceResources(HWND hwnd, uint32_t width, uint32_t height);

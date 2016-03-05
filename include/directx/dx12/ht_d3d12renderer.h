@@ -20,12 +20,23 @@
 #include <ht_d3d12vertexbuffer.h>
 #include <ht_d3d12indexbuffer.h>
 #include <ht_d3d12deviceresources.h>
-
+#include <ht_math.h>
+#include <DirectXMath.h>
 namespace Hatchit {
 
     namespace Graphics {
 
-        namespace DirectX {
+        namespace DX {
+
+            struct ConstantBuffer
+            {
+                /*Math::Matrix4 world;
+                Math::Matrix4 view;
+                Math::Matrix4 proj;*/
+                DirectX::XMFLOAT4X4 world;
+                DirectX::XMFLOAT4X4 view;
+                DirectX::XMFLOAT4X4 proj;
+            };
 
             class HT_API D3D12Renderer : public IRenderer
             {
@@ -53,6 +64,10 @@ namespace Hatchit {
                 D3D12DeviceResources*       m_resources;
                 ID3D12RootSignature*        m_rootSignature;
                 ID3D12PipelineState*        m_pipelineState;
+                ID3D12GraphicsCommandList*  m_commandList;
+                ID3D12DescriptorHeap*       m_cbDescriptorHeap;
+                uint32_t                    m_cbDescriptorSize;
+                uint8_t*                    m_mappedConstantBuffer;
      
                 Color                       m_clearColor;
 
@@ -60,11 +75,16 @@ namespace Hatchit {
                 float                       m_aspectRatio;
                 ID3D12Resource*             m_vertexBuffer;
                 ID3D12Resource*             m_indexBuffer;
-                D3D12VertexBuffer*          m_vBuffer;
-                D3D12IndexBuffer*           m_iBuffer;
-                uint32_t                    m_indexCount;
-                D3D12_VERTEX_BUFFER_VIEW							m_vertexBufferView;
-                D3D12_INDEX_BUFFER_VIEW								m_indexBufferView;
+                ID3D12Resource*             m_constantBuffer;
+                ID3DBlob*                   m_vertexShader;
+                ID3DBlob*                   m_pixelShader;
+                D3D12_VERTEX_BUFFER_VIEW	m_vertexBufferView;
+                D3D12_INDEX_BUFFER_VIEW		m_indexBufferView;
+
+                bool LoadShaderFiles();
+
+                ConstantBuffer              m_constantBufferData;
+                static const UINT c_alignedConstantBufferSize = (sizeof(ConstantBuffer) + 255) & ~255;
 
             };
         }

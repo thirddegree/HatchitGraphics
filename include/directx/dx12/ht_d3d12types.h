@@ -23,7 +23,7 @@ namespace Hatchit {
 
     namespace Graphics {
 
-        namespace DirectX {
+        namespace DX {
 
             struct ConstantBuffer
             {

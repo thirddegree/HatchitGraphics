@@ -23,7 +23,7 @@ namespace Hatchit {
     
     namespace Graphics {
 
-        namespace DirectX
+        namespace DX
         {
 
             class HT_API D3D12Shader : public IShader

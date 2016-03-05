@@ -19,7 +19,7 @@
 namespace Hatchit {
     namespace Graphics {
 
-        namespace DirectX
+        namespace DX
         {
             D3D12DeviceResources::D3D12DeviceResources()
             {
@@ -34,20 +34,21 @@ namespace Hatchit {
                 for (int i = 0; i < NUM_RENDER_TARGETS; i++)
                     m_renderTargets[i] = nullptr;
 
-                m_currentFrame = 0;
+                m_currentFrame = 1;
             }
 
             D3D12DeviceResources::~D3D12DeviceResources()
             {
-                DirectX::ReleaseCOM(m_device);
-                DirectX::ReleaseCOM(m_swapChain);
-                DirectX::ReleaseCOM(m_renderTargetViewHeap);
-                DirectX::ReleaseCOM(m_commandQueue);
-                DirectX::ReleaseCOM(m_commandAllocator);
-                DirectX::ReleaseCOM(m_fence);
+                ReleaseCOM(m_device);
+                ReleaseCOM(m_swapChain);
+                ReleaseCOM(m_renderTargetViewHeap);
+                ReleaseCOM(m_depthStencilHeap);
+                ReleaseCOM(m_commandQueue);
+                ReleaseCOM(m_commandAllocator);
+                ReleaseCOM(m_fence);
                 for (int i = 0; i < NUM_RENDER_TARGETS; i++)
-                    DirectX::ReleaseCOM(m_renderTargets[i]);
-
+                    ReleaseCOM(m_renderTargets[i]);
+                ReleaseCOM(m_depthStencil);
                 CloseHandle(m_fenceEvent);
             }
 
@@ -78,12 +79,32 @@ namespace Hatchit {
 
             ID3D12CommandAllocator * D3D12DeviceResources::GetCommandAllocator()
             {
-                return nullptr;
+                return m_commandAllocator;
             }
 
             ID3D12CommandQueue * D3D12DeviceResources::GetCommandQueue()
             {
-                return nullptr;
+                return m_commandQueue;
+            }
+
+            D3D12_VIEWPORT D3D12DeviceResources::GetScreenViewport()
+            {
+                return m_viewport;
+            }
+
+            CD3DX12_CPU_DESCRIPTOR_HANDLE D3D12DeviceResources::GetRenderTargetView()
+            {
+                return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_renderTargetViewHeap->GetCPUDescriptorHandleForHeapStart(), m_currentFrame, m_renderTargetViewHeapSize);
+            }
+
+            CD3DX12_CPU_DESCRIPTOR_HANDLE D3D12DeviceResources::GetDepthStencilView()
+            {
+                return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_depthStencilHeap->GetCPUDescriptorHandleForHeapStart());
+            }
+
+            uint32_t D3D12DeviceResources::GetCurrentFrameIndex()
+            {
+                return m_currentFrame;
             }
 
             bool D3D12DeviceResources::CreateDeviceResources(HWND hwnd, uint32_t width, uint32_t height)
@@ -107,7 +128,7 @@ namespace Hatchit {
 #ifdef _DEBUG
                     Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create DXGIFactory.\n");
 #endif
-                    DirectX::ReleaseCOM(factory);
+                    ReleaseCOM(factory);
                     return false;
                 }
 
@@ -118,8 +139,8 @@ namespace Hatchit {
 #ifdef _DEBUG
                     Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to find suitable Direct3D12 adapter.\n");
 #endif
-                    DirectX::ReleaseCOM(hardwareAdapter);
-                    DirectX::ReleaseCOM(factory);
+                    ReleaseCOM(hardwareAdapter);
+                    ReleaseCOM(factory);
                     return false;
                 }
 
@@ -132,8 +153,8 @@ namespace Hatchit {
 #ifdef _DEBUG
                     Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create Direct3D12 device.\n");
 #endif
-                    DirectX::ReleaseCOM(hardwareAdapter);
-                    DirectX::ReleaseCOM(factory);
+                    ReleaseCOM(hardwareAdapter);
+                    ReleaseCOM(factory);
                     return false;
                 }
 
@@ -155,8 +176,8 @@ namespace Hatchit {
 #ifdef _DEBUG
                     Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create Direct3D12 Command Queue.\n");
 #endif
-                    DirectX::ReleaseCOM(hardwareAdapter);
-                    DirectX::ReleaseCOM(factory);
+                    ReleaseCOM(hardwareAdapter);
+                    ReleaseCOM(factory);
                     return false;
                 }
 
@@ -167,7 +188,7 @@ namespace Hatchit {
                 swapChainDesc.BufferCount = NUM_RENDER_TARGETS; //double buffered
                 swapChainDesc.BufferDesc.Width = width;
                 swapChainDesc.BufferDesc.Height = height;
-                swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+                swapChainDesc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
                 swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
                 swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
                 swapChainDesc.OutputWindow = hwnd;
@@ -188,8 +209,8 @@ namespace Hatchit {
 #ifdef _DEBUG
                     Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create swapChain.\n");
 #endif
-                    DirectX::ReleaseCOM(hardwareAdapter);
-                    DirectX::ReleaseCOM(factory);
+                    ReleaseCOM(hardwareAdapter);
+                    ReleaseCOM(factory);
                     return false;
                 }
 
@@ -202,11 +223,11 @@ namespace Hatchit {
 #ifdef _DEBUG
                     Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to query IDXGISwapChain3 interface.\n");
 #endif
-                    DirectX::ReleaseCOM(hardwareAdapter);
-                    DirectX::ReleaseCOM(factory);
+                    ReleaseCOM(hardwareAdapter);
+                    ReleaseCOM(factory);
                     return false;
                 }
-                DirectX::ReleaseCOM(swapChain);
+                ReleaseCOM(swapChain);
                 m_currentFrame = m_swapChain->GetCurrentBackBufferIndex();
 
                 /*
@@ -222,8 +243,8 @@ namespace Hatchit {
 #ifdef _DEBUG
                     Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create render target view heap.\n");
 #endif
-                    DirectX::ReleaseCOM(hardwareAdapter);
-                    DirectX::ReleaseCOM(factory);
+                    ReleaseCOM(hardwareAdapter);
+                    ReleaseCOM(factory);
                     return false;
                 }
                 m_renderTargetViewHeapSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
@@ -240,8 +261,8 @@ namespace Hatchit {
 #ifdef _DEBUG
                         Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to get render target buffer for resource creation.\n");
 #endif
-                        DirectX::ReleaseCOM(hardwareAdapter);
-                        DirectX::ReleaseCOM(factory);
+                        ReleaseCOM(hardwareAdapter);
+                        ReleaseCOM(factory);
                         return false;
                     }
 
@@ -253,7 +274,34 @@ namespace Hatchit {
                 /*
                 * Create a depth stencil view
                 */
-                //D3D12_DESC
+                D3D12_DESCRIPTOR_HEAP_DESC depthStencilHeapDesc = {};
+                depthStencilHeapDesc.NumDescriptors = 1;
+                depthStencilHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+                depthStencilHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+                hr = m_device->CreateDescriptorHeap(&depthStencilHeapDesc, IID_PPV_ARGS(&m_depthStencilHeap));
+
+                D3D12_HEAP_PROPERTIES depthHeapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+                D3D12_RESOURCE_DESC   depthResourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT,
+                    width, height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+                D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
+                depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+                depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
+                depthOptimizedClearValue.DepthStencil.Stencil = 0;
+
+                hr = m_device->CreateCommittedResource(
+                    &depthHeapProps,
+                    D3D12_HEAP_FLAG_NONE,
+                    &depthResourceDesc,
+                    D3D12_RESOURCE_STATE_DEPTH_WRITE,
+                    &depthOptimizedClearValue,
+                    IID_PPV_ARGS(&m_depthStencil));
+
+                D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc = {};
+                depthStencilViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
+                depthStencilViewDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+                depthStencilViewDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+                m_device->CreateDepthStencilView(m_depthStencil, &depthStencilViewDesc, m_depthStencilHeap->GetCPUDescriptorHandleForHeapStart());
 
                 /*
                 * Create a command allocator for managing memory for command list
@@ -264,13 +312,13 @@ namespace Hatchit {
 #ifdef _DEBUG
                     Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create command allocator for command list memory allocation.\n");
 #endif
-                    DirectX::ReleaseCOM(hardwareAdapter);
-                    DirectX::ReleaseCOM(factory);
+                    ReleaseCOM(hardwareAdapter);
+                    ReleaseCOM(factory);
                     return false;
                 }
 
-                DirectX::ReleaseCOM(hardwareAdapter);
-                DirectX::ReleaseCOM(factory);
+                ReleaseCOM(hardwareAdapter);
+                ReleaseCOM(factory);
 
                 // Create synchronization objects.
                 m_device->CreateFence(m_fenceValues[m_currentFrame], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence));
