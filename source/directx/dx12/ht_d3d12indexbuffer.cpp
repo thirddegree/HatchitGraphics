@@ -19,7 +19,7 @@ namespace Hatchit {
 
     namespace Graphics {
 
-        namespace DirectX {
+        namespace DX {
 
             D3D12IndexBuffer::D3D12IndexBuffer(uint32_t size)
             {
@@ -30,8 +30,8 @@ namespace Hatchit {
 
             D3D12IndexBuffer::~D3D12IndexBuffer()
             {
-                DirectX::ReleaseCOM(m_buffer);
-                DirectX::ReleaseCOM(m_bufferUploadHeap);
+                ReleaseCOM(m_buffer);
+                ReleaseCOM(m_bufferUploadHeap);
             }
 
             bool D3D12IndexBuffer::Initialize(ID3D12Device* device)

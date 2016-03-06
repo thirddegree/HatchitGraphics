@@ -19,7 +19,7 @@ namespace Hatchit {
 
     namespace Graphics {
 
-        namespace DirectX {
+        namespace DX {
             
             D3D12VertexBuffer::D3D12VertexBuffer(uint32_t size)
             {
@@ -30,8 +30,8 @@ namespace Hatchit {
 
             D3D12VertexBuffer::~D3D12VertexBuffer()
             {
-                DirectX::ReleaseCOM(m_buffer);
-                DirectX::ReleaseCOM(m_bufferUploadHeap);
+                ReleaseCOM(m_buffer);
+                ReleaseCOM(m_bufferUploadHeap);
             }
 
             bool D3D12VertexBuffer::Initialize(ID3D12Device* device)

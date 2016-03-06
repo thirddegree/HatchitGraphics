@@ -19,7 +19,7 @@ namespace Hatchit {
 
     namespace Graphics {
 
-        namespace DirectX
+        namespace DX
         {
             D3D12ConstantBuffer::D3D12ConstantBuffer()
             {
