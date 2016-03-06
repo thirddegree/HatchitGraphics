@@ -46,6 +46,10 @@ namespace Hatchit {
                 ReleaseCOM(m_vertexShader);
                 ReleaseCOM(m_pixelShader);
                 ReleaseCOM(m_commandList);
+                ReleaseCOM(m_constantBuffer);
+                ReleaseCOM(m_cbDescriptorHeap);
+                ReleaseCOM(m_vertexBuffer);
+                ReleaseCOM(m_indexBuffer);
             }
 
             bool D3D12Renderer::VInitialize(const RendererParams& params)
@@ -101,11 +105,7 @@ namespace Hatchit {
                 psoDesc.pRootSignature = m_rootSignature;
                 psoDesc.VS = CD3DX12_SHADER_BYTECODE(m_vertexShader);
                 psoDesc.PS = CD3DX12_SHADER_BYTECODE(m_pixelShader);
-                
-                CD3DX12_RASTERIZER_DESC rsd(D3D12_DEFAULT);
-                rsd.FrontCounterClockwise = true;
-                rsd.CullMode = D3D12_CULL_MODE_BACK;
-                psoDesc.RasterizerState = rsd;
+                psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);;
                 psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
                 psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
                 psoDesc.SampleMask = UINT_MAX;
@@ -144,7 +144,7 @@ namespace Hatchit {
                 };
                 const UINT vertexBufferSize = sizeof(cubeVertices);
 
-                ID3D12Resource* vertexBufferUpload;
+                Microsoft::WRL::ComPtr<ID3D12Resource> vertexBufferUpload;
                 CD3DX12_HEAP_PROPERTIES defaultHeapProperties(D3D12_HEAP_TYPE_DEFAULT);
                 CD3DX12_RESOURCE_DESC vertexBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
                 hr = device->CreateCommittedResource(
@@ -173,11 +173,13 @@ namespace Hatchit {
                 vertexData.RowPitch = vertexBufferSize;
                 vertexData.SlicePitch = vertexData.RowPitch;
 
-                UpdateSubresources(m_commandList, m_vertexBuffer, vertexBufferUpload, 0, 0, 1, &vertexData);
+                UpdateSubresources(m_commandList, m_vertexBuffer, vertexBufferUpload.Get(), 0, 0, 1, &vertexData);
 
                 CD3DX12_RESOURCE_BARRIER vertexBufferResourceBarrier =
                     CD3DX12_RESOURCE_BARRIER::Transition(m_vertexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
                 m_commandList->ResourceBarrier(1, &vertexBufferResourceBarrier);
+
+                
 
                 // Load mesh indices. Each trio of indices represents a triangle to be rendered on the screen.
                 // For example: 0,2,1 means that the vertices with indexes 0, 2 and 1 from the vertex buffer compose the
@@ -331,47 +333,16 @@ namespace Hatchit {
 
                 static float rot = 0.0f;
                 rot += 0.01f;
-                /*m_constantBufferData.proj = Math::MMMatrixPerspProj(90.0f, aspectRatio, 0.01f, 100.0f);
+                m_constantBufferData.proj = Math::MMMatrixPerspProj(45.0f, aspectRatio, 0.01f, 100.0f);
                 m_constantBufferData.view = Math::MMMatrixLookAt(Math::Vector3(0.0f, 0.0f, -5.0f),
                     Math::Vector3(0.0f, 0.0f, 1.0f),
                     Math::Vector3(0.0f, 1.0f, 0.0f));
-                m_constantBufferData.world = Math::MMMatrixRotationY(rot) * Math::MMMatrixTranslation(Math::Vector3(0.0f, 0.0f, 0.0f));
+                m_constantBufferData.world = Math::MMMatrixRotationY(rot) /** Math::MMMatrixTranslation(Math::Vector3(0.0f, 0.0f, 0.0f))*/;
                 m_constantBufferData.world = Math::MMMatrixTranspose(m_constantBufferData.world);
                 m_constantBufferData.proj = Math::MMMatrixTranspose(m_constantBufferData.proj);
-                m_constantBufferData.view = Math::MMMatrixTranspose(m_constantBufferData.view);*/
+                m_constantBufferData.view = Math::MMMatrixTranspose(m_constantBufferData.view);
 
-                // Note that the OrientationTransform3D matrix is post-multiplied here
-                // in order to correctly orient the scene to match the display orientation.
-                // This post-multiplication step is required for any draw calls that are
-                // made to the swap chain render target. For draw calls to other targets,
-                // this transform should not be applied.
-
-                // This sample makes use of a right-handed coordinate system using row-major matrices.
-                XMMATRIX perspectiveMatrix = XMMatrixPerspectiveFovLH(
-                    45.0f,
-                    aspectRatio,
-                    0.01f,
-                    100.0f
-                    );
-
-                
-
-                XMStoreFloat4x4(
-                    &m_constantBufferData.proj,
-                    XMMatrixTranspose(perspectiveMatrix)
-                    );
-
-                // Eye is at (0,0.7,1.5), looking at point (0,-0.1,0) with the up-vector along the y-axis.
-                static const XMVECTORF32 eye = { 0.0f, 0.0f, -5.0f, 0.0f };
-                static const XMVECTORF32 at = { 0.0f, 0.0f, 1.0f, 0.0f };
-                static const XMVECTORF32 up = { 0.0f, 1.0f, 0.0f, 0.0f };
-
-                XMStoreFloat4x4(&m_constantBufferData.view, XMMatrixTranspose(XMMatrixLookAtLH(eye, at, up)));
-
-                XMStoreFloat4x4(
-                    &m_constantBufferData.world,
-                    XMMatrixTranspose(XMMatrixRotationY(rot) * XMMatrixTranslation(0, 0, 0)));
-
+               
                 // Update the constant buffer resource.
                 UINT8* destination = m_mappedConstantBuffer + (m_resources->GetCurrentFrameIndex() * c_alignedConstantBufferSize);
                 memcpy(destination, &m_constantBufferData, sizeof(m_constantBufferData));

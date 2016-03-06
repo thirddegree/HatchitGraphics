@@ -30,12 +30,9 @@ namespace Hatchit {
 
             struct ConstantBuffer
             {
-                /*Math::Matrix4 world;
+                Math::Matrix4 world;
                 Math::Matrix4 view;
-                Math::Matrix4 proj;*/
-                DirectX::XMFLOAT4X4 world;
-                DirectX::XMFLOAT4X4 view;
-                DirectX::XMFLOAT4X4 proj;
+                Math::Matrix4 proj;
             };
 
             class HT_API D3D12Renderer : public IRenderer
