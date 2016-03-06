@@ -78,6 +78,10 @@ namespace Hatchit {
                 D3D12_VERTEX_BUFFER_VIEW	m_vertexBufferView;
                 D3D12_INDEX_BUFFER_VIEW		m_indexBufferView;
 
+                D3D12VertexBuffer*          m_vBuffer;
+                D3D12IndexBuffer*           m_iBuffer;
+                size_t                      m_numIndices;
+
                 bool LoadShaderFiles();
 
                 ConstantBuffer              m_constantBufferData;
