@@ -55,25 +55,20 @@ namespace Hatchit {
                 bool VUnbindTexture(std::string name, ITexture* texture)    override;
 
                 ///Prepare this Material by building a descriptor set based off of its shader variables
-                bool VPrepare()                                             override;
+                bool VPrepare(IPipeline* pipeline)                         override;
                 bool VUpdate()                                              override;
 
-                VkDescriptorSet* GetDescriptorSet();
+                VkDescriptorSet* GetVKDescriptorSet();
 
             private:
-                VkDescriptorPool m_descriptorPool;
-
                 VkDescriptorSetLayout m_materialLayout;
-
                 VkDescriptorSet m_materialSet;
 
                 UniformBlock m_uniformVSBuffer;
                 UniformBlock m_uniformFSBuffer;
                 std::vector<UniformBlock> m_fragmentTextures;
 
-                bool setupDescriptorSetLayout(VkDevice device);
-                bool setupDescriptorPool(VkDevice device);
-                bool setupDescriptorSet(VkDevice device);
+                bool setupDescriptorSet(VkDescriptorPool descriptorPool, VkDevice device);
             };
         }
     }

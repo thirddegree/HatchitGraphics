@@ -27,21 +27,20 @@ namespace Hatchit {
 
             VKMaterial::VKMaterial() 
             { 
-                m_shaderVariables["matricies.model"] = new Matrix4Variable();
+                //TODO: Allocate variables based on the material file
+                m_shaderVariables["object.model"] = new Matrix4Variable();
 
-
-                static_cast<Matrix4Variable*>(m_shaderVariables["matricies.model"])->SetData(Math::Matrix4());
+                static_cast<Matrix4Variable*>(m_shaderVariables["object.model"])->SetData(Math::Matrix4());
             }
             VKMaterial::~VKMaterial() 
             {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
 
                 VkDevice device = renderer->GetVKDevice();
+                VkDescriptorPool descriptorPool = renderer->GetVKDescriptorPool();
 
                 //Free descriptors
-                vkFreeDescriptorSets(device, m_descriptorPool, 1, &m_materialSet);
-                vkDestroyDescriptorSetLayout(device, m_materialLayout, nullptr);
-                vkDestroyDescriptorPool(device, m_descriptorPool, nullptr);
+                vkFreeDescriptorSets(device, descriptorPool, 1, &m_materialSet);
 
                 //Destroy unifrom blocks
                 vkFreeMemory(device, m_uniformVSBuffer.memory, nullptr);
@@ -99,10 +98,15 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKMaterial::VPrepare() 
+            bool VKMaterial::VPrepare(IPipeline* pipeline) 
             {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
                 VkDevice device = renderer->GetVKDevice();
+                VkDescriptorPool descriptorPool = renderer->GetVKDescriptorPool();
+
+                VKPipeline* vkPipeline = static_cast<VKPipeline*>(pipeline);
+
+                m_materialLayout = vkPipeline->GetVKDescriptorSetLayouts()[1];
 
                 //Prepare uniform buffers
                 //if(m_shaderVariables.size() > 0)
@@ -112,13 +116,7 @@ namespace Hatchit {
                 m_uniformVSBuffer.descriptor.offset = 0;
                 m_uniformVSBuffer.descriptor.range = sizeof(Math::Matrix4);
 
-                if (!setupDescriptorSetLayout(device))
-                    return false;
-
-                if (!setupDescriptorPool(device))
-                    return false;
-
-                if (!setupDescriptorSet(device))
+                if (!setupDescriptorSet(descriptorPool, device))
                     return false;
 
                 return true;
@@ -151,106 +149,17 @@ namespace Hatchit {
                 return true;
             }
 
-            VkDescriptorSet* VKMaterial::GetDescriptorSet() { return &m_materialSet; }
+            VkDescriptorSet* VKMaterial::GetVKDescriptorSet() { return &m_materialSet; }
 
-            bool VKMaterial::setupDescriptorSetLayout(VkDevice device)
-            {
-                VkResult err;
-
-                //Only one layout for vertex layout
-                std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {};
-
-                VkDescriptorSetLayoutBinding vertexUniformBinding = {};
-                vertexUniformBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                vertexUniformBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-                vertexUniformBinding.binding = 0;
-                vertexUniformBinding.descriptorCount = 1;
-
-                //VkDescriptorSetLayoutBinding fragmentUniformBinding = {};
-                //fragmentUniformBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                //fragmentUniformBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-                //fragmentUniformBinding.binding = 1;
-                //fragmentUniformBinding.descriptorCount = 1;
-
-                layoutBindings.push_back(vertexUniformBinding);
-                //layoutBindings.push_back(fragmentUniformBinding);
-
-                for (uint32_t i = 0; i < m_textures.size(); i++)
-                {
-                    VkDescriptorSetLayoutBinding fragmentTextureBinding = {};
-                    fragmentTextureBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                    fragmentTextureBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-                    fragmentTextureBinding.binding = 2 + i;
-                    fragmentTextureBinding.descriptorCount = 1;
-                    layoutBindings.push_back(fragmentTextureBinding);
-                }
-
-                VkDescriptorSetLayoutCreateInfo descriptorLayoutInfo = {};
-                descriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-                descriptorLayoutInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
-                descriptorLayoutInfo.pBindings = layoutBindings.data();
-
-                err = vkCreateDescriptorSetLayout(device, &descriptorLayoutInfo, nullptr, &m_materialLayout);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKMaterial::VPrepare: Failed to create descriptor set layout\n");
-#endif
-                    return false;
-                }
-
-                return true;
-            }
-            bool VKMaterial::setupDescriptorPool(VkDevice device)
-            {
-                VkResult err;
-                
-                //Setup the descriptor pool
-                std::vector<VkDescriptorPoolSize> poolSizes;
-
-                VkDescriptorPoolSize uniformSize = {};
-                uniformSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                uniformSize.descriptorCount = 1;
-                poolSizes.push_back(uniformSize);
-
-                if (m_textures.size() > 0)
-                {
-                    VkDescriptorPoolSize samplerSize = {};
-                    samplerSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                    samplerSize.descriptorCount = static_cast<uint32_t>(m_textures.size());
-                    poolSizes.push_back(samplerSize);
-                }
-
-                VkDescriptorPoolCreateInfo poolCreateInfo = {};
-                poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-                poolCreateInfo.pPoolSizes = poolSizes.data();
-                poolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-                poolCreateInfo.maxSets = static_cast<uint32_t>(1 + m_textures.size());
-                poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-
-                err = vkCreateDescriptorPool(device, &poolCreateInfo, nullptr, &m_descriptorPool);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKMaterial::VPrepare: Failed to create descriptor pool\n");
-#endif
-                    return false;
-                }
-
-                return true;
-            }
-            bool VKMaterial::setupDescriptorSet(VkDevice device)
+            bool VKMaterial::setupDescriptorSet(VkDescriptorPool descriptorPool, VkDevice device)
             {
                 VkResult err;
 
                 //Setup the descriptor sets
-                VkDescriptorSetLayout descSetLayout = m_materialLayout;
                 VkDescriptorSetAllocateInfo allocInfo = {};
                 allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-                allocInfo.descriptorPool = m_descriptorPool;
-                allocInfo.pSetLayouts = &descSetLayout;
+                allocInfo.descriptorPool = descriptorPool;
+                allocInfo.pSetLayouts = &m_materialLayout;
                 allocInfo.descriptorSetCount = 1;
 
                 err = vkAllocateDescriptorSets(device, &allocInfo, &m_materialSet);

@@ -26,6 +26,9 @@ namespace Hatchit {
             renderRequest.material  = material;
             renderRequest.mesh      = mesh;
 
+            m_view = Math::Matrix4();
+            m_proj = Math::Matrix4();
+
             m_renderRequests.push_back(renderRequest);
         }
 
@@ -36,6 +39,15 @@ namespace Hatchit {
 
         void IRenderPass::SetWidth(uint32_t width) { m_width = width; }
         void IRenderPass::SetHeight(uint32_t height) { m_height = height; }
+
+        void IRenderPass::SetView(Math::Matrix4 view) 
+        {
+            m_view = view; 
+        }
+        void IRenderPass::SetProj(Math::Matrix4 proj) 
+        { 
+            m_proj = proj; 
+        }
 
         void IRenderPass::BuildRenderRequestHeirarchy() 
         {

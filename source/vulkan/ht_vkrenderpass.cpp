@@ -134,10 +134,20 @@ namespace Hatchit {
                 return true;
             }
 
-            //Will this be sent the Objects that it needs to render?
             ///Render the scene
-            void VKRenderPass::VRender()
+            void VKRenderPass::VUpdate()
             {
+                //Update info that the pipelines need
+                std::map<IPipeline*, std::vector<Renderable>>::iterator iterator;
+
+                for (iterator = m_pipelineList.begin(); iterator != m_pipelineList.end(); iterator++)
+                {
+                    IPipeline* pipeline = iterator->first;
+
+                    pipeline->VSetMatrix4("pass.view", m_view);
+                    pipeline->VSetMatrix4("pass.proj", m_proj);
+                }
+                
             }
 
             bool VKRenderPass::VBuildCommandList() 
@@ -220,16 +230,13 @@ namespace Hatchit {
                     VKPipeline* pipeline = static_cast<VKPipeline*>(iterator->first);
 
                     VkPipeline vkPipeline = pipeline->GetVKPipeline();
-                    VkPipelineLayout vkPipelineLayout = pipeline->GetPipelineLayout();
+                    VkPipelineLayout vkPipelineLayout = pipeline->GetVKPipelineLayout();
+                    VkDescriptorSet* vkPipelineDescriptorSet = pipeline->GetVKDescriptorSet();
 
                     vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetVKPipeline());
-
-                    /*  TODO: Set, get and bind pipeline-wide descriptor sets
-                        VkDescriptorSet descriptorSet = material->GetDescriptorSet();
-
-                        vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            vkPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);                    
-                    */
+                    
+                    vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                        vkPipelineLayout, 0, 1, vkPipelineDescriptorSet, 0, nullptr);
 
                     std::vector<Renderable> renderables = iterator->second;
 
@@ -239,16 +246,16 @@ namespace Hatchit {
                     {
                         VKMaterial* material = static_cast<VKMaterial*>(renderables[i].material);
                         VKMesh*     mesh = static_cast<VKMesh*>(renderables[i].mesh);
-
-                        VkDescriptorSet* descriptorSet = material->GetDescriptorSet();
-
+                    
+                        VkDescriptorSet* descriptorSet = material->GetVKDescriptorSet();
+                        
                         vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            vkPipelineLayout, 0, 1, descriptorSet, 0, nullptr);
-
+                            vkPipelineLayout, 1, 1, descriptorSet, 0, nullptr);
+                    
                         UniformBlock vertBlock = mesh->GetVertexBlock();
                         UniformBlock indexBlock = mesh->GetIndexBlock();
                         uint32_t indexCount = mesh->GetIndexCount();
-
+                    
                         vkCmdBindVertexBuffers(m_commandBuffer, 0, 1, &vertBlock.buffer, offsets);
                         vkCmdBindIndexBuffer(m_commandBuffer, indexBlock.buffer, 0, VK_INDEX_TYPE_UINT32);
                         vkCmdDrawIndexed(m_commandBuffer, indexCount, 1, 0, 0, 0);
