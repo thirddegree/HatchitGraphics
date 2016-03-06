@@ -27,7 +27,7 @@ namespace Hatchit {
 
     namespace Graphics {
 
-        namespace DirectX
+        namespace DX
         {
             template <typename T>
             void ReleaseCOM(T* t)

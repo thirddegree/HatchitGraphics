@@ -18,7 +18,7 @@ namespace Hatchit {
 
     namespace Graphics {
 
-        namespace DirectX
+        namespace DX
         {
             D3D12Pipeline::D3D12Pipeline()
             {
