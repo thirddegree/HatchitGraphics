@@ -200,7 +200,7 @@ namespace Hatchit {
 
                 //Example code for rotation
                 Math::Matrix4 rot = Math::MMMatrixRotationXYZ(Math::Vector3(0, m_angle += 0.001f, 0));
-                Math::Matrix4 mat = rot * Math::MMMatrixTranslation(Math::Vector3(0, 0, 0));
+                Math::Matrix4 mat = Math::MMMatrixTranspose(rot * Math::MMMatrixTranslation(Math::Vector3(0, 0, 0)));
 
                 m_material->VSetMatrix4("object.model", mat);
                 m_material->VUpdate();
@@ -1220,11 +1220,9 @@ namespace Hatchit {
                 multisampleState.minSamples = 0;
                 multisampleState.samples = SAMPLE_1_BIT;
 
-                Math::Matrix4 mat = Math::MMMatrixTranslation(Math::Vector3(0, 0, 0));
+                Math::Matrix4 view = Math::MMMatrixTranspose(Math::MMMatrixLookAt(Math::Vector3(0, 0, -5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0)));
 
-                Math::Matrix4 view = Math::MMMatrixLookAt(Math::Vector3(0, 0, 5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0));
-
-                Math::Matrix4 proj = Math::MMMatrixPerspProj(90.0f, (float)m_width / (float)m_height, 0.1f, 1000.0f);
+                Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.5f, (float)m_height / (float)m_width, 0.1f, 1000.0f));
 
                 IPipeline* pipeline = new VKPipeline(renderPass->GetVkRenderPass());
                 pipeline->VLoadShader(ShaderSlot::VERTEX, &vsShader);
@@ -1235,7 +1233,7 @@ namespace Hatchit {
 
                 m_material = new VKMaterial();
 
-                m_material->VSetMatrix4("object.model", mat);
+                m_material->VSetMatrix4("object.model", Math::Matrix4());
                 m_material->VPrepare(pipeline);
 
                 std::vector<Resource::Mesh*> meshes = model.GetMeshes();
