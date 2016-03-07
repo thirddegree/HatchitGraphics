@@ -23,7 +23,7 @@ namespace Hatchit {
             
             D3D12VertexBuffer::D3D12VertexBuffer(uint32_t size)
             {
-                m_bufferSize = size;
+                m_bufferSize = size * sizeof(Vertex);
                 m_buffer = nullptr;
                 m_bufferUploadHeap = nullptr;
             }
@@ -38,10 +38,12 @@ namespace Hatchit {
             {
                 HRESULT hr = S_OK;
 
+                CD3DX12_HEAP_PROPERTIES defaultHeapProperties(D3D12_HEAP_TYPE_DEFAULT);
+                CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(m_bufferSize);
                 hr = device->CreateCommittedResource(
-                    &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+                    &defaultHeapProperties,
                     D3D12_HEAP_FLAG_NONE,
-                    &CD3DX12_RESOURCE_DESC::Buffer(m_bufferSize),
+                    &bufferDesc,
                     D3D12_RESOURCE_STATE_COPY_DEST,
                     nullptr,
                     IID_PPV_ARGS(&m_buffer));
@@ -53,10 +55,11 @@ namespace Hatchit {
                     return false;
                 }
 
+                CD3DX12_HEAP_PROPERTIES uploadHeapProperties(D3D12_HEAP_TYPE_UPLOAD);
                 hr = device->CreateCommittedResource(
-                    &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+                    &uploadHeapProperties,
                     D3D12_HEAP_FLAG_NONE,
-                    &CD3DX12_RESOURCE_DESC::Buffer(m_bufferSize),
+                    &bufferDesc,
                     D3D12_RESOURCE_STATE_GENERIC_READ,
                     nullptr,
                     IID_PPV_ARGS(&m_bufferUploadHeap));
@@ -73,46 +76,20 @@ namespace Hatchit {
 
             bool D3D12VertexBuffer::UpdateSubData(ID3D12GraphicsCommandList* commandList, uint32_t offset, uint32_t count, const void* data)
             {
+                D3D12_SUBRESOURCE_DATA _data;
+                _data.pData = reinterpret_cast<const BYTE*>(data);
+                _data.RowPitch = m_bufferSize;
+                _data.SlicePitch = _data.RowPitch;
 
-#pragma region OLD
-//                HRESULT hr = S_OK;
-//
-//                CD3DX12_RANGE range(0, 0);
-//                uint8_t*      temp;
-//                hr = m_buffer->Map(0, &range, reinterpret_cast<void**>(&temp));
-//                if (FAILED(hr))
-//                {
-//#ifdef _DEBUG
-//                    Core::DebugPrintF("D3D12VertexBuffer::UpdateSubData(), Failed to map buffer.\n");
-//#endif
-//                    return false;
-//                }
-//
-//                /*copy data into buffer*/
-//                memcpy(temp, data, sizeof(Vertex) * count);
-//
-//                m_buffer->Unmap(0, nullptr);
-//
-//                /*initialize buffer view*/
-//                m_view.BufferLocation = m_buffer->GetGPUVirtualAddress();
-//                m_view.StrideInBytes = sizeof(Vertex);
-//                m_view.SizeInBytes = count * sizeof(Vertex);
-#pragma endregion
+                UpdateSubresources(commandList, m_buffer, m_bufferUploadHeap, 0, 0, 1, &_data);
 
-                // Copy data to the intermediate upload heap and then schedule a copy 
-                // from the upload heap to the vertex buffer.
-                D3D12_SUBRESOURCE_DATA vertexData = {};
-                vertexData.pData = data;
-                vertexData.RowPitch = count * sizeof(Vertex);
-                vertexData.SlicePitch = count * sizeof(Vertex);
+                CD3DX12_RESOURCE_BARRIER bufferResourceBarrier =
+                    CD3DX12_RESOURCE_BARRIER::Transition(m_buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+                commandList->ResourceBarrier(1, &bufferResourceBarrier);
 
-                UpdateSubresources<1>(commandList, m_buffer, m_bufferUploadHeap, 0, 0, 1, &vertexData);
-                commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
-
-                // Initialize the vertex buffer view.
                 m_view.BufferLocation = m_buffer->GetGPUVirtualAddress();
                 m_view.StrideInBytes = sizeof(Vertex);
-                m_view.SizeInBytes = count * sizeof(Vertex);
+                m_view.SizeInBytes = m_bufferSize;
 
                 return true;
             }

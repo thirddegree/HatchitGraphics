@@ -41,7 +41,7 @@ namespace Hatchit {
                 virtual bool VSetMatrix4(std::string name, Math::Matrix4 data) override;
                 virtual bool VBindTexture(std::string name, ITexture * texture) override;
                 virtual bool VUnbindTexture(std::string name, ITexture * texture) override;
-                virtual bool VPrepare() override;
+                virtual bool VPrepare(IPipeline* pipeline) override;
                 virtual bool VUpdate() override;
             };
         }

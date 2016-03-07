@@ -41,6 +41,7 @@ namespace Hatchit {
                 D3D12_VERTEX_BUFFER_VIEW GetView();
 
             private:
+                bool                        m_prepared;
                 ID3D12Resource*             m_buffer;
                 ID3D12Resource*             m_bufferUploadHeap;
                 D3D12_VERTEX_BUFFER_VIEW    m_view;

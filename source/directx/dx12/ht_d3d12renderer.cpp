@@ -32,10 +32,11 @@ namespace Hatchit {
             {
                 m_pipelineState = nullptr;
                 m_rootSignature = nullptr;
-                m_vertexBuffer = nullptr;
                 m_vertexShader = nullptr;
                 m_pixelShader = nullptr;
                 m_commandList = nullptr;
+                m_vBuffer = nullptr;
+                m_iBuffer = nullptr;
             }
 
             D3D12Renderer::~D3D12Renderer()
@@ -48,8 +49,9 @@ namespace Hatchit {
                 ReleaseCOM(m_commandList);
                 ReleaseCOM(m_constantBuffer);
                 ReleaseCOM(m_cbDescriptorHeap);
-                ReleaseCOM(m_vertexBuffer);
-                ReleaseCOM(m_indexBuffer);
+                
+                delete m_vBuffer;
+                delete m_iBuffer;
             }
 
             bool D3D12Renderer::VInitialize(const RendererParams& params)
@@ -131,119 +133,52 @@ namespace Hatchit {
                 if (FAILED(hr))
                     return false;
 
-                Vertex cubeVertices[] =
+                /*Load Susanne*/
+                Core::File file;
+                file.Open(Core::os_exec_dir() + "monkey.obj", Core::FileMode::ReadBinary);
+
+                Resource::Model m;
+                m.VInitFromFile(&file);
+
+                srand(time(NULL));
+                auto verts = m.GetMeshes()[0]->getVertices();
+                std::vector<Vertex> vertices;
+                for (auto v : verts)
                 {
-                    { Math::Float3(-0.5f, -0.5f, -0.5f), Math::Float4(0.0f, 0.0f, 0.0f, 1.0f) },
-                    { Math::Float3(-0.5f, -0.5f,  0.5f), Math::Float4(0.0f, 0.0f, 1.0f, 1.0f) },
-                    { Math::Float3(-0.5f,  0.5f, -0.5f), Math::Float4(0.0f, 1.0f, 0.0f, 1.0f) },
-                    { Math::Float3(-0.5f,  0.5f,  0.5f), Math::Float4(0.0f, 1.0f, 1.0f, 1.0f) },
-                    { Math::Float3(0.5f, -0.5f, -0.5f),  Math::Float4(1.0f, 0.0f, 0.0f, 1.0f) },
-                    { Math::Float3(0.5f, -0.5f,  0.5f),  Math::Float4(1.0f, 0.0f, 1.0f, 1.0f) },
-                    { Math::Float3(0.5f,  0.5f, -0.5f),  Math::Float4(1.0f, 1.0f, 0.0f, 1.0f) },
-                    { Math::Float3(0.5f,  0.5f,  0.5f),  Math::Float4(1.0f, 1.0f, 1.0f, 1.0f) },
-                };
-                const UINT vertexBufferSize = sizeof(cubeVertices);
+                    Vertex vertex;
+                    vertex.position.x = v.x;
+                    vertex.position.y = v.y;
+                    vertex.position.z = v.z;
+                    
+                    //int r = rand() % 2;
+                    //if(r == 0)
+                        vertex.color = Math::Float4(1.0f, 0.0f, 0.0f, 1.0f);
+                    //else
+                        //vertex.color = Math::Float4(1.0f, 1.0f, 0.0f, 1.0f);
 
-                Microsoft::WRL::ComPtr<ID3D12Resource> vertexBufferUpload;
-                CD3DX12_HEAP_PROPERTIES defaultHeapProperties(D3D12_HEAP_TYPE_DEFAULT);
-                CD3DX12_RESOURCE_DESC vertexBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
-                hr = device->CreateCommittedResource(
-                    &defaultHeapProperties,
-                    D3D12_HEAP_FLAG_NONE,
-                    &vertexBufferDesc,
-                    D3D12_RESOURCE_STATE_COPY_DEST,
-                    nullptr, IID_PPV_ARGS(&m_vertexBuffer));
-                if (FAILED(hr))
-                    return false;
+                    vertices.push_back(vertex);
+                }
 
-                CD3DX12_HEAP_PROPERTIES uploadHeapProperties(D3D12_HEAP_TYPE_UPLOAD);
-                hr = device->CreateCommittedResource(
-                    &uploadHeapProperties,
-                    D3D12_HEAP_FLAG_NONE,
-                    &vertexBufferDesc,
-                    D3D12_RESOURCE_STATE_GENERIC_READ,
-                    nullptr,
-                    IID_PPV_ARGS(&vertexBufferUpload));
-                if (FAILED(hr))
-                    return false;
+                auto indices = m.GetMeshes()[0]->getIndices();
+                std::vector<unsigned short> indexList;
+                for (auto i : indices)
+                {
+                    for (int n = 0; n < i.mNumIndices; n++)
+                    {
+                        indexList.push_back(i.mIndices[n]);
+                    }
+                }
 
-                /*Upload vertex data to the GPU*/
-                D3D12_SUBRESOURCE_DATA vertexData;
-                vertexData.pData = reinterpret_cast<BYTE*>(cubeVertices);
-                vertexData.RowPitch = vertexBufferSize;
-                vertexData.SlicePitch = vertexData.RowPitch;
+                m_vBuffer = new D3D12VertexBuffer(vertices.size());
+                m_vBuffer->Initialize(device);
+                m_vBuffer->UpdateSubData(m_commandList, 0, vertices.size(), &vertices[0]);
 
-                UpdateSubresources(m_commandList, m_vertexBuffer, vertexBufferUpload.Get(), 0, 0, 1, &vertexData);
-
-                CD3DX12_RESOURCE_BARRIER vertexBufferResourceBarrier =
-                    CD3DX12_RESOURCE_BARRIER::Transition(m_vertexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-                m_commandList->ResourceBarrier(1, &vertexBufferResourceBarrier);
+                m_numIndices = indexList.size();
+                m_iBuffer = new D3D12IndexBuffer(indexList.size());
+                m_iBuffer->Initialize(device);
+                m_iBuffer->UpdateSubData(m_commandList, 0, m_numIndices, &indexList[0]);
 
                 
-
-                // Load mesh indices. Each trio of indices represents a triangle to be rendered on the screen.
-                // For example: 0,2,1 means that the vertices with indexes 0, 2 and 1 from the vertex buffer compose the
-                // first triangle of this mesh.
-                unsigned short cubeIndices[] =
-                {
-                    0, 2, 1, // -x
-                    1, 2, 3,
-
-                    4, 5, 6, // +x
-                    5, 7, 6,
-
-                    0, 1, 5, // -y
-                    0, 5, 4,
-
-                    2, 6, 7, // +y
-                    2, 7, 3,
-
-                    0, 4, 6, // -z
-                    0, 6, 2,
-
-                    1, 3, 7, // +z
-                    1, 7, 5,
-                };
-
-                const UINT indexBufferSize = sizeof(cubeIndices);
-
-                // Create the index buffer resource in the GPU's default heap and copy index data into it using the upload heap.
-                // The upload resource must not be released until after the GPU has finished using it.
-                Microsoft::WRL::ComPtr<ID3D12Resource> indexBufferUpload;
-
-                CD3DX12_RESOURCE_DESC indexBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(indexBufferSize);
-                hr = device->CreateCommittedResource(
-                    &defaultHeapProperties,
-                    D3D12_HEAP_FLAG_NONE,
-                    &indexBufferDesc,
-                    D3D12_RESOURCE_STATE_COPY_DEST,
-                    nullptr,
-                    IID_PPV_ARGS(&m_indexBuffer));
-                if (FAILED(hr))
-                    return false;
-
-                hr = device->CreateCommittedResource(
-                    &uploadHeapProperties,
-                    D3D12_HEAP_FLAG_NONE,
-                    &indexBufferDesc,
-                    D3D12_RESOURCE_STATE_GENERIC_READ,
-                    nullptr,
-                    IID_PPV_ARGS(&indexBufferUpload));
-                if (FAILED(hr))
-                    return false;
-
-                /*Upload index buffer data to GPU*/
-                D3D12_SUBRESOURCE_DATA indexData;
-                indexData.pData = reinterpret_cast<BYTE*>(cubeIndices);
-                indexData.RowPitch = indexBufferSize;
-                indexData.SlicePitch = indexData.RowPitch;
-
-                UpdateSubresources(m_commandList, m_indexBuffer, indexBufferUpload.Get(), 0, 0, 1, &indexData);
-
-                CD3DX12_RESOURCE_BARRIER indexBufferResourceBarrier =
-                    CD3DX12_RESOURCE_BARRIER::Transition(m_indexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDEX_BUFFER);
-                m_commandList->ResourceBarrier(1, &indexBufferResourceBarrier);
-
                 /*Create a descriptor heap for the constant buffers*/
                 D3D12_DESCRIPTOR_HEAP_DESC heapDesc;
                 heapDesc.NumDescriptors = 1;
@@ -255,7 +190,7 @@ namespace Hatchit {
                 {
                     return false;
                 }
-
+                CD3DX12_HEAP_PROPERTIES uploadHeapProperties(D3D12_HEAP_TYPE_UPLOAD);
                 CD3DX12_RESOURCE_DESC constantBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(2 * c_alignedConstantBufferSize);
                 hr = device->CreateCommittedResource(
                     &uploadHeapProperties,
@@ -286,13 +221,13 @@ namespace Hatchit {
                 m_resources->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
                
                 // Create vertex/index buffer views.
-                m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
+                /*m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
                 m_vertexBufferView.StrideInBytes = sizeof(Vertex);
                 m_vertexBufferView.SizeInBytes = sizeof(cubeVertices);
 
                 m_indexBufferView.BufferLocation = m_indexBuffer->GetGPUVirtualAddress();
                 m_indexBufferView.SizeInBytes = sizeof(cubeIndices);
-                m_indexBufferView.Format = DXGI_FORMAT_R16_UINT;
+                m_indexBufferView.Format = DXGI_FORMAT_R16_UINT;*/
 
                 // Wait for the command list to finish executing; the vertex/index buffers need to be uploaded to the GPU before the upload resources go out of scope.
                 m_resources->WaitForGPU();
@@ -377,9 +312,9 @@ namespace Hatchit {
                 m_commandList->OMSetRenderTargets(1, &renderTargetView, false, &depthStencilView);
 
                 m_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-                m_commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
-                m_commandList->IASetIndexBuffer(&m_indexBufferView);
-                m_commandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
+                m_commandList->IASetVertexBuffers(0, 1, &m_vBuffer->GetView());
+                m_commandList->IASetIndexBuffer(&m_iBuffer->GetView());
+                m_commandList->DrawIndexedInstanced(m_numIndices, 1, 0, 0, 0);
 
                 // Indicate that the render target will now be used to present when the command list is done executing.
                 CD3DX12_RESOURCE_BARRIER presentResourceBarrier =
