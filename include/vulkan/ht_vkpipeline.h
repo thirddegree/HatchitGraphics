@@ -64,15 +64,25 @@ namespace Hatchit {
                 */
                 void VLoadShader(ShaderSlot shaderSlot, IShader* shader)        override;
 
+                bool VSetInt(std::string name, int data)                        override;
+                bool VSetFloat(std::string name, float data)                    override;
+                bool VSetFloat3(std::string name, Math::Vector3 data)           override;
+                bool VSetFloat4(std::string name, Math::Vector4 data)           override;
+                bool VSetMatrix4(std::string name, Math::Matrix4 data)          override;
+
                 ///Have Vulkan create a pipeline with these settings
                 bool VPrepare()                                                 override;
+
+                ///Have Vulkan update the descriptor sets in this pipeline
+                bool VUpdate()                                                  override;
 
                 //TODO: Remove this when we can just reflect shaders instead
                 void SetVKDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout);
 
-                VkPipeline GetVKPipeline();
-                VkPipelineLayout GetPipelineLayout();
-                VkDescriptorSetLayout GetDescriptorSetLayout();
+                VkPipeline                          GetVKPipeline();
+                VkPipelineLayout                    GetVKPipelineLayout();
+                std::vector<VkDescriptorSetLayout>  GetVKDescriptorSetLayouts();
+                VkDescriptorSet*                    GetVKDescriptorSet();
 
             protected:
                 //Input
@@ -83,17 +93,19 @@ namespace Hatchit {
                 std::vector<VkPipelineShaderStageCreateInfo> m_shaderStages;
 
                 bool useGivenLayout = false;
-                VkDescriptorSetLayout   m_descriptorLayout;
+                std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts; //0 is this pipeline set layout, 1 is the material set layout
                 VkPipelineLayout        m_pipelineLayout;
 
                 VkDescriptorSet m_descriptorSet; //Collection of shader variables
+                UniformBlock    m_uniformVSBlock;
+
                 VkPipelineCache m_pipelineCache;
                 VkPipeline      m_pipeline;
 
             private:
-                bool PrepareLayouts(VkDevice device);
-                bool PrepareDescriptorSet(VkDevice device);
-                bool PreparePipeline(VkDevice device);
+                bool prepareLayouts(VkDevice device);
+                bool prepareDescriptorSet(VkDescriptorPool descriptorPool, VkDevice device);
+                bool preparePipeline(VkDevice device);
             };
         }
     }

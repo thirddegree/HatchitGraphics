@@ -58,7 +58,7 @@ namespace Hatchit {
 
             //Will this be sent the Objects that it needs to render?
             ///Render the the given objects with the given pipeline to a texture
-            virtual void VRender() = 0;
+            virtual void VUpdate() = 0;
 
             virtual bool VBuildCommandList() =  0;
 
@@ -66,6 +66,9 @@ namespace Hatchit {
 
             void SetWidth(uint32_t width);
             void SetHeight(uint32_t height);
+
+            void SetView(Math::Matrix4 view);
+            void SetProj(Math::Matrix4 proj);
 
             void ScheduleRenderRequest(IPipeline* pipeline, IMaterial* material, IMesh* mesh);
 
@@ -80,6 +83,9 @@ namespace Hatchit {
 
             uint32_t m_width;
             uint32_t m_height;
+
+            Math::Matrix4 m_view;
+            Math::Matrix4 m_proj;
 
             //Output
             IRenderTarget* m_renderTarget;

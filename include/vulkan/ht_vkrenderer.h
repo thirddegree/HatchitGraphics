@@ -83,10 +83,15 @@ namespace Hatchit {
                 */
                 VkInstance GetVKInstance();
 
-                /* Get the core Vulkan command pools
+                /* Get the core Vulkan command pool
                 * \return a vulkan command pool
                 */
                 VkCommandPool GetVKCommandPool();
+
+                /* Get the core Vulkan descriptor pool
+                * \reutrn a vulkan descriptor pool
+                */
+                VkDescriptorPool GetVKDescriptorPool();
 
                 VkCommandBuffer GetSetupCommandBuffer();
 
@@ -126,7 +131,9 @@ namespace Hatchit {
                 VKSwapchain* m_swapchain;
 
                 VkCommandBuffer                         m_setupCommandBuffer;
+
                 VkCommandPool                           m_commandPool;
+                VkDescriptorPool                        m_descriptorPool;
                 
                 VkSemaphore                             m_presentSemaphore;
 
@@ -134,7 +141,8 @@ namespace Hatchit {
 
                 IRenderTarget* m_renderTarget;
                 IMaterial* m_material;
-                float m_angle =0;
+
+                float m_angle = 0;
 
                 //Vulkan Callbacks
                 PFN_vkCreateDebugReportCallbackEXT m_createDebugReportCallback;
@@ -162,6 +170,9 @@ namespace Hatchit {
                 bool setupDebugCallbacks();
                 bool setupDeviceQueues();
                 bool setupProcAddresses();
+
+                bool setupCommandPool();
+                bool setupDescriptorPool();
 
                 //Helper inits for initVulkanSwapchain
                 bool setupQueues();

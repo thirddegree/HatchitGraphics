@@ -35,7 +35,8 @@ namespace Hatchit {
                 vkDestroyPipelineCache(device, m_pipelineCache, nullptr);
 
                 //vkFreeDescriptorSets(m_device, );
-                vkDestroyDescriptorSetLayout(device, m_descriptorLayout, nullptr);
+                for (size_t i = 0; i < m_descriptorSetLayouts.size(); i++)
+                    vkDestroyDescriptorSetLayout(device, m_descriptorSetLayouts[i], nullptr);
             }
 
             //If we wanted to allow users to control blending states
@@ -168,23 +169,119 @@ namespace Hatchit {
                 m_shaderStages.push_back(shaderStage);
             }
 
+            bool VKPipeline::VSetInt(std::string name, int data)
+            {
+                //If the variable doesn't exist in the map lets allocate it
+                //Otherwise lets just change its data
+                std::map<std::string, ShaderVariable*>::iterator it = m_shaderVariables.find(name);
+                if (it != m_shaderVariables.end())
+                    static_cast<IntVariable*>(m_shaderVariables[name])->SetData(data);
+                else
+                    m_shaderVariables[name] = new IntVariable(data);
+
+                return true;
+            }
+            bool VKPipeline::VSetFloat(std::string name, float data)
+            {
+                //If the variable doesn't exist in the map lets allocate it
+                //Otherwise lets just change its data
+                std::map<std::string, ShaderVariable*>::iterator it = m_shaderVariables.find(name);
+                if (it != m_shaderVariables.end())
+                    static_cast<FloatVariable*>(m_shaderVariables[name])->SetData(data);
+                else
+                    m_shaderVariables[name] = new FloatVariable(data);
+
+                return true;
+            }
+            bool VKPipeline::VSetFloat3(std::string name, Math::Vector3 data)
+            {
+                //If the variable doesn't exist in the map lets allocate it
+                //Otherwise lets just change its data
+                std::map<std::string, ShaderVariable*>::iterator it = m_shaderVariables.find(name);
+                if (it != m_shaderVariables.end())
+                    static_cast<Float3Variable*>(m_shaderVariables[name])->SetData(data);
+                else
+                    m_shaderVariables[name] = new Float3Variable(data);
+
+                return true;
+            }
+            bool VKPipeline::VSetFloat4(std::string name, Math::Vector4 data)
+            {
+                //If the variable doesn't exist in the map lets allocate it
+                //Otherwise lets just change its data
+                std::map<std::string, ShaderVariable*>::iterator it = m_shaderVariables.find(name);
+                if (it != m_shaderVariables.end())
+                    static_cast<Float4Variable*>(m_shaderVariables[name])->SetData(data);
+                else
+                    m_shaderVariables[name] = new Float4Variable(data);
+
+                return true;
+            }
+            bool VKPipeline::VSetMatrix4(std::string name, Math::Matrix4 data)
+            {
+                //If the variable doesn't exist in the map lets allocate it
+                //Otherwise lets just change its data
+                std::map<std::string, ShaderVariable*>::iterator it = m_shaderVariables.find(name);
+                if (it != m_shaderVariables.end())
+                    static_cast<Matrix4Variable*>(m_shaderVariables[name])->SetData(data);
+                else
+                    m_shaderVariables[name] = new Matrix4Variable(data);
+                
+                return true;
+            }
+
             ///Have Vulkan create a pipeline with these settings
             bool VKPipeline::VPrepare()
             {
                 //Get the renderer for use later
                 VKRenderer* renderer = VKRenderer::RendererInstance;
 
-                //Get device
+                //Get objects from renderer
                 VkDevice device = renderer->GetVKDevice();
+                VkDescriptorPool descriptorPool = renderer->GetVKDescriptorPool();
 
-                if (!PrepareLayouts(device))
+                if (!prepareLayouts(device))
                     return false;
 
-                if (!PrepareDescriptorSet(device))
+                if (!useGivenLayout)
+                {
+                    //TODO: Actually figure out how big this needs to be
+                    renderer->CreateBuffer(device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, sizeof(Math::Matrix4) * 2, nullptr, &m_uniformVSBlock);
+
+                    m_uniformVSBlock.descriptor.offset = 0;
+                    m_uniformVSBlock.descriptor.range = sizeof(Math::Matrix4) * 2;
+
+                    if (!prepareDescriptorSet(descriptorPool, device))
+                        return false;
+                }
+
+                if (!preparePipeline(device))
                     return false;
 
-                if (!PreparePipeline(device))
-                    return false;
+                return true;
+            }
+
+            bool VKPipeline::VUpdate()
+            {
+                if (m_shaderVariables.size() == 0)
+                    return true;
+
+                VkDevice device = VKRenderer::RendererInstance->GetVKDevice();
+
+                uint8_t* pData;
+
+                std::vector<Math::Matrix4> variableList;
+
+                std::map <std::string, ShaderVariable*>::iterator it;
+                for (it = m_shaderVariables.begin(); it != m_shaderVariables.end(); it++)
+                    variableList.push_back(*(Math::Matrix4*)(it->second->GetData()));
+
+                VkResult err = vkMapMemory(device, m_uniformVSBlock.memory, 0, sizeof(m_shaderVariables), 0, (void**)&pData);
+                assert(!err);
+
+                memcpy(pData, variableList.data(), sizeof(Math::Matrix4) * 2);
+                
+                vkUnmapMemory(device, m_uniformVSBlock.memory);
 
                 return true;
             }
@@ -192,36 +289,65 @@ namespace Hatchit {
             void VKPipeline::SetVKDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout)
             {
                 useGivenLayout = true;
-                m_descriptorLayout = descriptorSetLayout;
+                m_descriptorSetLayouts.push_back(descriptorSetLayout);
             }
 
-            bool VKPipeline::PrepareLayouts(VkDevice device)
+            bool VKPipeline::prepareLayouts(VkDevice device)
             {
                 VkResult err;
 
                 if (!useGivenLayout)
                 {
                     //TODO: Properly detect and setup layout bindings
-                    VkDescriptorSetLayoutBinding layoutBindings[1] = {};
-                    layoutBindings[0].binding = 0;
-                    layoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                    layoutBindings[0].descriptorCount = 1;
-                    layoutBindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-                    layoutBindings[0].pImmutableSamplers = nullptr;
 
-                    //layoutBindings[1].binding = 1;
-                    //layoutBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                    //layoutBindings[1].descriptorCount = 1;
-                    //layoutBindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-                    //layoutBindings[1].pImmutableSamplers = nullptr;
+                    std::vector<VkDescriptorSetLayoutBinding> perPassBindings;
+                    std::vector<VkDescriptorSetLayoutBinding> perObjectBindings;
 
-                    VkDescriptorSetLayoutCreateInfo descriptorLayoutInfo = {};
-                    descriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-                    descriptorLayoutInfo.pNext = NULL;
-                    descriptorLayoutInfo.bindingCount = 1; //How many binding counts, really?
-                    descriptorLayoutInfo.pBindings = layoutBindings;
+                    //Per pass binding point
+                    VkDescriptorSetLayoutBinding perPassBinding = {};
+                    perPassBinding.binding = 0;
+                    perPassBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                    perPassBinding.descriptorCount = 1;
+                    perPassBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+                    perPassBinding.pImmutableSamplers = nullptr;
 
-                    err = vkCreateDescriptorSetLayout(device, &descriptorLayoutInfo, nullptr, &m_descriptorLayout);
+                    perPassBindings.push_back(perPassBinding);
+
+                    //Per model binding point
+                    VkDescriptorSetLayoutBinding perObjectBinding = {};
+                    perObjectBinding.binding = 0;
+                    perObjectBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                    perObjectBinding.descriptorCount = 1;
+                    perObjectBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+                    perObjectBinding.pImmutableSamplers = nullptr;
+
+                    perObjectBindings.push_back(perObjectBinding);
+
+                    VkDescriptorSetLayoutCreateInfo perPassDescriptorLayoutInfo = {};
+                    perPassDescriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+                    perPassDescriptorLayoutInfo.pNext = NULL;
+                    perPassDescriptorLayoutInfo.bindingCount = static_cast<uint32_t>(perPassBindings.size());
+                    perPassDescriptorLayoutInfo.pBindings = perPassBindings.data();
+
+                    VkDescriptorSetLayoutCreateInfo perObjectDescriptorLayoutInfo = {};
+                    perObjectDescriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+                    perObjectDescriptorLayoutInfo.pNext = NULL;
+                    perObjectDescriptorLayoutInfo.bindingCount = static_cast<uint32_t>(perObjectBindings.size());
+                    perObjectDescriptorLayoutInfo.pBindings = perObjectBindings.data();
+
+                    m_descriptorSetLayouts.resize(2);
+
+                    err = vkCreateDescriptorSetLayout(device, &perPassDescriptorLayoutInfo, nullptr, &m_descriptorSetLayouts[0]);
+                    assert(!err);
+                    if (err != VK_SUCCESS)
+                    {
+#ifdef _DEBUG
+                        Core::DebugPrintF("VKRenderer::preparePipeline(): Failed to create descriptor layout\n");
+#endif
+                        return false;
+                    }
+
+                    err = vkCreateDescriptorSetLayout(device, &perObjectDescriptorLayoutInfo, nullptr, &m_descriptorSetLayouts[1]);
                     assert(!err);
                     if (err != VK_SUCCESS)
                     {
@@ -236,8 +362,8 @@ namespace Hatchit {
                 VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
                 pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
                 pipelineLayoutInfo.pNext = nullptr;
-                pipelineLayoutInfo.setLayoutCount = 1;
-                pipelineLayoutInfo.pSetLayouts = &m_descriptorLayout;
+                pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(m_descriptorSetLayouts.size());
+                pipelineLayoutInfo.pSetLayouts = m_descriptorSetLayouts.data();
 
                 err = vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout);
                 assert(!err);
@@ -252,13 +378,45 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKPipeline::PrepareDescriptorSet(VkDevice device)
+            bool VKPipeline::prepareDescriptorSet(VkDescriptorPool descriptorPool, VkDevice device)
             {
+                VkResult err;
+
+                //Setup the descriptor sets
+                VkDescriptorSetAllocateInfo allocInfo = {};
+                allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+                allocInfo.descriptorPool = descriptorPool;
+                allocInfo.descriptorSetCount = 1;
+                allocInfo.pSetLayouts = &m_descriptorSetLayouts[0];
+
+                err = vkAllocateDescriptorSets(device, &allocInfo, &m_descriptorSet);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKPipeline::prepareDescriptorSet: Failed to allocate descriptor set\n");
+#endif
+                    return false;
+                }
+
+                std::vector<VkWriteDescriptorSet> descSetWrites = {};
+
+                VkWriteDescriptorSet perPassVSWrite = {};
+                perPassVSWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                perPassVSWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                perPassVSWrite.dstSet = m_descriptorSet;
+                perPassVSWrite.dstBinding = 0;
+                perPassVSWrite.pBufferInfo = &m_uniformVSBlock.descriptor;
+                perPassVSWrite.descriptorCount = 1;
+
+                descSetWrites.push_back(perPassVSWrite);
+
+                vkUpdateDescriptorSets(device, static_cast<uint32_t>(descSetWrites.size()), descSetWrites.data(), 0, nullptr);
 
                 return true;
             }
 
-            bool VKPipeline::PreparePipeline(VkDevice device)
+            bool VKPipeline::preparePipeline(VkDevice device)
             {
                 VkResult err;
 
@@ -387,9 +545,10 @@ namespace Hatchit {
                 return true;
             }
 
-            VkPipeline VKPipeline::GetVKPipeline() { return m_pipeline; }
-            VkPipelineLayout VKPipeline::GetPipelineLayout() { return m_pipelineLayout; }
-            VkDescriptorSetLayout VKPipeline::GetDescriptorSetLayout() { return m_descriptorLayout; }
+            VkPipeline                          VKPipeline::GetVKPipeline() { return m_pipeline; }
+            VkPipelineLayout                    VKPipeline::GetVKPipelineLayout() { return m_pipelineLayout; }
+            std::vector<VkDescriptorSetLayout>  VKPipeline::GetVKDescriptorSetLayouts() { return m_descriptorSetLayouts; }
+            VkDescriptorSet*                    VKPipeline::GetVKDescriptorSet() { return &m_descriptorSet; }
         }
     }
 }

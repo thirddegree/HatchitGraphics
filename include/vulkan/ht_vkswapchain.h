@@ -75,7 +75,6 @@ namespace Hatchit {
                 VkRenderPass            m_renderPass;
                 VKPipeline*             m_pipeline;
                 VkDescriptorSetLayout   m_descriptorSetLayout;
-                VkDescriptorPool        m_descriptorPool;
                 VkDescriptorSet         m_descriptorSet;
 
                 VkSwapchainKHR               m_swapchain;

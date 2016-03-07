@@ -124,6 +124,8 @@ namespace Hatchit {
                 m_renderPasses.clear();
 
                 vkDestroyCommandPool(m_device, m_commandPool, nullptr);
+                vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
+
                 vkDestroyDevice(m_device, nullptr);
 
                 m_destroyDebugReportCallback(m_instance, msg_callback, nullptr);
@@ -197,16 +199,10 @@ namespace Hatchit {
                 commandBuffers.push_back(m_swapchain->GetCurrentCommand());
 
                 //Example code for rotation
-                Math::Matrix4 rot = Math::MMMatrixRotationY( m_angle += 0.001f);
-                Math::Matrix4 mat = Math::MMMatrixTranslation(Math::Vector3(0, 0, 0)) * rot;
+                Math::Matrix4 rot = Math::MMMatrixRotationXYZ(Math::Vector3(0, m_angle += 0.001f, 0));
+                Math::Matrix4 mat = Math::MMMatrixTranspose(rot * Math::MMMatrixTranslation(Math::Vector3(0, 0, 0)));
 
-                Math::Matrix4 view = Math::MMMatrixLookAt(Math::Vector3(0, 0, 5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0));
-
-                Math::Matrix4 proj = Math::MMMatrixPerspProj(90.0f, (float)m_width / (float)m_height, 0.1f, 1000.0f);
-
-                Math::Matrix4 mvp = mat * (view * proj);
-                
-                m_material->VSetMatrix4("matricies.model", mvp);
+                m_material->VSetMatrix4("object.model", mat);
                 m_material->VUpdate();
 
                 VkResult err;
@@ -265,6 +261,11 @@ namespace Hatchit {
             VkCommandPool VKRenderer::GetVKCommandPool()
             {
                 return m_commandPool;
+            }
+
+            VkDescriptorPool VKRenderer::GetVKDescriptorPool() 
+            {
+                return m_descriptorPool;
             }
 
             VkCommandBuffer VKRenderer::GetSetupCommandBuffer() 
@@ -421,21 +422,21 @@ namespace Hatchit {
 #endif
 
 #ifdef HT_SYS_LINUX
-		        VkXcbSurfaceCreateInfoKHR creationInfo;
-		        creationInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
-		        creationInfo.pNext = nullptr;
-		        creationInfo.flags = 0;
+                VkXcbSurfaceCreateInfoKHR creationInfo;
+                creationInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+                creationInfo.pNext = nullptr;
+                creationInfo.flags = 0;
                 creationInfo.connection = (xcb_connection_t*)params.display;
-		        creationInfo.window = *(uint32_t*)params.window;
+                creationInfo.window = *(uint32_t*)params.window;
 
-		        err = vkCreateXcbSurfaceKHR(m_instance, &creationInfo, nullptr, &m_surface);
+                err = vkCreateXcbSurfaceKHR(m_instance, &creationInfo, nullptr, &m_surface);
 
-		        if(err != VK_SUCCESS)
-		        {
-		            Core::DebugPrintF("Error creating VkSurface for Xcb window");
-		
-		            return false;
-		        }
+                if(err != VK_SUCCESS)
+                {
+                    Core::DebugPrintF("Error creating VkSurface for Xcb window");
+        
+                    return false;
+                }
 #endif
 
                 /*
@@ -1097,8 +1098,7 @@ namespace Hatchit {
                 return true;
             }
 
-            //TODO: Move this functionality to other subclasses
-            bool VKRenderer::prepareVulkan()
+            bool VKRenderer::setupCommandPool() 
             {
                 VkResult err;
 
@@ -1114,10 +1114,60 @@ namespace Hatchit {
                 if (err != VK_SUCCESS)
                 {
 #ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::prepareVulkan(): Error creating command pool.\n");
+                    Core::DebugPrintF("VKRenderer::setupCommandPool: Error creating command pool.\n");
 #endif
                     return false;
-                }                
+                }
+
+                return true;
+            }
+
+            bool VKRenderer::setupDescriptorPool() 
+            {
+                VkResult err;
+
+                //Setup the descriptor pool
+                std::vector<VkDescriptorPoolSize> poolSizes;
+
+                VkDescriptorPoolSize uniformSize = {};
+                uniformSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                uniformSize.descriptorCount = 4;
+
+                VkDescriptorPoolSize samplerSize = {};
+                samplerSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                samplerSize.descriptorCount = 4;
+
+                poolSizes.push_back(uniformSize);
+                poolSizes.push_back(samplerSize);
+
+                VkDescriptorPoolCreateInfo poolCreateInfo = {};
+                poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+                poolCreateInfo.pPoolSizes = poolSizes.data();
+                poolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+                poolCreateInfo.maxSets = 8;
+                poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+
+                err = vkCreateDescriptorPool(m_device, &poolCreateInfo, nullptr, &m_descriptorPool);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKRenderer::setupDescriptorPool: Failed to create descriptor pool\n");
+#endif
+                    return false;
+                }
+
+                return true;
+            }
+
+            //TODO: Move this functionality to other subclasses
+            bool VKRenderer::prepareVulkan()
+            {
+                if (!setupCommandPool())
+                    return false;
+
+                if (!setupDescriptorPool())
+                    return false;
 
                 CreateSetupCommandBuffer();
 
@@ -1170,6 +1220,10 @@ namespace Hatchit {
                 multisampleState.minSamples = 0;
                 multisampleState.samples = SAMPLE_1_BIT;
 
+                Math::Matrix4 view = Math::MMMatrixTranspose(Math::MMMatrixLookAt(Math::Vector3(0, 0, -5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0)));
+
+                Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.5f, (float)m_height / (float)m_width, 0.1f, 1000.0f));
+
                 IPipeline* pipeline = new VKPipeline(renderPass->GetVkRenderPass());
                 pipeline->VLoadShader(ShaderSlot::VERTEX, &vsShader);
                 pipeline->VLoadShader(ShaderSlot::FRAGMENT, &fsShader);
@@ -1179,17 +1233,8 @@ namespace Hatchit {
 
                 m_material = new VKMaterial();
 
-                Math::Matrix4 mat = Math::MMMatrixTranslation(Math::Vector3(0, 0, 0));
-
-                Math::Matrix4 view = Math::MMMatrixLookAt(Math::Vector3(0, 0, 5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0));
-
-                Math::Matrix4 proj = Math::MMMatrixPerspProj(45.0f, (float)m_width / (float)m_height, 0.1f, 1000.0f);
-
-                Math::Matrix4 mvp = mat * (view * proj);
-
-                m_material->VSetMatrix4("matricies.model", mvp);
-                m_material->VPrepare();
-                m_material->VUpdate();
+                m_material->VSetMatrix4("object.model", Math::Matrix4());
+                m_material->VPrepare(pipeline);
 
                 std::vector<Resource::Mesh*> meshes = model.GetMeshes();
                 IMesh* mesh = new VKMesh();
@@ -1202,9 +1247,16 @@ namespace Hatchit {
                 renderable.mesh = mesh;
                 m_pipelineList[pipeline].push_back(renderable);
 
+                m_renderPasses.push_back(renderPass);
+
                 renderPass->VBuildCommandList();
 
-                m_renderPasses.push_back(renderPass);
+                renderPass->SetView(view);
+                renderPass->SetProj(proj);
+                renderPass->VUpdate();
+
+                pipeline->VUpdate();
+                m_material->VUpdate();
 
                 CreateSetupCommandBuffer();
 

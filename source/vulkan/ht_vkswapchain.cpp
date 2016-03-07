@@ -35,14 +35,15 @@ namespace Hatchit {
 
             VKSwapchain::~VKSwapchain()
             {
+                VKRenderer* renderer = VKRenderer::RendererInstance;
+
                 //TODO: Destroy any sort of descriptor sets or layouts
                 delete m_pipeline;
 
                 vkFreeMemory(m_device, m_vertexBuffer.memory, nullptr);
                 vkDestroyBuffer(m_device, m_vertexBuffer.buffer, nullptr);
 
-                vkFreeDescriptorSets(m_device, m_descriptorPool, 1, &m_descriptorSet);
-                vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
+                vkFreeDescriptorSets(m_device, renderer->GetVKDescriptorPool(), 1, &m_descriptorSet);
 
                 //Destroy depth
                 vkDestroyImageView(m_device, m_depthBuffer.view, nullptr);
@@ -252,10 +253,10 @@ namespace Hatchit {
                     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
                     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline->GetPipelineLayout(),
+                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline->GetVKPipelineLayout(),
                         0, 1, &m_descriptorSet, 0, nullptr);
                     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline->GetVKPipeline());
-
+                    
                     //Draw fullscreen Tri; geometry created in shader
                     VkDeviceSize offsets = { 0 };
                     vkCmdBindVertexBuffers(commandBuffer, 0, 1, &m_vertexBuffer.buffer, &offsets);
@@ -719,29 +720,6 @@ namespace Hatchit {
                 m_pipeline->VSetRasterState(rasterState);
                 m_pipeline->VSetMultisampleState(multisampleState);
 
-                //Setup the descriptor pool
-
-                VkDescriptorPoolSize samplerSize = {};
-                samplerSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                samplerSize.descriptorCount = 1;
-
-                VkDescriptorPoolCreateInfo poolCreateInfo = {};
-                poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-                poolCreateInfo.pPoolSizes = &samplerSize;
-                poolCreateInfo.poolSizeCount = 1;
-                poolCreateInfo.maxSets = 1;
-                poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-
-                err = vkCreateDescriptorPool(m_device, &poolCreateInfo, nullptr, &m_descriptorPool);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKSwapchain::prepareResources: Failed to create descriptor pool\n");
-#endif
-                    return false;
-                }
-
                 //Prepare descriptor set layout
 
                 VkDescriptorSetLayoutBinding textureBinding = {};
@@ -771,7 +749,7 @@ namespace Hatchit {
                 //Setup the descriptor sets
                 VkDescriptorSetAllocateInfo allocInfo = {};
                 allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-                allocInfo.descriptorPool = m_descriptorPool;
+                allocInfo.descriptorPool = renderer->GetVKDescriptorPool();
                 allocInfo.pSetLayouts = &m_descriptorSetLayout;
                 allocInfo.descriptorSetCount = 1;
 

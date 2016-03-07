@@ -56,7 +56,7 @@ namespace Hatchit {
             virtual bool VBindTexture(std::string name, ITexture* texture) = 0;
             virtual bool VUnbindTexture(std::string name, ITexture* texture) = 0;
 
-            virtual bool VPrepare() = 0;
+            virtual bool VPrepare(IPipeline* pipeline) = 0;
             virtual bool VUpdate() = 0;
 
         protected:

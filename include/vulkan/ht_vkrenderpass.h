@@ -44,7 +44,7 @@ namespace Hatchit {
 
                 //Will this be sent the Objects that it needs to render?
                 ///Render the scene
-                void VRender()  override;
+                void VUpdate()  override;
 
                 bool VBuildCommandList() override;
 

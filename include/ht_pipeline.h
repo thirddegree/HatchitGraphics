@@ -27,6 +27,9 @@
 #include <ht_platform.h>
 #include <ht_shader.h>
 #include <ht_debug.h>
+#include <ht_shadervariable.h>
+
+#include <map>
     
 namespace Hatchit {
     
@@ -100,8 +103,20 @@ namespace Hatchit {
             */
             virtual void VLoadShader(ShaderSlot shaderSlot, IShader* shader) = 0;
            
+            virtual bool VSetInt(std::string name, int data) = 0;
+            virtual bool VSetFloat(std::string name, float data) = 0;
+            virtual bool VSetFloat3(std::string name, Math::Vector3 data) = 0;
+            virtual bool VSetFloat4(std::string name, Math::Vector4 data) = 0;
+            virtual bool VSetMatrix4(std::string name, Math::Matrix4 data) = 0;
+
             ///Prepare the pipeline after you've set up your settings
             virtual bool VPrepare() = 0;
+
+            ///Update the pipeline after you've changed the uniform data
+            virtual bool VUpdate() = 0;
+
+        protected:
+            std::map<std::string, ShaderVariable*> m_shaderVariables;
         };
     }
 }
