@@ -69,7 +69,7 @@ namespace Hatchit {
                 return false;
             }
 
-            bool D3D12Material::VPrepare()
+            bool D3D12Material::VPrepare(IPipeline* pipeline)
             {
                 return false;
             }
