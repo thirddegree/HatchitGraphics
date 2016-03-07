@@ -107,9 +107,7 @@ namespace Hatchit {
                 psoDesc.pRootSignature = m_rootSignature;
                 psoDesc.VS = CD3DX12_SHADER_BYTECODE(m_vertexShader);
                 psoDesc.PS = CD3DX12_SHADER_BYTECODE(m_pixelShader);
-                CD3DX12_RASTERIZER_DESC rsd(D3D12_DEFAULT);
-                rsd.CullMode = D3D12_CULL_MODE_NONE;
-                psoDesc.RasterizerState = rsd;
+                psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);;
                 psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
                 psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
                 psoDesc.SampleMask = UINT_MAX;
@@ -135,19 +133,6 @@ namespace Hatchit {
                 if (FAILED(hr))
                     return false;
 
-                Vertex cubeVertices[] =
-                {
-                    { Math::Float3(-0.5f, -0.5f, -0.5f), Math::Float4(0.0f, 0.0f, 0.0f, 1.0f) },
-                    { Math::Float3(-0.5f, -0.5f,  0.5f), Math::Float4(0.0f, 0.0f, 1.0f, 1.0f) },
-                    { Math::Float3(-0.5f,  0.5f, -0.5f), Math::Float4(0.0f, 1.0f, 0.0f, 1.0f) },
-                    { Math::Float3(-0.5f,  0.5f,  0.5f), Math::Float4(0.0f, 1.0f, 1.0f, 1.0f) },
-                    { Math::Float3(0.5f, -0.5f, -0.5f),  Math::Float4(1.0f, 0.0f, 0.0f, 1.0f) },
-                    { Math::Float3(0.5f, -0.5f,  0.5f),  Math::Float4(1.0f, 0.0f, 1.0f, 1.0f) },
-                    { Math::Float3(0.5f,  0.5f, -0.5f),  Math::Float4(1.0f, 1.0f, 0.0f, 1.0f) },
-                    { Math::Float3(0.5f,  0.5f,  0.5f),  Math::Float4(1.0f, 1.0f, 1.0f, 1.0f) },
-                };
-                const UINT vertexBufferSize = sizeof(cubeVertices);
-
                 /*Load Susanne*/
                 Core::File file;
                 file.Open(Core::os_exec_dir() + "monkey.obj", Core::FileMode::ReadBinary);
@@ -155,6 +140,7 @@ namespace Hatchit {
                 Resource::Model m;
                 m.VInitFromFile(&file);
 
+                srand(time(NULL));
                 auto verts = m.GetMeshes()[0]->getVertices();
                 std::vector<Vertex> vertices;
                 for (auto v : verts)
@@ -163,7 +149,12 @@ namespace Hatchit {
                     vertex.position.x = v.x;
                     vertex.position.y = v.y;
                     vertex.position.z = v.z;
-                    vertex.color = Math::Float4(1.0f, 0.0f, 0.0f, 1.0f);
+                    
+                    //int r = rand() % 2;
+                    //if(r == 0)
+                        vertex.color = Math::Float4(1.0f, 0.0f, 0.0f, 1.0f);
+                    //else
+                        //vertex.color = Math::Float4(1.0f, 1.0f, 0.0f, 1.0f);
 
                     vertices.push_back(vertex);
                 }
@@ -181,32 +172,6 @@ namespace Hatchit {
                 m_vBuffer = new D3D12VertexBuffer(vertices.size());
                 m_vBuffer->Initialize(device);
                 m_vBuffer->UpdateSubData(m_commandList, 0, vertices.size(), &vertices[0]);
-
-                // Load mesh indices. Each trio of indices represents a triangle to be rendered on the screen.
-                // For example: 0,2,1 means that the vertices with indexes 0, 2 and 1 from the vertex buffer compose the
-                // first triangle of this mesh.
-                unsigned short cubeIndices[] =
-                {
-                    0, 2, 1, // -x
-                    1, 2, 3,
-
-                    4, 5, 6, // +x
-                    5, 7, 6,
-
-                    0, 1, 5, // -y
-                    0, 5, 4,
-
-                    2, 6, 7, // +y
-                    2, 7, 3,
-
-                    0, 4, 6, // -z
-                    0, 6, 2,
-
-                    1, 3, 7, // +z
-                    1, 7, 5,
-                };
-
-                const UINT indexBufferSize = sizeof(cubeIndices);
 
                 m_numIndices = indexList.size();
                 m_iBuffer = new D3D12IndexBuffer(indexList.size());

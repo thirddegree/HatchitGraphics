@@ -16,11 +16,18 @@
 
 #include <ht_platform.h>
 
+#ifdef DX11_SUPPORT
 #include <d3d11.h>
+#endif
+
+#ifdef DX12_SUPPORT
 #include <d3d12.h>
 #include <d3dx12.h>
+#endif
+
 #include <dxgi1_4.h>
 #include <d3dcompiler.h>
+
 #include <ht_math.h>
 
 namespace Hatchit {
