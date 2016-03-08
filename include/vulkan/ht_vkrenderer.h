@@ -63,7 +63,7 @@ namespace Hatchit {
                 */
                 void VClearBuffer(ClearArgs args)   override;
 
-                void VRender()  override;
+                void VRender(float dt)  override;
 
                 ///Present a frame to the screen via a backbuffer
                 void VPresent() override;

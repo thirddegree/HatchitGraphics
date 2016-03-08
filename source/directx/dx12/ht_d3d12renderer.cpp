@@ -99,7 +99,8 @@ namespace Hatchit {
                 D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
                 {
                     { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-                    { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+                    { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA , 0},
+                    { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
                 };
 
                 D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
@@ -107,7 +108,9 @@ namespace Hatchit {
                 psoDesc.pRootSignature = m_rootSignature;
                 psoDesc.VS = CD3DX12_SHADER_BYTECODE(m_vertexShader);
                 psoDesc.PS = CD3DX12_SHADER_BYTECODE(m_pixelShader);
-                psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);;
+                CD3DX12_RASTERIZER_DESC rsd(D3D12_DEFAULT);
+                rsd.FrontCounterClockwise = true;
+                psoDesc.RasterizerState = rsd;/* CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);*/
                 psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
                 psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
                 psoDesc.SampleMask = UINT_MAX;
@@ -142,20 +145,23 @@ namespace Hatchit {
 
                 srand(time(NULL));
                 auto verts = m.GetMeshes()[0]->getVertices();
+                auto normals = m.GetMeshes()[0]->getNormals();
                 std::vector<Vertex> vertices;
-                for (auto v : verts)
+                for (size_t i = 0; i < verts.size(); i++)
                 {
+                    aiVector3D v = verts[i];
+                    aiVector3D n = normals[i];
+
                     Vertex vertex;
                     vertex.position.x = v.x;
                     vertex.position.y = v.y;
                     vertex.position.z = v.z;
-                    
-                    //int r = rand() % 2;
-                    //if(r == 0)
-                        vertex.color = Math::Float4(1.0f, 0.0f, 0.0f, 1.0f);
-                    //else
-                        //vertex.color = Math::Float4(1.0f, 1.0f, 0.0f, 1.0f);
 
+                    if (normals.size() > 0)
+                        vertex.normal = Math::Float3(n.x, n.y, n.z);
+                    
+                    vertex.color = Math::Float4(1.0f, 0.0f, 0.0f, 1.0f);
+                    
                     vertices.push_back(vertex);
                 }
 
@@ -210,8 +216,6 @@ namespace Hatchit {
                 desc.SizeInBytes = c_alignedConstantBufferSize;
                 device->CreateConstantBufferView(&desc, cpuHandle);
 
-                
-
                 /*Map the constant buffer*/
                 hr = m_constantBuffer->Map(0, nullptr, reinterpret_cast<void**>(&m_mappedConstantBuffer));
                 ZeroMemory(m_mappedConstantBuffer, 2 * c_alignedConstantBufferSize);
@@ -219,15 +223,6 @@ namespace Hatchit {
                 hr = m_commandList->Close();
                 ID3D12CommandList* ppCommandLists[] = { m_commandList };
                 m_resources->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-               
-                // Create vertex/index buffer views.
-                /*m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
-                m_vertexBufferView.StrideInBytes = sizeof(Vertex);
-                m_vertexBufferView.SizeInBytes = sizeof(cubeVertices);
-
-                m_indexBufferView.BufferLocation = m_indexBuffer->GetGPUVirtualAddress();
-                m_indexBufferView.SizeInBytes = sizeof(cubeIndices);
-                m_indexBufferView.Format = DXGI_FORMAT_R16_UINT;*/
 
                 // Wait for the command list to finish executing; the vertex/index buffers need to be uploaded to the GPU before the upload resources go out of scope.
                 m_resources->WaitForGPU();
@@ -260,21 +255,17 @@ namespace Hatchit {
 
             }
 
-            void D3D12Renderer::VRender()
+            void D3D12Renderer::VRender(float dt)
             {
                 using namespace DirectX;
 
                 static float rot = 0.0f;
-                rot += 0.01f;
-                m_constantBufferData.proj = Math::MMMatrixPerspProj(45.0f, static_cast<float>(m_width), static_cast<float>(m_height), 0.01f, 100.0f);
+                rot += dt;
+                m_constantBufferData.proj = Math::MMMatrixPerspProj(3.14f * 0.5f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f);
                 m_constantBufferData.view = Math::MMMatrixLookAt(Math::Vector3(0.0f, 0.0f, -5.0f),
                     Math::Vector3(0.0f, 0.0f, 1.0f),
                     Math::Vector3(0.0f, 1.0f, 0.0f));
-                m_constantBufferData.world = Math::MMMatrixRotationY(rot) /** Math::MMMatrixTranslation(Math::Vector3(0.0f, 0.0f, 0.0f))*/;
-                //m_constantBufferData.world = Math::MMMatrixTranspose(m_constantBufferData.world);
-                //m_constantBufferData.proj = Math::MMMatrixTranspose(m_constantBufferData.proj);
-                //m_constantBufferData.view = Math::MMMatrixTranspose(m_constantBufferData.view);
-
+                m_constantBufferData.world = Math::MMMatrixRotationY(rot);
                
                 // Update the constant buffer resource.
                 UINT8* destination = m_mappedConstantBuffer + (m_resources->GetCurrentFrameIndex() * c_alignedConstantBufferSize);

@@ -181,7 +181,7 @@ namespace Hatchit {
                 }
             }
 
-            void VKRenderer::VRender() 
+            void VKRenderer::VRender(float dt) 
             {
                 //TODO: Determine which physical device and thread are best to render with
 
@@ -199,7 +199,7 @@ namespace Hatchit {
                 commandBuffers.push_back(m_swapchain->GetCurrentCommand());
 
                 //Example code for rotation
-                Math::Matrix4 rot = Math::MMMatrixRotationXYZ(Math::Vector3(0, m_angle += 0.001f, 0));
+                Math::Matrix4 rot = Math::MMMatrixRotationXYZ(Math::Vector3(0, m_angle += dt, 0));
                 Math::Matrix4 mat = Math::MMMatrixTranspose(rot * Math::MMMatrixTranslation(Math::Vector3(0, 0, 0)));
 
                 m_material->VSetMatrix4("object.model", mat);

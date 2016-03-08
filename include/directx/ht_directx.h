@@ -55,6 +55,7 @@ namespace Hatchit {
             struct Vertex
             {
                 Math::Float3 position;
+                Math::Float3 normal;
                 Math::Float4 color;
             };
             

@@ -95,7 +95,7 @@ namespace Hatchit {
             virtual void VClearBuffer(ClearArgs args) = 0;
             
             ///Render all render passes
-            virtual void VRender() = 0;
+            virtual void VRender(float dt) = 0;
 
             ///Present a frame to the screen via a backbuffer
             virtual void VPresent() = 0;

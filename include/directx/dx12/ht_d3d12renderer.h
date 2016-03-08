@@ -55,7 +55,7 @@ namespace Hatchit {
 
                 void VPresent()                                         override;
 
-                void VRender()                                          override;
+                void VRender(float dt)                                          override;
 
             private:
                 D3D12DeviceResources*       m_resources;
