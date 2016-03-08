@@ -1222,7 +1222,7 @@ namespace Hatchit {
 
                 Math::Matrix4 view = Math::MMMatrixTranspose(Math::MMMatrixLookAt(Math::Vector3(0, 0, -5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0)));
 
-                Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.5f, (float)m_height / (float)m_width, 0.1f, 1000.0f));
+                Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.5f, m_width, m_height, 0.1f, 1000.0f));
 
                 IPipeline* pipeline = new VKPipeline(renderPass->GetVkRenderPass());
                 pipeline->VLoadShader(ShaderSlot::VERTEX, &vsShader);

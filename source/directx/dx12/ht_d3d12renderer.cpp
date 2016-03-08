@@ -264,18 +264,16 @@ namespace Hatchit {
             {
                 using namespace DirectX;
 
-                float aspectRatio = static_cast<float>(m_width) / static_cast<float>(m_height);
-
                 static float rot = 0.0f;
                 rot += 0.01f;
-                m_constantBufferData.proj = Math::MMMatrixPerspProj(45.0f, aspectRatio, 0.01f, 100.0f);
+                m_constantBufferData.proj = Math::MMMatrixPerspProj(45.0f, static_cast<float>(m_width), static_cast<float>(m_height), 0.01f, 100.0f);
                 m_constantBufferData.view = Math::MMMatrixLookAt(Math::Vector3(0.0f, 0.0f, -5.0f),
                     Math::Vector3(0.0f, 0.0f, 1.0f),
                     Math::Vector3(0.0f, 1.0f, 0.0f));
                 m_constantBufferData.world = Math::MMMatrixRotationY(rot) /** Math::MMMatrixTranslation(Math::Vector3(0.0f, 0.0f, 0.0f))*/;
-                m_constantBufferData.world = Math::MMMatrixTranspose(m_constantBufferData.world);
-                m_constantBufferData.proj = Math::MMMatrixTranspose(m_constantBufferData.proj);
-                m_constantBufferData.view = Math::MMMatrixTranspose(m_constantBufferData.view);
+                //m_constantBufferData.world = Math::MMMatrixTranspose(m_constantBufferData.world);
+                //m_constantBufferData.proj = Math::MMMatrixTranspose(m_constantBufferData.proj);
+                //m_constantBufferData.view = Math::MMMatrixTranspose(m_constantBufferData.view);
 
                
                 // Update the constant buffer resource.
