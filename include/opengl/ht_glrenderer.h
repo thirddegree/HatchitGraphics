@@ -29,29 +29,33 @@ namespace Hatchit {
 
     namespace Graphics {
 
-        class HT_API GLRenderer : public IRenderer
-        {
-        public:
-            GLRenderer();
+        namespace OpenGL {
 
-            ~GLRenderer();
+            class HT_API GLRenderer : public IRenderer
+            {
+            public:
+                GLRenderer();
 
-            bool VInitialize(const RendererParams& params)                      override;
+                ~GLRenderer();
 
-            void VDeInitialize()                                                override;
+                bool VInitialize(const RendererParams& params)                      override;
 
-            void VResizeBuffers(uint32_t width, uint32_t height)                override;
+                void VDeInitialize()                                                override;
 
-            void VSetClearColor(const Color& color)                             override;
+                void VResizeBuffers(uint32_t width, uint32_t height)                override;
 
-            void VClearBuffer(ClearArgs args)                                   override;
+                void VSetClearColor(const Color& color)                             override;
 
-            void VPresent()                                                     override;
+                void VClearBuffer(ClearArgs args)                                   override;
 
-        private:
-            RendererParams m_params;
-        };
+                void VPresent()                                                     override;
 
+            private:
+                RendererParams m_params;
+            };
+
+        }
+        
     }
 
 }

@@ -15,13 +15,13 @@
 #pragma once
 
 #include <ht_platform.h>
-#include <ht_resource.h>
+#include <ht_resourceobject.h>
 
 namespace Hatchit {
 
     namespace Graphics {
         
-        class HT_API ITexture : public Resource::Resource
+        class HT_API ITexture : public Resource::ResourceObject
         {
         public:
             virtual ~ITexture() { }

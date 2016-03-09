@@ -16,6 +16,11 @@
 
 #include <ht_platform.h>
 #include <ht_string.h>
+#include <ht_math.h>
+
+#ifdef HT_SYS_LINUX
+#include <cstring>
+#endif
 
 namespace Hatchit {
 
@@ -23,79 +28,168 @@ namespace Hatchit {
 
         class IShader;
 
-        class HT_API IShaderVariable
+        class HT_API ShaderVariable 
         {
         public:
-            virtual ~IShaderVariable() { }
+            virtual ~ShaderVariable() {
+                if (m_data != nullptr)
+                {
+                    delete[] m_data;
+                    m_data = nullptr;
+                }
+            };
+            enum Type
+            {
+                INT,
+                FLOAT,
+                DOUBLE,
+                FLOAT2,
+                FLOAT3,
+                FLOAT4,
+                MAT3,
+                MAT4
+            };
+
+            inline Type GetType() { return m_type; }
+            inline void* GetData() { return m_data; }
+
+        protected:
+            Type m_type;
+            void* m_data = nullptr;
+        };
+
+        template<typename T>
+        class HT_API ShaderVariableTemplate : public ShaderVariable
+        {
+        public:
+            inline ShaderVariableTemplate();
+            inline ShaderVariableTemplate(T t);
             
-            virtual void VBind(std::string name, IShader* shader) = 0;
-            virtual void VUnbind(std::string name, IShader* shader) = 0;
+            inline void SetData(T t);
         };
 
-        class HT_API FloatVariable : public IShaderVariable
+
+
+	template<>
+        inline void HT_API ShaderVariableTemplate<int>::SetData(int data)
         {
-        public:
-            FloatVariable(float val);
+            memcpy(m_data, &data, sizeof(int));
+        }
 
-            ~FloatVariable();
-
-            void SetData(float val);
-            void VBind(std::string name, IShader* shader);
-            void VUnbind(std::string name, IShader* shader);
-
-        private:
-            float m_val;
-        };
-
-        class HT_API Float2Variable : public IShaderVariable
+        template <>
+        inline HT_API ShaderVariableTemplate<int>::ShaderVariableTemplate()
         {
-        public:
-            Float2Variable(float x, float y);
+            SetData(0);
+            m_type = Type::INT;
+        }
 
-            ~Float2Variable();
-
-            void SetData(float x, float y);
-            void VBind(std::string name, IShader* shader);
-            void VUnbind(std::string name, IShader* shader);
-
-        private:
-            float m_x;
-            float m_y;
-        };
-
-        class HT_API Float3Variable : public IShaderVariable
+        template <>
+        inline HT_API ShaderVariableTemplate<int>::ShaderVariableTemplate(int data)
         {
-        public:
-            Float3Variable(float x, float y, float z);
+            SetData(data);
+            m_type = Type::INT;
+        }
 
-            ~Float3Variable();
 
-            void SetData(float x, float y, float z);
-            void VBind(std::string name, IShader* shader);
-            void VUnbind(std::string name, IShader* shader);
 
-        private:
-            float m_x;
-            float m_y;
-            float m_z;
-        };
 
-        class HT_API Float4Variable : public IShaderVariable
+	template<>
+        inline void HT_API ShaderVariableTemplate<float>::SetData(float data)
         {
-        public:
-            Float4Variable(float x, float y, float z, float w);
+            memcpy(m_data, &data, sizeof(float));
+        }
 
-            ~Float4Variable();
+        template <>
+        inline HT_API ShaderVariableTemplate<float>::ShaderVariableTemplate()
+        {
+            SetData(0.0f);
+            m_type = Type::FLOAT;
+        }
 
-            void SetData(float x, float y, float z, float w);
-            void VBind(std::string name, IShader* shader);
-            void VUnbind(std::string name, IShader* shader);
+        template <>
+        inline HT_API ShaderVariableTemplate<float>::ShaderVariableTemplate(float data)
+        {
+            SetData(data);
+            m_type = Type::FLOAT;
+        }
+       
 
-        private:
-            float m_x;
-            float m_y;
-            float m_z;
-            float m_w;
-        }; 
+
+	template<>
+        inline void HT_API ShaderVariableTemplate<Math::Vector3>::SetData(Math::Vector3 data)
+        {
+            memcpy(m_data, data.m_data, sizeof(float) * 3);
+        }
+
+        template <>
+        inline HT_API ShaderVariableTemplate<Math::Vector3>::ShaderVariableTemplate()
+        {
+            SetData(Math::Vector3());
+            m_type = Type::FLOAT3;
+        }
+
+        template <>
+        inline HT_API ShaderVariableTemplate<Math::Vector3>::ShaderVariableTemplate(Math::Vector3 data)
+        {
+            SetData(data);
+            m_type = Type::FLOAT3;
+        }       
+
+
+
+	template<>
+        inline void HT_API ShaderVariableTemplate<Math::Vector4>::SetData(Math::Vector4 data)
+        {
+            memcpy(m_data, data.data, sizeof(float) * 4);
+        }
+
+        template <>
+        inline HT_API ShaderVariableTemplate<Math::Vector4>::ShaderVariableTemplate()
+        {
+            m_data = new BYTE[sizeof(float) * 4];
+            SetData(Math::Vector4());
+            m_type = Type::FLOAT4;
+        }
+
+        template <>
+        inline HT_API ShaderVariableTemplate<Math::Vector4>::ShaderVariableTemplate(Math::Vector4 data)
+        {
+            m_data = new BYTE[sizeof(float) * 4];
+            SetData(data);
+            m_type = Type::FLOAT4;
+        }
+
+
+
+	template<>
+        inline void HT_API ShaderVariableTemplate<Math::Matrix4>::SetData(Math::Matrix4 data)
+        {
+            memcpy(this->m_data, data.data, sizeof(float) * 16);
+        }
+
+        template <>
+        inline HT_API ShaderVariableTemplate<Math::Matrix4>::ShaderVariableTemplate()
+        {
+            m_data = new BYTE[sizeof(float) * 16];
+            SetData(Math::Matrix4());
+            m_type = Type::MAT4;
+        }
+
+        template <>
+        inline HT_API ShaderVariableTemplate<Math::Matrix4>::ShaderVariableTemplate(Math::Matrix4 data)
+        {
+            m_data = new BYTE[sizeof(float) * 16];
+            SetData(data);
+            m_type = Type::MAT4;
+        }
+
+
+
+
+        typedef ShaderVariableTemplate<int>             IntVariable;
+        typedef ShaderVariableTemplate<float>           FloatVariable;
+        typedef ShaderVariableTemplate<Math::Vector3>   Float3Variable;
+        typedef ShaderVariableTemplate<Math::Vector4>   Float4Variable;
+        typedef ShaderVariableTemplate<Math::Matrix4>   Matrix4Variable;
     }
 }

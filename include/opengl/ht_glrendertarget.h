@@ -31,21 +31,26 @@ namespace Hatchit {
 
 	namespace Graphics {
 
-		class HT_API GLRenderTarget : public IRenderTarget
-		{
-		public:
-			GLRenderTarget();
-			virtual ~GLRenderTarget();
+        namespace OpenGL {
 
-			///Bind the texture for reading
-			virtual void VReadBind()		override;
-			///Bind the FBO to be rendered to
-			virtual void VWriteBind()		override;
-			///Free the texture and FBO from memory
-			virtual void VFree()			override;
+            class HT_API GLRenderTarget : public IRenderTarget
+            {
+            public:
+                GLRenderTarget();
+                virtual ~GLRenderTarget();
 
-		private:
-			GLuint fbo;
-		};
+                ///Bind the texture for reading
+                virtual void VReadBind()		override;
+                ///Bind the FBO to be rendered to
+                virtual void VWriteBind()		override;
+                ///Free the texture and FBO from memory
+                virtual void VFree()			override;
+
+            private:
+                GLuint fbo;
+            };
+
+        }
+
 	}
 }

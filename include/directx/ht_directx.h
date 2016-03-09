@@ -12,16 +12,29 @@
 **
 **/
 
+#pragma once
+
 #include <ht_platform.h>
 
+#ifdef DX11_SUPPORT
 #include <d3d11.h>
+#endif
+
+#ifdef DX12_SUPPORT
+#include <d3d12.h>
+#include <d3dx12.h>
+#endif
+
+#include <dxgi1_4.h>
 #include <d3dcompiler.h>
+
+#include <ht_math.h>
 
 namespace Hatchit {
 
     namespace Graphics {
 
-        namespace DirectX
+        namespace DX
         {
             template <typename T>
             void ReleaseCOM(T* t)
@@ -32,6 +45,20 @@ namespace Hatchit {
                     t = nullptr;
                 }
             }
+
+            inline void ThrowIfFailed(HRESULT hr)
+            {
+                if (FAILED(hr))
+                    throw;
+            }
+
+            struct Vertex
+            {
+                Math::Float3 position;
+                Math::Float3 normal;
+                Math::Float4 color;
+            };
+            
         }
 
     }

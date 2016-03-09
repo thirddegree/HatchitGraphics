@@ -25,36 +25,70 @@
 #pragma once
 
 #include <ht_platform.h>
-#include <ht_material.h>
 #include <ht_rendertarget.h>
+#include <ht_pipeline.h>
+#include <ht_gmesh.h>
+#include <ht_material.h>
 #include <ht_math.h>
+#include <ht_color.h>
 
 namespace Hatchit {
 
     namespace Graphics {
 
+        struct RenderRequest 
+        {
+            IPipeline*  pipeline;
+            IMaterial*  material;
+            IMesh*      mesh;
+        };
+
+        struct Renderable 
+        {
+            IMaterial*  material;
+            IMesh*      mesh;
+        };
+
         class HT_API IRenderPass
         {
         public:
-			virtual ~IRenderPass() { };
+            virtual ~IRenderPass() { };
+
+            virtual bool VPrepare() = 0;
 
             //Will this be sent the Objects that it needs to render?
-			///Render the scene
-            virtual void VRender() = 0;
+            ///Render the the given objects with the given pipeline to a texture
+            virtual void VUpdate() = 0;
 
-        private:
-            //We're going need to send this to the shader
-            Math::Vector3 eyePoint;
+            virtual bool VBuildCommandList() =  0;
 
-            //Data representing *where* the objects will be viewed from in this pass
-			Math::Matrix4 viewMatrix;
-			Math::Matrix4 projectionMatrix;
+            virtual void VSetClearColor(Color clearColor) = 0;
 
-            //Which material we will be rendering with
-            IMaterial* material;
+            void SetWidth(uint32_t width);
+            void SetHeight(uint32_t height);
+
+            void SetView(Math::Matrix4 view);
+            void SetProj(Math::Matrix4 proj);
+
+            void ScheduleRenderRequest(IPipeline* pipeline, IMaterial* material, IMesh* mesh);
+
+            void SetRenderTarget(IRenderTarget* renderTarget);
+
+        protected:
+            void BuildRenderRequestHeirarchy();
+
+            //Input
+            std::vector<RenderRequest> m_renderRequests;
+            std::map<IPipeline*, std::vector<Renderable>> m_pipelineList;
+
+            uint32_t m_width;
+            uint32_t m_height;
+
+            Math::Matrix4 m_view;
+            Math::Matrix4 m_proj;
 
             //Output
-            IRenderTarget* renderTarget;
+            IRenderTarget* m_renderTarget;
         };
     }
 }

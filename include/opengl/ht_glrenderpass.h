@@ -30,14 +30,18 @@ namespace Hatchit {
 
 	namespace Graphics {
 
-		class HT_API GLRenderPass : public IRenderPass
-		{
-		public:
-			GLRenderPass();
-			virtual ~GLRenderPass();
+        namespace OpenGL {
 
-			///Render the pass with OpenGL
-			virtual void VRender()		override;
-		};
+            class HT_API GLRenderPass : public IRenderPass
+            {
+            public:
+                GLRenderPass();
+                virtual ~GLRenderPass();
+
+                ///Render the pass with OpenGL
+                virtual void VRender()		override;
+            };
+        }
+
 	}
 }

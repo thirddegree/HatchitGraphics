@@ -23,17 +23,22 @@
 
 #pragma once
 
-#include <ht_shader.h>
+#include <ht_glshader.h>
 
 namespace Hatchit {
 
 	namespace Graphics {
 
-		class HT_API GLTessShader : public IShader
-		{
-		public:
-			GLTessShader();
-			virtual ~GLTessShader();
-		};
+        namespace OpenGL {
+
+            class HT_API GLTessShader : public GLShader
+            {
+            public:
+                GLTessShader();
+                virtual ~GLTessShader();
+
+                void VCompile() override;
+            };
+        }
 	}
 }

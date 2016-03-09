@@ -19,14 +19,22 @@ namespace Hatchit {
 
 	namespace Graphics {
 
-		GLVertShader::GLVertShader()
-		{
+        namespace OpenGL {
 
-		}
+            GLVertShader::GLVertShader()
+            {
 
-		GLVertShader::~GLVertShader()
-		{
+            }
 
-		}
+            GLVertShader::~GLVertShader()
+            {
+
+            }
+
+            void GLVertShader::VCompile()
+            {
+                compileGL(GL_VERTEX_SHADER);
+            }
+        }
 	}
 }

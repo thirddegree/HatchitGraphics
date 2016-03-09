@@ -13,24 +13,98 @@
 **/
 
 #include <ht_glshader.h>
+#include <ht_debug.h>
 
 namespace Hatchit {
 
     namespace Graphics {
 
-        GLShader::GLShader()
-        {
+        namespace OpenGL {
 
-        }
+            GLShader::GLShader()
+            {
 
-        GLShader::~GLShader()
-        {
+            }
 
-        }
+            GLShader::~GLShader()
+            {
 
-        bool GLShader::VInitFromFile(Core::File* file)
-        {
-            return true;
-        }
+            }
+
+            void GLShader::VOnLoaded()
+            {
+                VCompile();
+            }
+
+            bool GLShader::VInitFromFile(Core::File* file)
+            {
+                size_t size = file->SizeBytes();
+
+                BYTE* blob = new BYTE[size];
+                size_t length = file->Read(blob, size - 1);
+                blob[length] = '\0';
+
+                m_data = (void*)blob;
+
+                return true;
+            }
+
+#ifdef _DEBUG
+            void GLShader::LoadDirectlyFromFile(std::string path)
+            {
+                Core::File shaderFile;
+                shaderFile.Open(path, Core::FileMode::ReadText);
+
+                size_t size = shaderFile.SizeBytes();
+
+                BYTE* blob = new BYTE[size];
+                size_t length = shaderFile.Read(blob, size - 1);
+                blob[length] = '\0';
+
+                m_data = (void*)blob;
+
+                shaderFile.Close();
+
+                VCompile();
+            }
+#endif
+
+            void GLShader::printShaderLog()
+            {
+                GLint logLength = 0;
+                GLsizei charsWritten = 0;
+                glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
+
+                if (logLength > 0)
+                {
+                    std::vector<GLchar> log(logLength);
+
+                    glGetShaderInfoLog(shader, logLength, &charsWritten, &log[0]);
+
+                    Core::DebugPrintF(&log[0]);
+
+                    glDeleteShader(shader);
+                }
+            }
+
+            void GLShader::compileGL(GLenum shaderType)
+            {
+                shader = glCreateShader(shaderType);
+
+                GLchar* string = (GLchar*)m_data;
+                size_t sourceSize = strlen(string);
+
+                glShaderSource(shader, 1, (const GLchar**)&string, (GLint*)&sourceSize);
+
+                glCompileShader(shader);
+
+#ifdef _DEBUG
+                printShaderLog();
+#endif
+                //Delete the member data as it is no longer needed
+                delete[] m_data;
+            }
+
+        }	
     }
 }

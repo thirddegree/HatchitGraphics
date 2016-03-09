@@ -19,29 +19,31 @@ namespace Hatchit {
 
 	namespace Graphics {
 
-		GLRenderTarget::GLRenderTarget()
-		{
+        namespace OpenGL {
+            GLRenderTarget::GLRenderTarget()
+            {
 
-		}
+            }
 
-		GLRenderTarget::~GLRenderTarget()
-		{
+            GLRenderTarget::~GLRenderTarget()
+            {
 
-		}
+            }
 
-		void GLRenderTarget::VReadBind() 
-		{
-		
-		}
+            void GLRenderTarget::VReadBind()
+            {
 
-		void GLRenderTarget::VWriteBind()
-		{
+            }
 
-		}
+            void GLRenderTarget::VWriteBind()
+            {
 
-		void GLRenderTarget::VFree()
-		{
+            }
 
-		}
+            void GLRenderTarget::VFree()
+            {
+
+            }
+        }
 	}
 }

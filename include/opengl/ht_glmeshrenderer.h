@@ -25,27 +25,31 @@
 #pragma once
 
 #include <ht_meshrenderer.h>
+#include <ht_glmaterial.h>
 #include <ht_gl.h>
 
 namespace Hatchit {
 
 	namespace Graphics {
 
-		class HT_API GLMeshRenderer : public IMeshRenderer
-		{
-		public:
-			GLMeshRenderer();
-			virtual ~GLMeshRenderer();
+        namespace OpenGL {
 
-			///Buffer a mesh with OpenGL
-			virtual void VBuffer()		override;
-			///Render a mesh with a OpenGL
-			virtual void VRender()		override;
-			///Gree a mesh from OpenGL
-			virtual void VFree()		override;
+            class HT_API GLMeshRenderer : public IMeshRenderer
+            {
+            public:
+                GLMeshRenderer(Resource::MeshPtr mesh, GLMaterial* material);
+                virtual ~GLMeshRenderer();
 
-		private:
-			GLuint vbo, vao, ibo;
-		};
+                ///Buffer a mesh with OpenGL
+                virtual void VBuffer()		override;
+                ///Render a mesh with a OpenGL
+                virtual void VRender()		override;
+                ///Gree a mesh from OpenGL
+                virtual void VFree()		override;
+
+            private:
+                GLuint vbo, vao, ibo;
+            };
+        }
 	}
 }
