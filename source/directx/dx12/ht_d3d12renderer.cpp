@@ -108,9 +108,7 @@ namespace Hatchit {
                 psoDesc.pRootSignature = m_rootSignature;
                 psoDesc.VS = CD3DX12_SHADER_BYTECODE(m_vertexShader);
                 psoDesc.PS = CD3DX12_SHADER_BYTECODE(m_pixelShader);
-                CD3DX12_RASTERIZER_DESC rsd(D3D12_DEFAULT);
-                rsd.FrontCounterClockwise = true;
-                psoDesc.RasterizerState = rsd;/* CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);*/
+                psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
                 psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
                 psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
                 psoDesc.SampleMask = UINT_MAX;
