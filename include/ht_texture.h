@@ -21,6 +21,25 @@ namespace Hatchit {
 
     namespace Graphics {
         
+        enum WrapMode 
+        {
+            REPEAT,
+            CLAMP
+        };
+
+        enum FilterMode
+        {
+            POINT,
+            BILINEAR,
+            TRILINEAR
+        };
+
+        enum ColorSpace 
+        {
+            GAMMA,
+            LINEAR
+        };
+
         class HT_API ITexture : public Resource::ResourceObject
         {
         public:
@@ -28,6 +47,13 @@ namespace Hatchit {
         
             virtual size_t VGetWidth()  const = 0;
             virtual size_t VGetHeight() const = 0;
+
+        protected:
+            uint32_t m_width, m_height;
+
+            FilterMode m_filterMode;
+            WrapMode m_wrapMode;
+            ColorSpace m_colorSpace;
         };
     }
 }
