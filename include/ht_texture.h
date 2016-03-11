@@ -14,8 +14,10 @@
 
 #pragma once
 
+#include <ht_debug.h>
 #include <ht_platform.h>
 #include <ht_resourceobject.h>
+#include <cassert>
 
 namespace Hatchit {
 
@@ -45,11 +47,23 @@ namespace Hatchit {
         public:
             virtual ~ITexture() { }
         
-            virtual size_t VGetWidth()  const = 0;
-            virtual size_t VGetHeight() const = 0;
+            bool VInitFromFile(Core::File* file) override;
+
+            void SetFilterMode(FilterMode filterMode);
+            void SetWrapMode(WrapMode wrapMode);
+            void SetColorSpace(ColorSpace colorSpace);
+
+            uint32_t GetWidth()  const;
+            uint32_t GetHeight() const;
 
         protected:
+            virtual bool VBufferImage() = 0;
+
             uint32_t m_width, m_height;
+            uint32_t m_mipLevels;
+            uint8_t m_bpp, m_channels;
+
+            const BYTE* m_data;
 
             FilterMode m_filterMode;
             WrapMode m_wrapMode;

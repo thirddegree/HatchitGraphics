@@ -342,6 +342,7 @@ namespace Hatchit {
 
                 VkImageCreateInfo imageCreateInfo = {};
                 imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+                imageCreateInfo.pNext = nullptr;
                 imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
                 imageCreateInfo.format = m_colorFormat;
                 imageCreateInfo.extent = { m_width, m_height, 1 };
@@ -370,7 +371,16 @@ namespace Hatchit {
                 vkGetImageMemoryRequirements(device, m_texture.image.image, &memReqs);
                 memAllocInfo.allocationSize = memReqs.size;
 
-                renderer->MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memAllocInfo.memoryTypeIndex);
+                bool success = renderer->MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memAllocInfo.memoryTypeIndex);
+                assert(success);
+                if (!success)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKTexture::VBufferImage(): Failed to find memory properties!\n");
+#endif
+                    return false;
+                }
+
 
                 err = vkAllocateMemory(device, &memAllocInfo, nullptr, &m_texture.image.memory);
                 assert(!err);

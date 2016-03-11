@@ -17,6 +17,7 @@
 #include <ht_vkshader.h>
 #include <ht_vkpipeline.h>
 #include <ht_vkmaterial.h>
+#include <ht_vktexture.h>
 #include <ht_vkmeshrenderer.h>
 #include <ht_vkrendertarget.h>
 #include <ht_debug.h>
@@ -199,8 +200,10 @@ namespace Hatchit {
                 commandBuffers.push_back(m_swapchain->GetCurrentCommand());
 
                 //Example code for rotation
+                Math::Matrix4 scale = Math::MMMatrixScale(Math::Vector3(0.05f, 0.05f, 0.05f));
                 Math::Matrix4 rot = Math::MMMatrixRotationXYZ(Math::Vector3(0, m_angle += dt, 0));
-                Math::Matrix4 mat = Math::MMMatrixTranspose(rot * Math::MMMatrixTranslation(Math::Vector3(0, 0, 0)));
+                Math::Matrix4 trans = Math::MMMatrixTranslation(Math::Vector3(0, -30, 0));
+                Math::Matrix4 mat = Math::MMMatrixTranspose(rot * (scale * trans));
 
                 m_material->VSetMatrix4("object.model", mat);
                 m_material->VUpdate();
@@ -1195,7 +1198,10 @@ namespace Hatchit {
                 m_swapchain->SetIncomingRenderTarget(m_renderTarget);
 
                 Core::File meshFile;
-                meshFile.Open(Core::os_exec_dir() + "monkey.obj", Core::FileMode::ReadBinary);
+                meshFile.Open(Core::os_exec_dir() + "Raptor.obj", Core::FileMode::ReadBinary);
+
+                Core::File textureFile;
+                textureFile.Open(Core::os_exec_dir() + "raptor.jpg", Core::FileMode::ReadBinary);
 
                 Core::File vsFile;
                 vsFile.Open(Core::os_exec_dir() + "monkey_VS.spv", Core::FileMode::ReadBinary);
@@ -1205,6 +1211,11 @@ namespace Hatchit {
 
                 Resource::Model model;
                 model.VInitFromFile(&meshFile);
+
+                CreateSetupCommandBuffer();
+
+                VKTexture texture(m_device, VK_FORMAT_B8G8R8A8_UNORM);
+                texture.VInitFromFile(&textureFile);
 
                 VKShader vsShader;
                 vsShader.VInitFromFile(&vsFile);
@@ -1257,8 +1268,6 @@ namespace Hatchit {
 
                 pipeline->VUpdate();
                 m_material->VUpdate();
-
-                CreateSetupCommandBuffer();
 
                 m_swapchain->BuildSwapchain(m_clearColor);
                 
