@@ -13,7 +13,7 @@
 **/
 
 #include <ht_texture.h>
-#include <ht_bitmap.h>
+#include <ht_image.h>
 
 namespace Hatchit {
 
@@ -21,8 +21,7 @@ namespace Hatchit {
 
         bool ITexture::VInitFromFile(Core::File* file)
         {
-            //Assume bitmap for now
-            Resource::Bitmap* bitmap = Resource::Bitmap::Load(file, Resource::Bitmap::Channels::AUTO);
+            Resource::Image* bitmap = Resource::Image::Load(file, Resource::Image::Channels::AUTO);
 
             m_width = bitmap->GetWidth();
             m_height = bitmap->GetHeight();

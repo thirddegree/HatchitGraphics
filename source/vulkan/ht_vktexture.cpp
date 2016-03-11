@@ -21,10 +21,9 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKTexture::VKTexture(VkDevice device, VkFormat format) 
+            VKTexture::VKTexture(VkDevice device) 
             {
                 m_device = device;
-                m_format = format;
             }
             VKTexture::~VKTexture() 
             {
@@ -34,18 +33,45 @@ namespace Hatchit {
                 vkFreeMemory(m_device, m_deviceMemory, nullptr);
             }
 
+            VkSampler VKTexture::GetSampler() { return m_sampler; }
+            VkImageView VKTexture::GetView() { return m_view; }
+
             bool VKTexture::VBufferImage()
             {
                 VkResult err;
 
                 VKRenderer* renderer = VKRenderer::RendererInstance;
 
-                //Create Image assuming optimal tiling!
+                VkFormat format;
+                if (m_channels == 4)
+                {
+                    switch (m_colorSpace)
+                    {
+                    case GAMMA:
+                        format = VK_FORMAT_R8G8B8A8_SRGB;
+                        break;
+                    case LINEAR:
+                        format = VK_FORMAT_R8G8B8A8_UNORM;
+                        break;
+                    default:
+                        format = VK_FORMAT_R8G8B8A8_UNORM;
+                        break;
+                    }
+                }
+                else
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKTexture::VBufferImage() Error; cannot process RGB textures; they must be RGBA");
+#endif
+                    return false;
+                }
+
+                //Create Image assuming linear tiling!
                 VkImageCreateInfo imageCreateInfo = {};
                 imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
                 imageCreateInfo.pNext = nullptr;
                 imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-                imageCreateInfo.format = m_format;
+                imageCreateInfo.format = format;
                 imageCreateInfo.extent = { m_width, m_height, 1 };
                 imageCreateInfo.mipLevels = m_mipLevels;
                 imageCreateInfo.arrayLayers = 1;
@@ -134,20 +160,48 @@ namespace Hatchit {
                 m_imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 renderer->SetImageLayout(renderer->GetSetupCommandBuffer(), m_image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, m_imageLayout);
 
+                //Determine some sampler settings
+                VkSamplerAddressMode vkWrapMode = {};
+                VkFilter vkFilterMode = {};
+
+                switch (m_wrapMode)
+                {
+                case WrapMode::CLAMP:
+                        vkWrapMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                case WrapMode::REPEAT:
+                    vkWrapMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+                default:
+                    vkWrapMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+                    break;
+                }
+
+                switch (m_filterMode)
+                {
+                case FilterMode::NEAREST:
+                    vkFilterMode = VK_FILTER_NEAREST;
+                    break;
+                case FilterMode::BILINEAR:
+                    vkFilterMode = VK_FILTER_LINEAR;
+                    break;
+                default:
+                    vkFilterMode = VK_FILTER_LINEAR;
+                    break;
+                }
+
                 //Setup the sampler
                 VkSamplerCreateInfo samplerInfo = {};
                 samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
                 samplerInfo.pNext = nullptr;
-                samplerInfo.magFilter = VK_FILTER_LINEAR;
-                samplerInfo.minFilter = VK_FILTER_LINEAR;
+                samplerInfo.magFilter = vkFilterMode;
+                samplerInfo.minFilter = vkFilterMode;
                 samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-                samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-                samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-                samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+                samplerInfo.addressModeU = vkWrapMode;
+                samplerInfo.addressModeV = vkWrapMode;
+                samplerInfo.addressModeW = vkWrapMode;
                 samplerInfo.mipLodBias = 0.0f;
                 samplerInfo.compareOp = VK_COMPARE_OP_NEVER;
                 samplerInfo.minLod = 0.0f;
-                samplerInfo.maxLod = static_cast<float>(m_mipLevels);
+                samplerInfo.maxLod = 0.0f;
                 samplerInfo.maxAnisotropy = 8;
                 samplerInfo.anisotropyEnable = VK_TRUE;
                 samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
@@ -167,7 +221,7 @@ namespace Hatchit {
                 viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
                 viewInfo.pNext = nullptr;
                 viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-                viewInfo.format = m_format;
+                viewInfo.format = format;
                 viewInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
                 viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
                 viewInfo.subresourceRange.baseMipLevel = 0;

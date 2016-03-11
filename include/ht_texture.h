@@ -31,9 +31,8 @@ namespace Hatchit {
 
         enum FilterMode
         {
-            POINT,
-            BILINEAR,
-            TRILINEAR
+            NEAREST,
+            BILINEAR
         };
 
         enum ColorSpace 

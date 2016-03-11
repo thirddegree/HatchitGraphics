@@ -313,15 +313,23 @@ namespace Hatchit {
 
                     perPassBindings.push_back(perPassBinding);
 
-                    //Per model binding point
-                    VkDescriptorSetLayoutBinding perObjectBinding = {};
-                    perObjectBinding.binding = 0;
-                    perObjectBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                    perObjectBinding.descriptorCount = 1;
-                    perObjectBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-                    perObjectBinding.pImmutableSamplers = nullptr;
+                    //Per model binding points
+                    VkDescriptorSetLayoutBinding perObjectVSBinding = {};
+                    perObjectVSBinding.binding = 0;
+                    perObjectVSBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                    perObjectVSBinding.descriptorCount = 1;
+                    perObjectVSBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+                    perObjectVSBinding.pImmutableSamplers = nullptr;
 
-                    perObjectBindings.push_back(perObjectBinding);
+                    VkDescriptorSetLayoutBinding perObjectFSBinding = {};
+                    perObjectFSBinding.binding = 1;
+                    perObjectFSBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                    perObjectFSBinding.descriptorCount = 1;
+                    perObjectFSBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+                    perObjectFSBinding.pImmutableSamplers = nullptr;
+
+                    perObjectBindings.push_back(perObjectVSBinding);
+                    perObjectBindings.push_back(perObjectFSBinding);
 
                     VkDescriptorSetLayoutCreateInfo perPassDescriptorLayoutInfo = {};
                     perPassDescriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;

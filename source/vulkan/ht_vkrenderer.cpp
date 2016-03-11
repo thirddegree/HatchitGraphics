@@ -1201,21 +1201,22 @@ namespace Hatchit {
                 meshFile.Open(Core::os_exec_dir() + "Raptor.obj", Core::FileMode::ReadBinary);
 
                 Core::File textureFile;
-                textureFile.Open(Core::os_exec_dir() + "raptor.jpg", Core::FileMode::ReadBinary);
+                textureFile.Open(Core::os_exec_dir() + "raptor.png", Core::FileMode::ReadBinary);
 
                 Core::File vsFile;
-                vsFile.Open(Core::os_exec_dir() + "monkey_VS.spv", Core::FileMode::ReadBinary);
+                vsFile.Open(Core::os_exec_dir() + "raptor_VS.spv", Core::FileMode::ReadBinary);
 
                 Core::File fsFile;
-                fsFile.Open(Core::os_exec_dir() + "monkey_FS.spv", Core::FileMode::ReadBinary);
+                fsFile.Open(Core::os_exec_dir() + "raptor_FS.spv", Core::FileMode::ReadBinary);
 
                 Resource::Model model;
                 model.VInitFromFile(&meshFile);
 
                 CreateSetupCommandBuffer();
 
-                VKTexture texture(m_device, VK_FORMAT_B8G8R8A8_UNORM);
-                texture.VInitFromFile(&textureFile);
+                ITexture* texture = new VKTexture(m_device);
+                texture->SetColorSpace(ColorSpace::GAMMA);
+                texture->VInitFromFile(&textureFile);
 
                 VKShader vsShader;
                 vsShader.VInitFromFile(&vsFile);
@@ -1245,6 +1246,7 @@ namespace Hatchit {
                 m_material = new VKMaterial();
 
                 m_material->VSetMatrix4("object.model", Math::Matrix4());
+                m_material->VBindTexture("color", texture);
                 m_material->VPrepare(pipeline);
 
                 std::vector<Resource::Mesh*> meshes = model.GetMeshes();

@@ -26,14 +26,16 @@ namespace Hatchit {
             class HT_API VKTexture : public ITexture
             {
             public:
-                VKTexture(VkDevice device, VkFormat format);
+                VKTexture(VkDevice device);
                 ~VKTexture();
+
+                VkSampler GetSampler();
+                VkImageView GetView();
 
             private:
                 bool VBufferImage() override;
 
                 VkDevice m_device;
-                VkFormat m_format;
 
                 VkImageView m_view;
                 VkImage m_image;

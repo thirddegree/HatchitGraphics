@@ -44,7 +44,6 @@ namespace Hatchit {
         public:
             virtual ~IMaterial() { };
 
-            virtual void VOnLoaded() = 0;
             virtual bool VInitFromFile(Core::File* file) = 0;
 
             virtual bool VSetInt(std::string name, int data) = 0;
