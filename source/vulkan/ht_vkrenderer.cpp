@@ -17,6 +17,7 @@
 #include <ht_vkshader.h>
 #include <ht_vkpipeline.h>
 #include <ht_vkmaterial.h>
+#include <ht_vksampler.h>
 #include <ht_vktexture.h>
 #include <ht_vkmeshrenderer.h>
 #include <ht_vkrendertarget.h>
@@ -200,7 +201,7 @@ namespace Hatchit {
                 commandBuffers.push_back(m_swapchain->GetCurrentCommand());
 
                 //Example code for rotation
-                Math::Matrix4 scale = Math::MMMatrixScale(Math::Vector3(0.05f, 0.05f, 0.05f));
+                Math::Matrix4 scale = Math::MMMatrixScale(Math::Vector3(0.02f, 0.02f, 0.02f));
                 Math::Matrix4 rot = Math::MMMatrixRotationXYZ(Math::Vector3(0, m_angle += dt, 0));
                 Math::Matrix4 trans = Math::MMMatrixTranslation(Math::Vector3(0, -30, 0));
                 Math::Matrix4 mat = Math::MMMatrixTranspose(rot * (scale * trans));
@@ -1214,8 +1215,12 @@ namespace Hatchit {
 
                 CreateSetupCommandBuffer();
 
+                ISampler* sampler = new VKSampler(m_device);
+                sampler->SetColorSpace(ColorSpace::GAMMA);
+                sampler->VPrepare();
+
                 ITexture* texture = new VKTexture(m_device);
-                texture->SetColorSpace(ColorSpace::GAMMA);
+                texture->SetSampler(sampler);
                 texture->VInitFromFile(&textureFile);
 
                 VKShader vsShader;
@@ -1234,7 +1239,7 @@ namespace Hatchit {
 
                 Math::Matrix4 view = Math::MMMatrixTranspose(Math::MMMatrixLookAt(Math::Vector3(0, 0, -5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0)));
 
-                Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.5f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f));
+                Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f));
 
                 IPipeline* pipeline = new VKPipeline(renderPass->GetVkRenderPass());
                 pipeline->VLoadShader(ShaderSlot::VERTEX, &vsShader);

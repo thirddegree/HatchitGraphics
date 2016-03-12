@@ -14,35 +14,29 @@
 
 #pragma once
 
-#include <ht_texture.h>
-#include <ht_vksampler.h>
+#include <ht_sampler.h>
 #include <ht_vulkan.h>
 
 namespace Hatchit {
 
     namespace Graphics {
-    
-        namespace Vulkan {
 
-            class HT_API VKTexture : public ITexture
+        namespace Vulkan {
+        
+            class HT_API VKSampler : public ISampler 
             {
             public:
-                VKTexture(VkDevice device);
-                ~VKTexture();
+                VKSampler(VkDevice device);
+                ~VKSampler();
 
-                VkSampler GetSampler();
-                VkImageView GetView();
+                bool VPrepare() override;
+
+                VkSampler GetVkSampler();
 
             private:
-                bool VBufferImage() override;
-
                 VkDevice m_device;
 
-                VkImageView m_view;
-                VkImage m_image;
-                VkImageLayout m_imageLayout;
-
-                VkDeviceMemory m_deviceMemory;
+                VkSampler m_sampler;
             };
 
         }

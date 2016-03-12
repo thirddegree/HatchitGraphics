@@ -16,41 +16,21 @@
 
 #include <ht_debug.h>
 #include <ht_platform.h>
-#include <ht_resourceobject.h>
+#include <ht_sampler.h>
 #include <cassert>
 
 namespace Hatchit {
 
     namespace Graphics {
-        
-        enum WrapMode 
-        {
-            REPEAT,
-            CLAMP
-        };
-
-        enum FilterMode
-        {
-            NEAREST,
-            BILINEAR
-        };
-
-        enum ColorSpace 
-        {
-            GAMMA,
-            LINEAR
-        };
 
         class HT_API ITexture : public Resource::ResourceObject
         {
         public:
             virtual ~ITexture() { }
         
-            bool VInitFromFile(Core::File* file) override;
+            void SetSampler(ISampler* sampler);
 
-            void SetFilterMode(FilterMode filterMode);
-            void SetWrapMode(WrapMode wrapMode);
-            void SetColorSpace(ColorSpace colorSpace);
+            bool VInitFromFile(Core::File* file) override;
 
             uint32_t GetWidth()  const;
             uint32_t GetHeight() const;
@@ -64,9 +44,7 @@ namespace Hatchit {
 
             const BYTE* m_data;
 
-            FilterMode m_filterMode;
-            WrapMode m_wrapMode;
-            ColorSpace m_colorSpace;
+            ISampler* m_sampler;
         };
     }
 }

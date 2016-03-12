@@ -36,9 +36,7 @@ namespace Hatchit {
             return VBufferImage();
         }
 
-        void ITexture::SetFilterMode(FilterMode filterMode) { m_filterMode = filterMode; }
-        void ITexture::SetWrapMode(WrapMode wrapMode) { m_wrapMode = wrapMode; }
-        void ITexture::SetColorSpace(ColorSpace colorSpace) { m_colorSpace = colorSpace; }
+        void ITexture::SetSampler(ISampler* sampler) { m_sampler = sampler; }
 
         uint32_t ITexture::GetWidth() const { return m_width; }
         uint32_t ITexture::GetHeight() const { return m_height; }

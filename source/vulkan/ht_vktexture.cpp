@@ -29,11 +29,14 @@ namespace Hatchit {
             {
                 vkDestroyImageView(m_device, m_view, nullptr);
                 vkDestroyImage(m_device, m_image, nullptr);
-                vkDestroySampler(m_device, m_sampler, nullptr);
                 vkFreeMemory(m_device, m_deviceMemory, nullptr);
             }
 
-            VkSampler VKTexture::GetSampler() { return m_sampler; }
+            VkSampler VKTexture::GetSampler()
+            { 
+                VKSampler* vkSampler = static_cast<VKSampler*>(m_sampler);
+                return vkSampler->GetVkSampler(); 
+            }
             VkImageView VKTexture::GetView() { return m_view; }
 
             bool VKTexture::VBufferImage()
@@ -45,7 +48,7 @@ namespace Hatchit {
                 VkFormat format;
                 if (m_channels == 4)
                 {
-                    switch (m_colorSpace)
+                    switch (m_sampler->GetColorSpace())
                     {
                     case GAMMA:
                         format = VK_FORMAT_R8G8B8A8_SRGB;
@@ -159,62 +162,6 @@ namespace Hatchit {
                 //Set the image to be shader read only
                 m_imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 renderer->SetImageLayout(renderer->GetSetupCommandBuffer(), m_image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, m_imageLayout);
-
-                //Determine some sampler settings
-                VkSamplerAddressMode vkWrapMode = {};
-                VkFilter vkFilterMode = {};
-
-                switch (m_wrapMode)
-                {
-                case WrapMode::CLAMP:
-                        vkWrapMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-                case WrapMode::REPEAT:
-                    vkWrapMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-                default:
-                    vkWrapMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-                    break;
-                }
-
-                switch (m_filterMode)
-                {
-                case FilterMode::NEAREST:
-                    vkFilterMode = VK_FILTER_NEAREST;
-                    break;
-                case FilterMode::BILINEAR:
-                    vkFilterMode = VK_FILTER_LINEAR;
-                    break;
-                default:
-                    vkFilterMode = VK_FILTER_LINEAR;
-                    break;
-                }
-
-                //Setup the sampler
-                VkSamplerCreateInfo samplerInfo = {};
-                samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-                samplerInfo.pNext = nullptr;
-                samplerInfo.magFilter = vkFilterMode;
-                samplerInfo.minFilter = vkFilterMode;
-                samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-                samplerInfo.addressModeU = vkWrapMode;
-                samplerInfo.addressModeV = vkWrapMode;
-                samplerInfo.addressModeW = vkWrapMode;
-                samplerInfo.mipLodBias = 0.0f;
-                samplerInfo.compareOp = VK_COMPARE_OP_NEVER;
-                samplerInfo.minLod = 0.0f;
-                samplerInfo.maxLod = 0.0f;
-                samplerInfo.maxAnisotropy = 8;
-                samplerInfo.anisotropyEnable = VK_TRUE;
-                samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-
-                err = vkCreateSampler(m_device, &samplerInfo, nullptr, &m_sampler);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKTexture::VBufferImage(): Failed to create sampler!\n");
-#endif
-                    return false;
-                }
 
                 //Setup the image view
                 VkImageViewCreateInfo viewInfo = {};
