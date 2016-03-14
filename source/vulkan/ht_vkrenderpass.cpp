@@ -177,8 +177,8 @@ namespace Hatchit {
                 beginInfo.pInheritanceInfo = &inheritanceInfo;
 
                 VkClearValue clearValues[2] = {};
-                clearValues[0] = m_clearColor;
-                clearValues[1] = {1.0f, 0.0f};
+                clearValues[0].color = m_clearColor.color;
+                clearValues[1].depthStencil = {1.0f, 0};
 
                 VkRenderPassBeginInfo renderPassBeginInfo = {};
                 renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

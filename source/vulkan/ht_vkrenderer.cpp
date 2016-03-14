@@ -283,7 +283,7 @@ namespace Hatchit {
             }
             VkFormat VKRenderer::GetPreferredDepthFormat() 
             {
-                return VK_FORMAT_D16_UNORM;
+                return VK_FORMAT_D32_SFLOAT_S8_UINT;
             }
 
             bool VKRenderer::initVulkan(const RendererParams& params) 

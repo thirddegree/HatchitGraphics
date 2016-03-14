@@ -85,6 +85,7 @@ namespace Hatchit {
                 m_rasterizationState.depthClampEnable = rasterState.depthClampEnable;
                 m_rasterizationState.rasterizerDiscardEnable = rasterState.discardEnable;
                 m_rasterizationState.depthBiasEnable = VK_FALSE;
+                m_rasterizationState.depthClampEnable = VK_TRUE;
             }
 
             /* Set the multisampling state for this pipeline
@@ -498,7 +499,7 @@ namespace Hatchit {
                 //Depth and stencil states
                 VkPipelineDepthStencilStateCreateInfo depthStencilState = {};
                 depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-                depthStencilState.pNext = &vertexInputState;
+                depthStencilState.pNext = nullptr;
                 depthStencilState.depthTestEnable = VK_TRUE;
                 depthStencilState.depthWriteEnable = VK_TRUE;
                 depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
@@ -508,6 +509,7 @@ namespace Hatchit {
                 depthStencilState.back.compareOp = VK_COMPARE_OP_ALWAYS;
                 depthStencilState.stencilTestEnable = VK_FALSE;
                 depthStencilState.front = depthStencilState.back;
+                depthStencilState.front.compareOp = VK_COMPARE_OP_NEVER;
 
                 //Finalize pipeline
                 VkGraphicsPipelineCreateInfo pipelineInfo = {};

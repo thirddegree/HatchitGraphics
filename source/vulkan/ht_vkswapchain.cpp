@@ -301,7 +301,7 @@ namespace Hatchit {
                 return fpAcquireNextImageKHR(device, m_swapchain, UINT64_MAX, presentSemaphore, VK_NULL_HANDLE, &m_currentBuffer);
             }
 
-            VkResult VKSwapchain::VKPresent(VkQueue queue)
+            VkResult VKSwapchain::VKPresent(const VkQueue& queue)
             {
                 VkPresentInfoKHR present = {};
                 present.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;

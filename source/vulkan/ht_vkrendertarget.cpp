@@ -246,8 +246,7 @@ namespace Hatchit {
                 }
 
                 viewInfo.format = m_depthFormat;
-                viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                viewInfo.image = m_depth.image;
+                viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 
                 vkGetImageMemoryRequirements(device, m_depth.image, &memReqs);
                 memAllocInfo.allocationSize = memReqs.size;
@@ -272,8 +271,12 @@ namespace Hatchit {
                     return false;
                 }
 
-                renderer->SetImageLayout(setupCommand, m_depth.image, VK_IMAGE_ASPECT_DEPTH_BIT,
-                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+                renderer->SetImageLayout(setupCommand, m_depth.image,
+                    VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+                    VK_IMAGE_LAYOUT_UNDEFINED,
+                    VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
+                viewInfo.image = m_depth.image;
 
                 err = vkCreateImageView(device, &viewInfo, nullptr, &m_depth.view);
                 if (err != VK_SUCCESS)
@@ -283,6 +286,8 @@ namespace Hatchit {
 #endif
                     return false;
                 }
+
+                renderer->FlushSetupCommandBuffer();
 
                 //Finally create internal framebuffer
                 VkImageView attachments[2];
@@ -308,8 +313,6 @@ namespace Hatchit {
 #endif
                     return false;
                 }
-
-                renderer->FlushSetupCommandBuffer();
 
                 return true;
             }

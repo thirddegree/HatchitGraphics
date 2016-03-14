@@ -62,7 +62,7 @@ namespace Hatchit {
                 bool BuildSwapchain(VkClearValue clearColor);
 
                 VkResult VKGetNextImage(VkSemaphore presentSemaphore);
-                VkResult VKPresent(VkQueue queue);
+                VkResult VKPresent(const VkQueue& queue);
 
                 VkCommandBuffer GetCurrentCommand();
 
