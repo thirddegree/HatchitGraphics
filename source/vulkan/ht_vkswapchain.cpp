@@ -261,24 +261,8 @@ namespace Hatchit {
                     VkDeviceSize offsets = { 0 };
                     vkCmdBindVertexBuffers(commandBuffer, 0, 1, &m_vertexBuffer.buffer, &offsets);
                     vkCmdDraw(commandBuffer, 3, 1, 0, 0);
-
+                    
                     vkCmdEndRenderPass(commandBuffer);
-
-                    VkImageMemoryBarrier prePresentBarrier = {};
-                    prePresentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                    prePresentBarrier.pNext = nullptr;
-                    prePresentBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-                    prePresentBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-                    prePresentBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                    prePresentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-                    prePresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                    prePresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                    prePresentBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-
-                    prePresentBarrier.image = m_swapchainBuffers[i].image;
-
-                    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &prePresentBarrier);
 
                     err = vkEndCommandBuffer(commandBuffer);
                     assert(!err);
@@ -289,7 +273,73 @@ namespace Hatchit {
 #endif
                         return false;
                     }
+
+
+
+                    //Setup barrier commands
+                    
+                    
+                    VkCommandBufferBeginInfo cmdBufInfo = {};
+                    cmdBufInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+                    cmdBufInfo.pInheritanceInfo = nullptr;
+
+                    err = vkBeginCommandBuffer(m_postPresentCommands[i], &cmdBufInfo);
+                    assert(!err);
+
+                    VkImageMemoryBarrier postPresentBarrier = {};
+                    postPresentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                    postPresentBarrier.srcAccessMask = 0;
+                    postPresentBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                    postPresentBarrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+                    postPresentBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                    postPresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    postPresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    postPresentBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+                    postPresentBarrier.image = m_swapchainBuffers[i].image;
+
+                    vkCmdPipelineBarrier(
+                        m_postPresentCommands[i],
+                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                        0,
+                        0, nullptr, // No memory barriers,
+                        0, nullptr, // No buffer barriers,
+                        1, &postPresentBarrier);
+
+                    err = vkEndCommandBuffer(m_postPresentCommands[i]);
+                    assert(!err);
+
+
+                    err = vkBeginCommandBuffer(m_prePresentCommands[i], &cmdBufInfo);
+                    assert(!err);
+
+                    VkImageMemoryBarrier prePresentBarrier = {};
+                    prePresentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                    prePresentBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                    prePresentBarrier.dstAccessMask = 0;
+                    prePresentBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                    prePresentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+                    prePresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    prePresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    prePresentBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+                    prePresentBarrier.image = m_swapchainBuffers[i].image;
+
+                    vkCmdPipelineBarrier(
+                        m_prePresentCommands[i],
+                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                        0,
+                        0, nullptr, // No memory barriers,
+                        0, nullptr, // No buffer barriers,
+                        1, &prePresentBarrier);
+
+                    err = vkEndCommandBuffer(m_prePresentCommands[i]);
+                    assert(!err);
+
                 }
+
+                
+
 
                 return true;
             }
@@ -299,6 +349,15 @@ namespace Hatchit {
                 //TODO: Use fences
                 VkDevice device = VKRenderer::RendererInstance->GetVKDevice();
                 return fpAcquireNextImageKHR(device, m_swapchain, UINT64_MAX, presentSemaphore, VK_NULL_HANDLE, &m_currentBuffer);
+            }
+
+            bool VKSwapchain::VKPostPresentBarrier(const VkQueue& queue) 
+            {
+                return submitBarrier(queue, m_postPresentCommands[m_currentBuffer]);
+            }
+            bool VKSwapchain::VKPrePresentBarrier(const VkQueue& queue) 
+            {
+                return submitBarrier(queue, m_prePresentCommands[m_currentBuffer]);
             }
 
             VkResult VKSwapchain::VKPresent(const VkQueue& queue)
@@ -458,6 +517,9 @@ namespace Hatchit {
 
                     m_swapchainBuffers.push_back(buffer);
                 }
+
+                m_postPresentCommands.resize(m_swapchainBuffers.size());
+                m_prePresentCommands.resize(m_swapchainBuffers.size());
 
                 return true;
             }
@@ -709,6 +771,7 @@ namespace Hatchit {
                 RasterizerState rasterState = {};
                 rasterState.cullMode = CullMode::NONE;
                 rasterState.polygonMode = PolygonMode::SOLID;
+                rasterState.depthClampEnable = true;
 
                 MultisampleState multisampleState = {};
                 multisampleState.minSamples = 0;
@@ -815,6 +878,45 @@ namespace Hatchit {
 #endif
                         return false;
                     }
+                }
+
+                //Create command buffers for pre and post barriers
+                allocateInfo.commandBufferCount = m_swapchainBuffers.size();
+
+                err = vkAllocateCommandBuffers(m_device, &allocateInfo, m_postPresentCommands.data());
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKSwapchain::allocateCommandBuffers(): Failed to allocate for post present barrier \n");
+#endif
+                    return false;
+                }
+
+                err = vkAllocateCommandBuffers(m_device, &allocateInfo, m_prePresentCommands.data());
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKSwapchain::allocateCommandBuffers(): Failed to allocate for pre present barrier \n");
+#endif
+                    return false;
+                }
+
+                return true;
+            }
+
+            bool VKSwapchain::submitBarrier(const VkQueue& queue, const VkCommandBuffer& command)
+            {
+                VkResult err;
+
+                VkSubmitInfo submitInfo = {};
+                submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+                submitInfo.commandBufferCount = 1;
+                submitInfo.pCommandBuffers = &command;
+
+                err = vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
+                if (err != VK_SUCCESS)
+                {
+                    return false;
                 }
 
                 return true;

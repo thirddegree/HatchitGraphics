@@ -85,7 +85,6 @@ namespace Hatchit {
                 m_rasterizationState.depthClampEnable = rasterState.depthClampEnable;
                 m_rasterizationState.rasterizerDiscardEnable = rasterState.discardEnable;
                 m_rasterizationState.depthBiasEnable = VK_FALSE;
-                m_rasterizationState.depthClampEnable = VK_TRUE;
             }
 
             /* Set the multisampling state for this pipeline

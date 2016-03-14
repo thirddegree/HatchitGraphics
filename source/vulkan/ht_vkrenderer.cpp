@@ -187,6 +187,9 @@ namespace Hatchit {
             {
                 //TODO: Determine which physical device and thread are best to render with
 
+                bool success = m_swapchain->VKPostPresentBarrier(m_queue);
+                assert(success);
+
                 //Get list of command buffers
                 std::vector<VkCommandBuffer> commandBuffers;
 
@@ -225,6 +228,9 @@ namespace Hatchit {
 
                 err = vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE);
                 assert(!err);
+
+                success = m_swapchain->VKPrePresentBarrier(m_queue);
+                assert(success);
             }
 
             void VKRenderer::VPresent()
@@ -1232,6 +1238,7 @@ namespace Hatchit {
                 RasterizerState rasterState = {};
                 rasterState.cullMode = CullMode::NONE;
                 rasterState.polygonMode = PolygonMode::SOLID;
+                rasterState.depthClampEnable = true;
 
                 MultisampleState multisampleState = {};
                 multisampleState.minSamples = 0;

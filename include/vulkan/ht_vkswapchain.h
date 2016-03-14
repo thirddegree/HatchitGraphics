@@ -62,6 +62,8 @@ namespace Hatchit {
                 bool BuildSwapchain(VkClearValue clearColor);
 
                 VkResult VKGetNextImage(VkSemaphore presentSemaphore);
+                bool VKPostPresentBarrier(const VkQueue& queue);
+                bool VKPrePresentBarrier(const VkQueue& queue);
                 VkResult VKPresent(const VkQueue& queue);
 
                 VkCommandBuffer GetCurrentCommand();
@@ -76,6 +78,9 @@ namespace Hatchit {
                 VKPipeline*             m_pipeline;
                 VkDescriptorSetLayout   m_descriptorSetLayout;
                 VkDescriptorSet         m_descriptorSet;
+
+                std::vector<VkCommandBuffer> m_postPresentCommands;
+                std::vector<VkCommandBuffer> m_prePresentCommands;
 
                 VkSwapchainKHR               m_swapchain;
                 std::vector<SwapchainBuffer> m_swapchainBuffers;
@@ -102,6 +107,8 @@ namespace Hatchit {
 
                 //Allocate the command buffers
                 bool allocateCommandBuffers();
+
+                bool submitBarrier(const VkQueue& queue, const VkCommandBuffer& command);
             };
         }
     }
