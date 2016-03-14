@@ -360,7 +360,7 @@ namespace Hatchit {
                 return submitBarrier(queue, m_prePresentCommands[m_currentBuffer]);
             }
 
-            VkResult VKSwapchain::VKPresent(const VkQueue& queue)
+            VkResult VKSwapchain::VKPresent(const VkQueue& queue, const VkSemaphore& renderSemaphore)
             {
                 VkPresentInfoKHR present = {};
                 present.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -368,6 +368,12 @@ namespace Hatchit {
                 present.swapchainCount = 1;
                 present.pSwapchains = &m_swapchain;
                 present.pImageIndices = &m_currentBuffer;
+
+                if (renderSemaphore != VK_NULL_HANDLE)
+                {
+                    present.pWaitSemaphores = &renderSemaphore;
+                    present.waitSemaphoreCount = 1;
+                }
 
                 return fpQueuePresentKHR(queue, &present);
             }

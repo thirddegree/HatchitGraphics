@@ -136,6 +136,8 @@ namespace Hatchit {
                 VkDescriptorPool                        m_descriptorPool;
                 
                 VkSemaphore                             m_presentSemaphore;
+                VkSemaphore                             m_renderSemaphore;
+                VkSubmitInfo                            m_submitInfo;
 
                 VkClearValue                            m_clearColor;
 

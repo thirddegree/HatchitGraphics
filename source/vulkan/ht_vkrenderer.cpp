@@ -125,6 +125,9 @@ namespace Hatchit {
                 
                 m_renderPasses.clear();
 
+                vkDestroySemaphore(m_device, m_presentSemaphore, nullptr);
+                vkDestroySemaphore(m_device, m_renderSemaphore, nullptr);
+
                 vkDestroyCommandPool(m_device, m_commandPool, nullptr);
                 vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
 
@@ -152,15 +155,7 @@ namespace Hatchit {
             {
                 VkResult err;
                 
-                VkSemaphoreCreateInfo presentCompleteSemaphoreInfo = {};
-                presentCompleteSemaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-                presentCompleteSemaphoreInfo.pNext = nullptr;
-                presentCompleteSemaphoreInfo.flags = 0;
-
                 VkFence nullFence = VK_NULL_HANDLE;
-
-                err = vkCreateSemaphore(m_device, &presentCompleteSemaphoreInfo, nullptr, &m_presentSemaphore);
-                assert(!err);
 
                 //Get the next image to draw on
                 //TODO: Actually use fences
@@ -169,7 +164,6 @@ namespace Hatchit {
                 {
                     //Resize!
                     VResizeBuffers(m_width, m_height); //TODO: find a better way to resize
-                    vkDestroySemaphore(m_device, m_presentSemaphore, nullptr);
                     return;
                 }
                 else if (err == VK_SUBOPTIMAL_KHR) 
@@ -214,19 +208,10 @@ namespace Hatchit {
 
                 VkResult err;
 
-                VkPipelineStageFlags pipelineStageFlags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-                VkSubmitInfo submitInfo = {};
-                submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-                submitInfo.pNext = nullptr;
-                submitInfo.waitSemaphoreCount = 1;
-                submitInfo.pWaitSemaphores = &m_presentSemaphore;
-                submitInfo.pWaitDstStageMask = &pipelineStageFlags;
-                submitInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
-                submitInfo.pCommandBuffers = commandBuffers.data();
-                submitInfo.signalSemaphoreCount = 0;
-                submitInfo.pSignalSemaphores = nullptr;
+                m_submitInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
+                m_submitInfo.pCommandBuffers = commandBuffers.data();
 
-                err = vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE);
+                err = vkQueueSubmit(m_queue, 1, &m_submitInfo, VK_NULL_HANDLE);
                 assert(!err);
 
                 success = m_swapchain->VKPrePresentBarrier(m_queue);
@@ -237,7 +222,7 @@ namespace Hatchit {
             {
                 VkResult err;
 
-                err = m_swapchain->VKPresent(m_queue);
+                err = m_swapchain->VKPresent(m_queue, m_renderSemaphore);
                 if (err == VK_ERROR_OUT_OF_DATE_KHR)
                     VResizeBuffers(m_width, m_height);
                 else if (err == VK_SUBOPTIMAL_KHR)
@@ -249,8 +234,6 @@ namespace Hatchit {
 
                 err = vkQueueWaitIdle(m_queue);
                 assert(!err);
-
-                vkDestroySemaphore(m_device, m_presentSemaphore, nullptr);
             }
 
             VkPhysicalDevice VKRenderer::GetVKPhysicalDevice() 
@@ -474,6 +457,28 @@ namespace Hatchit {
                 vkGetPhysicalDeviceMemoryProperties(m_gpu, &m_memoryProps);
 
                 m_swapchain = new VKSwapchain(m_instance, m_gpu, m_device, m_commandPool);
+
+                //Setup semaphores and submission info
+                VkSemaphoreCreateInfo semaphoreCreateInfo = {};
+                semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+                semaphoreCreateInfo.pNext = nullptr;
+                semaphoreCreateInfo.flags = 0;
+
+                err = vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_presentSemaphore);
+                assert(!err);
+
+                err = vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_renderSemaphore);
+                assert(!err);
+
+                VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+
+                m_submitInfo = {};
+                m_submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+                m_submitInfo.pWaitDstStageMask = &stageFlags;
+                m_submitInfo.waitSemaphoreCount = 1;
+                m_submitInfo.pWaitSemaphores = &m_presentSemaphore;
+                m_submitInfo.signalSemaphoreCount = 1;
+                m_submitInfo.pSignalSemaphores = &m_renderSemaphore;
 
                 return true;
             }

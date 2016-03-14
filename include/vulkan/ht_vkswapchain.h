@@ -64,7 +64,7 @@ namespace Hatchit {
                 VkResult VKGetNextImage(VkSemaphore presentSemaphore);
                 bool VKPostPresentBarrier(const VkQueue& queue);
                 bool VKPrePresentBarrier(const VkQueue& queue);
-                VkResult VKPresent(const VkQueue& queue);
+                VkResult VKPresent(const VkQueue& queue, const VkSemaphore& renderSemaphore);
 
                 VkCommandBuffer GetCurrentCommand();
 
