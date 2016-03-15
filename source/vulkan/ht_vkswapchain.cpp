@@ -62,6 +62,8 @@ namespace Hatchit {
                     vkDestroyImageView(m_device, m_swapchainBuffers[i].view, nullptr);
                     vkFreeCommandBuffers(m_device, m_commandPool, 1, &m_swapchainBuffers[i].command);
                 }
+                vkFreeCommandBuffers(m_device, m_commandPool, m_swapchainBuffers.size(), m_postPresentCommands.data());
+                vkFreeCommandBuffers(m_device, m_commandPool, m_swapchainBuffers.size(), m_prePresentCommands.data());
 
                 vkDestroyRenderPass(m_device, m_renderPass, nullptr);
 
@@ -337,9 +339,6 @@ namespace Hatchit {
                     assert(!err);
 
                 }
-
-                
-
 
                 return true;
             }
@@ -887,7 +886,7 @@ namespace Hatchit {
                 }
 
                 //Create command buffers for pre and post barriers
-                allocateInfo.commandBufferCount = m_swapchainBuffers.size();
+                allocateInfo.commandBufferCount = static_cast<uint32_t>(m_swapchainBuffers.size());
 
                 err = vkAllocateCommandBuffers(m_device, &allocateInfo, m_postPresentCommands.data());
                 if (err != VK_SUCCESS)

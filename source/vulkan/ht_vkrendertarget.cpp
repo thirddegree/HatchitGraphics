@@ -94,7 +94,7 @@ namespace Hatchit {
 
                 //Transfrom texture target to the transfer source
                 renderer->SetImageLayout(buffer, m_texture.image.image, VK_IMAGE_ASPECT_COLOR_BIT,
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
                 VkImageBlit blit;
 
@@ -126,7 +126,7 @@ namespace Hatchit {
                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
                 renderer->SetImageLayout(buffer, m_texture.image.image, VK_IMAGE_ASPECT_COLOR_BIT,
-                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
                 return true;
             }
@@ -157,8 +157,7 @@ namespace Hatchit {
                 imageInfo.pNext = nullptr;
                 imageInfo.format = m_colorFormat;
                 imageInfo.imageType = VK_IMAGE_TYPE_2D;
-                imageInfo.extent.width = m_width;
-                imageInfo.extent.height = m_height;
+                imageInfo.extent = { m_width, m_height, 1 };
                 imageInfo.mipLevels = 1;
                 imageInfo.arrayLayers = 1;
                 imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;

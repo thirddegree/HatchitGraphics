@@ -91,6 +91,8 @@ namespace Hatchit {
                 //vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 
                 delete m_renderTarget;
+                delete m_texture;
+                delete m_sampler;
                 
                 std::map<IPipeline*, std::vector<Renderable>>::iterator it;
                 for (it = m_pipelineList.begin(); it != m_pipelineList.end(); it++)
@@ -489,10 +491,7 @@ namespace Hatchit {
                 VkResult err;
 
                 /**
-                * Vulkan:
-                *
                 * Check the following requested Vulkan layers against available layers
-                *
                 */
                 VkBool32 validationFound = 0;
                 uint32_t instanceLayerCount = 0;
@@ -1226,13 +1225,13 @@ namespace Hatchit {
 
                 CreateSetupCommandBuffer();
 
-                ISampler* sampler = new VKSampler(m_device);
-                sampler->SetColorSpace(ColorSpace::GAMMA);
-                sampler->VPrepare();
+                m_sampler = new VKSampler(m_device);
+                m_sampler->SetColorSpace(ColorSpace::GAMMA);
+                m_sampler->VPrepare();
 
-                ITexture* texture = new VKTexture(m_device);
-                texture->SetSampler(sampler);
-                texture->VInitFromFile(&textureFile);
+                m_texture = new VKTexture(m_device);
+                m_texture->SetSampler(m_sampler);
+                m_texture->VInitFromFile(&textureFile);
 
                 VKShader vsShader;
                 vsShader.VInitFromFile(&vsFile);
@@ -1263,7 +1262,7 @@ namespace Hatchit {
                 m_material = new VKMaterial();
 
                 m_material->VSetMatrix4("object.model", Math::Matrix4());
-                m_material->VBindTexture("color", texture);
+                m_material->VBindTexture("color", m_texture);
                 m_material->VPrepare(pipeline);
 
                 std::vector<Resource::Mesh*> meshes = model.GetMeshes();
@@ -1402,6 +1401,11 @@ namespace Hatchit {
                 if (oldImageLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
                 {
                     imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                }
+
+                if (oldImageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+                {
+                    imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
                 }
 
                 // Old layout is shader read (sampler, input attachment)

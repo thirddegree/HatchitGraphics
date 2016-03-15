@@ -37,6 +37,13 @@ namespace Hatchit {
                 //vkFreeDescriptorSets(m_device, );
                 for (size_t i = 0; i < m_descriptorSetLayouts.size(); i++)
                     vkDestroyDescriptorSetLayout(device, m_descriptorSetLayouts[i], nullptr);
+
+                //Free Uniform block
+                if (!useGivenLayout) 
+                {
+                    vkDestroyBuffer(device, m_uniformVSBlock.buffer, nullptr);
+                    vkFreeMemory(device, m_uniformVSBlock.memory, nullptr);
+                }
             }
 
             //If we wanted to allow users to control blending states

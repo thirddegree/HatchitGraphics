@@ -49,7 +49,6 @@ namespace Hatchit {
 
                 //TODO: Destroy FS buffer
 
-                //TODO: Destroy textures
             }
 
             bool VKMaterial::VInitFromFile(Core::File* file) { return true; }

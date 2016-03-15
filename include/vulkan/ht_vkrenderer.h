@@ -143,6 +143,8 @@ namespace Hatchit {
 
                 IRenderTarget* m_renderTarget;
                 IMaterial* m_material;
+                ITexture* m_texture;
+                ISampler* m_sampler;
 
                 float m_angle = 0;
 

@@ -71,15 +71,15 @@ namespace Hatchit {
                 attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
                 attachments[1].flags = 0;
 
-                VkAttachmentReference colorReference;
+                VkAttachmentReference colorReference = {};
                 colorReference.attachment = 0;
                 colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-                VkAttachmentReference depthReference;
+                VkAttachmentReference depthReference = {};
                 depthReference.attachment = 1;
                 depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-                VkSubpassDescription subpass;
+                VkSubpassDescription subpass = {};
                 subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
                 subpass.flags = 0;
                 subpass.inputAttachmentCount = 0;
@@ -91,7 +91,7 @@ namespace Hatchit {
                 subpass.preserveAttachmentCount = 0;
                 subpass.pPreserveAttachments = nullptr;
 
-                VkRenderPassCreateInfo renderPassInfo;
+                VkRenderPassCreateInfo renderPassInfo = {};
                 renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
                 renderPassInfo.pNext = nullptr;
                 renderPassInfo.attachmentCount = 2;
@@ -255,7 +255,7 @@ namespace Hatchit {
                         UniformBlock vertBlock = mesh->GetVertexBlock();
                         UniformBlock indexBlock = mesh->GetIndexBlock();
                         uint32_t indexCount = mesh->GetIndexCount();
-                    
+
                         vkCmdBindVertexBuffers(m_commandBuffer, 0, 1, &vertBlock.buffer, offsets);
                         vkCmdBindIndexBuffer(m_commandBuffer, indexBlock.buffer, 0, VK_INDEX_TYPE_UINT32);
                         vkCmdDrawIndexed(m_commandBuffer, indexCount, 1, 0, 0, 0);
