@@ -25,9 +25,9 @@ namespace Hatchit {
 
             }
 
-            void D3D12Material::VOnLoaded()
+            /*void D3D12Material::VOnLoaded()
             {
-            }
+            }*/
 
             bool D3D12Material::VInitFromFile(Core::File * file)
             {

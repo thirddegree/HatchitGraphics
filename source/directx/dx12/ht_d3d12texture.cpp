@@ -13,7 +13,7 @@
 **/
 
 #include <ht_d3d12texture.h>
-#include <ht_bitmap.h>
+#include <ht_image.h>
 #include <ht_debug.h>
 
 namespace Hatchit
@@ -40,7 +40,7 @@ namespace Hatchit
 
             bool D3D12Texture::VInitFromFile(Core::File* file)
             {
-                m_bitmap = Resource::Bitmap::Load(file, Resource::Bitmap::Channels::AUTO);
+                m_bitmap = Resource::Image::Load(file, Resource::Image::Channels::AUTO);
                 if (!m_bitmap)
                     return false;
 
@@ -93,10 +93,10 @@ namespace Hatchit
                 return true;
             }
 
-            void D3D12Texture::VOnLoaded()
+            /*void D3D12Texture::VOnLoaded()
             {
 
-            }
+            }*/
 
             void D3D12Texture::Upload(ID3D12GraphicsCommandList* commandList)
             {

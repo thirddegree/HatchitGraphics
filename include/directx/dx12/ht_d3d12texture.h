@@ -17,7 +17,7 @@
 #include <ht_platform.h>
 #include <ht_directx.h>
 #include <ht_texture.h>
-#include <ht_bitmap.h>
+#include <ht_image.h>
 
 namespace Hatchit
 {
@@ -34,7 +34,7 @@ namespace Hatchit
 
                 bool VInitFromFile(Core::File* file) override;
 
-                void VOnLoaded() override;
+                //void VOnLoaded() override;
 
                 void Upload(ID3D12GraphicsCommandList* commandList);
 
@@ -44,7 +44,7 @@ namespace Hatchit
                 ID3D12Resource*             m_texture;
                 ID3D12Resource*             m_uploadHeap;
                 ID3D12DescriptorHeap*       m_srvHeap;
-                Resource::Bitmap*           m_bitmap;
+                Resource::Image*           m_bitmap;
             };
         }
     }
