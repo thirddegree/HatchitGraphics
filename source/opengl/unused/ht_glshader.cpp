@@ -44,7 +44,7 @@ namespace Hatchit {
                 size_t length = file->Read(blob, size - 1);
                 blob[length] = '\0';
 
-                m_data = (void*)blob;
+//                m_data = (void*)blob;
 
                 return true;
             }
@@ -61,7 +61,7 @@ namespace Hatchit {
                 size_t length = shaderFile.Read(blob, size - 1);
                 blob[length] = '\0';
 
-                m_data = (void*)blob;
+//                m_data = (void*)blob;
 
                 shaderFile.Close();
 
@@ -91,7 +91,7 @@ namespace Hatchit {
             {
                 shader = glCreateShader(shaderType);
 
-                GLchar* string = (GLchar*)m_data;
+                GLchar* string = (GLchar*)0;
                 size_t sourceSize = strlen(string);
 
                 glShaderSource(shader, 1, (const GLchar**)&string, (GLint*)&sourceSize);
@@ -102,7 +102,7 @@ namespace Hatchit {
                 printShaderLog();
 #endif
                 //Delete the member data as it is no longer needed
-                delete[] m_data;
+ //               delete[] m_data;
             }
 
         }	
