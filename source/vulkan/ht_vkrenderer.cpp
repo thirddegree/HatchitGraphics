@@ -499,7 +499,7 @@ namespace Hatchit {
                 assert(!err);
 
                 m_enabledLayerNames = {
-                    "VK_LAYER_LUNARG_threading",      "VK_LAYER_LUNARG_mem_tracker",
+                    "VK_LAYER_GOOGLE_threading",      "VK_LAYER_LUNARG_mem_tracker",
                     "VK_LAYER_LUNARG_object_tracker", "VK_LAYER_LUNARG_draw_state",
                     "VK_LAYER_LUNARG_param_checker",  "VK_LAYER_LUNARG_swapchain",
                     "VK_LAYER_LUNARG_device_limits",  "VK_LAYER_LUNARG_image",
@@ -1376,6 +1376,7 @@ namespace Hatchit {
                 imageMemoryBarrier.image = image;
                 imageMemoryBarrier.subresourceRange.aspectMask = aspectMask;
                 imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
+                imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
                 imageMemoryBarrier.subresourceRange.layerCount = 1;
                 imageMemoryBarrier.subresourceRange.levelCount = 1;
                 imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -1453,6 +1454,11 @@ namespace Hatchit {
                 {
                     //imageMemoryBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
                     imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                }
+
+                if (newImageLayout == VK_IMAGE_LAYOUT_PREINITIALIZED)
+                {
+                    imageMemoryBarrier.dstAccessMask = VK_ACCESS_HOST_WRITE_BIT;
                 }
 
 

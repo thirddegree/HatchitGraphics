@@ -31,6 +31,8 @@ namespace Hatchit {
                 m_gpu = gpu;
                 m_device = device;
                 m_commandPool = commandPool;
+
+                m_inputTexture = nullptr;
             }
 
             VKSwapchain::~VKSwapchain()
@@ -62,8 +64,11 @@ namespace Hatchit {
                     vkDestroyImageView(m_device, m_swapchainBuffers[i].view, nullptr);
                     vkFreeCommandBuffers(m_device, m_commandPool, 1, &m_swapchainBuffers[i].command);
                 }
-                vkFreeCommandBuffers(m_device, m_commandPool, m_swapchainBuffers.size(), m_postPresentCommands.data());
-                vkFreeCommandBuffers(m_device, m_commandPool, m_swapchainBuffers.size(), m_prePresentCommands.data());
+
+                uint32_t bufferCount = static_cast<uint32_t>(m_swapchainBuffers.size());
+
+                vkFreeCommandBuffers(m_device, m_commandPool, bufferCount, m_postPresentCommands.data());
+                vkFreeCommandBuffers(m_device, m_commandPool, bufferCount, m_prePresentCommands.data());
 
                 vkDestroyRenderPass(m_device, m_renderPass, nullptr);
 
@@ -630,7 +635,7 @@ namespace Hatchit {
                 }
 
                 VkCommandBuffer setupCommand = renderer->GetSetupCommandBuffer();
-                renderer->SetImageLayout(setupCommand, m_depthBuffer.image, VK_IMAGE_ASPECT_DEPTH_BIT,
+                renderer->SetImageLayout(setupCommand, m_depthBuffer.image, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
                     VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
                 //Create image view
@@ -831,23 +836,26 @@ namespace Hatchit {
                     return false;
                 }
 
-                Texture inputTexture = ((VKRenderTarget*)m_inputTexture)->GetVKTexture();
+                if (m_inputTexture != nullptr)
+                {
+                    Texture inputTexture = ((VKRenderTarget*)m_inputTexture)->GetVKTexture();
 
-                // Image descriptor for the color map texture
-                VkDescriptorImageInfo texDescriptor = {};
-                texDescriptor.sampler = inputTexture.sampler;
-                texDescriptor.imageView = inputTexture.image.view;
-                texDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+                    // Image descriptor for the color map texture
+                    VkDescriptorImageInfo texDescriptor = {};
+                    texDescriptor.sampler = inputTexture.sampler;
+                    texDescriptor.imageView = inputTexture.image.view;
+                    texDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-                VkWriteDescriptorSet uniformSampler2DWrite = {};
-                uniformSampler2DWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                uniformSampler2DWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                uniformSampler2DWrite.dstSet = m_descriptorSet;
-                uniformSampler2DWrite.dstBinding = 0;
-                uniformSampler2DWrite.pImageInfo = &texDescriptor;
-                uniformSampler2DWrite.descriptorCount = 1;
+                    VkWriteDescriptorSet uniformSampler2DWrite = {};
+                    uniformSampler2DWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                    uniformSampler2DWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                    uniformSampler2DWrite.dstSet = m_descriptorSet;
+                    uniformSampler2DWrite.dstBinding = 0;
+                    uniformSampler2DWrite.pImageInfo = &texDescriptor;
+                    uniformSampler2DWrite.descriptorCount = 1;
 
-                vkUpdateDescriptorSets(m_device, 1, &uniformSampler2DWrite, 0, nullptr);
+                    vkUpdateDescriptorSets(m_device, 1, &uniformSampler2DWrite, 0, nullptr);
+                }
 
                 //Buffer 3 blank points
                 float blank[9] = {0,0,0,0,0,0,0,0,0};

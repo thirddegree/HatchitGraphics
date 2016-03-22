@@ -100,6 +100,11 @@ namespace Hatchit {
                     return false;
                 }
 
+                //Set the image to be GENERAL before binding so it can map properly
+                renderer->SetImageLayout(renderer->GetSetupCommandBuffer(), m_image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+
+                renderer->FlushSetupCommandBuffer();
+
                 //Get memory requirements
                 vkGetImageMemoryRequirements(m_device, m_image, &memReqs);
                 memAllocInfo.allocationSize = memReqs.size;
@@ -160,8 +165,12 @@ namespace Hatchit {
                 vkUnmapMemory(m_device, m_deviceMemory);
 
                 //Set the image to be shader read only
+                renderer->CreateSetupCommandBuffer();
+
                 m_imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                renderer->SetImageLayout(renderer->GetSetupCommandBuffer(), m_image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, m_imageLayout);
+                renderer->SetImageLayout(renderer->GetSetupCommandBuffer(), m_image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL, m_imageLayout);
+
+                renderer->FlushSetupCommandBuffer();
 
                 //Setup the image view
                 VkImageViewCreateInfo viewInfo = {};
