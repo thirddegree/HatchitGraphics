@@ -562,7 +562,7 @@ namespace Hatchit {
                 components.a = VK_COMPONENT_SWIZZLE_A;
 
                 VkImageSubresourceRange depthSubresourceRange;
-                depthSubresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                depthSubresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
                 depthSubresourceRange.baseMipLevel = 0;
                 depthSubresourceRange.levelCount = 1;
                 depthSubresourceRange.baseArrayLayer = 0;
@@ -636,7 +636,7 @@ namespace Hatchit {
 
                 VkCommandBuffer setupCommand = renderer->GetSetupCommandBuffer();
                 renderer->SetImageLayout(setupCommand, m_depthBuffer.image, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
-                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+                   VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
                 //Create image view
                 view.image = m_depthBuffer.image;
