@@ -183,6 +183,8 @@ namespace Hatchit {
             {
                 //TODO: Determine which physical device and thread are best to render with
 
+                m_swapchain->BuildSwapchain(m_clearColor);
+
                 bool success = m_swapchain->VKPostPresentBarrier(m_queue);
                 assert(success);
 
@@ -193,6 +195,7 @@ namespace Hatchit {
                 {
                     VKRenderPass* renderPass = static_cast<VKRenderPass*>(m_renderPasses[i]);
 
+                    renderPass->VBuildCommandList();
                     commandBuffers.push_back(renderPass->GetVkCommandBuffer());
                 }
 
@@ -236,6 +239,9 @@ namespace Hatchit {
 
                 err = vkQueueWaitIdle(m_queue);
                 assert(!err);
+
+                //Reset command buffer memory back to this command pool
+                vkResetCommandPool(m_device, m_commandPool, 0);
             }
 
             VkPhysicalDevice VKRenderer::GetVKPhysicalDevice() 
@@ -1193,7 +1199,7 @@ namespace Hatchit {
                 FlushSetupCommandBuffer();
 
                 //TODO: remove this test code
-                VKRenderPass* renderPass = new VKRenderPass();
+                VKRenderPass* renderPass = new VKRenderPass(m_device, m_commandPool);
                 renderPass->SetWidth(m_width);
                 renderPass->SetHeight(m_height);
                 renderPass->VSetClearColor(Color(m_clearColor.color.float32[0], m_clearColor.color.float32[1], m_clearColor.color.float32[2], m_clearColor.color.float32[3]));
@@ -1278,16 +1284,13 @@ namespace Hatchit {
 
                 m_renderPasses.push_back(renderPass);
 
-                renderPass->VBuildCommandList();
-
-                renderPass->SetView(view);
-                renderPass->SetProj(proj);
-                renderPass->VUpdate();
-
                 pipeline->VUpdate();
                 m_material->VUpdate();
 
-                m_swapchain->BuildSwapchain(m_clearColor);
+                renderPass->SetView(view);
+                renderPass->SetProj(proj);
+
+                m_swapchain->VKPrepareResources();
                 
                 FlushSetupCommandBuffer();
 

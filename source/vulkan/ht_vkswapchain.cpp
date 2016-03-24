@@ -60,7 +60,7 @@ namespace Hatchit {
 
                 for (i = 0; i < m_swapchainBuffers.size(); i++)
                 {
-                    //vkDestroyImage(device, m_swapchainBuffers[i].image, nullptr);
+                    //vkDestroyImage(m_device, m_swapchainBuffers[i].image, nullptr);
                     vkDestroyImageView(m_device, m_swapchainBuffers[i].view, nullptr);
                     vkFreeCommandBuffers(m_device, m_commandPool, 1, &m_swapchainBuffers[i].command);
                 }
@@ -178,21 +178,125 @@ namespace Hatchit {
                 if (!prepareFramebuffers(swapchainExtent))
                     return false;
 
-                /*
-                    Allocate space for the swapchain command buffers
-                */
-                if (!allocateCommandBuffers())
+                return true;
+            }
+
+            bool VKSwapchain::VKPrepareResources()
+            {
+                VKRenderer* renderer = VKRenderer::RendererInstance;
+
+                VkResult err;
+
+                //Setup pipeline
+                Core::File vsFile;
+                vsFile.Open(Core::os_exec_dir() + "screen_VS.spv", Core::FileMode::ReadBinary);
+
+                Core::File fsFile;
+                fsFile.Open(Core::os_exec_dir() + "screen_FS.spv", Core::FileMode::ReadBinary);
+
+                VKShader vsShader;
+                vsShader.VInitFromFile(&vsFile);
+
+                VKShader fsShader;
+                fsShader.VInitFromFile(&fsFile);
+
+                RasterizerState rasterState = {};
+                rasterState.cullMode = CullMode::NONE;
+                rasterState.polygonMode = PolygonMode::SOLID;
+                rasterState.depthClampEnable = true;
+
+                MultisampleState multisampleState = {};
+                multisampleState.minSamples = 0;
+                multisampleState.samples = SAMPLE_1_BIT;
+
+                m_pipeline = new VKPipeline(&m_renderPass);
+                m_pipeline->VLoadShader(ShaderSlot::VERTEX, &vsShader);
+                m_pipeline->VLoadShader(ShaderSlot::FRAGMENT, &fsShader);
+                m_pipeline->VSetRasterState(rasterState);
+                m_pipeline->VSetMultisampleState(multisampleState);
+
+                //Prepare descriptor set layout
+
+                VkDescriptorSetLayoutBinding textureBinding = {};
+                textureBinding.binding = 0;
+                textureBinding.descriptorCount = 1;
+                textureBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                textureBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+                VkDescriptorSetLayoutCreateInfo descriptorLayoutInfo = {};
+                descriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+                descriptorLayoutInfo.bindingCount = 1;
+                descriptorLayoutInfo.pBindings = &textureBinding;
+
+                err = vkCreateDescriptorSetLayout(m_device, &descriptorLayoutInfo, nullptr, &m_descriptorSetLayout);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKSwapchain::prepareResources: Failed to create descriptor set layout\n");
+#endif
                     return false;
+                }
+
+                m_pipeline->SetVKDescriptorSetLayout(m_descriptorSetLayout);
+                m_pipeline->VPrepare();
+
+                //Setup the descriptor sets
+                VkDescriptorSetAllocateInfo allocInfo = {};
+                allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+                allocInfo.descriptorPool = renderer->GetVKDescriptorPool();
+                allocInfo.pSetLayouts = &m_descriptorSetLayout;
+                allocInfo.descriptorSetCount = 1;
+
+                err = vkAllocateDescriptorSets(m_device, &allocInfo, &m_descriptorSet);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKSwapchain::prepareResources: Failed to allocate descriptor set\n");
+#endif
+                    return false;
+                }
+
+                if (m_inputTexture != nullptr)
+                {
+                    Texture inputTexture = ((VKRenderTarget*)m_inputTexture)->GetVKTexture();
+
+                    // Image descriptor for the color map texture
+                    VkDescriptorImageInfo texDescriptor = {};
+                    texDescriptor.sampler = inputTexture.sampler;
+                    texDescriptor.imageView = inputTexture.image.view;
+                    texDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+                    VkWriteDescriptorSet uniformSampler2DWrite = {};
+                    uniformSampler2DWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                    uniformSampler2DWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                    uniformSampler2DWrite.dstSet = m_descriptorSet;
+                    uniformSampler2DWrite.dstBinding = 0;
+                    uniformSampler2DWrite.pImageInfo = &texDescriptor;
+                    uniformSampler2DWrite.descriptorCount = 1;
+
+                    vkUpdateDescriptorSets(m_device, 1, &uniformSampler2DWrite, 0, nullptr);
+                }
+
+                //Buffer 3 blank points
+                float blank[9] = { 0,0,0,0,0,0,0,0,0 };
+                if (!renderer->CreateBuffer(m_device, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 9, blank, &m_vertexBuffer))
+                    return false;
+
+                m_vertexBuffer.descriptor.offset = 0;
+                m_vertexBuffer.descriptor.range = 9;
 
                 return true;
             }
 
             bool VKSwapchain::BuildSwapchain(VkClearValue clearColor)
             {
+
                 /*
-                    Prepare pipeline, descriptor sets etc.
+                    Allocate space for the swapchain command buffers
                 */
-                if (!prepareResources())
+                if (!allocateCommandBuffers())
                     return false;
 
                 VkResult err;
@@ -531,6 +635,13 @@ namespace Hatchit {
                 m_postPresentCommands.resize(m_swapchainBuffers.size());
                 m_prePresentCommands.resize(m_swapchainBuffers.size());
 
+                for (int i = 0; i < m_swapchainBuffers.size(); i++)
+                {
+                    m_swapchainBuffers[i].command = VK_NULL_HANDLE;
+                    m_postPresentCommands[i] = VK_NULL_HANDLE;
+                    m_prePresentCommands[i] = VK_NULL_HANDLE;
+                }
+
                 return true;
             }
 
@@ -759,115 +870,6 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKSwapchain::prepareResources()
-            {
-                VKRenderer* renderer = VKRenderer::RendererInstance;
-
-                VkResult err;
-
-                //Setup pipeline
-                Core::File vsFile;
-                vsFile.Open(Core::os_exec_dir() + "screen_VS.spv", Core::FileMode::ReadBinary);
-
-                Core::File fsFile;
-                fsFile.Open(Core::os_exec_dir() + "screen_FS.spv", Core::FileMode::ReadBinary);
-
-                VKShader vsShader;
-                vsShader.VInitFromFile(&vsFile);
-
-                VKShader fsShader;
-                fsShader.VInitFromFile(&fsFile);
-
-                RasterizerState rasterState = {};
-                rasterState.cullMode = CullMode::NONE;
-                rasterState.polygonMode = PolygonMode::SOLID;
-                rasterState.depthClampEnable = true;
-
-                MultisampleState multisampleState = {};
-                multisampleState.minSamples = 0;
-                multisampleState.samples = SAMPLE_1_BIT;
-
-                m_pipeline = new VKPipeline(&m_renderPass);
-                m_pipeline->VLoadShader(ShaderSlot::VERTEX, &vsShader);
-                m_pipeline->VLoadShader(ShaderSlot::FRAGMENT, &fsShader);
-                m_pipeline->VSetRasterState(rasterState);
-                m_pipeline->VSetMultisampleState(multisampleState);
-
-                //Prepare descriptor set layout
-
-                VkDescriptorSetLayoutBinding textureBinding = {};
-                textureBinding.binding = 0;
-                textureBinding.descriptorCount = 1;
-                textureBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                textureBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-                VkDescriptorSetLayoutCreateInfo descriptorLayoutInfo = {};
-                descriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-                descriptorLayoutInfo.bindingCount = 1;
-                descriptorLayoutInfo.pBindings = &textureBinding;
-
-                err = vkCreateDescriptorSetLayout(m_device, &descriptorLayoutInfo, nullptr, &m_descriptorSetLayout);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKSwapchain::prepareResources: Failed to create descriptor set layout\n");
-#endif
-                    return false;
-                }
-
-                m_pipeline->SetVKDescriptorSetLayout(m_descriptorSetLayout);
-                m_pipeline->VPrepare();
-
-                //Setup the descriptor sets
-                VkDescriptorSetAllocateInfo allocInfo = {};
-                allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-                allocInfo.descriptorPool = renderer->GetVKDescriptorPool();
-                allocInfo.pSetLayouts = &m_descriptorSetLayout;
-                allocInfo.descriptorSetCount = 1;
-
-                err = vkAllocateDescriptorSets(m_device, &allocInfo, &m_descriptorSet);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKSwapchain::prepareResources: Failed to allocate descriptor set\n");
-#endif
-                    return false;
-                }
-
-                if (m_inputTexture != nullptr)
-                {
-                    Texture inputTexture = ((VKRenderTarget*)m_inputTexture)->GetVKTexture();
-
-                    // Image descriptor for the color map texture
-                    VkDescriptorImageInfo texDescriptor = {};
-                    texDescriptor.sampler = inputTexture.sampler;
-                    texDescriptor.imageView = inputTexture.image.view;
-                    texDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-                    VkWriteDescriptorSet uniformSampler2DWrite = {};
-                    uniformSampler2DWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                    uniformSampler2DWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                    uniformSampler2DWrite.dstSet = m_descriptorSet;
-                    uniformSampler2DWrite.dstBinding = 0;
-                    uniformSampler2DWrite.pImageInfo = &texDescriptor;
-                    uniformSampler2DWrite.descriptorCount = 1;
-
-                    vkUpdateDescriptorSets(m_device, 1, &uniformSampler2DWrite, 0, nullptr);
-                }
-
-                //Buffer 3 blank points
-                float blank[9] = {0,0,0,0,0,0,0,0,0};
-                if (!renderer->CreateBuffer(m_device, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 9, blank, &m_vertexBuffer))
-                    return false;
-
-                m_vertexBuffer.descriptor.offset = 0;
-                m_vertexBuffer.descriptor.range = 9;
-
-                return true;
-            }
-
             bool VKSwapchain::allocateCommandBuffers() 
             {
                 VkResult err;
@@ -881,6 +883,9 @@ namespace Hatchit {
 
                 for (uint32_t i = 0; i < m_swapchainBuffers.size(); i++)
                 {
+                    if (m_swapchainBuffers[i].command != VK_NULL_HANDLE)
+                        continue;
+
                     err = vkAllocateCommandBuffers(m_device, &allocateInfo, &m_swapchainBuffers[i].command);
                     assert(!err);
 
@@ -896,22 +901,51 @@ namespace Hatchit {
                 //Create command buffers for pre and post barriers
                 allocateInfo.commandBufferCount = static_cast<uint32_t>(m_swapchainBuffers.size());
 
-                err = vkAllocateCommandBuffers(m_device, &allocateInfo, m_postPresentCommands.data());
-                if (err != VK_SUCCESS)
+                size_t i;
+                bool commandsFree = true;
+
+                for (i = 0; i < m_postPresentCommands.size(); i++)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKSwapchain::allocateCommandBuffers(): Failed to allocate for post present barrier \n");
-#endif
-                    return false;
+                    if (m_postPresentCommands[i] != VK_NULL_HANDLE)
+                    {
+                        commandsFree = false;
+                        break;
+                    }
                 }
 
-                err = vkAllocateCommandBuffers(m_device, &allocateInfo, m_prePresentCommands.data());
-                if (err != VK_SUCCESS)
+                if (commandsFree)
                 {
+                    err = vkAllocateCommandBuffers(m_device, &allocateInfo, m_postPresentCommands.data());
+                    if (err != VK_SUCCESS)
+                    {
 #ifdef _DEBUG
-                    Core::DebugPrintF("VKSwapchain::allocateCommandBuffers(): Failed to allocate for pre present barrier \n");
+                        Core::DebugPrintF("VKSwapchain::allocateCommandBuffers(): Failed to allocate for post present barrier \n");
 #endif
-                    return false;
+                        return false;
+                    }
+                }
+
+                //Allocate prePresent commands if it won't cause a leak
+                commandsFree = true;
+                for (i = 0; i < m_prePresentCommands.size(); i++)
+                {
+                    if (m_prePresentCommands[i] != VK_NULL_HANDLE)
+                    {
+                        commandsFree = false;
+                        break;
+                    }
+                }
+
+                if (commandsFree)
+                {
+                    err = vkAllocateCommandBuffers(m_device, &allocateInfo, m_prePresentCommands.data());
+                    if (err != VK_SUCCESS)
+                    {
+#ifdef _DEBUG
+                        Core::DebugPrintF("VKSwapchain::allocateCommandBuffers(): Failed to allocate for pre present barrier \n");
+#endif
+                        return false;
+                    }
                 }
 
                 return true;

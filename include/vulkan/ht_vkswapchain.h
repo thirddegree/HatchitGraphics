@@ -58,6 +58,7 @@ namespace Hatchit {
                 ~VKSwapchain();
                 
                 bool VKPrepare(VkSurfaceKHR surface, VkColorSpaceKHR colorSpace);
+                bool VKPrepareResources();
 
                 bool BuildSwapchain(VkClearValue clearColor);
 
@@ -101,9 +102,6 @@ namespace Hatchit {
 
                 //Prepare the framebuffers for the swapchain images
                 bool prepareFramebuffers(VkExtent2D extents);
-
-                //Setup pipeline, etc
-                bool prepareResources();
 
                 //Allocate the command buffers
                 bool allocateCommandBuffers();

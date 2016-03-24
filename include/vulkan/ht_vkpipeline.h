@@ -82,7 +82,8 @@ namespace Hatchit {
                 VkPipeline                          GetVKPipeline();
                 VkPipelineLayout                    GetVKPipelineLayout();
                 std::vector<VkDescriptorSetLayout>  GetVKDescriptorSetLayouts();
-                VkDescriptorSet*                    GetVKDescriptorSet();
+                
+                void SendPushConstants(VkCommandBuffer commandBuffer);
 
             protected:
                 //Input
@@ -96,15 +97,13 @@ namespace Hatchit {
                 std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts; //0 is this pipeline set layout, 1 is the material set layout
                 VkPipelineLayout        m_pipelineLayout;
 
-                VkDescriptorSet m_descriptorSet; //Collection of shader variables
-                UniformBlock    m_uniformVSBlock;
-
                 VkPipelineCache m_pipelineCache;
                 VkPipeline      m_pipeline;
 
+                std::vector<float> m_matrixPushData;
+
             private:
                 bool prepareLayouts(VkDevice device);
-                bool prepareDescriptorSet(VkDescriptorPool descriptorPool, VkDevice device);
                 bool preparePipeline(VkDevice device);
             };
         }

@@ -51,13 +51,28 @@ namespace Hatchit {
 
         void IRenderPass::BuildRenderRequestHeirarchy() 
         {
-            for (uint32_t i = 0; i < m_renderRequests.size(); i++)
+            uint32_t i;
+
+            //Clear past pipeline requests
+            for (i = 0; i < m_renderRequests.size(); i++)
+            {
+                RenderRequest renderRequest = m_renderRequests[i];
+
+                IPipeline* pipeline = renderRequest.pipeline;
+
+                m_pipelineList[pipeline].clear();
+            }
+
+            //Build new requests
+            for (i = 0; i < m_renderRequests.size(); i++)
             {
                 RenderRequest renderRequest = m_renderRequests[i];
 
                 IPipeline* pipeline = renderRequest.pipeline;
                 IMaterial* material = renderRequest.material;
                 IMesh* mesh = renderRequest.mesh;
+
+                m_pipelineList[pipeline].clear();
 
                 m_pipelineList[pipeline].push_back({material, mesh});
             }
