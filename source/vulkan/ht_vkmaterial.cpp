@@ -14,6 +14,7 @@
 
 #include <ht_vkmaterial.h>
 #include <ht_vkshader.h>
+#include <ht_vktexture.h>
 #include <ht_vkrenderer.h>
 #include <ht_vkpipeline.h>
 
@@ -48,16 +49,8 @@ namespace Hatchit {
 
                 //TODO: Destroy FS buffer
 
-                //TODO: Destroy textures
             }
 
-            void VKMaterial::VOnLoaded()
-            {
-                //TODO: Read the material file and set the appropriate shader variables
-
-                
-
-            }
             bool VKMaterial::VInitFromFile(Core::File* file) { return true; }
 
             bool VKMaterial::VSetInt(std::string name, int data)
@@ -173,12 +166,13 @@ namespace Hatchit {
                 }
 
                 std::vector<VkWriteDescriptorSet> descSetWrites = {};
+                uint32_t descCount = 0;
 
                 VkWriteDescriptorSet uniformVSWrite = {};
                 uniformVSWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                 uniformVSWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                 uniformVSWrite.dstSet = m_materialSet;
-                uniformVSWrite.dstBinding = 0;
+                uniformVSWrite.dstBinding = descCount++;
                 uniformVSWrite.pBufferInfo = &m_uniformVSBuffer.descriptor;
                 uniformVSWrite.descriptorCount = 1;
 
@@ -186,14 +180,35 @@ namespace Hatchit {
                 //uniformFSWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                 //uniformFSWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                 //uniformFSWrite.dstSet = m_materialSet;
-                //uniformFSWrite.dstBinding = 1;
+                //uniformFSWrite.dstBinding = descCount++;
                 //uniformFSWrite.pBufferInfo = &m_uniformFSBuffer.descriptor;
                 //uniformFSWrite.descriptorCount = 1;
 
-                //TODO: Figure out the writes for the textures
-
                 descSetWrites.push_back(uniformVSWrite);
                 //descSetWrites.push_back(uniformFSWrite);
+
+                //Setup writes for textures
+                std::map<std::string, ITexture*>::iterator it;
+                for (it = m_textures.begin(); it != m_textures.end(); it++)
+                {
+                    VKTexture* texture = static_cast<VKTexture*>(it->second);
+
+                    //Create Texture description
+                    VkDescriptorImageInfo textureDescriptor = {};
+                    textureDescriptor.sampler = texture->GetSampler();
+                    textureDescriptor.imageView = texture->GetView();
+                    textureDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+                    VkWriteDescriptorSet samplerFSWrite = {};
+                    samplerFSWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                    samplerFSWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                    samplerFSWrite.dstSet = m_materialSet;
+                    samplerFSWrite.dstBinding = descCount++;
+                    samplerFSWrite.pImageInfo = &textureDescriptor;
+                    samplerFSWrite.descriptorCount = 1;
+
+                    descSetWrites.push_back(samplerFSWrite);
+                }
 
                 vkUpdateDescriptorSets(device, static_cast<uint32_t>(descSetWrites.size()), descSetWrites.data(), 0, nullptr);
 

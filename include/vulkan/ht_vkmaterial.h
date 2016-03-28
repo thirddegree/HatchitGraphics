@@ -42,7 +42,6 @@ namespace Hatchit {
                 ~VKMaterial();
 
                 ///Callback for when this VKMaterial has been loaded from the disk. Used to build shader variable list
-                void VOnLoaded()                                            override;
                 bool VInitFromFile(Core::File* file)                        override;
 
                 bool VSetInt(std::string name, int data)                    override;

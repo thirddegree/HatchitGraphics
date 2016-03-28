@@ -14,20 +14,37 @@
 
 #pragma once
 
+#include <ht_debug.h>
 #include <ht_platform.h>
-#include <ht_resourceobject.h>
+#include <ht_sampler.h>
+#include <cassert>
 
 namespace Hatchit {
 
     namespace Graphics {
-        
+
         class HT_API ITexture : public Resource::ResourceObject
         {
         public:
             virtual ~ITexture() { }
         
-            virtual size_t VGetWidth()  const = 0;
-            virtual size_t VGetHeight() const = 0;
+            void SetSampler(ISampler* sampler);
+
+            bool VInitFromFile(Core::File* file) override;
+
+            uint32_t GetWidth()  const;
+            uint32_t GetHeight() const;
+
+        protected:
+            virtual bool VBufferImage() = 0;
+
+            uint32_t m_width, m_height;
+            uint32_t m_mipLevels;
+            uint8_t m_bpp, m_channels;
+
+            const BYTE* m_data;
+
+            ISampler* m_sampler;
         };
     }
 }

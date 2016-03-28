@@ -34,7 +34,6 @@ namespace Hatchit {
                 vkDestroyPipelineLayout(device, m_pipelineLayout, nullptr);
                 vkDestroyPipelineCache(device, m_pipelineCache, nullptr);
 
-                //vkFreeDescriptorSets(m_device, );
                 for (size_t i = 0; i < m_descriptorSetLayouts.size(); i++)
                     vkDestroyDescriptorSetLayout(device, m_descriptorSetLayouts[i], nullptr);
             }
@@ -243,17 +242,6 @@ namespace Hatchit {
                 if (!prepareLayouts(device))
                     return false;
 
-                if (!useGivenLayout)
-                {
-                    //TODO: Actually figure out how big this needs to be
-                    renderer->CreateBuffer(device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, sizeof(Math::Matrix4) * 2, nullptr, &m_uniformVSBlock);
-
-                    m_uniformVSBlock.descriptor.offset = 0;
-                    m_uniformVSBlock.descriptor.range = sizeof(Math::Matrix4) * 2;
-
-                    if (!prepareDescriptorSet(descriptorPool, device))
-                        return false;
-                }
 
                 if (!preparePipeline(device))
                     return false;
@@ -263,12 +251,9 @@ namespace Hatchit {
 
             bool VKPipeline::VUpdate()
             {
+                //TODO: Organize push constant data other than just matricies
                 if (m_shaderVariables.size() == 0)
                     return true;
-
-                VkDevice device = VKRenderer::RendererInstance->GetVKDevice();
-
-                uint8_t* pData;
 
                 std::vector<Math::Matrix4> variableList;
 
@@ -276,12 +261,13 @@ namespace Hatchit {
                 for (it = m_shaderVariables.begin(); it != m_shaderVariables.end(); it++)
                     variableList.push_back(*(Math::Matrix4*)(it->second->GetData()));
 
-                VkResult err = vkMapMemory(device, m_uniformVSBlock.memory, 0, sizeof(m_shaderVariables), 0, (void**)&pData);
-                assert(!err);
+                m_matrixPushData.resize(variableList.size() * 16);
 
-                memcpy(pData, variableList.data(), sizeof(Math::Matrix4) * 2);
-                
-                vkUnmapMemory(device, m_uniformVSBlock.memory);
+                for (size_t i = 0; i < variableList.size(); i++)
+                {
+                    Math::Matrix4 mat = variableList[i];
+                    memcpy(m_matrixPushData.data() + (16 * i), static_cast<void*>(variableList[i].data), sizeof(float) * 16);
+                }
 
                 return true;
             }
@@ -313,15 +299,23 @@ namespace Hatchit {
 
                     perPassBindings.push_back(perPassBinding);
 
-                    //Per model binding point
-                    VkDescriptorSetLayoutBinding perObjectBinding = {};
-                    perObjectBinding.binding = 0;
-                    perObjectBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                    perObjectBinding.descriptorCount = 1;
-                    perObjectBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-                    perObjectBinding.pImmutableSamplers = nullptr;
+                    //Per model binding points
+                    VkDescriptorSetLayoutBinding perObjectVSBinding = {};
+                    perObjectVSBinding.binding = 0;
+                    perObjectVSBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                    perObjectVSBinding.descriptorCount = 1;
+                    perObjectVSBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+                    perObjectVSBinding.pImmutableSamplers = nullptr;
 
-                    perObjectBindings.push_back(perObjectBinding);
+                    VkDescriptorSetLayoutBinding perObjectFSBinding = {};
+                    perObjectFSBinding.binding = 1;
+                    perObjectFSBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                    perObjectFSBinding.descriptorCount = 1;
+                    perObjectFSBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+                    perObjectFSBinding.pImmutableSamplers = nullptr;
+
+                    perObjectBindings.push_back(perObjectVSBinding);
+                    perObjectBindings.push_back(perObjectFSBinding);
 
                     VkDescriptorSetLayoutCreateInfo perPassDescriptorLayoutInfo = {};
                     perPassDescriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -358,12 +352,27 @@ namespace Hatchit {
                     }
                 }
 
+                uint32_t matSize = 16 * sizeof(float);
+
+                std::vector<VkPushConstantRange> pushConstantRanges;
+                pushConstantRanges.resize(2);
+
+                pushConstantRanges[0].offset = 0;
+                pushConstantRanges[0].size = matSize;
+                pushConstantRanges[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+                pushConstantRanges[1].offset = matSize;
+                pushConstantRanges[1].size = matSize;
+                pushConstantRanges[1].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
                 //Pipeline layout 
                 VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
                 pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
                 pipelineLayoutInfo.pNext = nullptr;
                 pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(m_descriptorSetLayouts.size());
                 pipelineLayoutInfo.pSetLayouts = m_descriptorSetLayouts.data();
+                pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size());
+                pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data();
 
                 err = vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout);
                 assert(!err);
@@ -374,44 +383,6 @@ namespace Hatchit {
 #endif
                     return false;
                 }
-
-                return true;
-            }
-
-            bool VKPipeline::prepareDescriptorSet(VkDescriptorPool descriptorPool, VkDevice device)
-            {
-                VkResult err;
-
-                //Setup the descriptor sets
-                VkDescriptorSetAllocateInfo allocInfo = {};
-                allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-                allocInfo.descriptorPool = descriptorPool;
-                allocInfo.descriptorSetCount = 1;
-                allocInfo.pSetLayouts = &m_descriptorSetLayouts[0];
-
-                err = vkAllocateDescriptorSets(device, &allocInfo, &m_descriptorSet);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKPipeline::prepareDescriptorSet: Failed to allocate descriptor set\n");
-#endif
-                    return false;
-                }
-
-                std::vector<VkWriteDescriptorSet> descSetWrites = {};
-
-                VkWriteDescriptorSet perPassVSWrite = {};
-                perPassVSWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                perPassVSWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                perPassVSWrite.dstSet = m_descriptorSet;
-                perPassVSWrite.dstBinding = 0;
-                perPassVSWrite.pBufferInfo = &m_uniformVSBlock.descriptor;
-                perPassVSWrite.descriptorCount = 1;
-
-                descSetWrites.push_back(perPassVSWrite);
-
-                vkUpdateDescriptorSets(device, static_cast<uint32_t>(descSetWrites.size()), descSetWrites.data(), 0, nullptr);
 
                 return true;
             }
@@ -490,7 +461,7 @@ namespace Hatchit {
                 //Depth and stencil states
                 VkPipelineDepthStencilStateCreateInfo depthStencilState = {};
                 depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-                depthStencilState.pNext = &vertexInputState;
+                depthStencilState.pNext = nullptr;
                 depthStencilState.depthTestEnable = VK_TRUE;
                 depthStencilState.depthWriteEnable = VK_TRUE;
                 depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
@@ -500,6 +471,7 @@ namespace Hatchit {
                 depthStencilState.back.compareOp = VK_COMPARE_OP_ALWAYS;
                 depthStencilState.stencilTestEnable = VK_FALSE;
                 depthStencilState.front = depthStencilState.back;
+                depthStencilState.front.compareOp = VK_COMPARE_OP_NEVER;
 
                 //Finalize pipeline
                 VkGraphicsPipelineCreateInfo pipelineInfo = {};
@@ -545,10 +517,16 @@ namespace Hatchit {
                 return true;
             }
 
-            VkPipeline                          VKPipeline::GetVKPipeline() { return m_pipeline; }
-            VkPipelineLayout                    VKPipeline::GetVKPipelineLayout() { return m_pipelineLayout; }
+            VkPipeline                          VKPipeline::GetVKPipeline()             { return m_pipeline; }
+            VkPipelineLayout                    VKPipeline::GetVKPipelineLayout()       { return m_pipelineLayout; }
             std::vector<VkDescriptorSetLayout>  VKPipeline::GetVKDescriptorSetLayouts() { return m_descriptorSetLayouts; }
-            VkDescriptorSet*                    VKPipeline::GetVKDescriptorSet() { return &m_descriptorSet; }
+
+            void VKPipeline::SendPushConstants(VkCommandBuffer commandBuffer)
+            {
+                //Send a push for each type of data to send; vectors, matricies, ints etc.
+                uint32_t dataSize = static_cast<uint32_t>(m_matrixPushData.size() * sizeof(float));
+                vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, dataSize, m_matrixPushData.data());
+            }
         }
     }
 }

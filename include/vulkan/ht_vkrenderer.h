@@ -136,11 +136,15 @@ namespace Hatchit {
                 VkDescriptorPool                        m_descriptorPool;
                 
                 VkSemaphore                             m_presentSemaphore;
+                VkSemaphore                             m_renderSemaphore;
+                VkSubmitInfo                            m_submitInfo;
 
                 VkClearValue                            m_clearColor;
 
                 IRenderTarget* m_renderTarget;
                 IMaterial* m_material;
+                ITexture* m_texture;
+                ISampler* m_sampler;
 
                 float m_angle = 0;
 

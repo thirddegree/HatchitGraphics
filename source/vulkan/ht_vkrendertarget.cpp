@@ -92,10 +92,6 @@ namespace Hatchit {
                 renderer->SetImageLayout(buffer, m_color.image, VK_IMAGE_ASPECT_COLOR_BIT,
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
-                //Transfrom texture target to the transfer source
-                renderer->SetImageLayout(buffer, m_texture.image.image, VK_IMAGE_ASPECT_COLOR_BIT,
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-
                 VkImageBlit blit;
 
                 blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -124,9 +120,6 @@ namespace Hatchit {
                 //Transform textures back
                 renderer->SetImageLayout(buffer, m_color.image, VK_IMAGE_ASPECT_COLOR_BIT,
                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
-                renderer->SetImageLayout(buffer, m_texture.image.image, VK_IMAGE_ASPECT_COLOR_BIT,
-                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
                 return true;
             }
@@ -157,8 +150,7 @@ namespace Hatchit {
                 imageInfo.pNext = nullptr;
                 imageInfo.format = m_colorFormat;
                 imageInfo.imageType = VK_IMAGE_TYPE_2D;
-                imageInfo.extent.width = m_width;
-                imageInfo.extent.height = m_height;
+                imageInfo.extent = { m_width, m_height, 1 };
                 imageInfo.mipLevels = 1;
                 imageInfo.arrayLayers = 1;
                 imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -246,8 +238,7 @@ namespace Hatchit {
                 }
 
                 viewInfo.format = m_depthFormat;
-                viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                viewInfo.image = m_depth.image;
+                viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 
                 vkGetImageMemoryRequirements(device, m_depth.image, &memReqs);
                 memAllocInfo.allocationSize = memReqs.size;
@@ -272,8 +263,12 @@ namespace Hatchit {
                     return false;
                 }
 
-                renderer->SetImageLayout(setupCommand, m_depth.image, VK_IMAGE_ASPECT_DEPTH_BIT,
-                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+                renderer->SetImageLayout(setupCommand, m_depth.image,
+                    VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+                    VK_IMAGE_LAYOUT_UNDEFINED,
+                    VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
+                viewInfo.image = m_depth.image;
 
                 err = vkCreateImageView(device, &viewInfo, nullptr, &m_depth.view);
                 if (err != VK_SUCCESS)
@@ -283,6 +278,8 @@ namespace Hatchit {
 #endif
                     return false;
                 }
+
+                renderer->FlushSetupCommandBuffer();
 
                 //Finally create internal framebuffer
                 VkImageView attachments[2];
@@ -308,8 +305,6 @@ namespace Hatchit {
 #endif
                     return false;
                 }
-
-                renderer->FlushSetupCommandBuffer();
 
                 return true;
             }
@@ -342,6 +337,7 @@ namespace Hatchit {
 
                 VkImageCreateInfo imageCreateInfo = {};
                 imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+                imageCreateInfo.pNext = nullptr;
                 imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
                 imageCreateInfo.format = m_colorFormat;
                 imageCreateInfo.extent = { m_width, m_height, 1 };
@@ -370,7 +366,16 @@ namespace Hatchit {
                 vkGetImageMemoryRequirements(device, m_texture.image.image, &memReqs);
                 memAllocInfo.allocationSize = memReqs.size;
 
-                renderer->MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memAllocInfo.memoryTypeIndex);
+                bool success = renderer->MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memAllocInfo.memoryTypeIndex);
+                assert(success);
+                if (!success)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKTexture::VBufferImage(): Failed to find memory properties!\n");
+#endif
+                    return false;
+                }
+
 
                 err = vkAllocateMemory(device, &memAllocInfo, nullptr, &m_texture.image.memory);
                 assert(!err);

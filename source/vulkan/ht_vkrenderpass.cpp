@@ -25,28 +25,29 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKRenderPass::VKRenderPass() {}
+            VKRenderPass::VKRenderPass(VkDevice& device, VkCommandPool& commandPool) :
+                m_device(device), m_commandPool(commandPool)
+            {
+                m_device = device;
+                m_commandPool = commandPool;
+
+                m_commandBuffer = VK_NULL_HANDLE;
+            }
             VKRenderPass::~VKRenderPass() 
             {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
 
-                VkDevice device = renderer->GetVKDevice();
-                VkCommandPool commandPool = renderer->GetVKCommandPool();
-
                 //Destroy the command buffers
                 if(m_commandBuffer != VK_NULL_HANDLE)
-                    vkFreeCommandBuffers(device, commandPool, 1, &m_commandBuffer);
+                    vkFreeCommandBuffers(m_device, m_commandPool, 1, &m_commandBuffer);
 
                 //Destroy the render pass
-                vkDestroyRenderPass(device, m_renderPass, nullptr);
+                vkDestroyRenderPass(m_device, m_renderPass, nullptr);
             }
 
             bool VKRenderPass::VPrepare()
             {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
-
-                VkDevice device = renderer->GetVKDevice();
-                VkCommandPool commandPool = renderer->GetVKCommandPool();
 
                 //Setup render pass
 
@@ -71,15 +72,15 @@ namespace Hatchit {
                 attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
                 attachments[1].flags = 0;
 
-                VkAttachmentReference colorReference;
+                VkAttachmentReference colorReference = {};
                 colorReference.attachment = 0;
                 colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-                VkAttachmentReference depthReference;
+                VkAttachmentReference depthReference = {};
                 depthReference.attachment = 1;
                 depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-                VkSubpassDescription subpass;
+                VkSubpassDescription subpass = {};
                 subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
                 subpass.flags = 0;
                 subpass.inputAttachmentCount = 0;
@@ -91,7 +92,7 @@ namespace Hatchit {
                 subpass.preserveAttachmentCount = 0;
                 subpass.pPreserveAttachments = nullptr;
 
-                VkRenderPassCreateInfo renderPassInfo;
+                VkRenderPassCreateInfo renderPassInfo = {};
                 renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
                 renderPassInfo.pNext = nullptr;
                 renderPassInfo.attachmentCount = 2;
@@ -104,29 +105,12 @@ namespace Hatchit {
 
                 VkResult err;
 
-                err = vkCreateRenderPass(device, &renderPassInfo, nullptr, &m_renderPass);
+                err = vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
 #ifdef _DEBUG
                     Core::DebugPrintF("VKRenderer::prepareDescriptorLayout(): Failed to create render pass\n");
-#endif
-                    return false;
-                }
-
-                //Create internal command buffer
-                VkCommandBufferAllocateInfo cmdBufferAllocInfo = {};
-                cmdBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-                cmdBufferAllocInfo.commandPool = commandPool;
-                cmdBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-                cmdBufferAllocInfo.commandBufferCount = 1;
-                
-                err = vkAllocateCommandBuffers(device, &cmdBufferAllocInfo, &m_commandBuffer);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::prepareDescriptorLayout(): Failed to allocate command buffer\n");
 #endif
                     return false;
                 }
@@ -137,21 +121,14 @@ namespace Hatchit {
             ///Render the scene
             void VKRenderPass::VUpdate()
             {
-                //Update info that the pipelines need
-                std::map<IPipeline*, std::vector<Renderable>>::iterator iterator;
-
-                for (iterator = m_pipelineList.begin(); iterator != m_pipelineList.end(); iterator++)
-                {
-                    IPipeline* pipeline = iterator->first;
-
-                    pipeline->VSetMatrix4("pass.view", m_view);
-                    pipeline->VSetMatrix4("pass.proj", m_proj);
-                }
                 
             }
 
             bool VKRenderPass::VBuildCommandList() 
             {
+                if (!allocateCommandBuffer())
+                    return false;
+
                 //Setup the order of the commands we will issue in the command list
                 BuildRenderRequestHeirarchy();
 
@@ -177,8 +154,8 @@ namespace Hatchit {
                 beginInfo.pInheritanceInfo = &inheritanceInfo;
 
                 VkClearValue clearValues[2] = {};
-                clearValues[0] = m_clearColor;
-                clearValues[1] = {1.0f, 0.0f};
+                clearValues[0].color = m_clearColor.color;
+                clearValues[1].depthStencil = { 1.0f, 0 };
 
                 VkRenderPassBeginInfo renderPassBeginInfo = {};
                 renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -229,14 +206,15 @@ namespace Hatchit {
                 {
                     VKPipeline* pipeline = static_cast<VKPipeline*>(iterator->first);
 
+                    pipeline->VSetMatrix4("pass.proj", m_proj);
+                    pipeline->VSetMatrix4("pass.view", m_view);
+                    pipeline->VUpdate();
+
                     VkPipeline vkPipeline = pipeline->GetVKPipeline();
                     VkPipelineLayout vkPipelineLayout = pipeline->GetVKPipelineLayout();
-                    VkDescriptorSet* vkPipelineDescriptorSet = pipeline->GetVKDescriptorSet();
 
                     vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetVKPipeline());
-                    
-                    vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                        vkPipelineLayout, 0, 1, vkPipelineDescriptorSet, 0, nullptr);
+                    pipeline->SendPushConstants(m_commandBuffer);
 
                     std::vector<Renderable> renderables = iterator->second;
 
@@ -255,7 +233,7 @@ namespace Hatchit {
                         UniformBlock vertBlock = mesh->GetVertexBlock();
                         UniformBlock indexBlock = mesh->GetIndexBlock();
                         uint32_t indexCount = mesh->GetIndexCount();
-                    
+
                         vkCmdBindVertexBuffers(m_commandBuffer, 0, 1, &vertBlock.buffer, offsets);
                         vkCmdBindIndexBuffer(m_commandBuffer, indexBlock.buffer, 0, VK_INDEX_TYPE_UINT32);
                         vkCmdDrawIndexed(m_commandBuffer, indexCount, 1, 0, 0, 0);
@@ -297,6 +275,33 @@ namespace Hatchit {
             VkCommandBuffer VKRenderPass::GetVkCommandBuffer() { return m_commandBuffer; }
 
             const VkRenderPass* VKRenderPass::GetVkRenderPass() { return &m_renderPass; }
+
+            bool VKRenderPass::allocateCommandBuffer()
+            {
+                VkResult err;
+
+                if (m_commandBuffer != VK_NULL_HANDLE)
+                    return true;
+
+                //Create internal command buffer
+                VkCommandBufferAllocateInfo cmdBufferAllocInfo = {};
+                cmdBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+                cmdBufferAllocInfo.commandPool = m_commandPool;
+                cmdBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+                cmdBufferAllocInfo.commandBufferCount = 1;
+
+                err = vkAllocateCommandBuffers(m_device, &cmdBufferAllocInfo, &m_commandBuffer);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+#ifdef _DEBUG
+                    Core::DebugPrintF("VKRenderer::prepareDescriptorLayout(): Failed to allocate command buffer\n");
+#endif
+                    return false;
+                }
+
+                return true;
+            }
         }
     }
 }

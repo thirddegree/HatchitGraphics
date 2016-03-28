@@ -17,6 +17,8 @@
 #include <ht_vkshader.h>
 #include <ht_vkpipeline.h>
 #include <ht_vkmaterial.h>
+#include <ht_vksampler.h>
+#include <ht_vktexture.h>
 #include <ht_vkmeshrenderer.h>
 #include <ht_vkrendertarget.h>
 #include <ht_debug.h>
@@ -89,6 +91,8 @@ namespace Hatchit {
                 //vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 
                 delete m_renderTarget;
+                delete m_texture;
+                delete m_sampler;
                 
                 std::map<IPipeline*, std::vector<Renderable>>::iterator it;
                 for (it = m_pipelineList.begin(); it != m_pipelineList.end(); it++)
@@ -123,6 +127,9 @@ namespace Hatchit {
                 
                 m_renderPasses.clear();
 
+                vkDestroySemaphore(m_device, m_presentSemaphore, nullptr);
+                vkDestroySemaphore(m_device, m_renderSemaphore, nullptr);
+
                 vkDestroyCommandPool(m_device, m_commandPool, nullptr);
                 vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
 
@@ -150,15 +157,7 @@ namespace Hatchit {
             {
                 VkResult err;
                 
-                VkSemaphoreCreateInfo presentCompleteSemaphoreInfo = {};
-                presentCompleteSemaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-                presentCompleteSemaphoreInfo.pNext = nullptr;
-                presentCompleteSemaphoreInfo.flags = 0;
-
                 VkFence nullFence = VK_NULL_HANDLE;
-
-                err = vkCreateSemaphore(m_device, &presentCompleteSemaphoreInfo, nullptr, &m_presentSemaphore);
-                assert(!err);
 
                 //Get the next image to draw on
                 //TODO: Actually use fences
@@ -167,7 +166,6 @@ namespace Hatchit {
                 {
                     //Resize!
                     VResizeBuffers(m_width, m_height); //TODO: find a better way to resize
-                    vkDestroySemaphore(m_device, m_presentSemaphore, nullptr);
                     return;
                 }
                 else if (err == VK_SUBOPTIMAL_KHR) 
@@ -185,6 +183,11 @@ namespace Hatchit {
             {
                 //TODO: Determine which physical device and thread are best to render with
 
+                m_swapchain->BuildSwapchain(m_clearColor);
+
+                bool success = m_swapchain->VKPostPresentBarrier(m_queue);
+                assert(success);
+
                 //Get list of command buffers
                 std::vector<VkCommandBuffer> commandBuffers;
 
@@ -192,6 +195,7 @@ namespace Hatchit {
                 {
                     VKRenderPass* renderPass = static_cast<VKRenderPass*>(m_renderPasses[i]);
 
+                    renderPass->VBuildCommandList();
                     commandBuffers.push_back(renderPass->GetVkCommandBuffer());
                 }
 
@@ -199,35 +203,31 @@ namespace Hatchit {
                 commandBuffers.push_back(m_swapchain->GetCurrentCommand());
 
                 //Example code for rotation
+                Math::Matrix4 scale = Math::MMMatrixScale(Math::Vector3(0.02f, 0.02f, 0.02f));
                 Math::Matrix4 rot = Math::MMMatrixRotationXYZ(Math::Vector3(0, m_angle += dt, 0));
-                Math::Matrix4 mat = Math::MMMatrixTranspose(rot * Math::MMMatrixTranslation(Math::Vector3(0, 0, 0)));
+                Math::Matrix4 trans = Math::MMMatrixTranslation(Math::Vector3(0, -30, 0));
+                Math::Matrix4 mat = Math::MMMatrixTranspose(rot * (scale * trans));
 
                 m_material->VSetMatrix4("object.model", mat);
                 m_material->VUpdate();
 
                 VkResult err;
 
-                VkPipelineStageFlags pipelineStageFlags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-                VkSubmitInfo submitInfo = {};
-                submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-                submitInfo.pNext = nullptr;
-                submitInfo.waitSemaphoreCount = 1;
-                submitInfo.pWaitSemaphores = &m_presentSemaphore;
-                submitInfo.pWaitDstStageMask = &pipelineStageFlags;
-                submitInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
-                submitInfo.pCommandBuffers = commandBuffers.data();
-                submitInfo.signalSemaphoreCount = 0;
-                submitInfo.pSignalSemaphores = nullptr;
+                m_submitInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
+                m_submitInfo.pCommandBuffers = commandBuffers.data();
 
-                err = vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE);
+                err = vkQueueSubmit(m_queue, 1, &m_submitInfo, VK_NULL_HANDLE);
                 assert(!err);
+
+                success = m_swapchain->VKPrePresentBarrier(m_queue);
+                assert(success);
             }
 
             void VKRenderer::VPresent()
             {
                 VkResult err;
 
-                err = m_swapchain->VKPresent(m_queue);
+                err = m_swapchain->VKPresent(m_queue, m_renderSemaphore);
                 if (err == VK_ERROR_OUT_OF_DATE_KHR)
                     VResizeBuffers(m_width, m_height);
                 else if (err == VK_SUBOPTIMAL_KHR)
@@ -240,7 +240,8 @@ namespace Hatchit {
                 err = vkQueueWaitIdle(m_queue);
                 assert(!err);
 
-                vkDestroySemaphore(m_device, m_presentSemaphore, nullptr);
+                //Reset command buffer memory back to this command pool
+                vkResetCommandPool(m_device, m_commandPool, 0);
             }
 
             VkPhysicalDevice VKRenderer::GetVKPhysicalDevice() 
@@ -279,7 +280,7 @@ namespace Hatchit {
             }
             VkFormat VKRenderer::GetPreferredDepthFormat() 
             {
-                return VK_FORMAT_D16_UNORM;
+                return VK_FORMAT_D32_SFLOAT_S8_UINT;
             }
 
             bool VKRenderer::initVulkan(const RendererParams& params) 
@@ -465,6 +466,28 @@ namespace Hatchit {
 
                 m_swapchain = new VKSwapchain(m_instance, m_gpu, m_device, m_commandPool);
 
+                //Setup semaphores and submission info
+                VkSemaphoreCreateInfo semaphoreCreateInfo = {};
+                semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+                semaphoreCreateInfo.pNext = nullptr;
+                semaphoreCreateInfo.flags = 0;
+
+                err = vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_presentSemaphore);
+                assert(!err);
+
+                err = vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_renderSemaphore);
+                assert(!err);
+
+                VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+
+                m_submitInfo = {};
+                m_submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+                m_submitInfo.pWaitDstStageMask = &stageFlags;
+                m_submitInfo.waitSemaphoreCount = 1;
+                m_submitInfo.pWaitSemaphores = &m_presentSemaphore;
+                m_submitInfo.signalSemaphoreCount = 1;
+                m_submitInfo.pSignalSemaphores = &m_renderSemaphore;
+
                 return true;
             }
 
@@ -474,10 +497,7 @@ namespace Hatchit {
                 VkResult err;
 
                 /**
-                * Vulkan:
-                *
                 * Check the following requested Vulkan layers against available layers
-                *
                 */
                 VkBool32 validationFound = 0;
                 uint32_t instanceLayerCount = 0;
@@ -485,7 +505,7 @@ namespace Hatchit {
                 assert(!err);
 
                 m_enabledLayerNames = {
-                    "VK_LAYER_LUNARG_threading",      "VK_LAYER_LUNARG_mem_tracker",
+                    "VK_LAYER_GOOGLE_threading",      "VK_LAYER_LUNARG_mem_tracker",
                     "VK_LAYER_LUNARG_object_tracker", "VK_LAYER_LUNARG_draw_state",
                     "VK_LAYER_LUNARG_param_checker",  "VK_LAYER_LUNARG_swapchain",
                     "VK_LAYER_LUNARG_device_limits",  "VK_LAYER_LUNARG_image",
@@ -1179,7 +1199,7 @@ namespace Hatchit {
                 FlushSetupCommandBuffer();
 
                 //TODO: remove this test code
-                VKRenderPass* renderPass = new VKRenderPass();
+                VKRenderPass* renderPass = new VKRenderPass(m_device, m_commandPool);
                 renderPass->SetWidth(m_width);
                 renderPass->SetHeight(m_height);
                 renderPass->VSetClearColor(Color(m_clearColor.color.float32[0], m_clearColor.color.float32[1], m_clearColor.color.float32[2], m_clearColor.color.float32[3]));
@@ -1195,16 +1215,29 @@ namespace Hatchit {
                 m_swapchain->SetIncomingRenderTarget(m_renderTarget);
 
                 Core::File meshFile;
-                meshFile.Open(Core::os_exec_dir() + "monkey.obj", Core::FileMode::ReadBinary);
+                meshFile.Open(Core::os_exec_dir() + "Raptor.obj", Core::FileMode::ReadBinary);
+
+                Core::File textureFile;
+                textureFile.Open(Core::os_exec_dir() + "raptor.png", Core::FileMode::ReadBinary);
 
                 Core::File vsFile;
-                vsFile.Open(Core::os_exec_dir() + "monkey_VS.spv", Core::FileMode::ReadBinary);
+                vsFile.Open(Core::os_exec_dir() + "raptor_VS.spv", Core::FileMode::ReadBinary);
 
                 Core::File fsFile;
-                fsFile.Open(Core::os_exec_dir() + "monkey_FS.spv", Core::FileMode::ReadBinary);
+                fsFile.Open(Core::os_exec_dir() + "raptor_FS.spv", Core::FileMode::ReadBinary);
 
                 Resource::Model model;
                 model.VInitFromFile(&meshFile);
+
+                CreateSetupCommandBuffer();
+
+                m_sampler = new VKSampler(m_device);
+                m_sampler->SetColorSpace(ColorSpace::GAMMA);
+                m_sampler->VPrepare();
+
+                m_texture = new VKTexture(m_device);
+                m_texture->SetSampler(m_sampler);
+                m_texture->VInitFromFile(&textureFile);
 
                 VKShader vsShader;
                 vsShader.VInitFromFile(&vsFile);
@@ -1215,6 +1248,7 @@ namespace Hatchit {
                 RasterizerState rasterState = {};
                 rasterState.cullMode = CullMode::NONE;
                 rasterState.polygonMode = PolygonMode::SOLID;
+                rasterState.depthClampEnable = true;
 
                 MultisampleState multisampleState = {};
                 multisampleState.minSamples = 0;
@@ -1222,7 +1256,7 @@ namespace Hatchit {
 
                 Math::Matrix4 view = Math::MMMatrixTranspose(Math::MMMatrixLookAt(Math::Vector3(0, 0, -5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0)));
 
-                Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.5f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f));
+                Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f));
 
                 IPipeline* pipeline = new VKPipeline(renderPass->GetVkRenderPass());
                 pipeline->VLoadShader(ShaderSlot::VERTEX, &vsShader);
@@ -1234,6 +1268,7 @@ namespace Hatchit {
                 m_material = new VKMaterial();
 
                 m_material->VSetMatrix4("object.model", Math::Matrix4());
+                m_material->VBindTexture("color", m_texture);
                 m_material->VPrepare(pipeline);
 
                 std::vector<Resource::Mesh*> meshes = model.GetMeshes();
@@ -1249,18 +1284,13 @@ namespace Hatchit {
 
                 m_renderPasses.push_back(renderPass);
 
-                renderPass->VBuildCommandList();
-
-                renderPass->SetView(view);
-                renderPass->SetProj(proj);
-                renderPass->VUpdate();
-
                 pipeline->VUpdate();
                 m_material->VUpdate();
 
-                CreateSetupCommandBuffer();
+                renderPass->SetView(view);
+                renderPass->SetProj(proj);
 
-                m_swapchain->BuildSwapchain(m_clearColor);
+                m_swapchain->VKPrepareResources();
                 
                 FlushSetupCommandBuffer();
 
@@ -1349,6 +1379,7 @@ namespace Hatchit {
                 imageMemoryBarrier.image = image;
                 imageMemoryBarrier.subresourceRange.aspectMask = aspectMask;
                 imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
+                imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
                 imageMemoryBarrier.subresourceRange.layerCount = 1;
                 imageMemoryBarrier.subresourceRange.levelCount = 1;
                 imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -1374,6 +1405,11 @@ namespace Hatchit {
                 if (oldImageLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
                 {
                     imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                }
+
+                if (oldImageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+                {
+                    imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
                 }
 
                 // Old layout is shader read (sampler, input attachment)
@@ -1421,6 +1457,11 @@ namespace Hatchit {
                 {
                     //imageMemoryBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
                     imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                }
+
+                if (newImageLayout == VK_IMAGE_LAYOUT_PREINITIALIZED)
+                {
+                    imageMemoryBarrier.dstAccessMask = VK_ACCESS_HOST_WRITE_BIT;
                 }
 
 
