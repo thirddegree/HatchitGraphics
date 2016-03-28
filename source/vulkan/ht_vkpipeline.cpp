@@ -38,6 +38,118 @@ namespace Hatchit {
                     vkDestroyDescriptorSetLayout(device, m_descriptorSetLayouts[i], nullptr);
             }
 
+			bool VKPipeline::VInitFromFile(File* file)
+			{
+				nlohmann::json json;
+				std::ifstream jsonStream(file->Path());
+
+				if (jsonStream.is_open())
+				{
+					jsonStream >> json;
+					JsonExtractGuid(json, "GUID", m_guid);
+
+					// TO-DO Add Shader extraction from JSON file
+
+					// Get Shader Variables
+					nlohmann::json shaderVariables = json["ShaderVariables"];
+					for (int i = 0; i < shaderVariables.size(); i++)
+					{
+						std::string name;
+						std::string type;
+						JsonExtractString(shaderVariables[i], "Name", name);
+						JsonExtractString(shaderVariables[i], "Type", type);
+
+						if (type == "INT")
+						{
+							int64_t value;
+							JsonExtractInt64(shaderVariables[i], "Value", value);
+							m_shaderVariables[name] = new IntVariable(value);
+						}
+						else if (type == "FLOAT")
+						{
+							float value = 0.0f;
+							JsonExtractFloat(shaderVariables[i], "Value", value);
+							m_shaderVariables[name] = new FloatVariable(value);
+						}
+						else if (type == "DOUBLE")
+						{
+							double value = 0.0f;
+							JsonExtractDouble(shaderVariables[i], "Value", value);
+							m_shaderVariables[name] = new DoubleVariable(value);
+						}
+					}
+
+					// Get Rasterizer state
+					nlohmann::json json_rasterState = json["RasterState"];
+					RasterizerState rasterState {};
+					std::string polygonModeStr;
+					std::string cullModeStr;
+
+					JsonExtractString(json_rasterState, "PolygonMode", polygonModeStr);
+					JsonExtractString(json_rasterState, "CullMode", cullModeStr);
+					JsonExtractBool(json_rasterState, "FrontCounterClockwise", rasterState.frontCounterClockwise);
+					JsonExtractBool(json_rasterState, "DepthClampEnable", rasterState.depthClampEnable);
+
+					// Polygon mode
+					if (polygonModeStr == "SOLID")
+						rasterState.polygonMode = PolygonMode::SOLID;
+					else if (polygonModeStr == "LINE")
+						rasterState.polygonMode = PolygonMode::LINE;
+
+					// Cull mode
+					if (cullModeStr == "NONE")
+						rasterState.cullMode = CullMode::NONE;
+					else if (cullModeStr == "FRONT")
+						rasterState.cullMode = CullMode::FRONT;
+					else if (cullModeStr == "BACK")
+						rasterState.cullMode = CullMode::BACK;
+
+					// Get Multisampler state
+					nlohmann::json json_multisampleState = json["MultisampleState"];
+					MultisampleState multisampleState {};
+					uint32_t sampleCount;
+
+					JsonExtractUInt32(json_multisampleState, "SampleCount", sampleCount);
+					JsonExtractFloat(json_multisampleState, "MinSamples", multisampleState.minSamples);
+					JsonExtractBool(json_multisampleState, "PerSampleShading", multisampleState.perSampleShading);
+
+					// Sample count
+					switch (sampleCount)
+					{
+					case 1:
+						multisampleState.samples = SAMPLE_1_BIT;
+						break;
+					case 2:
+						multisampleState.samples = SAMPLE_2_BIT;
+						break;
+					case 4:
+						multisampleState.samples = SAMPLE_4_BIT;
+						break;
+					case 8:
+						multisampleState.samples = SAMPLE_8_BIT;
+						break;
+					case 16:
+						multisampleState.samples = SAMPLE_16_BIT;
+						break;
+					case 32:
+						multisampleState.samples = SAMPLE_32_BIT;
+						break;
+					case 64:
+						multisampleState.samples = SAMPLE_64_BIT;
+						break;
+					}
+
+					VSetRasterState(rasterState);
+					VSetMultisampleState(multisampleState);
+
+					jsonStream.close();
+					return true;
+				}
+
+				DebugPrintF("ERROR: Could not generate stream to JSON file -> %s", file->Path());
+				return false;
+			}
+
             //If we wanted to allow users to control blending states
             //void VSetColorBlendAttachments(ColorBlendState* colorBlendStates) override;
 

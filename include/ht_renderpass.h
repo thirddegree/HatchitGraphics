@@ -31,6 +31,7 @@
 #include <ht_material.h>
 #include <ht_math.h>
 #include <ht_color.h>
+#include <ht_resourceobject.h>
 
 namespace Hatchit {
 
@@ -49,10 +50,12 @@ namespace Hatchit {
             IMesh*      mesh;
         };
 
-        class HT_API IRenderPass
+        class HT_API IRenderPass : public Resource::ResourceObject
         {
         public:
             virtual ~IRenderPass() { };
+
+			virtual bool VInitFromFile(File* file) = 0;
 
             virtual bool VPrepare() = 0;
 

@@ -39,6 +39,8 @@ namespace Hatchit {
                 VKRenderPass(VkDevice& device, VkCommandPool& commandPool);
                 ~VKRenderPass();
 
+				bool VInitFromFile(File* file) override;
+
                 //Prepare the internal VkRenderPass
                 bool VPrepare()   override;
 
@@ -54,7 +56,6 @@ namespace Hatchit {
                 VkCommandBuffer GetVkCommandBuffer();
 
             private:
-
                 bool allocateCommandBuffer();
 
                 VkDevice& m_device;
@@ -64,6 +65,9 @@ namespace Hatchit {
                 VkCommandBuffer m_commandBuffer;
 
                 VkClearValue m_clearColor;
+
+				std::vector<Guid> m_inputRenderTargets;
+				std::vector<Guid> m_outputRenderTargets;
             };
         }
     }

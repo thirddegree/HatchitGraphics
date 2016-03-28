@@ -61,6 +61,33 @@ namespace Hatchit {
                 vkDestroySampler(device, m_texture.sampler, nullptr);
             } 
 
+			bool VKRenderTarget::VInitFromFile(File* file)
+			{
+				nlohmann::json json;
+				std::ifstream jsonStream(file->Path());
+
+				if (jsonStream.is_open())
+				{
+					jsonStream >> json;
+
+					JsonExtractGuid(json, "GUID", m_guid);
+					JsonExtractUInt32(json, "Width", m_width);
+					JsonExtractUInt32(json, "Height", m_height);
+
+					std::string colorFormat;
+					JsonExtractString(json, "Format", colorFormat);
+
+					if (colorFormat == "BGRA")
+						m_colorFormat = VK_FORMAT_B8G8R8A8_UINT;
+
+					jsonStream.close();
+					return true;
+				}
+
+				DebugPrintF("ERROR: Could not generate stream to JSON file -> %s", file->Path());
+				return false;
+			}
+
             bool VKRenderTarget::VPrepare()
             {
                 VKRenderer* renderer = VKRenderer::RendererInstance;

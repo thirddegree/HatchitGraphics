@@ -68,6 +68,9 @@ namespace Hatchit {
                 std::vector<UniformBlock> m_fragmentTextures;
 
                 bool setupDescriptorSet(VkDescriptorPool descriptorPool, VkDevice device);
+
+				Core::Guid m_pipelineGUID;
+				Core::Guid m_renderPassGUID;
             };
         }
     }

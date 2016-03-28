@@ -51,7 +51,54 @@ namespace Hatchit {
 
             }
 
-            bool VKMaterial::VInitFromFile(Core::File* file) { return true; }
+            bool VKMaterial::VInitFromFile(Core::File* file) 
+			{ 
+				nlohmann::json json;
+				std::ifstream jsonStream(file->Path());
+
+				if (jsonStream.is_open())
+				{
+					jsonStream >> json;
+					nlohmann::json shaderVariables = json["ShaderVariables"];
+
+					Core::JsonExtractGuid(json, "GUID", m_guid);
+					Core::JsonExtractGuid(json, "Pipeline", m_pipelineGUID);
+					Core::JsonExtractGuid(json, "RenderPass", m_renderPassGUID);
+					
+					for (int i = 0; i < shaderVariables.size(); i++)
+					{
+						std::string name;
+						std::string type;
+						JsonExtractString(shaderVariables[i], "Name", name);
+						JsonExtractString(shaderVariables[i], "Type", type);
+
+						if (type == "INT")
+						{
+							int64_t value;
+							JsonExtractInt64(shaderVariables[i], "Value", value);
+							m_shaderVariables[name] = new IntVariable(value);
+						}
+						else if (type == "FLOAT")
+						{
+							float value = 0.0f;
+							JsonExtractFloat(shaderVariables[i], "Value", value);
+							m_shaderVariables[name] = new FloatVariable(value);
+						}
+						else if (type == "DOUBLE")
+						{
+							double value = 0.0f;
+							JsonExtractDouble(shaderVariables[i], "Value", value);
+							m_shaderVariables[name] = new DoubleVariable(value);
+						}
+					}
+
+					jsonStream.close();
+					return true;
+				}
+
+				Core::DebugPrintF("ERROR: Coult not generate stream to JSON file -> %s", file->Path());
+				return false;
+			}
 
             bool VKMaterial::VSetInt(std::string name, int data)
             {
