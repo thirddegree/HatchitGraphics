@@ -58,9 +58,16 @@ namespace Hatchit {
             virtual bool VPrepare(IPipeline* pipeline) = 0;
             virtual bool VUpdate() = 0;
 
+            inline IPipeline* GetPipeline() 
+            {
+                return m_pipeline;
+            }
+
         protected:
             std::map<std::string, ShaderVariable*> m_shaderVariables;
             std::map<std::string, ITexture*> m_textures;
+
+            IPipeline* m_pipeline;
         };
     }
 }
