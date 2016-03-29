@@ -100,7 +100,12 @@ namespace Hatchit {
                 VkPipelineCache m_pipelineCache;
                 VkPipeline      m_pipeline;
 
-                std::vector<float> m_matrixPushData;
+                std::vector<int>    m_intPushData;
+                std::vector<float>  m_floatPushData;
+                std::vector<float>  m_vector2PushData;
+                std::vector<float>  m_vector3PushData;
+                std::vector<float>  m_vector4PushData;
+                std::vector<float>  m_matrixPushData;
 
             private:
                 bool prepareLayouts(VkDevice device);
