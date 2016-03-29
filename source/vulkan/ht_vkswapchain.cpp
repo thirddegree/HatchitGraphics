@@ -187,18 +187,12 @@ namespace Hatchit {
 
                 VkResult err;
 
-                //Setup pipeline
-                Core::File vsFile;
-                vsFile.Open(Core::os_exec_dir() + "screen_VS.spv", Core::FileMode::ReadBinary);
-
-                Core::File fsFile;
-                fsFile.Open(Core::os_exec_dir() + "screen_FS.spv", Core::FileMode::ReadBinary);
 
                 VKShader vsShader;
-                vsShader.VInitFromFile(&vsFile);
+                vsShader.VInitFromFile("screen_VS.spv");
 
                 VKShader fsShader;
-                fsShader.VInitFromFile(&fsFile);
+                fsShader.VInitFromFile("screen_FS.spv");
 
                 RasterizerState rasterState = {};
                 rasterState.cullMode = CullMode::NONE;

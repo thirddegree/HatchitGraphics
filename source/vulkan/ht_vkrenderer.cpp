@@ -1220,12 +1220,6 @@ namespace Hatchit {
                 Core::File textureFile;
                 textureFile.Open(Core::os_exec_dir() + "raptor.png", Core::FileMode::ReadBinary);
 
-                Core::File vsFile;
-                vsFile.Open(Core::os_exec_dir() + "raptor_VS.spv", Core::FileMode::ReadBinary);
-
-                Core::File fsFile;
-                fsFile.Open(Core::os_exec_dir() + "raptor_FS.spv", Core::FileMode::ReadBinary);
-
                 Resource::Model model;
                 model.VInitFromFile(&meshFile);
 
@@ -1239,11 +1233,11 @@ namespace Hatchit {
                 m_texture->SetSampler(m_sampler);
                 m_texture->VInitFromFile(&textureFile);
 
-                VKShader vsShader;
-                vsShader.VInitFromFile(&vsFile);
+				VKShader vsShader;
+                vsShader.VInitFromFile("raptor_VS.spv");
 
                 VKShader fsShader;
-                fsShader.VInitFromFile(&fsFile);
+                fsShader.VInitFromFile("raptor_FS.spv");
 
                 RasterizerState rasterState = {};
                 rasterState.cullMode = CullMode::NONE;

@@ -29,13 +29,17 @@ namespace Hatchit {
                 vkDestroyShaderModule(device, m_shader, nullptr);
             }
 
-            bool VKShader::VInitFromFile(Core::File* file)
+            bool VKShader::VInitFromFile(const std::string& file)
             {
+				Core::File f;
+				f.Open(Core::os_exec_dir() + file, Core::FileMode::ReadBinary);
+
+
                 VkDevice device = VKRenderer::RendererInstance->GetVKDevice();
 
-                size_t size = file->SizeBytes();
+                size_t size = f.SizeBytes();
                 BYTE* shaderCode = new BYTE[size];
-                file->Read(shaderCode, size);
+                f.Read(shaderCode, size);
 
                 VkResult err;
 
@@ -57,10 +61,6 @@ namespace Hatchit {
                 }
 
                 return true;
-            }
-
-            void VKShader::VOnLoaded()
-            {
             }
 
             VkShaderModule VKShader::GetShaderModule()

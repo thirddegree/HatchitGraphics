@@ -33,7 +33,7 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            class HT_API VKShader : public IShader
+            class HT_API VKShader : public IShader, public Resource::Resource<VKShader>
             {
                 friend class IMaterial;
 
@@ -41,15 +41,14 @@ namespace Hatchit {
                 VKShader();
                 ~VKShader();
 
-                bool VInitFromFile(Core::File* file)    override;
-
-                void VOnLoaded() override;
-
+				virtual bool VInitFromFile(const std::string& file) override;
                 VkShaderModule GetShaderModule();
 
             private:
                 VkShaderModule m_shader;
             };
+
+			using VKShaderPtr = VKShader::Handle;
         }
     }
 }
