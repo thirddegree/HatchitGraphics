@@ -23,28 +23,18 @@ namespace Hatchit {
 
     namespace Graphics {
 
-        class HT_API ITexture : public Resource::ResourceObject
+        class HT_API ITexture
         {
         public:
             virtual ~ITexture() { }
         
-            void SetSampler(ISampler* sampler);
+            virtual void SetSampler(ISampler* sampler) = 0;
 
-            bool VInitFromFile(Core::File* file) override;
-
-            uint32_t GetWidth()  const;
-            uint32_t GetHeight() const;
+            virtual uint32_t GetWidth()  const = 0;
+            virtual uint32_t GetHeight() const = 0;
 
         protected:
             virtual bool VBufferImage() = 0;
-
-            uint32_t m_width, m_height;
-            uint32_t m_mipLevels;
-            uint8_t m_bpp, m_channels;
-
-            const BYTE* m_data;
-
-            ISampler* m_sampler;
         };
     }
 }
