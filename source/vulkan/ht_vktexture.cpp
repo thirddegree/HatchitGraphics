@@ -50,10 +50,10 @@ namespace Hatchit {
                 {
                     switch (m_sampler->GetColorSpace())
                     {
-                    case GAMMA:
+                    case Resource::Sampler::ColorSpace::GAMMA:
                         format = VK_FORMAT_R8G8B8A8_SRGB;
                         break;
-                    case LINEAR:
+                    case Resource::Sampler::ColorSpace::LINEAR:
                         format = VK_FORMAT_R8G8B8A8_UNORM;
                         break;
                     default:

@@ -26,17 +26,27 @@ namespace Hatchit {
             class HT_API VKSampler : public ISampler 
             {
             public:
-                VKSampler(VkDevice device);
+                VKSampler(VkDevice device, const std::string& samplerResourceFile);
                 ~VKSampler();
 
                 bool VPrepare() override;
 
                 VkSampler GetVkSampler();
 
+                // Inherited via ISampler
+                virtual void SetFilterMode(Resource::Sampler::FilterMode filterMode) override;
+                virtual void SetWrapMode(Resource::Sampler::WrapMode wrapMode) override;
+                virtual void SetColorSpace(Resource::Sampler::ColorSpace colorSpace) override;
+                virtual Resource::Sampler::FilterMode GetFilterMode() override;
+                virtual Resource::Sampler::WrapMode GetWrapMode() override;
+                virtual Resource::Sampler::ColorSpace GetColorSpace() override;
+
             private:
                 VkDevice m_device;
 
                 VkSampler m_sampler;
+
+                Resource::SamplerHandle m_resources;
             };
 
         }

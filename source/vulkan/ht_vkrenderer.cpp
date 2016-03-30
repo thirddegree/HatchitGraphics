@@ -1266,8 +1266,9 @@ namespace Hatchit {
 
                 CreateSetupCommandBuffer();
 
-                m_sampler = new VKSampler(m_device);
-                m_sampler->SetColorSpace(ColorSpace::GAMMA);
+                //TODO: Once JSON file is found, insert name here
+                m_sampler = new VKSampler(m_device, "");
+                m_sampler->SetColorSpace(Resource::Sampler::ColorSpace::GAMMA);
                 m_sampler->VPrepare();
 
                 m_texture = new VKTexture(m_device);
