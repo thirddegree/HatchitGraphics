@@ -39,7 +39,7 @@ namespace Hatchit {
 
         class IPipeline;
 
-        class HT_API IMaterial : Resource::ResourceObject
+        class HT_API IMaterial : public Resource::ResourceObject
         {
         public:
             virtual ~IMaterial() { };

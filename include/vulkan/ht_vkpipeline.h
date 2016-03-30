@@ -44,6 +44,8 @@ namespace Hatchit {
             public:
                 VKPipeline(const VkRenderPass* renderPass);
                 ~VKPipeline();
+				
+				bool VInitFromFile(File* file) override;
 
                 //If we wanted to allow users to control blending states
                 //void VSetColorBlendAttachments(ColorBlendState* colorBlendStates) override;

@@ -26,6 +26,7 @@
 
 #include <ht_platform.h>
 #include <ht_math.h>
+#include <ht_resourceobject.h>
 
 namespace Hatchit {
 
@@ -33,10 +34,12 @@ namespace Hatchit {
         
         class IRenderPass;
 
-        class HT_API IRenderTarget
+        class HT_API IRenderTarget : public Resource::ResourceObject
         {
         public:
             virtual ~IRenderTarget() { };
+
+			virtual bool VInitFromFile(File* file) = 0;
 
             ///Prepare the render target with a graphics language
             virtual bool VPrepare() = 0;
