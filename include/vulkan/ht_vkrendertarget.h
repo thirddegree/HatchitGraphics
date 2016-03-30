@@ -41,6 +41,8 @@ namespace Hatchit {
                 VKRenderTarget(uint32_t width, uint32_t height);
                 ~VKRenderTarget();
 
+                bool VInitFromFile(File* file) override;
+
                 ///Prepare the render target with Vulkan
                 bool VPrepare()     override;
                 ///Override to bind the render target for reading with Vulkan

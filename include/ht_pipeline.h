@@ -28,6 +28,7 @@
 #include <ht_shader.h>
 #include <ht_debug.h>
 #include <ht_shadervariable.h>
+#include <ht_resourceobject.h>
 
 #include <map>
     
@@ -79,10 +80,12 @@ namespace Hatchit {
             bool        perSampleShading;   //Shades per sample if true, per fragment if false
         };
    
-       class HT_API IPipeline
+       class HT_API IPipeline : public Resource::ResourceObject
         {
        public:
             virtual ~IPipeline() {};
+
+            virtual bool VInitFromFile(File* file) = 0;
            
             //If we wanted to allow users to control blending states
             //virtual void VSetColorBlendAttachments(ColorBlendState* colorBlendStates) = 0;

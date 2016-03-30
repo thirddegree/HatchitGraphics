@@ -26,10 +26,10 @@
 
 #include <ht_platform.h>
 #include <ht_shader.h>
-#include <ht_resourceobject.h>
 #include <ht_shadervariable.h>
 #include <ht_math.h>
 #include <ht_debug.h>
+#include <ht_resource.h>
 
 #include <map>
 
@@ -39,12 +39,12 @@ namespace Hatchit {
 
         class IPipeline;
 
-        class HT_API IMaterial : Resource::ResourceObject
+        class HT_API IMaterial : public Resource::ResourceObject
         {
         public:
             virtual ~IMaterial() { };
 
-            virtual bool VInitFromFile(Core::File* file) = 0;
+           virtual bool VInitFromFile(File* file) = 0;
 
             virtual bool VSetInt(std::string name, int data) = 0;
             virtual bool VSetFloat(std::string name, float data) = 0;
@@ -59,6 +59,7 @@ namespace Hatchit {
             virtual bool VUpdate() = 0;
 
         protected:
+
             std::map<std::string, ShaderVariable*> m_shaderVariables;
             std::map<std::string, ITexture*> m_textures;
         };

@@ -41,8 +41,7 @@ namespace Hatchit {
                 VKMaterial();
                 ~VKMaterial();
 
-                ///Callback for when this VKMaterial has been loaded from the disk. Used to build shader variable list
-                bool VInitFromFile(Core::File* file)                        override;
+                bool VInitFromFile(File* file)                              override;
 
                 bool VSetInt(std::string name, int data)                    override;
                 bool VSetFloat(std::string name, float data)                override;
@@ -54,7 +53,7 @@ namespace Hatchit {
                 bool VUnbindTexture(std::string name, ITexture* texture)    override;
 
                 ///Prepare this Material by building a descriptor set based off of its shader variables
-                bool VPrepare(IPipeline* pipeline)                         override;
+                bool VPrepare(IPipeline* pipeline)                          override;
                 bool VUpdate()                                              override;
 
                 VkDescriptorSet* GetVKDescriptorSet();
@@ -68,6 +67,9 @@ namespace Hatchit {
                 std::vector<UniformBlock> m_fragmentTextures;
 
                 bool setupDescriptorSet(VkDescriptorPool descriptorPool, VkDevice device);
+
+                Core::Guid m_pipelineGUID;
+                Core::Guid m_renderPassGUID;
             };
         }
     }

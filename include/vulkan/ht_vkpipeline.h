@@ -45,6 +45,8 @@ namespace Hatchit {
                 VKPipeline(const VkRenderPass* renderPass);
                 ~VKPipeline();
 
+                bool VInitFromFile(File* file)                                  override;
+
                 //If we wanted to allow users to control blending states
                 //void VSetColorBlendAttachments(ColorBlendState* colorBlendStates) override;
 
@@ -110,6 +112,9 @@ namespace Hatchit {
             private:
                 bool prepareLayouts(VkDevice device);
                 bool preparePipeline(VkDevice device);
+
+                std::string m_vertexShaderPath;
+                std::string m_pixelShaderPath;
             };
         }
     }

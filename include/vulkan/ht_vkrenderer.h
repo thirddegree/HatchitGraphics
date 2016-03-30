@@ -24,6 +24,7 @@
 
 //Totally remove this
 #include <fstream>
+#include <ht_vkmaterial.h>
 
 namespace Hatchit {
 
@@ -183,7 +184,6 @@ namespace Hatchit {
                 bool createDevice();
                 bool getSupportedFormats();
             };
-
         }
     }
 }
