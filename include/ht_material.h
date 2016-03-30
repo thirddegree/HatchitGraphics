@@ -29,7 +29,7 @@
 #include <ht_shadervariable.h>
 #include <ht_math.h>
 #include <ht_debug.h>
-#include <ht_resource.h>
+#include <ht_resourceobject.h>
 
 #include <map>
 
