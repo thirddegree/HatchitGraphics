@@ -26,6 +26,7 @@
 
 #include <ht_platform.h>
 #include <ht_resourceobject.h>
+#include <ht_resource.h>
 #include <ht_texture.h>
 #include <ht_string.h>
 #include <ht_math.h>
@@ -44,15 +45,11 @@ namespace Hatchit {
             COMPUTE
         };
 
-        class HT_API IShader : public Resource::ResourceObject
+        class HT_API IShader
         {
+		public:
             friend class IMaterial;
-
-        public:
-            virtual ~IShader() {};
-            
-            virtual void VOnLoaded() = 0;
-            virtual bool VInitFromFile(Core::File* file) = 0;
+			virtual ~IShader() {};
         };
     }
 }

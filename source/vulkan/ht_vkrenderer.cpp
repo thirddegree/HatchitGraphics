@@ -46,6 +46,21 @@ namespace Hatchit {
             VKRenderer::VKRenderer()
             {
                 m_setupCommandBuffer = 0;
+
+                m_swapchain = nullptr;
+
+                m_renderTarget = nullptr;
+                m_texture = nullptr;
+                m_sampler = nullptr;
+
+                m_instance = VK_NULL_HANDLE;
+
+                m_device = VK_NULL_HANDLE;
+                m_commandPool = VK_NULL_HANDLE;
+                m_descriptorPool = VK_NULL_HANDLE;
+
+                m_renderSemaphore = VK_NULL_HANDLE;
+                m_presentSemaphore = VK_NULL_HANDLE;
             }
 
             VKRenderer::~VKRenderer()
@@ -88,12 +103,19 @@ namespace Hatchit {
             {
                 m_queueProps.clear();
 
-                vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
-                delete m_swapchain;
+                if (m_swapchain != nullptr)
+                {
+                    delete m_swapchain;
+                    vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+                }
 
-                delete m_renderTarget;
-                delete m_texture;
-                delete m_sampler;
+                //These should all be deleted elsewhere when resources work properly
+                if(m_renderTarget != nullptr)
+                    delete m_renderTarget;
+                if (m_texture != nullptr)
+                    delete m_texture;
+                if (m_sampler != nullptr)
+                    delete m_sampler;
                 
                 std::map<IPipeline*, std::vector<Renderable>>::iterator it;
                 for (it = m_pipelineList.begin(); it != m_pipelineList.end(); it++)
@@ -128,17 +150,28 @@ namespace Hatchit {
                 
                 m_renderPasses.clear();
 
-                vkDestroySemaphore(m_device, m_presentSemaphore, nullptr);
-                vkDestroySemaphore(m_device, m_renderSemaphore, nullptr);
+                if (m_device != VK_NULL_HANDLE)
+                {
+                    if (m_presentSemaphore != VK_NULL_HANDLE)
+                        vkDestroySemaphore(m_device, m_presentSemaphore, nullptr);
+                    if (m_renderSemaphore != VK_NULL_HANDLE)
+                        vkDestroySemaphore(m_device, m_renderSemaphore, nullptr);
 
-                vkDestroyCommandPool(m_device, m_commandPool, nullptr);
-                vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
+                    if (m_commandPool != VK_NULL_HANDLE)
+                        vkDestroyCommandPool(m_device, m_commandPool, nullptr);
+                    if (m_descriptorPool != VK_NULL_HANDLE)
+                        vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
 
-                vkDestroyDevice(m_device, nullptr);
+                    vkDestroyDevice(m_device, nullptr);
+                }
 
-                m_destroyDebugReportCallback(m_instance, msg_callback, nullptr);
+                if (m_instance != VK_NULL_HANDLE)
+                {
+                    if(msg_callback != VK_NULL_HANDLE)
+                        m_destroyDebugReportCallback(m_instance, msg_callback, nullptr);
 
-                vkDestroyInstance(m_instance, nullptr);
+                    vkDestroyInstance(m_instance, nullptr);
+                }
             }
 
             void VKRenderer::VResizeBuffers(uint32_t width, uint32_t height)
@@ -287,16 +320,22 @@ namespace Hatchit {
             bool VKRenderer::initVulkan(const RendererParams& params) 
             {
                 VkResult err;
+                bool success = true;
                 /*
                 * Check Vulkan instance layers
                 */
-                if (!checkInstanceLayers())
+                success = checkInstanceLayers();
+                assert(success);
+                if (!success)
                     return false;
+
 
                 /*
                 * Check Vulkan instance extensions
                 */
-                if (!checkInstanceExtensions())
+                success = checkInstanceExtensions();
+                assert(success);
+                if (!success)
                     return false;
 
                 /*
@@ -1222,14 +1261,8 @@ namespace Hatchit {
                 Core::File textureFile;
                 textureFile.Open(Core::os_exec_dir() + "raptor.png", Core::FileMode::ReadBinary);
 
-                Core::File vsFile;
-                vsFile.Open(Core::os_exec_dir() + "raptor_VS.spv", Core::FileMode::ReadBinary);
-
-                Core::File fsFile;
-                fsFile.Open(Core::os_exec_dir() + "raptor_FS.spv", Core::FileMode::ReadBinary);
-
-                Resource::Model model;
-                model.VInitFromFile(&meshFile);
+                Resource::ModelHandle model = Resource::Model::GetResourceHandle("Raptor.obj");
+                //model.VInitFromFile(&meshFile);
 
                 CreateSetupCommandBuffer();
 
@@ -1241,11 +1274,10 @@ namespace Hatchit {
                 m_texture->SetSampler(m_sampler);
                 m_texture->VInitFromFile(&textureFile);
 
-                VKShader vsShader;
-                vsShader.VInitFromFile(&vsFile);
 
-                VKShader fsShader;
-                fsShader.VInitFromFile(&fsFile);
+				VKShaderHandle vsShader = VKShader::GetResourceHandle("raptor_VS.spv");
+				VKShaderHandle fsShader = VKShader::GetResourceHandle("raptor_FS.spv");
+
 
                 RasterizerState rasterState = {};
                 rasterState.cullMode = CullMode::NONE;
@@ -1261,8 +1293,9 @@ namespace Hatchit {
                 Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f));
 
                 IPipeline* pipeline = new VKPipeline(renderPass->GetVkRenderPass());
-                pipeline->VLoadShader(ShaderSlot::VERTEX, &vsShader);
-                pipeline->VLoadShader(ShaderSlot::FRAGMENT, &fsShader);
+				
+                pipeline->VLoadShader(ShaderSlot::VERTEX, vsShader->GetRawPointer());
+                pipeline->VLoadShader(ShaderSlot::FRAGMENT, fsShader->GetRawPointer());
                 pipeline->VSetRasterState(rasterState);
                 pipeline->VSetMultisampleState(multisampleState);
                 pipeline->VPrepare();
@@ -1273,7 +1306,7 @@ namespace Hatchit {
                 m_material->VBindTexture("color", m_texture);
                 m_material->VPrepare(pipeline);
 
-                std::vector<Resource::Mesh*> meshes = model.GetMeshes();
+                std::vector<Resource::Mesh*> meshes = model->GetMeshes();
                 IMesh* mesh = new VKMesh();
                 mesh->VBuffer(meshes[0]);
 

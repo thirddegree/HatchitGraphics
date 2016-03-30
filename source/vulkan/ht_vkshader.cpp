@@ -21,7 +21,7 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKShader::VKShader() {}
+            VKShader::VKShader(std::string fileName) : Resource::Resource(std::move(fileName)) {}
             VKShader::~VKShader() 
             {
                 VkDevice device = VKRenderer::RendererInstance->GetVKDevice();
@@ -29,13 +29,17 @@ namespace Hatchit {
                 vkDestroyShaderModule(device, m_shader, nullptr);
             }
 
-            bool VKShader::VInitFromFile(Core::File* file)
+            bool VKShader::VInitFromFile(const std::string& file)
             {
+				Core::File f;
+				f.Open(Core::os_exec_dir() + file, Core::FileMode::ReadBinary);
+
+
                 VkDevice device = VKRenderer::RendererInstance->GetVKDevice();
 
-                size_t size = file->SizeBytes();
+                size_t size = f.SizeBytes();
                 BYTE* shaderCode = new BYTE[size];
-                file->Read(shaderCode, size);
+                f.Read(shaderCode, size);
 
                 VkResult err;
 
@@ -59,14 +63,15 @@ namespace Hatchit {
                 return true;
             }
 
-            void VKShader::VOnLoaded()
-            {
-            }
-
             VkShaderModule VKShader::GetShaderModule()
             {
                 return m_shader;
             }
+
+			VKShader* VKShader::GetRawPointer()
+			{
+				return this;
+			}
         }
     }
 }
