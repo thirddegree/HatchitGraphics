@@ -1261,8 +1261,8 @@ namespace Hatchit {
                 Core::File textureFile;
                 textureFile.Open(Core::os_exec_dir() + "raptor.png", Core::FileMode::ReadBinary);
 
-                Resource::Model model;
-                model.VInitFromFile(&meshFile);
+                Resource::ModelHandle model = Resource::Model::GetResourceHandle("Raptor.obj");
+                //model.VInitFromFile(&meshFile);
 
                 CreateSetupCommandBuffer();
 
@@ -1306,7 +1306,7 @@ namespace Hatchit {
                 m_material->VBindTexture("color", m_texture);
                 m_material->VPrepare(pipeline);
 
-                std::vector<Resource::Mesh*> meshes = model.GetMeshes();
+                std::vector<Resource::Mesh*> meshes = model->GetMeshes();
                 IMesh* mesh = new VKMesh();
                 mesh->VBuffer(meshes[0]);
 
