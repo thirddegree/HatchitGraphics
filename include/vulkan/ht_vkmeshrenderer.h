@@ -28,6 +28,9 @@
 #include <ht_vulkan.h>
 #include <ht_vkrenderpass.h>
 #include <ht_vkmaterial.h>
+#include <ht_vkpipeline.h>
+#include <ht_vkrenderer.h>
+#include <ht_vkmesh.h>
 
 namespace Hatchit {
 
@@ -41,8 +44,16 @@ namespace Hatchit {
                 VKMeshRenderer();
                 ~VKMeshRenderer();
 
-                ///Allocates a mesh into Vulkan memory
-                void VBuffer()                                  override;
+                /* Set which mesh will be rendered
+                * \param mesh A pointer to the mesh you want to render
+                */
+                void VSetMesh(IMesh* mesh)                      override;
+
+                /* Set which material you want to render with
+                * \param material the material you want to render with
+                * The material should also store the appropriate pipeline
+                */
+                void VSetMaterial(IMaterial* material)          override;
 
                 /* Set which render pass will be bound to this command buffer
                 * \param renderPass A pointer to the render pass that this will be a part of
@@ -52,13 +63,12 @@ namespace Hatchit {
                 ///Submit's a command buffer to the VKRenderer
                 void VRender()                                  override;
 
-                ///Cleans up a mesh and material from Vulkan memory
-                void VFree()                                    override;
-
             protected:
-                VKRenderPass* m_markedRenderPass;
-                VKMaterial*  m_material;
-                VkCommandBuffer m_commandBuffer;
+                VKRenderPass*   m_renderPass;
+                VKPipeline*     m_pipeline;
+                VKMaterial*     m_material;
+                VKMesh*         m_mesh;
+
             };
         }
     }

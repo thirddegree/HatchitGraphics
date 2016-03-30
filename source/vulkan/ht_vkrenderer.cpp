@@ -22,6 +22,7 @@
 #include <ht_vkmeshrenderer.h>
 #include <ht_vkrendertarget.h>
 #include <ht_debug.h>
+#include <ht_scheduler.h>
 
 #include <cassert>
 
@@ -87,8 +88,8 @@ namespace Hatchit {
             {
                 m_queueProps.clear();
 
+                vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
                 delete m_swapchain;
-                //vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 
                 delete m_renderTarget;
                 delete m_texture;
@@ -316,6 +317,7 @@ namespace Hatchit {
                 VkInstanceCreateInfo instanceInfo;
                 instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
                 instanceInfo.pNext = nullptr;
+                instanceInfo.flags = 0;
                 instanceInfo.pApplicationInfo = &m_appInfo;
                 instanceInfo.enabledLayerCount = static_cast<uint32_t>(m_enabledLayerNames.size());
                 instanceInfo.ppEnabledLayerNames = &m_enabledLayerNames[0];

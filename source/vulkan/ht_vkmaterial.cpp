@@ -97,7 +97,8 @@ namespace Hatchit {
                 VkDevice device = renderer->GetVKDevice();
                 VkDescriptorPool descriptorPool = renderer->GetVKDescriptorPool();
 
-                VKPipeline* vkPipeline = static_cast<VKPipeline*>(pipeline);
+                m_pipeline = pipeline;
+                VKPipeline* vkPipeline = static_cast<VKPipeline*>(m_pipeline);
 
                 m_materialLayout = vkPipeline->GetVKDescriptorSetLayouts()[1];
 

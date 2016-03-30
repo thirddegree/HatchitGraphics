@@ -33,15 +33,11 @@ namespace Hatchit {
         class HT_API IObjectRenderer
         {
         public:
-			virtual ~IObjectRenderer() {};
+            virtual ~IObjectRenderer() {};
 
-			///Override to buffer a resource with a graphics language
-			virtual void VBuffer() = 0;
-			///Override to render a resource with a graphics language
-			virtual void VRender() = 0;
-			///Override to free a resource from a graphics language
-			virtual void VFree() = 0;
-			
+            ///Override to render a resource with a graphics language
+            virtual void VRender() = 0;
+            
         };
     }
 }

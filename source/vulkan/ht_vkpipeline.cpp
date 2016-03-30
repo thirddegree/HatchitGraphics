@@ -255,18 +255,95 @@ namespace Hatchit {
                 if (m_shaderVariables.size() == 0)
                     return true;
 
-                std::vector<Math::Matrix4> variableList;
+                std::vector<uint32_t>       intList;
+                std::vector<float>          floatList;
+                std::vector<Math::Vector2>  vector2List;
+                std::vector<Math::Vector3>  vector3List;
+                std::vector<Math::Vector4>  vector4List;
+                std::vector<Math::Matrix4>  matrixList;
 
+                //Sort data into appropriate lists
                 std::map <std::string, ShaderVariable*>::iterator it;
                 for (it = m_shaderVariables.begin(); it != m_shaderVariables.end(); it++)
-                    variableList.push_back(*(Math::Matrix4*)(it->second->GetData()));
-
-                m_matrixPushData.resize(variableList.size() * 16);
-
-                for (size_t i = 0; i < variableList.size(); i++)
                 {
-                    Math::Matrix4 mat = variableList[i];
-                    memcpy(m_matrixPushData.data() + (16 * i), static_cast<void*>(variableList[i].data), sizeof(float) * 16);
+                    ShaderVariable::Type varType = it->second->GetType();
+
+                    switch (varType)
+                    {
+                    case ShaderVariable::INT:
+                        intList.push_back(*(int*)(it->second->GetData()));
+                        break;
+                    case ShaderVariable::FLOAT:
+                        floatList.push_back(*(float*)(it->second->GetData()));
+                        break;
+                    case ShaderVariable::FLOAT2:
+                        vector2List.push_back(*(Math::Vector2*)(it->second->GetData()));
+                        break;
+                    case ShaderVariable::FLOAT3:
+                        vector3List.push_back(*(Math::Vector3*)(it->second->GetData()));
+                        break;
+                    case ShaderVariable::FLOAT4:
+                        vector4List.push_back(*(Math::Vector4*)(it->second->GetData()));
+                        break;
+                    case ShaderVariable::MAT4:
+                        matrixList.push_back(*(Math::Matrix4*)(it->second->GetData()));
+                        break;
+                    }
+                }
+
+                //Resize vectors to fit new push data
+                m_intPushData.clear();
+                m_intPushData.resize(intList.size());
+
+                m_floatPushData.clear();
+                m_floatPushData.resize(floatList.size());
+
+                m_vector2PushData.clear();
+                m_vector2PushData.resize(vector2List.size() * 2);
+
+                m_vector3PushData.clear();
+                m_vector3PushData.resize(vector3List.size() * 3);
+
+                m_vector4PushData.clear();
+                m_vector4PushData.resize(vector4List.size() * 4);
+
+                m_matrixPushData.clear();
+                m_matrixPushData.resize(matrixList.size() * 16);
+
+                //Copy data into variable lists
+                size_t i = 0; //reuse i
+                for (i = 0; i < intList.size(); i++)
+                {
+                    memcpy(m_intPushData.data() + i, static_cast<void*>(&intList[i]), sizeof(uint32_t));
+                }
+                
+                for (i = 0; i < floatList.size(); i++)
+                {
+                    memcpy(m_floatPushData.data() + i, static_cast<void*>(&floatList[i]), sizeof(float));
+                }
+                
+                for (i = 0; i < vector2List.size(); i++)
+                {
+                    Math::Vector2 vec = vector2List[i];
+                    memcpy(m_vector2PushData.data() + (2 * i), static_cast<void*>(&vec[0]), sizeof(float) * 2);
+                }
+                
+                for (i = 0; i < vector3List.size(); i++)
+                {
+                    Math::Vector3 vec = vector3List[i];
+                    memcpy(m_vector3PushData.data() + (3 * i), static_cast<void*>(&vec[0]), sizeof(float) * 3);
+                }
+
+                for (i = 0; i < vector4List.size(); i++)
+                {
+                    Math::Vector4 vec = vector4List[i];
+                    memcpy(m_vector4PushData.data() + (4 * i), static_cast<void*>(&vec[0]), sizeof(float) * 4);
+                }
+                
+                for (i = 0; i < matrixList.size(); i++)
+                {
+                    Math::Matrix4 mat = matrixList[i];
+                    memcpy(m_matrixPushData.data() + (16 * i), static_cast<void*>(matrixList[i].data), sizeof(float) * 16);
                 }
 
                 return true;

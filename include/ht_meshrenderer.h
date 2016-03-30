@@ -37,26 +37,28 @@ namespace Hatchit {
         {
         public:
             virtual ~IMeshRenderer() {};
-
-            ///Override to buffer a mesh with a graphics language
-            virtual void VBuffer() = 0;
             
+            /* Set which mesh will be rendered
+            * \param mesh A pointer to the mesh you want to render
+            */
+            virtual void VSetMesh(IMesh* mesh) = 0;
+
+            /* Set which material you want to render with
+            * \param material the material you want to render with
+            * The material should also store the appropriate pipeline
+            */
+            virtual void VSetMaterial(IMaterial* material) = 0;
+
             /* Set which render pass this will be a part of
             * \param renderPass A pointer to the render pass that this will be a part of
             */
             virtual void VSetRenderPass(IRenderPass* renderPass) = 0;
 
-            ///Override to render a mesh with a graphics language
+            ///Override to submit a render request with a graphics language
             virtual void VRender() = 0;
 
-            ///Override to free a mesh from a graphics language
-            virtual void VFree() = 0;
-
-        protected:
-            IMesh*          m_mesh;
-            IMaterial*      m_material;
-            IPipeline*      m_pipeline;
-            IRenderPass*    m_renderPass;
+            //All resources should be reference counted and freed appropriately
+            //virtual void VFree() = 0;
         };
     }
 }
