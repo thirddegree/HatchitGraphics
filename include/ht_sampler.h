@@ -14,52 +14,26 @@
 
 #pragma once
 
-#include <ht_resourceobject.h>
+#include <ht_samplerresource.h>
 
 namespace Hatchit {
 
     namespace Graphics {
 
-        enum WrapMode
-        {
-            REPEAT,
-            CLAMP
-        };
-
-        enum FilterMode
-        {
-            NEAREST,
-            BILINEAR
-        };
-
-        enum ColorSpace
-        {
-            GAMMA,
-            LINEAR
-        };
-
-        class HT_API ISampler : public Resource::ResourceObject
+        class HT_API ISampler
         {
         public:
-            ISampler();
-            virtual ~ISampler() {};
-
-            bool VInitFromFile(Core::File* file) override;
+            virtual ~ISampler() = default;
 
             virtual bool VPrepare() = 0;
 
-            void SetFilterMode(FilterMode filterMode);
-            void SetWrapMode(WrapMode wrapMode);
-            void SetColorSpace(ColorSpace colorSpace);
-
-            FilterMode GetFilterMode();
-            WrapMode GetWrapMode();
-            ColorSpace GetColorSpace();
-
-        protected:
-            FilterMode m_filterMode;
-            WrapMode m_wrapMode;
-            ColorSpace m_colorSpace;
+            virtual void SetFilterMode(Resource::Sampler::FilterMode filterMode) = 0;
+            virtual void SetWrapMode(Resource::Sampler::WrapMode wrapMode) = 0;
+            virtual void SetColorSpace(Resource::Sampler::ColorSpace colorSpace) = 0;
+            
+            virtual Resource::Sampler::FilterMode GetFilterMode() = 0;
+            virtual Resource::Sampler::WrapMode GetWrapMode() = 0;
+            virtual Resource::Sampler::ColorSpace GetColorSpace() = 0;
         };
 
     }
