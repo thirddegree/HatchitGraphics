@@ -47,7 +47,9 @@ namespace Hatchit {
 
         class HT_API IShader
         {
+		public:
             friend class IMaterial;
+			virtual ~IShader() {};
         };
     }
 }

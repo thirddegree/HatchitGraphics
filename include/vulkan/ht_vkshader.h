@@ -36,9 +36,11 @@ namespace Hatchit {
             class HT_API VKShader : public IShader, public Resource::Resource<VKShader>
             {
                 friend class IMaterial;
-
+				friend class VKRenderer;
+				friend class VKSwapchain;
             public:
-                VKShader();
+				VKShader(std::string fileName);
+				VKShader(VKShader&&) = default;
                 ~VKShader();
 
 				virtual bool VInitFromFile(const std::string& file) override;
@@ -46,9 +48,10 @@ namespace Hatchit {
 
             private:
                 VkShaderModule m_shader;
+				VKShader* GetRawPointer();
             };
 
-			using VKShaderPtr = VKShader::Handle;
+			using VKShaderHandle = VKShader::Handle;
         }
     }
 }

@@ -21,7 +21,7 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKShader::VKShader() {}
+            VKShader::VKShader(std::string fileName) : Resource::Resource(std::move(fileName)) {}
             VKShader::~VKShader() 
             {
                 VkDevice device = VKRenderer::RendererInstance->GetVKDevice();
@@ -67,6 +67,11 @@ namespace Hatchit {
             {
                 return m_shader;
             }
+
+			VKShader* VKShader::GetRawPointer()
+			{
+				return this;
+			}
         }
     }
 }

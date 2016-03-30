@@ -1235,11 +1235,10 @@ namespace Hatchit {
                 m_texture->SetSampler(m_sampler);
                 m_texture->VInitFromFile(&textureFile);
 
-				VKShader vsShader;
-                vsShader.VInitFromFile("raptor_VS.spv");
 
-                VKShader fsShader;
-                fsShader.VInitFromFile("raptor_FS.spv");
+				VKShaderHandle vsShader = VKShader::GetResourceHandle("raptor_VS.spv");
+				VKShaderHandle fsShader = VKShader::GetResourceHandle("raptor_FS.spv");
+
 
                 RasterizerState rasterState = {};
                 rasterState.cullMode = CullMode::NONE;
@@ -1255,8 +1254,9 @@ namespace Hatchit {
                 Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f));
 
                 IPipeline* pipeline = new VKPipeline(renderPass->GetVkRenderPass());
-                pipeline->VLoadShader(ShaderSlot::VERTEX, &vsShader);
-                pipeline->VLoadShader(ShaderSlot::FRAGMENT, &fsShader);
+				
+                pipeline->VLoadShader(ShaderSlot::VERTEX, vsShader->GetRawPointer());
+                pipeline->VLoadShader(ShaderSlot::FRAGMENT, fsShader->GetRawPointer());
                 pipeline->VSetRasterState(rasterState);
                 pipeline->VSetMultisampleState(multisampleState);
                 pipeline->VPrepare();

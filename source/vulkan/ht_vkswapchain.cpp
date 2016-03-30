@@ -188,11 +188,11 @@ namespace Hatchit {
                 VkResult err;
 
 
-                VKShader vsShader;
-                vsShader.VInitFromFile("screen_VS.spv");
+				VKShaderHandle vsShader = VKShader::GetResourceHandle("screen_VS.spv");
+                //vsShader.VInitFromFile("screen_VS.spv");
 
-                VKShader fsShader;
-                fsShader.VInitFromFile("screen_FS.spv");
+                VKShaderHandle fsShader = VKShader::GetResourceHandle("screen_FS.spv");
+                //fsShader.VInitFromFile("screen_FS.spv");
 
                 RasterizerState rasterState = {};
                 rasterState.cullMode = CullMode::NONE;
@@ -204,8 +204,8 @@ namespace Hatchit {
                 multisampleState.samples = SAMPLE_1_BIT;
 
                 m_pipeline = new VKPipeline(&m_renderPass);
-                m_pipeline->VLoadShader(ShaderSlot::VERTEX, &vsShader);
-                m_pipeline->VLoadShader(ShaderSlot::FRAGMENT, &fsShader);
+                m_pipeline->VLoadShader(ShaderSlot::VERTEX, vsShader->GetRawPointer());
+                m_pipeline->VLoadShader(ShaderSlot::FRAGMENT, fsShader->GetRawPointer());
                 m_pipeline->VSetRasterState(rasterState);
                 m_pipeline->VSetMultisampleState(multisampleState);
 
