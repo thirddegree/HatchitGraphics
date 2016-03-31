@@ -34,14 +34,14 @@ namespace Hatchit {
 
             }
 
-            bool D3D12Shader::VInitFromFile(Core::File * file)
-            {
-                //size_t size = file->SizeBytes();
-                //m_data = new BYTE[size];
-                //file->Read(static_cast<BYTE*>(m_data), size);
+            //bool D3D12Shader::VInitFromFile(Core::File * file)
+            //{
+            //    //size_t size = file->SizeBytes();
+            //    //m_data = new BYTE[size];
+            //    //file->Read(static_cast<BYTE*>(m_data), size);
 
-                return false;
-            }
+            //    return false;
+            //}
 
 //            void D3D12Shader::VOnLoaded()
 //            {

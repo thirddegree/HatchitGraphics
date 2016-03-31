@@ -24,9 +24,8 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKSampler::VKSampler(VkDevice device) 
+            VKSampler::VKSampler(VkDevice device, const std::string& samplerResourceFile) : m_device(device), m_resources(Resource::Sampler::GetResourceHandle(samplerResourceFile))
             {
-                m_device = device;
             }
             VKSampler::~VKSampler() 
             {
@@ -41,23 +40,23 @@ namespace Hatchit {
                 VkSamplerAddressMode vkWrapMode = {};
                 VkFilter vkFilterMode = {};
 
-                switch (m_wrapMode)
+                switch (m_resources->m_wrapMode)
                 {
-                case WrapMode::CLAMP:
+                case Resource::Sampler::WrapMode::CLAMP:
                     vkWrapMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-                case WrapMode::REPEAT:
+                case Resource::Sampler::WrapMode::REPEAT:
                     vkWrapMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
                 default:
                     vkWrapMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
                     break;
                 }
 
-                switch (m_filterMode)
+                switch (m_resources->m_filterMode)
                 {
-                case FilterMode::NEAREST:
+                case Resource::Sampler::FilterMode::NEAREST:
                     vkFilterMode = VK_FILTER_NEAREST;
                     break;
-                case FilterMode::BILINEAR:
+                case Resource::Sampler::FilterMode::BILINEAR:
                     vkFilterMode = VK_FILTER_LINEAR;
                     break;
                 default:
@@ -97,6 +96,36 @@ namespace Hatchit {
             }
 
             VkSampler VKSampler::GetVkSampler() { return m_sampler; }
+
+            void VKSampler::SetFilterMode(Resource::Sampler::FilterMode filterMode)
+            {
+                m_resources->m_filterMode = filterMode;
+            }
+
+            void VKSampler::SetWrapMode(Resource::Sampler::WrapMode wrapMode)
+            {
+                m_resources->m_wrapMode = wrapMode;
+            }
+
+            void VKSampler::SetColorSpace(Resource::Sampler::ColorSpace colorSpace)
+            {
+                m_resources->m_colorSpace = colorSpace;
+            }
+
+            Resource::Sampler::FilterMode VKSampler::GetFilterMode()
+            {
+                return m_resources->m_filterMode;
+            }
+
+            Resource::Sampler::WrapMode VKSampler::GetWrapMode()
+            {
+                return m_resources->m_wrapMode;
+            }
+
+            Resource::Sampler::ColorSpace VKSampler::GetColorSpace()
+            {
+                return m_resources->m_colorSpace;
+            }
 
         }
 

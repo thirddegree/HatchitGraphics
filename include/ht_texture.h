@@ -17,6 +17,7 @@
 #include <ht_debug.h>
 #include <ht_platform.h>
 #include <ht_sampler.h>
+#include <ht_resourceobject.h>
 #include <cassert>
 
 namespace Hatchit {
