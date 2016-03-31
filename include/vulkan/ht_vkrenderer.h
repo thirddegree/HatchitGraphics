@@ -183,7 +183,6 @@ namespace Hatchit {
                 bool createDevice();
                 bool getSupportedFormats();
             };
-
         }
     }
 }

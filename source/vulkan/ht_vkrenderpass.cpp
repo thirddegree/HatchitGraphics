@@ -33,6 +33,7 @@ namespace Hatchit {
 
                 m_commandBuffer = VK_NULL_HANDLE;
             }
+
             VKRenderPass::~VKRenderPass() 
             {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
@@ -43,6 +44,39 @@ namespace Hatchit {
 
                 //Destroy the render pass
                 vkDestroyRenderPass(m_device, m_renderPass, nullptr);
+            }
+
+            bool VKRenderPass::VInitFromFile(File* file)
+            {
+                nlohmann::json json;
+                std::ifstream jsonStream(file->Path());
+
+                if (jsonStream.is_open())
+                {
+                    jsonStream >> json;
+                    nlohmann::json json_inputRenderTargets = json["Input"];
+                    nlohmann::json json_outputRenderTargets = json["Output"];
+                    m_inputRenderTargets = std::vector<Core::Guid>(json_inputRenderTargets.size());
+                    m_outputRenderTargets = std::vector<Core::Guid>(json_outputRenderTargets.size());
+
+                    JsonExtractGuid(json, "GUID", m_guid);
+
+                    for (int i = 0; i < json_inputRenderTargets.size(); i++)
+                    {
+                        Core::Guid::Parse(json_inputRenderTargets[i], m_inputRenderTargets[i]);
+                    }
+
+                    for (int i = 0; i < json_outputRenderTargets.size(); i++)
+                    {
+                        Core::Guid::Parse(json_outputRenderTargets[i], m_outputRenderTargets[i]);
+                    }
+
+                    jsonStream.close();
+                    return true;
+                }
+
+                DebugPrintF("ERROR: Could not generate stream to JSON file -> %s", file->Path());
+                return false;
             }
 
             bool VKRenderPass::VPrepare()

@@ -30,7 +30,11 @@
 #include <ht_shader.h>
 #include <ht_debug.h>
 #include <ht_shadervariable.h>
+<<<<<<< HEAD
+#include <ht_resourceobject.h>
+=======
 #include <ht_pipeline_resource.h>
+>>>>>>> 8e759777736a1d4aaf4226126bb4180a53e457cc
 
 #include <map>
     
@@ -38,10 +42,60 @@ namespace Hatchit {
     
    namespace Graphics {
    
+<<<<<<< HEAD
+        enum PolygonMode
+        {
+            SOLID,
+            LINE
+        };
+   
+        enum CullMode
+        {
+            NONE,
+            FRONT,
+            BACK
+        };
+   
+        //Describes options for the render state
+        //Some options are not available such as front face winding order
+        struct RasterizerState
+        {
+            PolygonMode polygonMode;           //How we want to render objects
+            CullMode    cullMode;              //How we want to cull faces
+            bool        frontCounterClockwise; //Determines if a triangle is front- or back-facing.
+            bool        depthClampEnable;      //True to use depth clamping, false to clip primitives
+            bool        discardEnable;         //True to discard primitives before rasterization
+            float       lineWidth;             //How wide to render when using Line polygon mode
+        };
+   
+        enum SampleCount
+        {
+            SAMPLE_1_BIT,
+            SAMPLE_2_BIT,
+            SAMPLE_4_BIT,
+            SAMPLE_8_BIT,
+            SAMPLE_16_BIT,
+            SAMPLE_32_BIT,
+            SAMPLE_64_BIT
+        };
+   
+        //Describes the multisampling state of the pipeline
+        struct MultisampleState
+        {
+            SampleCount samples;	        //How many bits per sample
+            float       minSamples;		    //Min samples per fragment
+            bool        perSampleShading;   //Shades per sample if true, per fragment if false
+        };
+   
+       class HT_API IPipeline : public Resource::ResourceObject
+=======
        class HT_API IPipeline
+>>>>>>> 8e759777736a1d4aaf4226126bb4180a53e457cc
         {
        public:
             virtual ~IPipeline() {};
+
+            virtual bool VInitFromFile(File* file) = 0;
            
             //If we wanted to allow users to control blending states
             //virtual void VSetColorBlendAttachments(ColorBlendState* colorBlendStates) = 0;

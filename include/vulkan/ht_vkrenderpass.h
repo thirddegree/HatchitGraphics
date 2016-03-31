@@ -39,8 +39,10 @@ namespace Hatchit {
                 VKRenderPass(VkDevice& device, VkCommandPool& commandPool);
                 ~VKRenderPass();
 
+                bool VInitFromFile(File* file)  override;
+
                 //Prepare the internal VkRenderPass
-                bool VPrepare()   override;
+                bool VPrepare()  override;
 
                 //Will this be sent the Objects that it needs to render?
                 ///Render the scene
@@ -64,6 +66,9 @@ namespace Hatchit {
                 VkCommandBuffer m_commandBuffer;
 
                 VkClearValue m_clearColor;
+
+                std::vector<Core::Guid> m_inputRenderTargets;
+                std::vector<Core::Guid> m_outputRenderTargets;
             };
         }
     }

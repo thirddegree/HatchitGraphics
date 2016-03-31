@@ -56,6 +56,154 @@ namespace Hatchit {
                     vkDestroyDescriptorSetLayout(device, m_descriptorSetLayouts[i], nullptr);
             }
 
+            bool VKPipeline::VInitFromFile(File* file)
+            {
+                nlohmann::json json;
+                std::ifstream jsonStream(file->Path());
+
+                if (jsonStream.is_open())
+                {
+                    jsonStream >> json;
+
+                    JsonExtractGuid(json, "GUID", m_guid);
+
+                    // TO-DO: Read in shaders as string of bytes
+                    JsonExtractString(json["Shaders"], "Vertex", m_vertexShaderPath);
+                    JsonExtractString(json["Shaders"], "Pixel", m_pixelShaderPath);
+
+                    // Extract Rasterizer state
+                    nlohmann::json json_rasterState = json["RasterState"];
+                    RasterizerState rasterState{};
+                    std::string polygonMode;
+                    std::string cullMode;
+                    double lineWidth;
+
+                    JsonExtractString(json_rasterState, "PolygonMode", polygonMode);
+                    JsonExtractString(json_rasterState, "CullMode", cullMode);
+                    JsonExtractBool(json_rasterState, "FrontCounterClockwise", rasterState.frontCounterClockwise);
+                    JsonExtractBool(json_rasterState, "DepthClampEnable", rasterState.depthClampEnable);
+                    JsonExtractBool(json_rasterState, "DiscardEnable", rasterState.discardEnable);
+                    JsonExtractDouble(json_rasterState, "LineWidth", lineWidth);
+                    
+                    rasterState.lineWidth = static_cast<float>(lineWidth);
+
+                    if (polygonMode == "LINE")
+                        rasterState.polygonMode = PolygonMode::LINE;
+                    else
+                        rasterState.polygonMode = PolygonMode::SOLID;
+                    
+                    if (cullMode == "FRONT")
+                        rasterState.cullMode = CullMode::FRONT;
+                    else if (cullMode == "BACK")
+                        rasterState.cullMode = CullMode::BACK;
+                    else
+                        rasterState.cullMode = CullMode::NONE;
+
+                    VSetRasterState(rasterState);
+
+                    // Extract Multisampler state
+                    nlohmann::json json_multisampleState = json["MultisampleState"];
+                    MultisampleState multisampleState {};
+                    int64_t sampleCount;
+                    double minSamples;
+
+                    JsonExtractInt64(json_multisampleState, "SampleCount", sampleCount);
+                    JsonExtractDouble(json_multisampleState, "MinSamples", minSamples);
+                    JsonExtractBool(json_multisampleState, "PerSampleShading", multisampleState.perSampleShading);
+
+                    multisampleState.minSamples = static_cast<float>(minSamples);
+
+                    switch (sampleCount)
+                    {
+                    case 1:
+                        multisampleState.samples = SampleCount::SAMPLE_1_BIT;
+                        break;
+                    case 2:
+                        multisampleState.samples = SampleCount::SAMPLE_2_BIT;
+                        break;
+                    case 4:
+                        multisampleState.samples = SampleCount::SAMPLE_4_BIT;
+                        break;
+                    case 8:
+                        multisampleState.samples = SampleCount::SAMPLE_8_BIT;
+                        break;
+                    case 16:
+                        multisampleState.samples = SampleCount::SAMPLE_16_BIT;
+                        break;
+                    case 32:
+                        multisampleState.samples = SampleCount::SAMPLE_32_BIT;
+                        break;
+                    case 64:
+                        multisampleState.samples = SampleCount::SAMPLE_64_BIT;
+                        break;
+                    }
+
+                    VSetMultisampleState(multisampleState);
+
+                    // Extract ShaderVariables
+                    nlohmann::json shaderVariables = json["ShaderVariables"];
+                    std::string name;
+                    std::string type;
+
+                    for (unsigned i = 0; i < shaderVariables.size(); i++)
+                    {
+                        JsonExtractString(shaderVariables[i], "Name", name);
+                        JsonExtractString(shaderVariables[i], "Type", type);
+
+                        if (type == "INT")
+                        {
+                            int64_t value;
+                            JsonExtractInt64(shaderVariables[i], "Value", value);
+                            m_shaderVariables[name] = new IntVariable(static_cast<int>(value));
+                        }
+                        else if (type == "FLOAT")
+                        {
+                            double value;
+                            JsonExtractDouble(shaderVariables[i], "Value", value);
+                            m_shaderVariables[name] = new FloatVariable(static_cast<float>(value));
+                        }
+                        else if (type == "DOUBLE")
+                        {
+                            double value;
+                            JsonExtractDouble(shaderVariables[i], "Value", value);
+                            m_shaderVariables[name] = new DoubleVariable(value);
+                        }
+                        else if (type == "FLOAT2")
+                        {
+                            nlohmann::json jsonVec = shaderVariables[i]["Value"];
+                            Math::Vector2 vec = Math::Vector2(jsonVec[0], jsonVec[1]);
+                            m_shaderVariables[name] = new Float2Variable(vec);
+                        }
+                        else if (type == "FLOAT3")
+                        {
+                            nlohmann::json jsonVec = shaderVariables[i]["Value"];
+                            Math::Vector3 vec = Math::Vector3(jsonVec[0], jsonVec[1], jsonVec[2]);
+                            m_shaderVariables[name] = new Float3Variable(vec);
+                        }
+                        else if (type == "FLOAT4")
+                        {
+                            nlohmann::json jsonVec = shaderVariables[i]["Value"];
+                            Math::Vector4 vec = Math::Vector4(jsonVec[0], jsonVec[1], jsonVec[2], jsonVec[3]);
+                            m_shaderVariables[name] = new Float4Variable(vec);
+                        }
+                        else if (type == "MATRIX4")
+                        {
+                            nlohmann::json jsonMat = shaderVariables[i]["Value"];
+                            Math::Matrix4 mat = Math::Matrix4(jsonMat[0], jsonMat[1], jsonMat[2], jsonMat[3],
+                                jsonMat[4], jsonMat[5], jsonMat[6], jsonMat[7],
+                                jsonMat[8], jsonMat[9], jsonMat[10], jsonMat[11],
+                                jsonMat[12], jsonMat[13], jsonMat[14], jsonMat[15]);
+                            m_shaderVariables[name] = new Matrix4Variable(mat);
+                        }
+                    }
+
+                    return true;
+                }
+
+                DebugPrintF("ERROR: Could not generate stream to JSON file -> %s", file->Path());
+                return true;
+            }
+
             //If we wanted to allow users to control blending states
             //void VSetColorBlendAttachments(ColorBlendState* colorBlendStates) override;
 
