@@ -134,16 +134,11 @@ namespace Hatchit {
                 if (FAILED(hr))
                     return false;
 
-                /*Load Susanne*/
-                Core::File file;
-                file.Open(Core::os_exec_dir() + "monkey.obj", Core::FileMode::ReadBinary);
-
-                Resource::Model m;
-                m.VInitFromFile(&file);
+				Resource::ModelHandle m = Resource::Model::GetResourceHandle("monkey.obj");
 
                 srand(time(NULL));
-                auto verts = m.GetMeshes()[0]->getVertices();
-                auto normals = m.GetMeshes()[0]->getNormals();
+                auto verts = m->GetMeshes()[0]->getVertices();
+                auto normals = m->GetMeshes()[0]->getNormals();
                 std::vector<Vertex> vertices;
                 for (size_t i = 0; i < verts.size(); i++)
                 {
@@ -163,7 +158,7 @@ namespace Hatchit {
                     vertices.push_back(vertex);
                 }
 
-                auto indices = m.GetMeshes()[0]->getIndices();
+                auto indices = m->GetMeshes()[0]->getIndices();
                 std::vector<unsigned short> indexList;
                 for (auto i : indices)
                 {
