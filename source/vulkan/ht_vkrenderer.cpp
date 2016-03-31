@@ -1271,9 +1271,9 @@ namespace Hatchit {
                 m_sampler->SetColorSpace(Resource::Sampler::ColorSpace::GAMMA);
                 m_sampler->VPrepare();
 
-                m_texture = new VKTexture(m_device);
+                m_texture = new VKTexture(m_device, "raptor.png");
                 m_texture->SetSampler(m_sampler);
-                m_texture->VInitFromFile(&textureFile);
+//                m_texture->VInitFromFile(&textureFile);
 
 
 				VKShaderHandle vsShader = VKShader::GetResourceHandle("raptor_VS.spv");

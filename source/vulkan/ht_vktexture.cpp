@@ -21,10 +21,10 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKTexture::VKTexture(VkDevice device) 
+            VKTexture::VKTexture(VkDevice device, const std::string& fileName) : m_device(device), m_resource(Resource::Texture::GetResourceHandle(fileName)) 
             {
-                m_device = device;
             }
+
             VKTexture::~VKTexture() 
             {
                 vkDestroyImageView(m_device, m_view, nullptr);
@@ -39,6 +39,22 @@ namespace Hatchit {
             }
             VkImageView VKTexture::GetView() { return m_view; }
 
+            void VKTexture::SetSampler(ISampler* sampler)
+            {
+                m_sampler = std::move(sampler);
+                VBufferImage();
+            }
+
+            uint32_t VKTexture::GetWidth() const
+            {
+                return m_resource->GetWidth();
+            }
+
+            uint32_t VKTexture::GetHeight() const
+            {
+                return m_resource->GetHeight();
+            }
+
             bool VKTexture::VBufferImage()
             {
                 VkResult err;
@@ -46,7 +62,7 @@ namespace Hatchit {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
 
                 VkFormat format;
-                if (m_channels == 4)
+                if (m_resource->GetChannels() == 4)
                 {
                     switch (m_sampler->GetColorSpace())
                     {
@@ -75,8 +91,8 @@ namespace Hatchit {
                 imageCreateInfo.pNext = nullptr;
                 imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
                 imageCreateInfo.format = format;
-                imageCreateInfo.extent = { m_width, m_height, 1 };
-                imageCreateInfo.mipLevels = m_mipLevels;
+                imageCreateInfo.extent = { m_resource->GetWidth(), m_resource->GetHeight(), 1 };
+                imageCreateInfo.mipLevels = m_resource->GetMIPLevels();
                 imageCreateInfo.arrayLayers = 1;
                 imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
                 imageCreateInfo.tiling = VK_IMAGE_TILING_LINEAR;
@@ -160,7 +176,7 @@ namespace Hatchit {
                 }
 
                 //Copy image data
-                memcpy(pData, m_data, m_width * m_height * m_channels);
+                memcpy(pData, m_resource->GetData(), m_resource->GetWidth() * m_resource->GetHeight() * m_resource->GetChannels());
 
                 vkUnmapMemory(m_device, m_deviceMemory);
 
@@ -183,7 +199,7 @@ namespace Hatchit {
                 viewInfo.subresourceRange.baseMipLevel = 0;
                 viewInfo.subresourceRange.baseArrayLayer = 0;
                 viewInfo.subresourceRange.layerCount = 1;
-                viewInfo.subresourceRange.levelCount = m_mipLevels;
+                viewInfo.subresourceRange.levelCount = m_resource->GetMIPLevels();
                 viewInfo.image = m_image;
                 err = vkCreateImageView(m_device, &viewInfo, nullptr, &m_view);
                 assert(!err);
