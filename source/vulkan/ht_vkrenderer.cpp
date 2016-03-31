@@ -1257,12 +1257,6 @@ namespace Hatchit {
 
                 m_swapchain->SetIncomingRenderTarget(m_renderTarget);
 
-                Core::File meshFile;
-                meshFile.Open(Core::os_exec_dir() + "Raptor.obj", Core::FileMode::ReadBinary);
-
-                Core::File textureFile;
-                textureFile.Open(Core::os_exec_dir() + "raptor.png", Core::FileMode::ReadBinary);
-
                 ModelHandle model = Model::GetResourceHandle("Raptor.obj");
                 //model.VInitFromFile(&meshFile);
 
@@ -1275,11 +1269,11 @@ namespace Hatchit {
 
                 m_texture = new VKTexture(m_device, "raptor.png");
                 m_texture->SetSampler(m_sampler);
-//                m_texture->VInitFromFile(&textureFile);
+                //m_texture->VInitFromFile(&textureFile);
 
 
-				VKShaderHandle vsShader = VKShader::GetResourceHandle("raptor_VS.spv");
-				VKShaderHandle fsShader = VKShader::GetResourceHandle("raptor_FS.spv");
+                VKShaderHandle vsShader = VKShader::GetResourceHandle("raptor_VS.spv");
+                VKShaderHandle fsShader = VKShader::GetResourceHandle("raptor_FS.spv");
 
 
                 Pipeline::RasterizerState rasterState = {};
@@ -1295,8 +1289,8 @@ namespace Hatchit {
 
                 Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f));
 
-                IPipeline* pipeline = new VKPipeline(renderPass->GetVkRenderPass());
-				
+                IPipeline* pipeline = new VKPipeline(renderPass->GetVkRenderPass(), "TestPipeline.json");
+                
                 pipeline->VLoadShader(ShaderSlot::VERTEX, vsShader->GetRawPointer());
                 pipeline->VLoadShader(ShaderSlot::FRAGMENT, fsShader->GetRawPointer());
                 pipeline->VSetRasterState(rasterState);

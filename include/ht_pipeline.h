@@ -59,11 +59,19 @@ namespace Hatchit {
             /* Load a shader into a shader slot for the pipeline
             * \param shaderSlot The slot that you want the shader in; vertex, fragment etc.
             * \param shader A pointer to the shader that you want to load to the given shader slot
+            * Marked for removal
             */
             virtual void VLoadShader(ShaderSlot shaderSlot, IShader* shader) = 0;
            
+            /* Add a map of existing shader variables into this pipeline
+            * \param shaderVariables the map of existing shader variables you want to add
+            */
+            virtual bool VAddShaderVariables(std::map<std::string, Resource::ShaderVariable*> shaderVariables) = 0;
+
             virtual bool VSetInt(std::string name, int data) = 0;
+            virtual bool VSetDouble(std::string name, double data) = 0;
             virtual bool VSetFloat(std::string name, float data) = 0;
+            virtual bool VSetFloat2(std::string name, Math::Vector2 data) = 0;
             virtual bool VSetFloat3(std::string name, Math::Vector3 data) = 0;
             virtual bool VSetFloat4(std::string name, Math::Vector4 data) = 0;
             virtual bool VSetMatrix4(std::string name, Math::Matrix4 data) = 0;

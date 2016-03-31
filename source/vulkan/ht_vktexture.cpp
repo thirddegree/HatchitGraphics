@@ -21,7 +21,9 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKTexture::VKTexture(VkDevice device, const std::string& fileName) : m_device(device), m_resource(Resource::Texture::GetResourceHandle(fileName)) 
+            VKTexture::VKTexture(VkDevice device, const std::string& fileName) :
+                m_device(device),
+                m_resource(Resource::Texture::GetResourceHandle(fileName)) 
             {
             }
 
