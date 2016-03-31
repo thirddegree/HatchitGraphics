@@ -22,6 +22,8 @@ namespace Hatchit {
 
         namespace Vulkan {
 
+            using namespace Resource;
+
             VKSwapchain::VKSwapchain(VkInstance& instance, VkPhysicalDevice& gpu, VkDevice& device, VkCommandPool& commandPool) :
                 m_instance(instance), m_gpu(gpu), m_device(device), m_commandPool(commandPool)
             {
@@ -194,14 +196,14 @@ namespace Hatchit {
                 VKShaderHandle fsShader = VKShader::GetResourceHandle("screen_FS.spv");
                 //fsShader.VInitFromFile("screen_FS.spv");
 
-                RasterizerState rasterState = {};
-                rasterState.cullMode = CullMode::NONE;
-                rasterState.polygonMode = PolygonMode::SOLID;
+                Pipeline::RasterizerState rasterState = {};
+                rasterState.cullMode = Pipeline::CullMode::NONE;
+                rasterState.polygonMode = Pipeline::PolygonMode::SOLID;
                 rasterState.depthClampEnable = true;
 
-                MultisampleState multisampleState = {};
+                Pipeline::MultisampleState multisampleState = {};
                 multisampleState.minSamples = 0;
-                multisampleState.samples = SAMPLE_1_BIT;
+                multisampleState.samples = Pipeline::SAMPLE_1_BIT;
 
                 m_pipeline = new VKPipeline(&m_renderPass);
                 m_pipeline->VLoadShader(ShaderSlot::VERTEX, vsShader->GetRawPointer());

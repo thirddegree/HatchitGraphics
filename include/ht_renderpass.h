@@ -27,7 +27,7 @@
 #include <ht_platform.h>
 #include <ht_rendertarget.h>
 #include <ht_pipeline.h>
-#include <ht_gmesh.h>
+#include <ht_mesh.h>
 #include <ht_material.h>
 #include <ht_math.h>
 #include <ht_color.h>

@@ -41,6 +41,8 @@ namespace Hatchit {
 
         namespace Vulkan {
 
+            using namespace Hatchit::Resource;
+
             VKRenderer* VKRenderer::RendererInstance = nullptr;
 
             VKRenderer::VKRenderer()
@@ -1261,14 +1263,14 @@ namespace Hatchit {
                 Core::File textureFile;
                 textureFile.Open(Core::os_exec_dir() + "raptor.png", Core::FileMode::ReadBinary);
 
-                Resource::ModelHandle model = Resource::Model::GetResourceHandle("Raptor.obj");
+                ModelHandle model = Model::GetResourceHandle("Raptor.obj");
                 //model.VInitFromFile(&meshFile);
 
                 CreateSetupCommandBuffer();
 
                 //TODO: Once JSON file is found, insert name here
                 m_sampler = new VKSampler(m_device, "");
-                m_sampler->SetColorSpace(Resource::Sampler::ColorSpace::GAMMA);
+                m_sampler->SetColorSpace(Sampler::ColorSpace::GAMMA);
                 m_sampler->VPrepare();
 
                 m_texture = new VKTexture(m_device, "raptor.png");
@@ -1280,14 +1282,14 @@ namespace Hatchit {
 				VKShaderHandle fsShader = VKShader::GetResourceHandle("raptor_FS.spv");
 
 
-                RasterizerState rasterState = {};
-                rasterState.cullMode = CullMode::NONE;
-                rasterState.polygonMode = PolygonMode::SOLID;
+                Pipeline::RasterizerState rasterState = {};
+                rasterState.cullMode = Pipeline::CullMode::NONE;
+                rasterState.polygonMode = Pipeline::PolygonMode::SOLID;
                 rasterState.depthClampEnable = true;
 
-                MultisampleState multisampleState = {};
+                Pipeline::MultisampleState multisampleState = {};
                 multisampleState.minSamples = 0;
-                multisampleState.samples = SAMPLE_1_BIT;
+                multisampleState.samples = Pipeline::SAMPLE_1_BIT;
 
                 Math::Matrix4 view = Math::MMMatrixTranspose(Math::MMMatrixLookAt(Math::Vector3(0, 0, -5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0)));
 
@@ -1307,7 +1309,7 @@ namespace Hatchit {
                 m_material->VBindTexture("color", m_texture);
                 m_material->VPrepare(pipeline);
 
-                std::vector<Resource::Mesh*> meshes = model->GetMeshes();
+                std::vector<Mesh*> meshes = model->GetMeshes();
                 IMesh* mesh = new VKMesh();
                 mesh->VBuffer(meshes[0]);
 

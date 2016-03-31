@@ -51,12 +51,12 @@ namespace Hatchit {
                 /* Set the rasterization state for this pipeline
                 * \param rasterState A struct containing rasterization options
                 */
-                void VSetRasterState(const RasterizerState& rasterState)        override;
+                void VSetRasterState(const Hatchit::Resource::Pipeline::RasterizerState& rasterState)        override;
 
                 /* Set the multisampling state for this pipeline
                 * \param multiState A struct containing multisampling options
                 */
-                void VSetMultisampleState(const MultisampleState& multiState)   override;
+                void VSetMultisampleState(const Hatchit::Resource::Pipeline::MultisampleState& multiState)   override;
 
                 /* Load a shader into a shader slot for the pipeline
                 * \param shaderSlot The slot that you want the shader in; vertex, fragment etc.

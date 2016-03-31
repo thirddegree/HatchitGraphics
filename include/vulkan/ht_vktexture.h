@@ -15,7 +15,7 @@
 #pragma once
 
 #include <ht_texture.h>
-#include <ht_textureresource.h>
+#include <ht_texture_resource.h>
 #include <ht_vksampler.h>
 #include <ht_vulkan.h>
 

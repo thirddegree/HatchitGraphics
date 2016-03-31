@@ -20,6 +20,8 @@
  *
  * A pipeline contains all sort of information about how the renderer should render subsequent
  * render passes. This includes things like topology, MSAA, shaders etc.
+ *
+ * Shader variables set in this class will be sent via PushConstants in Vulkan.
  */
     
 #pragma once
@@ -28,56 +30,13 @@
 #include <ht_shader.h>
 #include <ht_debug.h>
 #include <ht_shadervariable.h>
+#include <ht_pipeline_resource.h>
 
 #include <map>
     
 namespace Hatchit {
     
    namespace Graphics {
-   
-        enum PolygonMode
-        {
-            SOLID,
-            LINE
-        };
-   
-        enum CullMode
-        {
-            NONE,
-            FRONT,
-            BACK
-        };
-   
-        //Describes options for the render state
-        //Some options are not available such as front face winding order
-        struct RasterizerState
-        {
-            PolygonMode polygonMode;           //How we want to render objects
-            CullMode    cullMode;              //How we want to cull faces
-            bool        frontCounterClockwise; //Determines if a triangle is front- or back-facing.
-            bool        depthClampEnable;      //True to use depth clamping, false to clip primitives
-            bool        discardEnable;         //True to discard primitives before rasterization
-            float       lineWidth;             //How wide to render when using Line polygon mode
-        };
-   
-        enum SampleCount
-        {
-            SAMPLE_1_BIT,
-            SAMPLE_2_BIT,
-            SAMPLE_4_BIT,
-            SAMPLE_8_BIT,
-            SAMPLE_16_BIT,
-            SAMPLE_32_BIT,
-            SAMPLE_64_BIT
-        };
-   
-        //Describes the multisampling state of the pipeline
-        struct MultisampleState
-        {
-            SampleCount samples;	        //How many bits per sample
-            float       minSamples;		    //Min samples per fragment
-            bool        perSampleShading;   //Shades per sample if true, per fragment if false
-        };
    
        class HT_API IPipeline
         {
@@ -90,12 +49,12 @@ namespace Hatchit {
             /* Set the rasterization state for this pipeline
             * \param rasterState A struct containing rasterization options
             */
-            virtual void VSetRasterState(const RasterizerState& rasterState) = 0;
+            virtual void VSetRasterState(const Resource::Pipeline::RasterizerState& rasterState) = 0;
            
             /* Set the multisampling state for this pipeline
             * \param multiState A struct containing multisampling options
             */
-            virtual void VSetMultisampleState(const MultisampleState& multiState) = 0;
+            virtual void VSetMultisampleState(const Resource::Pipeline::MultisampleState& multiState) = 0;
            
             /* Load a shader into a shader slot for the pipeline
             * \param shaderSlot The slot that you want the shader in; vertex, fragment etc.
@@ -116,7 +75,7 @@ namespace Hatchit {
             virtual bool VUpdate() = 0;
 
         protected:
-            std::map<std::string, ShaderVariable*> m_shaderVariables;
+            std::map<std::string, Resource::ShaderVariable*> m_shaderVariables;
         };
     }
 }

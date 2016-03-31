@@ -23,6 +23,8 @@ namespace Hatchit {
 
         namespace Vulkan {
 
+            using namespace Resource;
+
             VKPipeline::VKPipeline(const VkRenderPass* renderPass) { m_renderPass = renderPass; }
             VKPipeline::~VKPipeline() 
             {
@@ -44,17 +46,17 @@ namespace Hatchit {
             /* Set the rasterization state for this pipeline
             * \param rasterState A struct containing rasterization options
             */
-            void VKPipeline::VSetRasterState(const RasterizerState& rasterState)
+            void VKPipeline::VSetRasterState(const Pipeline::RasterizerState& rasterState)
             {
                 VkPolygonMode polyMode;
                 VkCullModeFlagBits cullMode;
 
                 switch (rasterState.polygonMode)
                 {
-                case PolygonMode::SOLID:
+                case Pipeline::PolygonMode::SOLID:
                     polyMode = VK_POLYGON_MODE_FILL;
                     break;
-                case PolygonMode::LINE:
+                case Pipeline::PolygonMode::LINE:
                     polyMode = VK_POLYGON_MODE_LINE;
                     break;
                 default:
@@ -64,13 +66,13 @@ namespace Hatchit {
 
                 switch (rasterState.cullMode)
                 {
-                case NONE:
+                case Pipeline::NONE:
                     cullMode = VK_CULL_MODE_NONE;
                     break;
-                case FRONT:
+                case Pipeline::FRONT:
                     cullMode = VK_CULL_MODE_FRONT_BIT;
                     break;
-                case BACK:
+                case Pipeline::BACK:
                     cullMode = VK_CULL_MODE_BACK_BIT;
                     break;
                 }
@@ -89,31 +91,31 @@ namespace Hatchit {
             /* Set the multisampling state for this pipeline
             * \param multiState A struct containing multisampling options
             */
-            void VKPipeline::VSetMultisampleState(const MultisampleState& multiState)
+            void VKPipeline::VSetMultisampleState(const Pipeline::MultisampleState& multiState)
             {
                 VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT;
 
                 switch (multiState.samples)
                 {
-                case SAMPLE_1_BIT:
+                case Pipeline::SAMPLE_1_BIT:
                     sampleCount = VK_SAMPLE_COUNT_1_BIT;
                     break;
-                case SAMPLE_2_BIT:
+                case Pipeline::SAMPLE_2_BIT:
                     sampleCount = VK_SAMPLE_COUNT_2_BIT;
                     break;
-                case SAMPLE_4_BIT:
+                case Pipeline::SAMPLE_4_BIT:
                     sampleCount = VK_SAMPLE_COUNT_4_BIT;
                     break;
-                case SAMPLE_8_BIT:
+                case Pipeline::SAMPLE_8_BIT:
                     sampleCount = VK_SAMPLE_COUNT_8_BIT;
                     break;
-                case SAMPLE_16_BIT:
+                case Pipeline::SAMPLE_16_BIT:
                     sampleCount = VK_SAMPLE_COUNT_16_BIT;
                     break;
-                case SAMPLE_32_BIT:
+                case Pipeline::SAMPLE_32_BIT:
                     sampleCount = VK_SAMPLE_COUNT_32_BIT;
                     break;
-                case SAMPLE_64_BIT:
+                case Pipeline::SAMPLE_64_BIT:
                     sampleCount = VK_SAMPLE_COUNT_64_BIT;
                     break;
                 }

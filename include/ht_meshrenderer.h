@@ -27,7 +27,7 @@
 #include <ht_renderpass.h>
 #include <ht_objectrenderer.h>
 #include <ht_material.h>
-#include <ht_gmesh.h>
+#include <ht_mesh.h>
 
 namespace Hatchit {
 

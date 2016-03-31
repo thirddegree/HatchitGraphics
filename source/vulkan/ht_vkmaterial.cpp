@@ -26,6 +26,8 @@ namespace Hatchit {
 
         namespace Vulkan {
 
+            using namespace Resource;
+
             VKMaterial::VKMaterial() 
             { 
                 //TODO: Allocate variables based on the material file
