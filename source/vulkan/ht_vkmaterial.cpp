@@ -162,9 +162,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKMaterial::VPrepare: Failed to allocate descriptor set\n");
-#endif
+                    HT_DEBUG_PRINTF("VKMaterial::VPrepare: Failed to allocate descriptor set\n");
                     return false;
                 }
 

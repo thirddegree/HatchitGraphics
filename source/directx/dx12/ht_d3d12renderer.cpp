@@ -123,9 +123,7 @@ namespace Hatchit {
                 hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pipelineState));
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create pipeline state object.\n");
-#endif
+                    HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to create pipeline state object.\n");
                     return false;
                 }
 
@@ -324,9 +322,7 @@ namespace Hatchit {
                 }
                 catch (std::exception& e)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("%s\n", e.what());
-#endif
+                    HT_DEBUG_PRINTF("%s\n", e.what());
                     return false;
                 }
 

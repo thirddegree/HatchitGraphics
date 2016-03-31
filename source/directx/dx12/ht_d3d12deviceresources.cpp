@@ -125,9 +125,7 @@ namespace Hatchit {
                 hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create DXGIFactory.\n");
-#endif
+                    HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to create DXGIFactory.\n");
                     ReleaseCOM(factory);
                     return false;
                 }
@@ -136,9 +134,7 @@ namespace Hatchit {
                 hr = CheckHardwareAdapter(factory, &hardwareAdapter);
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to find suitable Direct3D12 adapter.\n");
-#endif
+                    HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to find suitable Direct3D12 adapter.\n");
                     ReleaseCOM(hardwareAdapter);
                     ReleaseCOM(factory);
                     return false;
@@ -150,9 +146,7 @@ namespace Hatchit {
                 hr = D3D12CreateDevice(hardwareAdapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_device));
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create Direct3D12 device.\n");
-#endif
+                    HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to create Direct3D12 device.\n");
                     ReleaseCOM(hardwareAdapter);
                     ReleaseCOM(factory);
                     return false;
@@ -173,9 +167,7 @@ namespace Hatchit {
                 hr = m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_commandQueue));
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create Direct3D12 Command Queue.\n");
-#endif
+                    HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to create Direct3D12 Command Queue.\n");
                     ReleaseCOM(hardwareAdapter);
                     ReleaseCOM(factory);
                     return false;
@@ -206,9 +198,7 @@ namespace Hatchit {
                 hr = factory->CreateSwapChain(m_commandQueue, &swapChainDesc, &swapChain);
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create swapChain.\n");
-#endif
+                    HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to create swapChain.\n");
                     ReleaseCOM(hardwareAdapter);
                     ReleaseCOM(factory);
                     return false;
@@ -220,9 +210,7 @@ namespace Hatchit {
                 hr = swapChain->QueryInterface(__uuidof(IDXGISwapChain3), reinterpret_cast<void**>(&m_swapChain));
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to query IDXGISwapChain3 interface.\n");
-#endif
+                    HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to query IDXGISwapChain3 interface.\n");
                     ReleaseCOM(hardwareAdapter);
                     ReleaseCOM(factory);
                     return false;
@@ -240,9 +228,7 @@ namespace Hatchit {
                 hr = m_device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_renderTargetViewHeap));
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create render target view heap.\n");
-#endif
+                    HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to create render target view heap.\n");
                     ReleaseCOM(hardwareAdapter);
                     ReleaseCOM(factory);
                     return false;
@@ -258,9 +244,7 @@ namespace Hatchit {
                     hr = m_swapChain->GetBuffer(i, IID_PPV_ARGS(&m_renderTargets[i]));
                     if (FAILED(hr))
                     {
-#ifdef _DEBUG
-                        Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to get render target buffer for resource creation.\n");
-#endif
+                        HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to get render target buffer for resource creation.\n");
                         ReleaseCOM(hardwareAdapter);
                         ReleaseCOM(factory);
                         return false;
@@ -309,9 +293,7 @@ namespace Hatchit {
                 hr = m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator));
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create command allocator for command list memory allocation.\n");
-#endif
+                    HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to create command allocator for command list memory allocation.\n");
                     ReleaseCOM(hardwareAdapter);
                     ReleaseCOM(factory);
                     return false;

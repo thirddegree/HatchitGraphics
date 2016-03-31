@@ -376,12 +376,10 @@ namespace Hatchit {
 
                 case VK_ERROR_INCOMPATIBLE_DRIVER:
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("Cannot find a compatible Vulkan installable client driver"
+                    HT_DEBUG_PRINTF("Cannot find a compatible Vulkan installable client driver"
                         "(ICD).\n\nPlease look at the Getting Started guide for "
                         "additional information.\n"
                         "vkCreateInstance Failure\n");
-#endif
                 } return false;
 
                 case VK_ERROR_EXTENSION_NOT_PRESENT:
@@ -458,9 +456,7 @@ namespace Hatchit {
 
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("Error creating VkSurface for Win32 window");
-#endif
+                    HT_DEBUG_PRINTF("Error creating VkSurface for Win32 window");
                     return false;
                 }
 #endif
@@ -477,7 +473,7 @@ namespace Hatchit {
 
                 if(err != VK_SUCCESS)
                 {
-                    Core::DebugPrintF("Error creating VkSurface for Xcb window");
+                    HT_DEBUG_PRINTF("Error creating VkSurface for Xcb window");
         
                     return false;
                 }
@@ -570,9 +566,7 @@ namespace Hatchit {
                     return true;
                 }
 
-#ifdef _DEBUG
-                Core::DebugPrintF("VKRenderer::checkInstanceLayers(), instanceLayerCount is zero. \n");
-#endif
+                HT_DEBUG_PRINTF("VKRenderer::checkInstanceLayers(), instanceLayerCount is zero. \n");
                 return false;
             }
 
@@ -630,9 +624,8 @@ namespace Hatchit {
                     return true;
                 }
 
-#ifdef _DEBUG
-                Core::DebugPrintF("VKRenderer::checkInstanceExtensions(), instanceExtensionCount is zero. \n");
-#endif
+                HT_DEBUG_PRINTF("VKRenderer::checkInstanceExtensions(), instanceExtensionCount is zero. \n");
+
                 return false;
             }
 
@@ -644,9 +637,7 @@ namespace Hatchit {
                 err = vkEnumeratePhysicalDevices(m_instance, &gpuCount, nullptr);
                 if (gpuCount <= 0 || err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("No compatible devices were found.\n");
-#endif
+                    HT_DEBUG_PRINTF("No compatible devices were found.\n");
                     return false;
                 }
 
@@ -654,9 +645,7 @@ namespace Hatchit {
                 err = vkEnumeratePhysicalDevices(m_instance, &gpuCount, physicalDevices);
                 if (err)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("Vulkan encountered error enumerating physical devices.\n");
-#endif
+                    HT_DEBUG_PRINTF("Vulkan encountered error enumerating physical devices.\n");
                     delete[] physicalDevices;
                     return false;
                 }
@@ -677,9 +666,7 @@ namespace Hatchit {
 
                 if (deviceLayerCount == 0)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::checkValidationLayers(): No layers were found on the device.\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::checkValidationLayers(): No layers were found on the device.\n");
                     return false;
                 }
 
@@ -692,9 +679,7 @@ namespace Hatchit {
 
                 if (!validated)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VkRenderer::checkValidationLayers(): Could not validate enabled layers against device layers.\n");
-#endif
+                    HT_DEBUG_PRINTF("VkRenderer::checkValidationLayers(): Could not validate enabled layers against device layers.\n");
                     return false;
                 }
 
@@ -717,9 +702,7 @@ namespace Hatchit {
                     }
                     if (!found)
                     {
-#ifdef _DEBUG
-                        Core::DebugPrintF("VKRenderer::checkLayers(), Cannot find layer: %s\n", layerNames[i]);
-#endif
+                        HT_DEBUG_PRINTF("VKRenderer::checkLayers(), Cannot find layer: %s\n", layerNames[i]);
                         validated = false;
                     }
 
@@ -743,9 +726,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKMesh::createBuffer(): Failed to create buffer\n");
-#endif
+                    HT_DEBUG_PRINTF("VKMesh::createBuffer(): Failed to create buffer\n");
                     return false;
                 }
 
@@ -763,9 +744,7 @@ namespace Hatchit {
                 assert(okay);
                 if (!okay)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKMesh::createBuffer(): Failed to get memory type\n");
-#endif
+                    HT_DEBUG_PRINTF("VKMesh::createBuffer(): Failed to get memory type\n");
                     return false;
                 }
 
@@ -776,9 +755,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKMesh::createBuffer(): Failed to allocate memory\n");
-#endif
+                    HT_DEBUG_PRINTF("VKMesh::createBuffer(): Failed to allocate memory\n");
                     return false;
                 }
 
@@ -789,9 +766,7 @@ namespace Hatchit {
                     assert(!err);
                     if (err != VK_SUCCESS)
                     {
-#ifdef _DEBUG
-                        Core::DebugPrintF("VKMesh::createBuffer(): Failed to map memory\n");
-#endif
+                        HT_DEBUG_PRINTF("VKMesh::createBuffer(): Failed to map memory\n");
                         return false;
                     }
 
@@ -806,9 +781,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKMesh::VBuffer(): Failed to bind memory\n");
-#endif
+                    HT_DEBUG_PRINTF("VKMesh::VBuffer(): Failed to bind memory\n");
                     return false;
                 }
 
@@ -830,9 +803,7 @@ namespace Hatchit {
 
                 if (deviceExtensionCount == 0)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::checkDeviceExtensions(): Device reported no available extensions\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::checkDeviceExtensions(): Device reported no available extensions\n");
                     return false;
                 }
 
@@ -855,14 +826,12 @@ namespace Hatchit {
 
                 if (!swapchainExtFound)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("vkEnumerateDeviceExtensionProperties failed to find "
+                    HT_DEBUG_PRINTF("vkEnumerateDeviceExtensionProperties failed to find "
                         "the " VK_KHR_SWAPCHAIN_EXTENSION_NAME
                         " extension.\n\nDo you have a compatible "
                         "Vulkan installable client driver (ICD) installed?\nPlease "
                         "look at the Getting Started guide for additional "
                         "information.\n");
-#endif
                     return false;
                 }
 
@@ -881,24 +850,18 @@ namespace Hatchit {
 
                 if (!m_createDebugReportCallback)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("GetProcAddr: Unable to find vkCreateDebugReportCallbackEXT\n");
-#endif
+                    HT_DEBUG_PRINTF("GetProcAddr: Unable to find vkCreateDebugReportCallbackEXT\n");
                     return false;
                 }
                 if (!m_destroyDebugReportCallback) {
-#ifdef _DEBUG
-                    Core::DebugPrintF("GetProcAddr: Unable to find vkDestroyDebugReportCallbackEXT\n");
-#endif
+                    HT_DEBUG_PRINTF("GetProcAddr: Unable to find vkDestroyDebugReportCallbackEXT\n");
                     return false;
                 }
 
                 m_debugReportMessage =
                     (PFN_vkDebugReportMessageEXT)vkGetInstanceProcAddr(m_instance, "vkDebugReportMessageEXT");
                 if (!m_debugReportMessage) {
-#ifdef _DEBUG
-                    Core::DebugPrintF("GetProcAddr: Unable to find vkDebugReportMessageEXT\n");
-#endif
+                    HT_DEBUG_PRINTF("GetProcAddr: Unable to find vkDebugReportMessageEXT\n");
                     return false;
                 }
 
@@ -918,14 +881,10 @@ namespace Hatchit {
                 case VK_SUCCESS:
                     break;
                 case VK_ERROR_OUT_OF_HOST_MEMORY:
-#ifdef _DEBUG
-                    Core::DebugPrintF("ERROR: Out of host memory!\n");
-#endif
+                    HT_DEBUG_PRINTF("ERROR: Out of host memory!\n");
                     return false;
                 default:
-#ifdef _DEBUG
-                    Core::DebugPrintF("ERROR: An unknown error occured!\n");
-#endif
+                    HT_DEBUG_PRINTF("ERROR: An unknown error occured!\n");
                     return false;
                 }
 
@@ -943,9 +902,7 @@ namespace Hatchit {
 
                 if (queueCount == 0)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::setupDeviceQueues: No queues were found on the device\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::setupDeviceQueues: No queues were found on the device\n");
                     return false;
                 }
 
@@ -962,9 +919,7 @@ namespace Hatchit {
 
                 if (gfxQueueIdx >= queueCount)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::setupDeviceQueues: No graphics queue was found on the device\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::setupDeviceQueues: No graphics queue was found on the device\n");
                     return false;
                 }
 
@@ -983,9 +938,7 @@ namespace Hatchit {
                     vkGetInstanceProcAddr(m_instance, "vkGetPhysicalDeviceSurfaceSupportKHR");
                 if (fpGetPhysicalDeviceSurfaceSupportKHR == nullptr)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::setupProcAddresses: vkGetPhysicalDeviceSurfaceSupportKHR not found.\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::setupProcAddresses: vkGetPhysicalDeviceSurfaceSupportKHR not found.\n");
                     return false;
                 }
 
@@ -993,9 +946,7 @@ namespace Hatchit {
                     vkGetInstanceProcAddr(m_instance, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
                 if (fpGetPhysicalDeviceSurfaceCapabilitiesKHR == nullptr)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::setupProcAddresses: vkGetPhysicalDeviceSurfaceCapabilitiesKHR not found.\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::setupProcAddresses: vkGetPhysicalDeviceSurfaceCapabilitiesKHR not found.\n");
                     return false;
                 }
 
@@ -1003,9 +954,7 @@ namespace Hatchit {
                     vkGetInstanceProcAddr(m_instance, "vkGetPhysicalDeviceSurfaceFormatsKHR");
                 if (fpGetPhysicalDeviceSurfaceFormatsKHR == nullptr)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::setupProcAddresses: vkGetPhysicalDeviceSurfaceFormatsKHR not found.\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::setupProcAddresses: vkGetPhysicalDeviceSurfaceFormatsKHR not found.\n");
                     return false;
                 }
 
@@ -1013,9 +962,7 @@ namespace Hatchit {
                     vkGetInstanceProcAddr(m_instance, "vkGetPhysicalDeviceSurfacePresentModesKHR");
                 if (fpGetPhysicalDeviceSurfacePresentModesKHR == nullptr)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::setupProcAddresses: vkGetPhysicalDeviceSurfacePresentModesKHR not found.\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::setupProcAddresses: vkGetPhysicalDeviceSurfacePresentModesKHR not found.\n");
                     return false;
                 }
 
@@ -1063,9 +1010,7 @@ namespace Hatchit {
                 // Generate error if could not find both a graphics and a present queue
                 if (graphicsQueueNodeIndex == UINT32_MAX ||
                     presentQueueNodeIndex == UINT32_MAX) {
-#ifdef _DEBUG
-                    Core::DebugPrintF("Unable to find a graphics and a present queue.\n");
-#endif
+                    HT_DEBUG_PRINTF("Unable to find a graphics and a present queue.\n");
                     return false;
                 }
 
@@ -1102,9 +1047,7 @@ namespace Hatchit {
                 err = vkCreateDevice(m_gpu, &device, nullptr, &m_device);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("Failed to create device. \n");
-#endif
+                    HT_DEBUG_PRINTF("Failed to create device. \n");
                     return false;
                 }
 
@@ -1131,9 +1074,7 @@ namespace Hatchit {
 
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VkRenderer::getSupportedFormats(): Error getting number of formats from device.\n");
-#endif
+                    HT_DEBUG_PRINTF("VkRenderer::getSupportedFormats(): Error getting number of formats from device.\n");
                     return false;
                 }
 
@@ -1142,9 +1083,7 @@ namespace Hatchit {
                 err = fpGetPhysicalDeviceSurfaceFormatsKHR(m_gpu, m_surface, &formatCount, surfaceFormats);
                 if (err != VK_SUCCESS || formatCount <= 0)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VkRenderer::getSupportedFormats(): Error getting VkSurfaceFormats from device.\n");
-#endif
+                    HT_DEBUG_PRINTF("VkRenderer::getSupportedFormats(): Error getting VkSurfaceFormats from device.\n");
                     return false;
                 }
 
@@ -1176,9 +1115,7 @@ namespace Hatchit {
 
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::setupCommandPool: Error creating command pool.\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::setupCommandPool: Error creating command pool.\n");
                     return false;
                 }
 
@@ -1214,9 +1151,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::setupDescriptorPool: Failed to create descriptor pool\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::setupDescriptorPool: Failed to create descriptor pool\n");
                     return false;
                 }
 
@@ -1352,9 +1287,7 @@ namespace Hatchit {
                     err = vkAllocateCommandBuffers(m_device, &command, &m_setupCommandBuffer);
                     if (err != VK_SUCCESS)
                     {
-#ifdef _DEBUG
-                        Core::DebugPrintF("VKRenderer::CreateSetupCommandBuffer(): Failed to allocate command buffer.\n");
-#endif
+                        HT_DEBUG_PRINTF("VKRenderer::CreateSetupCommandBuffer(): Failed to allocate command buffer.\n");
                     }
                 }
 
@@ -1511,9 +1444,7 @@ namespace Hatchit {
             {
                 if (RendererInstance == nullptr)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::MemoryTypeFromProperties(): Tried to call static before the renderer instance was set.\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::MemoryTypeFromProperties(): Tried to call static before the renderer instance was set.\n");
                     return false;
                 }
 
@@ -1543,9 +1474,7 @@ namespace Hatchit {
             {
                 if (msgFlags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("ERROR: [%s] Code %d : %s\n", pLayerPrefix, msgCode,pMsg);
-#endif
+                    HT_DEBUG_PRINTF("ERROR: [%s] Code %d : %s\n", pLayerPrefix, msgCode,pMsg);
                 }
                 else if (msgFlags & VK_DEBUG_REPORT_WARNING_BIT_EXT)
                 {
@@ -1557,9 +1486,7 @@ namespace Hatchit {
                         return false;
                     }
 
-#ifdef _DEBUG
-                    Core::DebugPrintF("WARNING: [%s] Code %d : %s\n", pLayerPrefix, msgCode, pMsg);
-#endif
+                    HT_DEBUG_PRINTF("WARNING: [%s] Code %d : %s\n", pLayerPrefix, msgCode, pMsg);
                 }
                 else {
                     return false;

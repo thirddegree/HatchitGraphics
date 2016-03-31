@@ -81,9 +81,7 @@ namespace Hatchit {
                 }
                 else
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKTexture::VBufferImage() Error; cannot process RGB textures; they must be RGBA");
-#endif
+                    HT_DEBUG_PRINTF("VKTexture::VBufferImage() Error; cannot process RGB textures; they must be RGBA");
                     return false;
                 }
 
@@ -112,9 +110,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKTexture::VBufferImage(): Failed to create image\n");
-#endif
+                    HT_DEBUG_PRINTF("VKTexture::VBufferImage(): Failed to create image\n");
                     return false;
                 }
 
@@ -131,9 +127,7 @@ namespace Hatchit {
                 assert(success);
                 if (!success)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKTexture::VBufferImage(): Failed to find memory properties!\n");
-#endif
+                    HT_DEBUG_PRINTF("VKTexture::VBufferImage(): Failed to find memory properties!\n");
                     return false;
                 }
 
@@ -142,9 +136,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKTexture::VBufferImage(): Failed to allocate memory!\n");
-#endif
+                    HT_DEBUG_PRINTF("VKTexture::VBufferImage(): Failed to allocate memory!\n");
                     return false;
                 }
 
@@ -153,9 +145,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKTexture::VBufferImage(): Failed to bind image!\n");
-#endif
+                    HT_DEBUG_PRINTF("VKTexture::VBufferImage(): Failed to bind image!\n");
                     return false;
                 }
 
@@ -171,9 +161,7 @@ namespace Hatchit {
                 err = vkMapMemory(m_device, m_deviceMemory, 0, memReqs.size, 0, &pData);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKTexture::VBufferImage(): Failed to map memory!\n");
-#endif
+                    HT_DEBUG_PRINTF("VKTexture::VBufferImage(): Failed to map memory!\n");
                     return false;
                 }
 
