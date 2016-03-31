@@ -23,7 +23,25 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKPipeline::VKPipeline(const VkRenderPass* renderPass) { m_renderPass = renderPass; }
+            using namespace Resource;
+
+            VKPipeline::VKPipeline(const VkRenderPass* renderPass) :
+                m_renderPass(renderPass),
+                m_resource(Pipeline::GetResourceHandle(""))
+            {
+            }
+
+            VKPipeline::VKPipeline(const VkRenderPass* renderPass, const std::string& fileName) : 
+                m_renderPass(renderPass),
+                m_resource(Pipeline::GetResourceHandle(fileName))
+            { 
+                VSetRasterState(m_resource->GetRasterizationState());
+                VSetMultisampleState(m_resource->GetMultisampleState());
+
+                VAddShaderVariables(m_resource->GetShaderVariables());
+
+                //TODO: Load shaders from resource
+            }
             VKPipeline::~VKPipeline() 
             {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
@@ -192,17 +210,17 @@ namespace Hatchit {
             /* Set the rasterization state for this pipeline
             * \param rasterState A struct containing rasterization options
             */
-            void VKPipeline::VSetRasterState(const RasterizerState& rasterState)
+            void VKPipeline::VSetRasterState(const Pipeline::RasterizerState& rasterState)
             {
                 VkPolygonMode polyMode;
                 VkCullModeFlagBits cullMode;
 
                 switch (rasterState.polygonMode)
                 {
-                case PolygonMode::SOLID:
+                case Pipeline::PolygonMode::SOLID:
                     polyMode = VK_POLYGON_MODE_FILL;
                     break;
-                case PolygonMode::LINE:
+                case Pipeline::PolygonMode::LINE:
                     polyMode = VK_POLYGON_MODE_LINE;
                     break;
                 default:
@@ -212,13 +230,13 @@ namespace Hatchit {
 
                 switch (rasterState.cullMode)
                 {
-                case NONE:
+                case Pipeline::NONE:
                     cullMode = VK_CULL_MODE_NONE;
                     break;
-                case FRONT:
+                case Pipeline::FRONT:
                     cullMode = VK_CULL_MODE_FRONT_BIT;
                     break;
-                case BACK:
+                case Pipeline::BACK:
                     cullMode = VK_CULL_MODE_BACK_BIT;
                     break;
                 }
@@ -237,31 +255,31 @@ namespace Hatchit {
             /* Set the multisampling state for this pipeline
             * \param multiState A struct containing multisampling options
             */
-            void VKPipeline::VSetMultisampleState(const MultisampleState& multiState)
+            void VKPipeline::VSetMultisampleState(const Pipeline::MultisampleState& multiState)
             {
                 VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT;
 
                 switch (multiState.samples)
                 {
-                case SAMPLE_1_BIT:
+                case Pipeline::SAMPLE_1_BIT:
                     sampleCount = VK_SAMPLE_COUNT_1_BIT;
                     break;
-                case SAMPLE_2_BIT:
+                case Pipeline::SAMPLE_2_BIT:
                     sampleCount = VK_SAMPLE_COUNT_2_BIT;
                     break;
-                case SAMPLE_4_BIT:
+                case Pipeline::SAMPLE_4_BIT:
                     sampleCount = VK_SAMPLE_COUNT_4_BIT;
                     break;
-                case SAMPLE_8_BIT:
+                case Pipeline::SAMPLE_8_BIT:
                     sampleCount = VK_SAMPLE_COUNT_8_BIT;
                     break;
-                case SAMPLE_16_BIT:
+                case Pipeline::SAMPLE_16_BIT:
                     sampleCount = VK_SAMPLE_COUNT_16_BIT;
                     break;
-                case SAMPLE_32_BIT:
+                case Pipeline::SAMPLE_32_BIT:
                     sampleCount = VK_SAMPLE_COUNT_32_BIT;
                     break;
-                case SAMPLE_64_BIT:
+                case Pipeline::SAMPLE_64_BIT:
                     sampleCount = VK_SAMPLE_COUNT_64_BIT;
                     break;
                 }
@@ -316,6 +334,43 @@ namespace Hatchit {
                 m_shaderStages.push_back(shaderStage);
             }
 
+            bool VKPipeline::VAddShaderVariables(std::map<std::string, ShaderVariable*> shaderVariables)
+            {
+                std::map<std::string, ShaderVariable*>::iterator it;
+                for (it = shaderVariables.begin(); it != shaderVariables.end(); it++)
+                {
+                    std::string name = it->first;
+                    ShaderVariable* var = it->second;
+                    
+                    switch (var->GetType())
+                    {
+                    case ShaderVariable::INT:
+                        VSetInt(name, *static_cast<int*>(var->GetData()));
+                        break;
+                    case ShaderVariable::DOUBLE:
+                        VSetDouble(name, *static_cast<double*>(var->GetData()));
+                        break;
+                    case ShaderVariable::FLOAT:
+                        VSetFloat(name, *static_cast<float*>(var->GetData()));
+                        break;
+                    case ShaderVariable::FLOAT2:
+                        VSetFloat2(name, *static_cast<Math::Vector2 *>(var->GetData()));
+                        break;
+                    case ShaderVariable::FLOAT3:
+                        VSetFloat3(name, *static_cast<Math::Vector3 *>(var->GetData()));
+                        break;
+                    case ShaderVariable::FLOAT4:
+                        VSetFloat4(name, *static_cast<Math::Vector4 *>(var->GetData()));
+                        break;
+                    case ShaderVariable::MAT4:
+                        VSetMatrix4(name, *static_cast<Math::Matrix4 *>(var->GetData()));
+                        break;
+                    }
+                }
+
+                return true;
+            }
+
             bool VKPipeline::VSetInt(std::string name, int data)
             {
                 //If the variable doesn't exist in the map lets allocate it
@@ -328,6 +383,18 @@ namespace Hatchit {
 
                 return true;
             }
+            bool VKPipeline::VSetDouble(std::string name, double data)
+            {
+                //If the variable doesn't exist in the map lets allocate it
+                //Otherwise lets just change its data
+                std::map<std::string, ShaderVariable*>::iterator it = m_shaderVariables.find(name);
+                if (it != m_shaderVariables.end())
+                    static_cast<DoubleVariable*>(m_shaderVariables[name])->SetData(data);
+                else
+                    m_shaderVariables[name] = new DoubleVariable(data);
+
+                return true;
+            }
             bool VKPipeline::VSetFloat(std::string name, float data)
             {
                 //If the variable doesn't exist in the map lets allocate it
@@ -337,6 +404,18 @@ namespace Hatchit {
                     static_cast<FloatVariable*>(m_shaderVariables[name])->SetData(data);
                 else
                     m_shaderVariables[name] = new FloatVariable(data);
+
+                return true;
+            }
+            bool VKPipeline::VSetFloat2(std::string name, Math::Vector2 data)
+            {
+                //If the variable doesn't exist in the map lets allocate it
+                //Otherwise lets just change its data
+                std::map<std::string, ShaderVariable*>::iterator it = m_shaderVariables.find(name);
+                if (it != m_shaderVariables.end())
+                    static_cast<Float2Variable*>(m_shaderVariables[name])->SetData(data);
+                else
+                    m_shaderVariables[name] = new Float2Variable(data);
 
                 return true;
             }

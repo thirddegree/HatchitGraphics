@@ -26,8 +26,15 @@ namespace Hatchit {
 
         namespace Vulkan {
 
+<<<<<<< HEAD
             VKMaterial::VKMaterial()
             {
+=======
+            using namespace Resource;
+
+            VKMaterial::VKMaterial() 
+            { 
+>>>>>>> 8e759777736a1d4aaf4226126bb4180a53e457cc
                 //TODO: Allocate variables based on the material file
                 m_shaderVariables["object.model"] = new Matrix4Variable();
 

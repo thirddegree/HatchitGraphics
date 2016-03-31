@@ -64,8 +64,7 @@ namespace Hatchit {
             }
 
         protected:
-
-            std::map<std::string, ShaderVariable*> m_shaderVariables;
+            std::map<std::string, Resource::ShaderVariable*> m_shaderVariables;
             std::map<std::string, ITexture*> m_textures;
 
             IPipeline* m_pipeline;

@@ -20,6 +20,8 @@
  *
  * A pipeline contains all sort of information about how the renderer should render subsequent
  * render passes. This includes things like topology, MSAA, shaders etc.
+ *
+ * Shader variables set in this class will be sent via PushConstants in Vulkan.
  */
     
 #pragma once
@@ -28,7 +30,11 @@
 #include <ht_shader.h>
 #include <ht_debug.h>
 #include <ht_shadervariable.h>
+<<<<<<< HEAD
 #include <ht_resourceobject.h>
+=======
+#include <ht_pipeline_resource.h>
+>>>>>>> 8e759777736a1d4aaf4226126bb4180a53e457cc
 
 #include <map>
     
@@ -36,6 +42,7 @@ namespace Hatchit {
     
    namespace Graphics {
    
+<<<<<<< HEAD
         enum PolygonMode
         {
             SOLID,
@@ -81,6 +88,9 @@ namespace Hatchit {
         };
    
        class HT_API IPipeline : public Resource::ResourceObject
+=======
+       class HT_API IPipeline
+>>>>>>> 8e759777736a1d4aaf4226126bb4180a53e457cc
         {
        public:
             virtual ~IPipeline() {};
@@ -93,21 +103,29 @@ namespace Hatchit {
             /* Set the rasterization state for this pipeline
             * \param rasterState A struct containing rasterization options
             */
-            virtual void VSetRasterState(const RasterizerState& rasterState) = 0;
+            virtual void VSetRasterState(const Resource::Pipeline::RasterizerState& rasterState) = 0;
            
             /* Set the multisampling state for this pipeline
             * \param multiState A struct containing multisampling options
             */
-            virtual void VSetMultisampleState(const MultisampleState& multiState) = 0;
+            virtual void VSetMultisampleState(const Resource::Pipeline::MultisampleState& multiState) = 0;
            
             /* Load a shader into a shader slot for the pipeline
             * \param shaderSlot The slot that you want the shader in; vertex, fragment etc.
             * \param shader A pointer to the shader that you want to load to the given shader slot
+            * Marked for removal
             */
             virtual void VLoadShader(ShaderSlot shaderSlot, IShader* shader) = 0;
            
+            /* Add a map of existing shader variables into this pipeline
+            * \param shaderVariables the map of existing shader variables you want to add
+            */
+            virtual bool VAddShaderVariables(std::map<std::string, Resource::ShaderVariable*> shaderVariables) = 0;
+
             virtual bool VSetInt(std::string name, int data) = 0;
+            virtual bool VSetDouble(std::string name, double data) = 0;
             virtual bool VSetFloat(std::string name, float data) = 0;
+            virtual bool VSetFloat2(std::string name, Math::Vector2 data) = 0;
             virtual bool VSetFloat3(std::string name, Math::Vector3 data) = 0;
             virtual bool VSetFloat4(std::string name, Math::Vector4 data) = 0;
             virtual bool VSetMatrix4(std::string name, Math::Matrix4 data) = 0;
@@ -119,7 +137,7 @@ namespace Hatchit {
             virtual bool VUpdate() = 0;
 
         protected:
-            std::map<std::string, ShaderVariable*> m_shaderVariables;
+            std::map<std::string, Resource::ShaderVariable*> m_shaderVariables;
         };
     }
 }

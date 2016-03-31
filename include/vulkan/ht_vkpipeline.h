@@ -43,6 +43,7 @@ namespace Hatchit {
             {
             public:
                 VKPipeline(const VkRenderPass* renderPass);
+                VKPipeline(const VkRenderPass* renderPass, const std::string& fileName);
                 ~VKPipeline();
 
                 bool VInitFromFile(File* file)                                  override;
@@ -53,21 +54,29 @@ namespace Hatchit {
                 /* Set the rasterization state for this pipeline
                 * \param rasterState A struct containing rasterization options
                 */
-                void VSetRasterState(const RasterizerState& rasterState)        override;
+                void VSetRasterState(const Hatchit::Resource::Pipeline::RasterizerState& rasterState)        override;
 
                 /* Set the multisampling state for this pipeline
                 * \param multiState A struct containing multisampling options
                 */
-                void VSetMultisampleState(const MultisampleState& multiState)   override;
+                void VSetMultisampleState(const Hatchit::Resource::Pipeline::MultisampleState& multiState)   override;
 
                 /* Load a shader into a shader slot for the pipeline
                 * \param shaderSlot The slot that you want the shader in; vertex, fragment etc.
                 * \param shader A pointer to the shader that you want to load to the given shader slot
+                * Marked for removal
                 */
                 void VLoadShader(ShaderSlot shaderSlot, IShader* shader)        override;
 
+                /* Add a map of existing shader variables into this pipeline
+                * \param shaderVariables the map of existing shader variables you want to add
+                */
+                bool VAddShaderVariables(std::map<std::string, Hatchit::Resource::ShaderVariable*> shaderVariables);
+
                 bool VSetInt(std::string name, int data)                        override;
+                bool VSetDouble(std::string name, double data)                  override;
                 bool VSetFloat(std::string name, float data)                    override;
+                bool VSetFloat2(std::string name, Math::Vector2 data)           override;
                 bool VSetFloat3(std::string name, Math::Vector3 data)           override;
                 bool VSetFloat4(std::string name, Math::Vector4 data)           override;
                 bool VSetMatrix4(std::string name, Math::Matrix4 data)          override;
@@ -86,8 +95,9 @@ namespace Hatchit {
                 std::vector<VkDescriptorSetLayout>  GetVKDescriptorSetLayouts();
                 
                 void SendPushConstants(VkCommandBuffer commandBuffer);
-
             protected:
+                Hatchit::Resource::PipelineHandle m_resource;
+
                 //Input
                 const VkRenderPass* m_renderPass;
 

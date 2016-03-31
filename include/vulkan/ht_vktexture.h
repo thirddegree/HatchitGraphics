@@ -15,6 +15,7 @@
 #pragma once
 
 #include <ht_texture.h>
+#include <ht_texture_resource.h>
 #include <ht_vksampler.h>
 #include <ht_vulkan.h>
 
@@ -27,11 +28,16 @@ namespace Hatchit {
             class HT_API VKTexture : public ITexture
             {
             public:
-                VKTexture(VkDevice device);
-                ~VKTexture();
+                VKTexture(VkDevice device, const std::string& fileName);
+                virtual ~VKTexture();
 
                 VkSampler GetSampler();
                 VkImageView GetView();
+
+                virtual void SetSampler(ISampler* sampler) override;
+
+                virtual uint32_t GetWidth() const override;
+                virtual uint32_t GetHeight() const override;
 
             private:
                 bool VBufferImage() override;
@@ -43,6 +49,10 @@ namespace Hatchit {
                 VkImageLayout m_imageLayout;
 
                 VkDeviceMemory m_deviceMemory;
+
+                Resource::TextureHandle m_resource;
+
+                ISampler* m_sampler;
             };
 
         }
