@@ -25,13 +25,15 @@ namespace Hatchit {
 
             using namespace Resource;
 
-            VKPipeline::VKPipeline(const VkRenderPass* renderPass) :
+            VKPipeline::VKPipeline(VkDevice& device, const VkRenderPass* renderPass) :
+                m_device(device),
                 m_renderPass(renderPass),
                 m_resource(Pipeline::GetResourceHandle(""))
             {
             }
 
-            VKPipeline::VKPipeline(const VkRenderPass* renderPass, const std::string& fileName) : 
+            VKPipeline::VKPipeline(VkDevice& device, const VkRenderPass* renderPass, const std::string& fileName) : 
+                m_device(device),
                 m_renderPass(renderPass),
                 m_resource(Pipeline::GetResourceHandle(fileName))
             { 
@@ -40,7 +42,12 @@ namespace Hatchit {
 
                 VAddShaderVariables(m_resource->GetShaderVariables());
 
-                //TODO: Load shaders from resource
+                //Load all shaders
+                std::map<Pipeline::ShaderSlot, ShaderHandle> shaderHandles = m_resource->GetSPVShaderPaths();
+
+                std::map<Pipeline::ShaderSlot, ShaderHandle>::iterator it;
+                for (it = shaderHandles.begin(); it != shaderHandles.end(); it++)
+                    VLoadShader(it->first, it->second);
             }
             VKPipeline::~VKPipeline() 
             {
@@ -149,30 +156,47 @@ namespace Hatchit {
             * \param shaderSlot The slot that you want the shader in; vertex, fragment etc.
             * \param shader A pointer to the shader that you want to load to the given shader slot
             */
-            void VKPipeline::VLoadShader(ShaderSlot shaderSlot, IShader* shader)
+            void VKPipeline::VLoadShader(Pipeline::ShaderSlot shaderSlot, ShaderHandle shader)
             {
-                VKShader* vkShader = (VKShader*)shader;
+                VkResult err;
+
+                BYTE* shaderBytecode = shader->GetBytecode();
+                size_t shaderBytecodeSize = shader->GetBytecodeSize();
+
+                VkShaderModule shaderModule;
+
+                VkShaderModuleCreateInfo moduleCreateInfo = {};
+                moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+                moduleCreateInfo.pNext = nullptr;
+                moduleCreateInfo.codeSize = shaderBytecodeSize;
+                moduleCreateInfo.pCode = (uint32_t*)shaderBytecode;
+                moduleCreateInfo.flags = 0;
+
+                err = vkCreateShaderModule(m_device, &moduleCreateInfo, nullptr, &shaderModule);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                    HT_DEBUG_PRINTF("VKShader::VInitFromFile(): Error creating shader module\n");
 
                 VkShaderStageFlagBits shaderType;
 
                 switch (shaderSlot)
                 {
-                case ShaderSlot::VERTEX:
+                case Pipeline::ShaderSlot::VERTEX:
                     shaderType = VK_SHADER_STAGE_VERTEX_BIT;
                     break;
-                case ShaderSlot::FRAGMENT:
+                case Pipeline::ShaderSlot::FRAGMENT:
                     shaderType = VK_SHADER_STAGE_FRAGMENT_BIT;
                     break;
-                case ShaderSlot::GEOMETRY:
+                case Pipeline::ShaderSlot::GEOMETRY:
                     shaderType = VK_SHADER_STAGE_GEOMETRY_BIT;
                     break;
-                case ShaderSlot::TESS_CONTROL:
+                case Pipeline::ShaderSlot::TESS_CONTROL:
                     shaderType = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
                     break;
-                case ShaderSlot::TESS_EVAL:
+                case Pipeline::ShaderSlot::TESS_EVAL:
                     shaderType = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
                     break;
-                case ShaderSlot::COMPUTE:
+                case Pipeline::ShaderSlot::COMPUTE:
                     shaderType = VK_SHADER_STAGE_COMPUTE_BIT;
                     break;
                 }
@@ -180,7 +204,7 @@ namespace Hatchit {
                 VkPipelineShaderStageCreateInfo shaderStage = {};
                 shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
                 shaderStage.stage = shaderType;
-                shaderStage.module = vkShader->GetShaderModule();
+                shaderStage.module = shaderModule;
                 shaderStage.pName = "main";
 
                 m_shaderStages.push_back(shaderStage);

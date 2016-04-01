@@ -31,6 +31,7 @@
 #include <ht_debug.h>
 #include <ht_shadervariable.h>
 #include <ht_pipeline_resource.h>
+#include <ht_shader_resource.h>
 
 #include <map>
     
@@ -59,9 +60,8 @@ namespace Hatchit {
             /* Load a shader into a shader slot for the pipeline
             * \param shaderSlot The slot that you want the shader in; vertex, fragment etc.
             * \param shader A pointer to the shader that you want to load to the given shader slot
-            * Marked for removal
             */
-            virtual void VLoadShader(ShaderSlot shaderSlot, IShader* shader) = 0;
+            virtual void VLoadShader(Resource::Pipeline::ShaderSlot shaderSlot, Resource::ShaderHandle shader) = 0;
            
             /* Add a map of existing shader variables into this pipeline
             * \param shaderVariables the map of existing shader variables you want to add
