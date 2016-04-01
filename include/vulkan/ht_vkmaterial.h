@@ -28,6 +28,7 @@
 #include <ht_material.h>
 
 #include <ht_vkrenderpass.h>
+#include <ht_material_resource.h>
 
 namespace Hatchit {
 
@@ -39,10 +40,11 @@ namespace Hatchit {
             {
             public:
                 VKMaterial();
+                VKMaterial(const std::string& fileName);
                 ~VKMaterial();
 
                 ///Callback for when this VKMaterial has been loaded from the disk. Used to build shader variable list
-                bool VInitFromFile(Core::File* file)                        override;
+                virtual void VOnResourceLoaded() override;
 
                 bool VSetInt(std::string name, int data)                    override;
                 bool VSetFloat(std::string name, float data)                override;
@@ -59,7 +61,14 @@ namespace Hatchit {
 
                 VkDescriptorSet* GetVKDescriptorSet();
 
+                virtual IPipeline* GetPipeline() override;
+
             private:
+
+                bool setupDescriptorSet(VkDescriptorPool descriptorPool, VkDevice device);
+
+                Hatchit::Resource::MaterialHandle m_resource;
+
                 VkDescriptorSetLayout m_materialLayout;
                 VkDescriptorSet m_materialSet;
 
@@ -67,7 +76,9 @@ namespace Hatchit {
                 UniformBlock m_uniformFSBuffer;
                 std::vector<UniformBlock> m_fragmentTextures;
 
-                bool setupDescriptorSet(VkDescriptorPool descriptorPool, VkDevice device);
+                IPipeline* m_pipeline;
+                std::map<std::string, ITexture*> m_textures;
+                std::map<std::string, Hatchit::Resource::ShaderVariable*> m_shaderVariables;
             };
         }
     }
