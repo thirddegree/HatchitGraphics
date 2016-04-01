@@ -109,9 +109,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::prepareDescriptorLayout(): Failed to create render pass\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::prepareDescriptorLayout(): Failed to create render pass\n");
                     return false;
                 }
 
@@ -185,9 +183,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderPass::VBuildCommandList(): Failed to build command buffer.\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderPass::VBuildCommandList(): Failed to build command buffer.\n");
                     return false;
                 }
 
@@ -255,9 +251,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderPass::VBuildCommandList(): Failed to end command buffer.\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderPass::VBuildCommandList(): Failed to end command buffer.\n");
                     return false;
                 }
 
@@ -294,9 +288,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::prepareDescriptorLayout(): Failed to allocate command buffer\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::prepareDescriptorLayout(): Failed to allocate command buffer\n");
                     return false;
                 }
 

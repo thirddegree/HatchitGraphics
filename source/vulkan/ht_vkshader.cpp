@@ -54,9 +54,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKShader::VInitFromFile(): Error creating shader module\n");
-#endif
+                    HT_DEBUG_PRINTF("VKShader::VInitFromFile(): Error creating shader module\n");
                     return false;
                 }
 

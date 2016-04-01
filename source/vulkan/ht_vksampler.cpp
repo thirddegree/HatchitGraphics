@@ -86,9 +86,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKTexture::VBufferImage(): Failed to create sampler!\n");
-#endif
+                    HT_DEBUG_PRINTF("VKTexture::VBufferImage(): Failed to create sampler!\n");
                     return false;
                 }
 

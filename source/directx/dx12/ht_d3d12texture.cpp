@@ -67,9 +67,7 @@ namespace Hatchit
                     IID_PPV_ARGS(&m_texture));
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("ID3D12Texture::VInitFromFile, Failed to create texture.\n");
-#endif
+                    HT_DEBUG_PRINTF("ID3D12Texture::VInitFromFile, Failed to create texture.\n");
                     return false;
                 }
 
@@ -84,9 +82,7 @@ namespace Hatchit
                     IID_PPV_ARGS(&m_uploadHeap));
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("ID3D12Texture::VInitFromFile, Failed to create texture upload heap.\n");
-#endif
+                    HT_DEBUG_PRINTF("ID3D12Texture::VInitFromFile, Failed to create texture upload heap.\n");
                     return false;
                 }
 

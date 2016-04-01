@@ -59,10 +59,8 @@ namespace Hatchit {
                 {
                     if (errorBlob)
                     {
-#ifdef _DEBUG
-                        Core::DebugPrintF("DXVertexShader::VInitShader() Error: %s\n", errorBlob->GetBufferPointer());
+                        HT_DEBUG_PRINTF("DXVertexShader::VInitShader() Error: %s\n", errorBlob->GetBufferPointer());
                         DirectX::ReleaseCOM(errorBlob);
-#endif
                     }
                     return false;
                 }
@@ -137,10 +135,8 @@ namespace Hatchit {
                     static_cast<uint32_t>(inputLayoutDesc.size()), m_blob->GetBufferPointer(), m_blob->GetBufferSize(), &m_inputLayout);
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("DXVertexShader::VInitShader() Error: Failed to create input layout.\n");
-#endif
-                    false;
+                    HT_DEBUG_PRINTF("DXVertexShader::VInitShader() Error: Failed to create input layout.\n");
+                    return false;
                 }
 
                 return true;

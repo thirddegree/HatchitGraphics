@@ -48,9 +48,7 @@ namespace Hatchit {
 //                //Initialize shader with data
 //                if (!this->VInitShader())
 //                {
-//#ifdef _DEBUG
-//                    Core::DebugPrintF("D3D12Shader::VOnLoaded, Failed to initialize shader.\n");
-//#endif
+//                    HT_DEBUG_PRINTF("D3D12Shader::VOnLoaded, Failed to initialize shader.\n");
 //                    return;
 //                }
 //
