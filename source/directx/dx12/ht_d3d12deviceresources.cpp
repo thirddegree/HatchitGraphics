@@ -54,6 +54,8 @@ namespace Hatchit {
 
             bool D3D12DeviceResources::Initialize(HWND hwnd, uint32_t width, uint32_t height)
             {
+				m_hwnd = hwnd;
+
                 return CreateDeviceResources(hwnd, width, height);
             }
 
@@ -106,6 +108,18 @@ namespace Hatchit {
             {
                 return m_currentFrame;
             }
+
+			void D3D12DeviceResources::DestroyDeviceResources()
+			{
+				ReleaseCOM(m_renderTargetViewHeap);
+				ReleaseCOM(m_depthStencilHeap);
+				for (int i = 0; i < NUM_RENDER_TARGETS; i++)
+				{
+					ReleaseCOM(m_renderTargets[i]);
+					m_fenceValues[i] = m_fenceValues[m_currentFrame];
+				}
+				ReleaseCOM(m_depthStencil);
+			}
 
             bool D3D12DeviceResources::CreateDeviceResources(HWND hwnd, uint32_t width, uint32_t height)
             {
@@ -176,16 +190,16 @@ namespace Hatchit {
 
 
                 
-                DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
-                swapChainDesc.BufferCount = NUM_RENDER_TARGETS; //double buffered
-                swapChainDesc.BufferDesc.Width = width;
-                swapChainDesc.BufferDesc.Height = height;
-                swapChainDesc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-                swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-                swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-                swapChainDesc.OutputWindow = hwnd;
-                swapChainDesc.SampleDesc.Count = 1;
-                swapChainDesc.Windowed = true;
+                m_swapChainDesc = {};
+				m_swapChainDesc.BufferCount = NUM_RENDER_TARGETS; //double buffered
+				m_swapChainDesc.BufferDesc.Width = width;
+				m_swapChainDesc.BufferDesc.Height = height;
+				m_swapChainDesc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+				m_swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+				m_swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+				m_swapChainDesc.OutputWindow = hwnd;
+				m_swapChainDesc.SampleDesc.Count = 1;
+				m_swapChainDesc.Windowed = true;
 
 
                 /**
@@ -195,7 +209,7 @@ namespace Hatchit {
                 * the command queue directly.
                 */
                 IDXGISwapChain* swapChain;
-                hr = factory->CreateSwapChain(m_commandQueue, &swapChainDesc, &swapChain);
+                hr = factory->CreateSwapChain(m_commandQueue, &m_swapChainDesc, &swapChain);
                 if (FAILED(hr))
                 {
                     HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to create swapChain.\n");
@@ -218,74 +232,8 @@ namespace Hatchit {
                 ReleaseCOM(swapChain);
                 m_currentFrame = m_swapChain->GetCurrentBackBufferIndex();
 
-                /*
-                * Create desciptor heaps
-                */
-                D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-                rtvHeapDesc.NumDescriptors = 2;
-                rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-                rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-                hr = m_device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_renderTargetViewHeap));
-                if (FAILED(hr))
-                {
-                    HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to create render target view heap.\n");
-                    ReleaseCOM(hardwareAdapter);
-                    ReleaseCOM(factory);
-                    return false;
-                }
-                m_renderTargetViewHeapSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
-                /*
-                * Now we will create the resources for each frame
-                */
-                CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_renderTargetViewHeap->GetCPUDescriptorHandleForHeapStart());
-                for (uint32_t i = 0; i < NUM_RENDER_TARGETS; i++)
-                {
-                    hr = m_swapChain->GetBuffer(i, IID_PPV_ARGS(&m_renderTargets[i]));
-                    if (FAILED(hr))
-                    {
-                        HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to get render target buffer for resource creation.\n");
-                        ReleaseCOM(hardwareAdapter);
-                        ReleaseCOM(factory);
-                        return false;
-                    }
-
-                    m_device->CreateRenderTargetView(m_renderTargets[i], nullptr, rtvHandle);
-
-                    rtvHandle.ptr += 1 * m_renderTargetViewHeapSize;
-                }
-
-                /*
-                * Create a depth stencil view
-                */
-                D3D12_DESCRIPTOR_HEAP_DESC depthStencilHeapDesc = {};
-                depthStencilHeapDesc.NumDescriptors = 1;
-                depthStencilHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-                depthStencilHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-                hr = m_device->CreateDescriptorHeap(&depthStencilHeapDesc, IID_PPV_ARGS(&m_depthStencilHeap));
-
-                D3D12_HEAP_PROPERTIES depthHeapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-                D3D12_RESOURCE_DESC   depthResourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT,
-                    width, height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
-                D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
-                depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
-                depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
-                depthOptimizedClearValue.DepthStencil.Stencil = 0;
-
-                hr = m_device->CreateCommittedResource(
-                    &depthHeapProps,
-                    D3D12_HEAP_FLAG_NONE,
-                    &depthResourceDesc,
-                    D3D12_RESOURCE_STATE_DEPTH_WRITE,
-                    &depthOptimizedClearValue,
-                    IID_PPV_ARGS(&m_depthStencil));
-
-                D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc = {};
-                depthStencilViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
-                depthStencilViewDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-                depthStencilViewDesc.Flags = D3D12_DSV_FLAG_NONE;
-
-                m_device->CreateDepthStencilView(m_depthStencil, &depthStencilViewDesc, m_depthStencilHeap->GetCPUDescriptorHandleForHeapStart());
+				if (!CreateBuffers(width, height))
+					return false;
 
                 /*
                 * Create a command allocator for managing memory for command list
@@ -322,6 +270,92 @@ namespace Hatchit {
 
                 return true;
             }
+
+			bool D3D12DeviceResources::CreateBuffers(uint32_t width, uint32_t height)
+			{
+				HRESULT hr = S_OK;
+
+				/*
+				* Create desciptor heaps
+				*/
+				D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
+				rtvHeapDesc.NumDescriptors = 2;
+				rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+				rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+				hr = m_device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_renderTargetViewHeap));
+				if (FAILED(hr))
+				{
+					HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to create render target view heap.\n");
+					return false;
+				}
+				m_renderTargetViewHeapSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+				/*
+				* Now we will create the resources for each frame
+				*/
+				CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_renderTargetViewHeap->GetCPUDescriptorHandleForHeapStart());
+				for (uint32_t i = 0; i < NUM_RENDER_TARGETS; i++)
+				{
+					hr = m_swapChain->GetBuffer(i, IID_PPV_ARGS(&m_renderTargets[i]));
+					if (FAILED(hr))
+					{
+						HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to get render target buffer for resource creation.\n");
+						return false;
+					}
+
+					m_device->CreateRenderTargetView(m_renderTargets[i], nullptr, rtvHandle);
+
+					rtvHandle.ptr += 1 * m_renderTargetViewHeapSize;
+				}
+
+				/*
+				* Create a depth stencil view
+				*/
+				D3D12_DESCRIPTOR_HEAP_DESC depthStencilHeapDesc = {};
+				depthStencilHeapDesc.NumDescriptors = 1;
+				depthStencilHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+				depthStencilHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+				hr = m_device->CreateDescriptorHeap(&depthStencilHeapDesc, IID_PPV_ARGS(&m_depthStencilHeap));
+
+				D3D12_HEAP_PROPERTIES depthHeapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+				D3D12_RESOURCE_DESC   depthResourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT,
+					width, height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+				D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
+				depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+				depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
+				depthOptimizedClearValue.DepthStencil.Stencil = 0;
+
+				hr = m_device->CreateCommittedResource(
+					&depthHeapProps,
+					D3D12_HEAP_FLAG_NONE,
+					&depthResourceDesc,
+					D3D12_RESOURCE_STATE_DEPTH_WRITE,
+					&depthOptimizedClearValue,
+					IID_PPV_ARGS(&m_depthStencil));
+
+				D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc = {};
+				depthStencilViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
+				depthStencilViewDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+				depthStencilViewDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+				m_device->CreateDepthStencilView(m_depthStencil, &depthStencilViewDesc, m_depthStencilHeap->GetCPUDescriptorHandleForHeapStart());
+
+				return true;
+			}
+			
+			void D3D12DeviceResources::Resize(uint32_t width, uint32_t height)
+			{
+				WaitForGPU();
+				
+				DestroyDeviceResources();
+
+				m_swapChain->ResizeBuffers(2, width, height, m_swapChainDesc.BufferDesc.Format, 0);
+				m_swapChain->GetDesc(&m_swapChainDesc);
+
+				m_currentFrame = m_swapChain->GetCurrentBackBufferIndex();
+
+				this->CreateBuffers(width, height);
+			}
 
             void D3D12DeviceResources::Present()
             {

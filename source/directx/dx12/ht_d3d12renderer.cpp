@@ -13,6 +13,7 @@
 **/
 
 #include <ht_d3d12renderer.h>
+#include <ht_path_singleton.h>
 #include <ht_debug.h>
 #include <wrl.h>
 #include <ht_file.h>
@@ -243,7 +244,10 @@ namespace Hatchit {
 
             void D3D12Renderer::VResizeBuffers(uint32_t width, uint32_t height)
             {
+				m_resources->Resize(width, height);
 
+				m_width = width;
+				m_height = height;
             }
 
             void D3D12Renderer::VRender(float dt)
@@ -317,8 +321,8 @@ namespace Hatchit {
                 Core::File pShaderFile;
                 try
                 {
-                    vShaderFile.Open(Core::os_exec_dir() + "tri_VS.hlsl", Core::FileMode::ReadBinary);
-                    pShaderFile.Open(Core::os_exec_dir() + "tri_PS.hlsl", Core::FileMode::ReadBinary);
+                    vShaderFile.Open(Core::Path::Value(Core::Path::Directory::Shaders) + "tri_VS.hlsl", Core::FileMode::ReadBinary);
+                    pShaderFile.Open(Core::Path::Value(Core::Path::Directory::Shaders) + "tri_PS.hlsl", Core::FileMode::ReadBinary);
                 }
                 catch (std::exception& e)
                 {
