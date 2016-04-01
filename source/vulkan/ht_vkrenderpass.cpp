@@ -266,6 +266,7 @@ namespace Hatchit {
                 m_clearColor.color.float32[3] = color.a;
             }
 
+
             VkCommandBuffer VKRenderPass::GetVkCommandBuffer() { return m_commandBuffer; }
 
             const VkRenderPass* VKRenderPass::GetVkRenderPass() { return &m_renderPass; }
