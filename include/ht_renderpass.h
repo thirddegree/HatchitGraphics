@@ -55,6 +55,7 @@ namespace Hatchit {
         public:
             virtual ~IRenderPass() { };
 
+            virtual bool VInitFromResource(const Resource::RenderPassHandle& handle) = 0;
             virtual bool VPrepare() = 0;
 
             //Will this be sent the Objects that it needs to render?
