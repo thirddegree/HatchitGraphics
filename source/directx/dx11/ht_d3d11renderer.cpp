@@ -75,9 +75,7 @@ namespace Hatchit {
                 }
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("Failed to initialize DXRenderer. Exiting.\n");
-#endif
+                    HT_DEBUG_PRINTF("Failed to initialize DXRenderer. Exiting.\n");
                     return false;
                 }
 
@@ -91,9 +89,7 @@ namespace Hatchit {
                     reinterpret_cast<void**>(&dxgiDevice));
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("[DXRenderer]--Failed to query device interface. Exiting.\n");
-#endif
+                    HT_DEBUG_PRINTF("[DXRenderer]--Failed to query device interface. Exiting.\n");
                     return false;
                 }
                 IDXGIAdapter* dxgiAdapter = nullptr;
@@ -101,9 +97,7 @@ namespace Hatchit {
                     reinterpret_cast<void**>(&dxgiAdapter));
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("[DXRenderer]--Failed to query adapter interface. Exiting.\n");
-#endif
+                    HT_DEBUG_PRINTF("[DXRenderer]--Failed to query adapter interface. Exiting.\n");
                     return false;
                 }
                 IDXGIFactory* dxgiFactory = nullptr;
@@ -111,9 +105,7 @@ namespace Hatchit {
                     reinterpret_cast<void**>(&dxgiFactory));
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("[DXRenderer]--Failed to query factory interface. Exiting.\n");
-#endif
+                    HT_DEBUG_PRINTF("[DXRenderer]--Failed to query factory interface. Exiting.\n");
                     return false;
                 }
 
@@ -137,9 +129,7 @@ namespace Hatchit {
                 hr = dxgiFactory->CreateSwapChain(m_device, &m_swapChainDesc, &m_swapChain);
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("[DXRenderer]--Failed to create swap chain. Exiting.\n");
-#endif
+                    HT_DEBUG_PRINTF("[DXRenderer]--Failed to create swap chain. Exiting.\n");
                     DirectX::ReleaseCOM(dxgiDevice);
                     DirectX::ReleaseCOM(dxgiAdapter);
                     DirectX::ReleaseCOM(dxgiFactory);
@@ -151,9 +141,7 @@ namespace Hatchit {
 
                 if (!CreateBuffers(width, height))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("[DXRenderer]--Failed to create buffers. Exiting.\n");
-#endif
+                    HT_DEBUG_PRINTF("[DXRenderer]--Failed to create buffers. Exiting.\n");
                     return false;
                 }
 
@@ -231,16 +219,12 @@ namespace Hatchit {
                 hr = m_swapChain->ResizeBuffers(1, width, height, m_swapChainDesc.BufferDesc.Format, 0);
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("[DXRenderer]--Failed to resize swap chain buffers.\n");
-#endif
+                    HT_DEBUG_PRINTF("[DXRenderer]--Failed to resize swap chain buffers.\n");
                 }
 
                 if (!CreateBuffers(width, height))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("[DXRenderer]--Failed to create buffers.\n");
-#endif
+                    HT_DEBUG_PRINTF("[DXRenderer]--Failed to create buffers.\n");
                 }
 
                 D3D11_VIEWPORT vp;
@@ -265,18 +249,14 @@ namespace Hatchit {
                     reinterpret_cast<void**>(&backBuffer));
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("[DXRenderer]--Failed to get buffer from swapchain. Exiting.\n");
-#endif
+                    HT_DEBUG_PRINTF("[DXRenderer]--Failed to get buffer from swapchain. Exiting.\n");
                     return false;
                 }
 
                 hr = m_device->CreateRenderTargetView(backBuffer, 0, &m_renderTargetView);
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("[DXRenderer]--Failed to create render target view. Exiting.\n");
-#endif
+                    HT_DEBUG_PRINTF("[DXRenderer]--Failed to create render target view. Exiting.\n");
                     DirectX::ReleaseCOM(backBuffer);
                     return false;
                 }
@@ -300,9 +280,7 @@ namespace Hatchit {
                 hr = m_device->CreateTexture2D(&dsTextureDesc, nullptr, &depthStencilBuffer);
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("[DXRenderer]--Failed to create depth stencil buffer for view. Exiting.\n");
-#endif
+                    HT_DEBUG_PRINTF("[DXRenderer]--Failed to create depth stencil buffer for view. Exiting.\n");
                     return false;
                 }
 
@@ -314,9 +292,7 @@ namespace Hatchit {
                 hr = m_device->CreateDepthStencilView(depthStencilBuffer, &dsvDesc, &m_depthStencilView);
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("[DXRenderer]--Failed to create depth stencil view. Exiting.\n");
-#endif
+                    HT_DEBUG_PRINTF("[DXRenderer]--Failed to create depth stencil view. Exiting.\n");
                     DirectX::ReleaseCOM(depthStencilBuffer);
                     return false;
                 }

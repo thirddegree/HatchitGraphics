@@ -515,9 +515,7 @@ namespace Hatchit {
                     assert(!err);
                     if (err != VK_SUCCESS)
                     {
-#ifdef _DEBUG
-                        Core::DebugPrintF("VKRenderer::preparePipeline(): Failed to create descriptor layout\n");
-#endif
+                        HT_DEBUG_PRINTF("VKRenderer::preparePipeline(): Failed to create descriptor layout\n");
                         return false;
                     }
 
@@ -525,9 +523,7 @@ namespace Hatchit {
                     assert(!err);
                     if (err != VK_SUCCESS)
                     {
-#ifdef _DEBUG
-                        Core::DebugPrintF("VKRenderer::preparePipeline(): Failed to create descriptor layout\n");
-#endif
+                        HT_DEBUG_PRINTF("VKRenderer::preparePipeline(): Failed to create descriptor layout\n");
                         return false;
                     }
                 }
@@ -558,9 +554,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::preparePipeline(): Failed to create pipeline layout\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::preparePipeline(): Failed to create pipeline layout\n");
                     return false;
                 }
 
@@ -676,9 +670,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::preparePipeline(): Failed to create pipeline cache\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::preparePipeline(): Failed to create pipeline cache\n");
                     return false;
                 }
 
@@ -686,9 +678,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::preparePipeline(): Failed to create pipeline\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::preparePipeline(): Failed to create pipeline\n");
                     return false;
                 }
 

@@ -228,9 +228,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKSwapchain::prepareResources: Failed to create descriptor set layout\n");
-#endif
+                    HT_DEBUG_PRINTF("VKSwapchain::prepareResources: Failed to create descriptor set layout\n");
                     return false;
                 }
 
@@ -248,9 +246,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKSwapchain::prepareResources: Failed to allocate descriptor set\n");
-#endif
+                    HT_DEBUG_PRINTF("VKSwapchain::prepareResources: Failed to allocate descriptor set\n");
                     return false;
                 }
 
@@ -337,9 +333,7 @@ namespace Hatchit {
                     assert(!err);
                     if (err != VK_SUCCESS)
                     {
-#ifdef _DEBUG
-                        Core::DebugPrintF("VKSwapchain::BuildSwapchain(): Failed to build command buffer.\n");
-#endif
+                        HT_DEBUG_PRINTF("VKSwapchain::BuildSwapchain(): Failed to build command buffer.\n");
                         return false;
                     }
 
@@ -375,9 +369,7 @@ namespace Hatchit {
                     assert(!err);
                     if (err != VK_SUCCESS)
                     {
-#ifdef _DEBUG
-                        Core::DebugPrintF("VKSwapchain::BuildSwapchain(): Failed to end command buffer.\n");
-#endif
+                        HT_DEBUG_PRINTF("VKSwapchain::BuildSwapchain(): Failed to end command buffer.\n");
                         return false;
                     }
 
@@ -547,9 +539,7 @@ namespace Hatchit {
                 err = fpCreateSwapchainKHR(m_device, &swapchainInfo, nullptr, &m_swapchain);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::prepareSwapchainBuffers(): Failed to create Swapchain.\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::prepareSwapchainBuffers(): Failed to create Swapchain.\n");
                     return false;
                 }
 
@@ -562,9 +552,7 @@ namespace Hatchit {
                 err = fpGetSwapchainImagesKHR(m_device, m_swapchain, &swapchainImageCount, nullptr);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::prepareSwapchainBuffers(): Failed to get swapchain image count.\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::prepareSwapchainBuffers(): Failed to get swapchain image count.\n");
                     return false;
                 }
 
@@ -573,9 +561,7 @@ namespace Hatchit {
                 err = fpGetSwapchainImagesKHR(m_device, m_swapchain, &swapchainImageCount, &swapchainImages[0]);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::prepareSwapchainBuffers(): Failed to get swapchain images.\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::prepareSwapchainBuffers(): Failed to get swapchain images.\n");
                     return false;
                 }
 
@@ -619,9 +605,7 @@ namespace Hatchit {
 
                     if (err != VK_SUCCESS)
                     {
-#ifdef _DEBUG
-                        Core::DebugPrintF("VKRenderer::prepareSwapchainBuffers(): Failed to create image view.\n");
-#endif
+                        HT_DEBUG_PRINTF("VKRenderer::prepareSwapchainBuffers(): Failed to create image view.\n");
                         return false;
                     }
 
@@ -695,9 +679,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKSwapchain::prepareSwapchainDepth(): Error, failed to create image\n");
-#endif
+                    HT_DEBUG_PRINTF("VKSwapchain::prepareSwapchainDepth(): Error, failed to create image\n");
                     return false;
                 }
 
@@ -713,9 +695,7 @@ namespace Hatchit {
                 assert(pass);
                 if (!pass)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKSwapchain::prepareSwapchainDepth(): Error, failed to get memory type for depth buffer\n");
-#endif
+                    HT_DEBUG_PRINTF("VKSwapchain::prepareSwapchainDepth(): Error, failed to get memory type for depth buffer\n");
                     return false;
                 }
 
@@ -724,9 +704,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKSwapchain::prepareSwapchainDepth(): Error, failed to allocate memory for depth buffer\n");
-#endif
+                    HT_DEBUG_PRINTF("VKSwapchain::prepareSwapchainDepth(): Error, failed to allocate memory for depth buffer\n");
                     return false;
                 }
 
@@ -735,9 +713,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKSwapchain::prepareSwapchainDepth(): Error, failed to bind depth buffer memory\n");
-#endif
+                    HT_DEBUG_PRINTF("VKSwapchain::prepareSwapchainDepth(): Error, failed to bind depth buffer memory\n");
                     return false;
                 }
 
@@ -751,9 +727,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKSwapchain::prepareSwapchainDepth(): Error, failed create image view for depth buffer\n");
-#endif
+                    HT_DEBUG_PRINTF("VKSwapchain::prepareSwapchainDepth(): Error, failed create image view for depth buffer\n");
                     return false;
                 }
 
@@ -820,9 +794,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKSwapchain::prepareRenderPass(): Failed to create render pass\n");
-#endif
+                    HT_DEBUG_PRINTF("VKSwapchain::prepareRenderPass(): Failed to create render pass\n");
                     return false;
                 }
 
@@ -854,9 +826,7 @@ namespace Hatchit {
 
                     if (err != VK_SUCCESS)
                     {
-#ifdef _DEBUG
-                        Core::DebugPrintF("VKSwapchain::prepareFrambuffers(): Failed to create framebuffer at index:%d \n", i);
-#endif
+                        HT_DEBUG_PRINTF("VKSwapchain::prepareFrambuffers(): Failed to create framebuffer at index:%d \n", i);
                         return false;
                     }
 
@@ -887,9 +857,7 @@ namespace Hatchit {
 
                     if (err != VK_SUCCESS)
                     {
-#ifdef _DEBUG
-                        Core::DebugPrintF("VKSwapchain::allocateCommandBuffers(): Failed to allocate for command buffer at index:%d \n", i);
-#endif
+                        HT_DEBUG_PRINTF("VKSwapchain::allocateCommandBuffers(): Failed to allocate for command buffer at index:%d \n", i);
                         return false;
                     }
                 }
@@ -914,9 +882,7 @@ namespace Hatchit {
                     err = vkAllocateCommandBuffers(m_device, &allocateInfo, m_postPresentCommands.data());
                     if (err != VK_SUCCESS)
                     {
-#ifdef _DEBUG
-                        Core::DebugPrintF("VKSwapchain::allocateCommandBuffers(): Failed to allocate for post present barrier \n");
-#endif
+                        HT_DEBUG_PRINTF("VKSwapchain::allocateCommandBuffers(): Failed to allocate for post present barrier \n");
                         return false;
                     }
                 }
@@ -937,9 +903,7 @@ namespace Hatchit {
                     err = vkAllocateCommandBuffers(m_device, &allocateInfo, m_prePresentCommands.data());
                     if (err != VK_SUCCESS)
                     {
-#ifdef _DEBUG
-                        Core::DebugPrintF("VKSwapchain::allocateCommandBuffers(): Failed to allocate for pre present barrier \n");
-#endif
+                        HT_DEBUG_PRINTF("VKSwapchain::allocateCommandBuffers(): Failed to allocate for pre present barrier \n");
                         return false;
                     }
                 }

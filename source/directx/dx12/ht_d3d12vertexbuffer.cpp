@@ -49,9 +49,7 @@ namespace Hatchit {
                     IID_PPV_ARGS(&m_buffer));
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("D3D12VertexBuffer::Initialize(), Failed to create buffer.\n");
-#endif
+                    HT_DEBUG_PRINTF("D3D12VertexBuffer::Initialize(), Failed to create buffer.\n");
                     return false;
                 }
 
@@ -65,9 +63,7 @@ namespace Hatchit {
                     IID_PPV_ARGS(&m_bufferUploadHeap));
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("D3D12VertexBuffer::Initialize(), Failed to create buffer upload heap.\n");
-#endif
+                    HT_DEBUG_PRINTF("D3D12VertexBuffer::Initialize(), Failed to create buffer upload heap.\n");
                     return false;
                 }
 
