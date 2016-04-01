@@ -32,11 +32,11 @@ namespace Hatchit
 
                 ~D3D12Texture();
 
-                bool VInitFromFile(Core::File* file) override;
+                //void Upload(ID3D12GraphicsCommandList* commandList);
 
-                //void VOnLoaded() override;
-
-                void Upload(ID3D12GraphicsCommandList* commandList);
+                void     SetSampler(ISampler * sampler) override;
+                uint32_t GetWidth() const override;
+                uint32_t GetHeight() const override;
 
             private:
                 D3D12_RESOURCE_DESC         m_desc;
@@ -44,7 +44,10 @@ namespace Hatchit
                 ID3D12Resource*             m_texture;
                 ID3D12Resource*             m_uploadHeap;
                 ID3D12DescriptorHeap*       m_srvHeap;
-                Resource::Image*           m_bitmap;
+                Resource::Image*            m_bitmap;
+
+                // Inherited via ITexture
+                virtual bool VBufferImage() override;
             };
         }
     }

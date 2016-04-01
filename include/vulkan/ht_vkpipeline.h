@@ -42,8 +42,8 @@ namespace Hatchit {
             class HT_API VKPipeline : public IPipeline
             {
             public:
-                VKPipeline(const VkRenderPass* renderPass);
-                VKPipeline(const VkRenderPass* renderPass, const std::string& fileName);
+                VKPipeline(VkDevice& device, const VkRenderPass* renderPass);
+                VKPipeline(VkDevice& device, const VkRenderPass* renderPass, const std::string& fileName);
                 ~VKPipeline();
 
                 //If we wanted to allow users to control blending states
@@ -62,9 +62,8 @@ namespace Hatchit {
                 /* Load a shader into a shader slot for the pipeline
                 * \param shaderSlot The slot that you want the shader in; vertex, fragment etc.
                 * \param shader A pointer to the shader that you want to load to the given shader slot
-                * Marked for removal
                 */
-                void VLoadShader(ShaderSlot shaderSlot, IShader* shader)        override;
+                void VLoadShader(Hatchit::Resource::Pipeline::ShaderSlot shaderSlot, Hatchit::Resource::ShaderHandle shader)        override;
 
                 /* Add a map of existing shader variables into this pipeline
                 * \param shaderVariables the map of existing shader variables you want to add
@@ -97,6 +96,7 @@ namespace Hatchit {
                 Hatchit::Resource::PipelineHandle m_resource;
 
                 //Input
+                VkDevice& m_device;
                 const VkRenderPass* m_renderPass;
 
                 VkPipelineRasterizationStateCreateInfo m_rasterizationState;

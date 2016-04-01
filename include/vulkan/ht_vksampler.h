@@ -37,6 +37,7 @@ namespace Hatchit {
                 virtual void SetFilterMode(Hatchit::Resource::Sampler::FilterMode filterMode) override;
                 virtual void SetWrapMode(Hatchit::Resource::Sampler::WrapMode wrapMode) override;
                 virtual void SetColorSpace(Hatchit::Resource::Sampler::ColorSpace colorSpace) override;
+
                 virtual Hatchit::Resource::Sampler::FilterMode GetFilterMode() override;
                 virtual Hatchit::Resource::Sampler::WrapMode GetWrapMode() override;
                 virtual Hatchit::Resource::Sampler::ColorSpace GetColorSpace() override;
@@ -46,7 +47,9 @@ namespace Hatchit {
 
                 VkSampler m_sampler;
 
-                Hatchit::Resource::SamplerHandle m_resources;
+                Hatchit::Resource::Sampler::FilterMode m_filterMode;
+                Hatchit::Resource::Sampler::WrapMode m_wrapMode;
+                Hatchit::Resource::Sampler::ColorSpace m_colorSpace;
             };
 
         }
