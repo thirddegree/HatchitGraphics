@@ -31,9 +31,9 @@ namespace Hatchit {
                 D3D12Pipeline();
 
                 // Inherited via IPipeline
-                virtual void VSetRasterState(const RasterizerState & rasterState) override;
-                virtual void VSetMultisampleState(const MultisampleState & multiState) override;
-                virtual void VLoadShader(ShaderSlot shaderSlot, IShader * shader) override;
+                virtual void VSetRasterState(const Resource::Pipeline::RasterizerState & rasterState) override;
+                virtual void VSetMultisampleState(const Resource::Pipeline::MultisampleState & multiState) override;
+                virtual void VLoadShader(Resource::Pipeline::ShaderSlot shaderSlot, Resource::ShaderHandle shader) override;
                 virtual bool VPrepare() override;
 
             private:
