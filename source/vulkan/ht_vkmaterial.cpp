@@ -35,6 +35,15 @@ namespace Hatchit {
 
                 static_cast<Matrix4Variable*>(m_shaderVariables["object.model"])->SetData(Math::Matrix4());
             }
+
+            VKMaterial::VKMaterial(const std::string& fileName) : m_resource(Material::GetResourceHandle(fileName))
+            {
+                //TODO: Allocate variables based on the material file
+                m_shaderVariables["object.model"] = new Matrix4Variable();
+
+                static_cast<Matrix4Variable*>(m_shaderVariables["object.model"])->SetData(Math::Matrix4());
+            }
+
             VKMaterial::~VKMaterial() 
             {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
@@ -53,7 +62,10 @@ namespace Hatchit {
 
             }
 
-            bool VKMaterial::VInitFromFile(Core::File* file) { return true; }
+            void VKMaterial::VOnResourceLoaded()
+            {
+                //TODO: Implement what to do when resource gets loaded.
+            }
 
             bool VKMaterial::VSetInt(std::string name, int data)
             {
@@ -91,6 +103,11 @@ namespace Hatchit {
             {
                 m_textures.erase(name);
                 return true;
+            }
+
+            IPipeline* VKMaterial::GetPipeline()
+            {
+                return m_pipeline;
             }
 
             bool VKMaterial::VPrepare(IPipeline* pipeline) 
