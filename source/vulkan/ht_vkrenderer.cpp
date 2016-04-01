@@ -1178,8 +1178,8 @@ namespace Hatchit {
 
                 //TODO: remove this test code
                 VKRenderPass* renderPass = new VKRenderPass(m_device, m_commandPool);
-                renderPass->SetWidth(m_width);
-                renderPass->SetHeight(m_height);
+                renderPass->VSetWidth(m_width);
+                renderPass->VSetHeight(m_height);
                 renderPass->VSetClearColor(Color(m_clearColor.color.float32[0], m_clearColor.color.float32[1], m_clearColor.color.float32[2], m_clearColor.color.float32[3]));
 
                 m_renderTarget = new VKRenderTarget(m_width, m_height);
@@ -1188,7 +1188,7 @@ namespace Hatchit {
                 renderPass->VPrepare();
                 m_renderTarget->VPrepare();
 
-                renderPass->SetRenderTarget(m_renderTarget);
+                renderPass->VSetRenderTarget(m_renderTarget);
 
                 m_swapchain->SetIncomingRenderTarget(m_renderTarget);
 
@@ -1242,7 +1242,7 @@ namespace Hatchit {
                 IMesh* mesh = new VKMesh();
                 mesh->VBuffer(meshes[0]);
 
-                renderPass->ScheduleRenderRequest(pipeline, m_material, mesh);
+                renderPass->VScheduleRenderRequest(pipeline, m_material, mesh);
                  
                 Renderable renderable;
                 renderable.material = m_material;
@@ -1254,8 +1254,8 @@ namespace Hatchit {
                 pipeline->VUpdate();
                 m_material->VUpdate();
 
-                renderPass->SetView(view);
-                renderPass->SetProj(proj);
+                renderPass->VSetView(view);
+                renderPass->VSetProj(proj);
 
                 m_swapchain->VKPrepareResources();
                 

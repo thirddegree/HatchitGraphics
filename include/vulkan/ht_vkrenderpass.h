@@ -33,7 +33,7 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            class HT_API VKRenderPass : public IRenderPass
+            class HT_API VKRenderPass : public RenderPassBase
             {
             public:
                 VKRenderPass(VkDevice& device, VkCommandPool& commandPool);
