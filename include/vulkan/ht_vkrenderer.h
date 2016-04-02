@@ -122,13 +122,9 @@ namespace Hatchit {
                 VkApplicationInfo                       m_appInfo;
                 VkInstance                              m_instance;
                 VkPhysicalDevice                        m_gpu;
-                VkPhysicalDeviceProperties              m_gpuProps;
                 std::vector<VkQueueFamilyProperties>    m_queueProps;
-                uint32_t                                m_graphicsQueueNodeIndex;
                 VkDevice                                m_device; 
                 VkQueue                                 m_queue;
-                VkFormat                                m_preferredImageFormat;
-                VkColorSpaceKHR                         m_colorSpace;
                 VkPhysicalDeviceMemoryProperties        m_memoryProps;
                 
                 VKSwapchain*                            m_swapchain;
@@ -176,16 +172,12 @@ namespace Hatchit {
                 bool checkDeviceLayers();
                 bool checkDeviceExtensions();
                 bool setupDebugCallbacks();
-                bool setupDeviceQueues();
                 bool setupProcAddresses();
 
                 bool setupCommandPool();
                 bool setupDescriptorPool();
 
-                //Helper inits for initVulkanSwapchain
-                bool setupQueues(const VkSurfaceKHR& surface);
                 bool createDevice();
-                bool getSupportedFormats(const VkSurfaceKHR& surface);
             };
 
         }

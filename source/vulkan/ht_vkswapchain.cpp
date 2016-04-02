@@ -62,7 +62,7 @@ namespace Hatchit {
                 destroySurface();
             }
 
-            VkCommandBuffer VKSwapchain::GetCurrentCommand()
+            const VkCommandBuffer& VKSwapchain::VKGetCurrentCommand()
             {
                 return m_swapchainBuffers[m_currentBuffer].command;
             }
@@ -71,8 +71,20 @@ namespace Hatchit {
             {
                 return m_surface;
             }
+            const uint32_t& VKSwapchain::VKGetGraphicsQueueIndex() 
+            {
+                return m_graphicsQueueNodeIndex;
+            }
+            const VkFormat& VKSwapchain::VKGetPreferredColorFormat() 
+            {
+                return m_preferredColorFormat;
+            }
+            const VkFormat& VKSwapchain::VKGetPreferredDepthFormat() 
+            {
+                return m_preferredDepthFormat;
+            }
 
-            bool VKSwapchain::VKPrepare(VkColorSpaceKHR colorSpace)
+            bool VKSwapchain::VKPrepare()
             {
                 VkResult err;
 
@@ -162,26 +174,24 @@ namespace Hatchit {
                 }
 
                 VKRenderer* renderer = VKRenderer::RendererInstance;
-                const VkFormat& preferredColorFormat = renderer->GetPreferredImageFormat();
-                const VkFormat& preferredDepthFormat = renderer->GetPreferredDepthFormat();
 
                 /*
                     Prepare Color
                 */
-                if (!prepareSwapchain(renderer, preferredColorFormat, colorSpace,
+                if (!prepareSwapchain(renderer, m_preferredColorFormat, m_colorSpace,
                     presentModes, surfCaps, swapchainExtent))
                     return false;
 
                 /*
                     Prepare depth
                 */
-                if (!prepareSwapchainDepth(renderer, preferredDepthFormat, swapchainExtent))
+                if (!prepareSwapchainDepth(renderer, m_preferredDepthFormat, swapchainExtent))
                     return false;
                 
                 /*
                     Prepare internal render pass
                 */
-                if (!prepareRenderPass(preferredColorFormat))
+                if (!prepareRenderPass())
                     return false;
 
                 /*
@@ -526,11 +536,170 @@ namespace Hatchit {
 
                 if (err != VK_SUCCESS)
                 {
-                    HT_DEBUG_PRINTF("Error creating VkSurface for Xcb window");
+                    HT_DEBUG_PRINTF("VKSwapchain::prepareSurface(): Error creating VkSurface for Xcb window");
 
                     return false;
                 }
 #endif
+                if(!getQueueProperties())
+                    HT_DEBUG_PRINTF("VKSwapchain::prepareSurface(): Error getting queue properties");
+
+                if(!findSutibleQueue())
+                    HT_DEBUG_PRINTF("VKSwapchain::prepareSurface(): Could not find suitible queue");
+
+                if (!getPreferredFormats())
+                    HT_DEBUG_PRINTF("VKSwapchain::prepareSurface(): Error getting preffered image formats");
+
+                return true;
+            }
+
+            bool VKSwapchain::getQueueProperties() 
+            {
+                vkGetPhysicalDeviceProperties(m_gpu, &m_gpuProps);
+
+                //Call with NULL data to get count
+                uint32_t queueCount;
+                vkGetPhysicalDeviceQueueFamilyProperties(m_gpu, &queueCount, NULL);
+                assert(queueCount >= 1);
+
+                if (queueCount == 0)
+                {
+                    HT_DEBUG_PRINTF("VKRenderer::setupDeviceQueues: No queues were found on the device\n");
+                    return false;
+                }
+
+                m_queueProps = std::vector<VkQueueFamilyProperties>(queueCount);
+                vkGetPhysicalDeviceQueueFamilyProperties(m_gpu, &queueCount, &m_queueProps[0]);
+
+                // Find a queue that supports gfx
+                uint32_t gfxQueueIdx = 0;
+                for (gfxQueueIdx = 0; gfxQueueIdx < queueCount; gfxQueueIdx++) {
+                    if (m_queueProps[gfxQueueIdx].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+                        break;
+                }
+                assert(gfxQueueIdx < queueCount);
+
+                if (gfxQueueIdx >= queueCount)
+                {
+                    HT_DEBUG_PRINTF("VKRenderer::setupDeviceQueues: No graphics queue was found on the device\n");
+                    return false;
+                }
+
+                return true;
+            }
+
+            bool VKSwapchain::findSutibleQueue() 
+            {
+                uint32_t i; //we reuse this for all the loops
+
+                            //Find which queue we can use to present
+                VkBool32* supportsPresent = new VkBool32[m_queueProps.size()];
+                for (i = 0; i < m_queueProps.size(); i++)
+                    fpGetPhysicalDeviceSurfaceSupportKHR(m_gpu, i, m_surface, &supportsPresent[i]);
+
+                //Search for a queue that can both do graphics and presentation
+                uint32_t graphicsQueueNodeIndex = UINT32_MAX;
+                uint32_t presentQueueNodeIndex = UINT32_MAX;
+
+                for (i = 0; i < m_queueProps.size(); i++) {
+                    if ((m_queueProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0) {
+                        if (graphicsQueueNodeIndex == UINT32_MAX)
+                            graphicsQueueNodeIndex = i;
+
+                        if (supportsPresent[i] == VK_TRUE) {
+                            graphicsQueueNodeIndex = i;
+                            presentQueueNodeIndex = i;
+                            break;
+                        }
+                    }
+                }
+                if (presentQueueNodeIndex == UINT32_MAX) {
+                    // If didn't find a queue that supports both graphics and present, then
+                    // find a separate present queue.
+                    for (uint32_t i = 0; i < m_queueProps.size(); ++i) {
+                        if (supportsPresent[i] == VK_TRUE) {
+                            presentQueueNodeIndex = i;
+                            break;
+                        }
+                    }
+                }
+
+                delete[] supportsPresent;
+
+                // Generate error if could not find both a graphics and a present queue
+                if (graphicsQueueNodeIndex == UINT32_MAX ||
+                    presentQueueNodeIndex == UINT32_MAX) {
+                    HT_DEBUG_PRINTF("Unable to find a graphics and a present queue.\n");
+                    return false;
+                }
+
+                //Save the index of the queue we want to use
+                m_graphicsQueueNodeIndex = graphicsQueueNodeIndex;
+
+                return true;
+            }
+
+            bool VKSwapchain::getPreferredFormats() 
+            {
+                VkResult err;
+
+                //Get list of supported VkFormats
+                uint32_t formatCount;
+                err = fpGetPhysicalDeviceSurfaceFormatsKHR(m_gpu, m_surface, &formatCount, nullptr);
+
+                if (err != VK_SUCCESS)
+                {
+                    HT_DEBUG_PRINTF("VkRenderer::getSupportedFormats(): Error getting number of formats from device.\n");
+                    return false;
+                }
+
+                //Get format list
+                VkSurfaceFormatKHR* surfaceFormats = new VkSurfaceFormatKHR[formatCount];
+                err = fpGetPhysicalDeviceSurfaceFormatsKHR(m_gpu, m_surface, &formatCount, surfaceFormats);
+                if (err != VK_SUCCESS || formatCount <= 0)
+                {
+                    HT_DEBUG_PRINTF("VkRenderer::getSupportedFormats(): Error getting VkSurfaceFormats from device.\n");
+                    return false;
+                }
+
+                // If the format list includes just one entry of VK_FORMAT_UNDEFINED,
+                // the surface has no preferred format.  Otherwise, at least one
+                // supported format will be returned.
+                if (formatCount == 1 && surfaceFormats[0].format == VK_FORMAT_UNDEFINED)
+                    m_preferredColorFormat = VK_FORMAT_B8G8R8A8_UNORM;
+                else
+                    m_preferredColorFormat = surfaceFormats[0].format;
+
+                //Try to find the preferred depth format
+
+                // Since all depth formats may be optional, we need to find a suitable depth format to use
+                // Start with the highest precision packed format
+                std::vector<VkFormat> depthFormats = {
+                    VK_FORMAT_D32_SFLOAT_S8_UINT,
+                    VK_FORMAT_D32_SFLOAT,
+                    VK_FORMAT_D24_UNORM_S8_UINT,
+                    VK_FORMAT_D16_UNORM_S8_UINT,
+                    VK_FORMAT_D16_UNORM
+                };
+
+                //Default to VK_FORMAT_D32_SFLOAT just because
+                m_preferredDepthFormat = VK_FORMAT_D32_SFLOAT;
+
+                for (VkFormat format : depthFormats)
+                {
+                    VkFormatProperties formatProps;
+                    vkGetPhysicalDeviceFormatProperties(m_gpu, format, &formatProps);
+                    // Format must support depth stencil attachment for optimal tiling
+                    if (formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+                    {
+                        m_preferredDepthFormat = format;
+                        break;
+                    }
+                }
+
+                //Get the color space we're expected to work in
+                m_colorSpace = surfaceFormats[0].colorSpace;
+
                 return true;
             }
 
@@ -789,10 +958,10 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKSwapchain::prepareRenderPass(const VkFormat& preferredColorFormat)
+            bool VKSwapchain::prepareRenderPass()
             {
                 VkAttachmentDescription attachments[2];
-                attachments[0].format = preferredColorFormat;
+                attachments[0].format = m_preferredColorFormat;
                 attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
                 attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
                 attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;

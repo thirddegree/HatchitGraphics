@@ -57,9 +57,13 @@ namespace Hatchit {
                 VKSwapchain(VkInstance& instance, VkPhysicalDevice& gpu, VkDevice& device, VkCommandPool& commandPool);
                 ~VKSwapchain();
                 
-                const VkSurfaceKHR& VKGetSurface();
+                const VkCommandBuffer&  VKGetCurrentCommand();
+                const VkSurfaceKHR&     VKGetSurface();
+                const uint32_t&         VKGetGraphicsQueueIndex();
+                const VkFormat&         VKGetPreferredColorFormat();
+                const VkFormat&         VKGetPreferredDepthFormat();
 
-                bool VKPrepare(VkColorSpaceKHR colorSpace);
+                bool VKPrepare();
                 bool VKPrepareResources();
 
                 bool BuildSwapchainCommands(VkClearValue clearColor);
@@ -69,8 +73,6 @@ namespace Hatchit {
                 bool VKPrePresentBarrier(const VkQueue& queue);
                 VkResult VKPresent(const VkQueue& queue, const VkSemaphore& renderSemaphore);
 
-                VkCommandBuffer GetCurrentCommand();
-
             private:
                 VkInstance&         m_instance;
                 VkPhysicalDevice&   m_gpu;
@@ -78,6 +80,13 @@ namespace Hatchit {
                 VkCommandPool&      m_commandPool;
 
                 VkSurfaceKHR    m_surface;
+                VkPhysicalDeviceProperties              m_gpuProps;
+                std::vector<VkQueueFamilyProperties>    m_queueProps;
+                uint32_t                                m_graphicsQueueNodeIndex;
+
+                VkFormat        m_preferredColorFormat;
+                VkFormat        m_preferredDepthFormat;
+                VkColorSpaceKHR m_colorSpace;
 
                 VkRenderPass            m_renderPass;
                 VKPipeline*             m_pipeline;
@@ -97,6 +106,12 @@ namespace Hatchit {
 
                 bool prepareSurface(const RendererParams& rendererParams);
 
+                bool getQueueProperties();
+
+                bool findSutibleQueue();
+
+                bool getPreferredFormats();
+
                 //Prepare the swapchain base
                 bool prepareSwapchain(VKRenderer* renderer, VkFormat preferredColorFormat, VkColorSpaceKHR colorSpace,
                     std::vector<VkPresentModeKHR> presentModes, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D surfaceExtents);
@@ -105,7 +120,7 @@ namespace Hatchit {
                 bool prepareSwapchainDepth(VKRenderer* renderer, const VkFormat& preferredDepthFormat, VkExtent2D extent);
 
                 //Prepare the internal render pass
-                bool prepareRenderPass(const VkFormat& preferredColorFormat);
+                bool prepareRenderPass();
 
                 //Prepare the framebuffers for the swapchain images
                 bool prepareFramebuffers(VkExtent2D extents);

@@ -334,7 +334,7 @@ namespace Hatchit {
                 }
 
                 //Make sure we run the swapchain command
-                commandBuffers.push_back(m_swapchain->GetCurrentCommand());
+                commandBuffers.push_back(m_swapchain->VKGetCurrentCommand());
 
                 //Example code for rotation
                 Math::Matrix4 scale = Math::MMMatrixScale(Math::Vector3(0.02f, 0.02f, 0.02f));
@@ -410,11 +410,11 @@ namespace Hatchit {
 
             VkFormat VKRenderer::GetPreferredImageFormat() 
             {
-                return m_preferredImageFormat;
+                return m_swapchain->VKGetPreferredColorFormat();
             }
             VkFormat VKRenderer::GetPreferredDepthFormat() 
             {
-                return VK_FORMAT_D32_SFLOAT_S8_UINT;
+                return m_swapchain->VKGetPreferredDepthFormat();
             }
 
             const RendererParams& VKRenderer::GetRendererParams()
@@ -523,12 +523,6 @@ namespace Hatchit {
 #endif
 
                 /*
-                * Device should be valid at this point, get device properties
-                */
-                if (!setupDeviceQueues())
-                    return false;
-
-                /*
                 * Query the device for advanced feature support
                 */
                 if (!setupProcAddresses())
@@ -544,25 +538,13 @@ namespace Hatchit {
                 const VkSurfaceKHR& surface = m_swapchain->VKGetSurface();
 
                 /*
-                * Setup the device queues
-                */
-                if (!setupQueues(surface))
-                    return false;
-
-                /*
                 * Create the device object that is in charge of allocating memory and making draw calls
                 */
                 if (!createDevice())
                     return false;                
 
                 //Get Device queue
-                vkGetDeviceQueue(m_device, m_graphicsQueueNodeIndex, 0, &m_queue);
-
-                /*
-                * Get the supported texture format and color space
-                */
-                if (!getSupportedFormats(surface))
-                    return false;
+                vkGetDeviceQueue(m_device, m_swapchain->VKGetGraphicsQueueIndex(), 0, &m_queue);
 
                 VkResult err;
 
@@ -955,41 +937,6 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKRenderer::setupDeviceQueues()
-            {
-                vkGetPhysicalDeviceProperties(m_gpu, &m_gpuProps);
-
-                //Call with NULL data to get count
-                uint32_t queueCount;
-                vkGetPhysicalDeviceQueueFamilyProperties(m_gpu, &queueCount, NULL);
-                assert(queueCount >= 1);
-
-                if (queueCount == 0)
-                {
-                    HT_DEBUG_PRINTF("VKRenderer::setupDeviceQueues: No queues were found on the device\n");
-                    return false;
-                }
-
-                m_queueProps = std::vector<VkQueueFamilyProperties>(queueCount);
-                vkGetPhysicalDeviceQueueFamilyProperties(m_gpu, &queueCount, &m_queueProps[0]);
-
-                // Find a queue that supports gfx
-                uint32_t gfxQueueIdx = 0;
-                for (gfxQueueIdx = 0; gfxQueueIdx < queueCount; gfxQueueIdx++) {
-                    if (m_queueProps[gfxQueueIdx].queueFlags & VK_QUEUE_GRAPHICS_BIT)
-                        break;
-                }
-                assert(gfxQueueIdx < queueCount);
-
-                if (gfxQueueIdx >= queueCount)
-                {
-                    HT_DEBUG_PRINTF("VKRenderer::setupDeviceQueues: No graphics queue was found on the device\n");
-                    return false;
-                }
-
-                return true;
-            }
-
             bool VKRenderer::setupProcAddresses()
             {
                 // Query fine-grained feature support for this device.
@@ -1033,57 +980,6 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKRenderer::setupQueues(const VkSurfaceKHR& surface)
-            {
-                uint32_t i; //we reuse this for all the loops
-
-                //Find which queue we can use to present
-                VkBool32* supportsPresent = new VkBool32[m_queueProps.size()];
-                for (i = 0; i < m_queueProps.size(); i++)
-                    fpGetPhysicalDeviceSurfaceSupportKHR(m_gpu, i, surface, &supportsPresent[i]);
-
-                //Search for a queue that can both do graphics and presentation
-                uint32_t graphicsQueueNodeIndex = UINT32_MAX;
-                uint32_t presentQueueNodeIndex = UINT32_MAX;
-
-                for (i = 0; i < m_queueProps.size(); i++) {
-                    if ((m_queueProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0) {
-                        if (graphicsQueueNodeIndex == UINT32_MAX)
-                            graphicsQueueNodeIndex = i;
-
-                        if (supportsPresent[i] == VK_TRUE) {
-                            graphicsQueueNodeIndex = i;
-                            presentQueueNodeIndex = i;
-                            break;
-                        }
-                    }
-                }
-                if (presentQueueNodeIndex == UINT32_MAX) {
-                    // If didn't find a queue that supports both graphics and present, then
-                    // find a separate present queue.
-                    for (uint32_t i = 0; i < m_queueProps.size(); ++i) {
-                        if (supportsPresent[i] == VK_TRUE) {
-                            presentQueueNodeIndex = i;
-                            break;
-                        }
-                    }
-                }
-
-                delete[] supportsPresent;
-
-                // Generate error if could not find both a graphics and a present queue
-                if (graphicsQueueNodeIndex == UINT32_MAX ||
-                    presentQueueNodeIndex == UINT32_MAX) {
-                    HT_DEBUG_PRINTF("Unable to find a graphics and a present queue.\n");
-                    return false;
-                }
-
-                //Save the index of the queue we want to use
-                m_graphicsQueueNodeIndex = graphicsQueueNodeIndex;
-
-                return true;
-            }
-
             //TODO: Support more than one queue / device?
             bool VKRenderer::createDevice() 
             {
@@ -1093,7 +989,7 @@ namespace Hatchit {
                 VkDeviceQueueCreateInfo queue;
                 queue.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
                 queue.pNext = nullptr;
-                queue.queueFamilyIndex = m_graphicsQueueNodeIndex;
+                queue.queueFamilyIndex = m_swapchain->VKGetGraphicsQueueIndex();
                 queue.queueCount = 1;
                 queue.pQueuePriorities = queuePriorities;
 
@@ -1128,42 +1024,6 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKRenderer::getSupportedFormats(const VkSurfaceKHR& surface)
-            {
-                VkResult err;
-
-                //Get list of supported VkFormats
-                uint32_t formatCount;
-                err = fpGetPhysicalDeviceSurfaceFormatsKHR(m_gpu, surface, &formatCount, nullptr);
-
-                if (err != VK_SUCCESS)
-                {
-                    HT_DEBUG_PRINTF("VkRenderer::getSupportedFormats(): Error getting number of formats from device.\n");
-                    return false;
-                }
-
-                //Get format list
-                VkSurfaceFormatKHR* surfaceFormats = new VkSurfaceFormatKHR[formatCount];
-                err = fpGetPhysicalDeviceSurfaceFormatsKHR(m_gpu, surface, &formatCount, surfaceFormats);
-                if (err != VK_SUCCESS || formatCount <= 0)
-                {
-                    HT_DEBUG_PRINTF("VkRenderer::getSupportedFormats(): Error getting VkSurfaceFormats from device.\n");
-                    return false;
-                }
-
-                // If the format list includes just one entry of VK_FORMAT_UNDEFINED,
-                // the surface has no preferred format.  Otherwise, at least one
-                // supported format will be returned.
-                if (formatCount == 1 && surfaceFormats[0].format == VK_FORMAT_UNDEFINED)
-                    m_preferredImageFormat = VK_FORMAT_B8G8R8A8_UNORM;
-                else
-                    m_preferredImageFormat = surfaceFormats[0].format;
-
-                m_colorSpace = surfaceFormats[0].colorSpace;
-
-                return true;
-            }
-
             bool VKRenderer::setupCommandPool() 
             {
                 VkResult err;
@@ -1172,7 +1032,7 @@ namespace Hatchit {
                 VkCommandPoolCreateInfo commandPoolInfo;
                 commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
                 commandPoolInfo.pNext = nullptr;
-                commandPoolInfo.queueFamilyIndex = m_graphicsQueueNodeIndex;
+                commandPoolInfo.queueFamilyIndex = m_swapchain->VKGetGraphicsQueueIndex();
                 commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
                 err = vkCreateCommandPool(m_device, &commandPoolInfo, nullptr, &m_commandPool);
@@ -1233,7 +1093,7 @@ namespace Hatchit {
 
                 CreateSetupCommandBuffer();
 
-                m_swapchain->VKPrepare(m_colorSpace);
+                m_swapchain->VKPrepare();
 
                 m_width = m_swapchain->GetWidth();
                 m_height = m_swapchain->GetHeight();
