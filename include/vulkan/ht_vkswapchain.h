@@ -57,10 +57,12 @@ namespace Hatchit {
                 VKSwapchain(VkInstance& instance, VkPhysicalDevice& gpu, VkDevice& device, VkCommandPool& commandPool);
                 ~VKSwapchain();
                 
-                bool VKPrepare(VkSurfaceKHR surface, VkColorSpaceKHR colorSpace);
+                const VkSurfaceKHR& VKGetSurface();
+
+                bool VKPrepare(VkColorSpaceKHR colorSpace);
                 bool VKPrepareResources();
 
-                bool BuildSwapchain(VkClearValue clearColor);
+                bool BuildSwapchainCommands(VkClearValue clearColor);
 
                 VkResult VKGetNextImage(VkSemaphore presentSemaphore);
                 bool VKPostPresentBarrier(const VkQueue& queue);
@@ -74,6 +76,8 @@ namespace Hatchit {
                 VkPhysicalDevice&   m_gpu;
                 VkDevice&           m_device;
                 VkCommandPool&      m_commandPool;
+
+                VkSurfaceKHR    m_surface;
 
                 VkRenderPass            m_renderPass;
                 VKPipeline*             m_pipeline;
@@ -90,15 +94,18 @@ namespace Hatchit {
 
                 UniformBlock    m_vertexBuffer;
 
+
+                bool prepareSurface(const RendererParams& rendererParams);
+
                 //Prepare the swapchain base
-                bool prepareSwapchain(VKRenderer* renderer, VkSurfaceKHR surface, VkFormat preferredColorFormat, VkColorSpaceKHR colorSpace,
+                bool prepareSwapchain(VKRenderer* renderer, VkFormat preferredColorFormat, VkColorSpaceKHR colorSpace,
                     std::vector<VkPresentModeKHR> presentModes, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D surfaceExtents);
 
                 //Prepare the swapchain depth buffer
-                bool prepareSwapchainDepth(VKRenderer* renderer, VkExtent2D extent);
+                bool prepareSwapchainDepth(VKRenderer* renderer, const VkFormat& preferredDepthFormat, VkExtent2D extent);
 
                 //Prepare the internal render pass
-                bool prepareRenderPass(VkFormat preferredColorFormat);
+                bool prepareRenderPass(const VkFormat& preferredColorFormat);
 
                 //Prepare the framebuffers for the swapchain images
                 bool prepareFramebuffers(VkExtent2D extents);
@@ -107,6 +114,16 @@ namespace Hatchit {
                 bool allocateCommandBuffers();
 
                 bool submitBarrier(const VkQueue& queue, const VkCommandBuffer& command);
+
+                //Helpers for destruction / recreation
+                void destroySurface();
+                void destroyPipeline();
+                void destroyDepth();
+                void destroyFramebuffers();
+                void destroySwapchainBuffers();
+                void destroyRenderPass();
+                void destroySwapchain();
+                
             };
         }
     }

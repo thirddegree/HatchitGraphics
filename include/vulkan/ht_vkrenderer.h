@@ -98,6 +98,8 @@ namespace Hatchit {
                 VkFormat GetPreferredImageFormat();
                 VkFormat GetPreferredDepthFormat();
 
+                const RendererParams& GetRendererParams();
+
                 void CreateSetupCommandBuffer();
                 void FlushSetupCommandBuffer();
 
@@ -114,13 +116,14 @@ namespace Hatchit {
 
                 std::map<IPipeline*, std::vector<Renderable>> m_pipelineList;
 
+                RendererParams m_rendererParams; //We will need these later to re-create the swapchain if the window resizes
+
                 //Vuklan data structs
                 VkApplicationInfo                       m_appInfo;
                 VkInstance                              m_instance;
                 VkPhysicalDevice                        m_gpu;
                 VkPhysicalDeviceProperties              m_gpuProps;
                 std::vector<VkQueueFamilyProperties>    m_queueProps;
-                VkSurfaceKHR                            m_surface;
                 uint32_t                                m_graphicsQueueNodeIndex;
                 VkDevice                                m_device; 
                 VkQueue                                 m_queue;
@@ -128,7 +131,7 @@ namespace Hatchit {
                 VkColorSpaceKHR                         m_colorSpace;
                 VkPhysicalDeviceMemoryProperties        m_memoryProps;
                 
-                VKSwapchain* m_swapchain;
+                VKSwapchain*                            m_swapchain;
 
                 VkCommandBuffer                         m_setupCommandBuffer;
 
@@ -141,6 +144,7 @@ namespace Hatchit {
 
                 VkClearValue                            m_clearColor;
 
+                //Resources we want loaded elsewhere
                 IRenderTarget* m_renderTarget;
                 IMaterial* m_material;
                 ITexture* m_texture;
@@ -159,8 +163,8 @@ namespace Hatchit {
                     const char *pLayerPrefix, const char *pMsg, void *pUserData);
 
                 //Core init methods
-                bool initVulkan(const RendererParams& params);
-                bool initVulkanSwapchain(const RendererParams& params);
+                bool initVulkan();
+                bool initVulkanSwapchain();
                 bool prepareVulkan();
 
                 //Helper init methods
@@ -179,9 +183,9 @@ namespace Hatchit {
                 bool setupDescriptorPool();
 
                 //Helper inits for initVulkanSwapchain
-                bool setupQueues();
+                bool setupQueues(const VkSurfaceKHR& surface);
                 bool createDevice();
-                bool getSupportedFormats();
+                bool getSupportedFormats(const VkSurfaceKHR& surface);
             };
 
         }

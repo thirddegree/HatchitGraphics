@@ -27,7 +27,7 @@ namespace Hatchit {
             VKSwapchain::VKSwapchain(VkInstance& instance, VkPhysicalDevice& gpu, VkDevice& device, VkCommandPool& commandPool) :
                 m_instance(instance), m_gpu(gpu), m_device(device), m_commandPool(commandPool)
             {
-                m_swapchain = 0;
+                m_swapchain = VK_NULL_HANDLE;
 
                 m_instance = instance;
                 m_gpu = gpu;
@@ -35,48 +35,31 @@ namespace Hatchit {
                 m_commandPool = commandPool;
 
                 m_inputTexture = nullptr;
+
+                /*
+                Prepare surface
+                */
+                VKRenderer* renderer = VKRenderer::RendererInstance;
+                const RendererParams& rendererParams = renderer->GetRendererParams();
+                if (!prepareSurface(rendererParams))
+                    HT_DEBUG_PRINTF("VKSwapchain(): Failed to prepare surface");
             }
 
             VKSwapchain::~VKSwapchain()
             {
-                VKRenderer* renderer = VKRenderer::RendererInstance;
+                destroyPipeline();
+               
+                destroyDepth();
 
-                //TODO: Destroy any sort of descriptor sets or layouts
-                delete m_pipeline;
+                destroySwapchainBuffers();
 
-                vkFreeMemory(m_device, m_vertexBuffer.memory, nullptr);
-                vkDestroyBuffer(m_device, m_vertexBuffer.buffer, nullptr);
+                destroyFramebuffers();
 
-                vkFreeDescriptorSets(m_device, renderer->GetVKDescriptorPool(), 1, &m_descriptorSet);
+                destroyRenderPass();
 
-                //Destroy depth
-                vkDestroyImageView(m_device, m_depthBuffer.view, nullptr);
-                vkDestroyImage(m_device, m_depthBuffer.image, nullptr);
-                vkFreeMemory(m_device, m_depthBuffer.memory, nullptr);
+                destroySwapchain();
 
-                //Clear out framebuffers and swapchain buffer commands
-                uint32_t i;
-                for (i = 0; i < m_swapchainBuffers.size(); i++)
-                    vkDestroyFramebuffer(m_device, m_framebuffers[i], nullptr);
-                m_framebuffers.clear();
-
-                for (i = 0; i < m_swapchainBuffers.size(); i++)
-                {
-                    //vkDestroyImage(m_device, m_swapchainBuffers[i].image, nullptr);
-                    vkDestroyImageView(m_device, m_swapchainBuffers[i].view, nullptr);
-                    vkFreeCommandBuffers(m_device, m_commandPool, 1, &m_swapchainBuffers[i].command);
-                }
-
-                uint32_t bufferCount = static_cast<uint32_t>(m_swapchainBuffers.size());
-
-                vkFreeCommandBuffers(m_device, m_commandPool, bufferCount, m_postPresentCommands.data());
-                vkFreeCommandBuffers(m_device, m_commandPool, bufferCount, m_prePresentCommands.data());
-
-                vkDestroyRenderPass(m_device, m_renderPass, nullptr);
-
-                fpDestroySwapchainKHR(m_device, m_swapchain, nullptr);
-
-                m_swapchainBuffers.clear();
+                destroySurface();
             }
 
             VkCommandBuffer VKSwapchain::GetCurrentCommand()
@@ -84,24 +67,49 @@ namespace Hatchit {
                 return m_swapchainBuffers[m_currentBuffer].command;
             }
 
-            bool VKSwapchain::VKPrepare(VkSurfaceKHR surface, VkColorSpaceKHR colorSpace)
+            const VkSurfaceKHR& VKSwapchain::VKGetSurface()
+            {
+                return m_surface;
+            }
+
+            bool VKSwapchain::VKPrepare(VkColorSpaceKHR colorSpace)
             {
                 VkResult err;
 
+                //Clean out old data
+                if(m_swapchain != VK_NULL_HANDLE)
+                {
+                    //destroyImages();
+
+                    destroyFramebuffers();
+
+                    m_swapchainBuffers.clear();
+
+                    destroySwapchain();
+
+                    destroySurface();
+
+                    //Re-create surface
+                    VKRenderer* renderer = VKRenderer::RendererInstance;
+                    const RendererParams& rendererParams = renderer->GetRendererParams();
+                    if (!prepareSurface(rendererParams))
+                        HT_DEBUG_PRINTF("VKSwapchain(): Failed to prepare surface");
+                }
+
                 // Get physical device surface properties and formats
                 VkSurfaceCapabilitiesKHR surfCaps;
-                err = fpGetPhysicalDeviceSurfaceCapabilitiesKHR(m_gpu, surface, &surfCaps);
+                err = fpGetPhysicalDeviceSurfaceCapabilitiesKHR(m_gpu, m_surface, &surfCaps);
                 assert(!err);
 
                 // Get available present modes
                 uint32_t presentModeCount;
-                err = fpGetPhysicalDeviceSurfacePresentModesKHR(m_gpu, surface, &presentModeCount, NULL);
+                err = fpGetPhysicalDeviceSurfacePresentModesKHR(m_gpu, m_surface, &presentModeCount, NULL);
                 assert(!err);
                 assert(presentModeCount > 0);
 
                 std::vector<VkPresentModeKHR> presentModes(presentModeCount);
 
-                err = fpGetPhysicalDeviceSurfacePresentModesKHR(m_gpu, surface, &presentModeCount, presentModes.data());
+                err = fpGetPhysicalDeviceSurfacePresentModesKHR(m_gpu, m_surface, &presentModeCount, presentModes.data());
                 assert(!err);
 
                 VkExtent2D swapchainExtent = {};
@@ -154,18 +162,20 @@ namespace Hatchit {
                 }
 
                 VKRenderer* renderer = VKRenderer::RendererInstance;
-                VkFormat preferredColorFormat = renderer->GetPreferredImageFormat();
+                const VkFormat& preferredColorFormat = renderer->GetPreferredImageFormat();
+                const VkFormat& preferredDepthFormat = renderer->GetPreferredDepthFormat();
+
                 /*
                     Prepare Color
                 */
-                if (!prepareSwapchain(renderer, surface, preferredColorFormat, colorSpace,
+                if (!prepareSwapchain(renderer, preferredColorFormat, colorSpace,
                     presentModes, surfCaps, swapchainExtent))
                     return false;
 
                 /*
                     Prepare depth
                 */
-                if (!prepareSwapchainDepth(renderer, swapchainExtent))
+                if (!prepareSwapchainDepth(renderer, preferredDepthFormat, swapchainExtent))
                     return false;
                 
                 /*
@@ -188,7 +198,6 @@ namespace Hatchit {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
 
                 VkResult err;
-
 
                 ShaderHandle vsShader = Shader::GetResourceHandle("screen_VS.spv");
                 //vsShader.VInitFromFile("screen_VS.spv");
@@ -282,7 +291,7 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKSwapchain::BuildSwapchain(VkClearValue clearColor)
+            bool VKSwapchain::BuildSwapchainCommands(VkClearValue clearColor)
             {
 
                 /*
@@ -478,10 +487,57 @@ namespace Hatchit {
                 Private Methods
             */
 
-            bool VKSwapchain::prepareSwapchain(VKRenderer* renderer, VkSurfaceKHR surface, VkFormat preferredColorFormat, VkColorSpaceKHR colorSpace, std::vector<VkPresentModeKHR> presentModes, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D surfaceExtents)
+            bool VKSwapchain::prepareSurface(const RendererParams& rendererParams) 
             {
                 VkResult err;
-                VkSwapchainKHR oldSwapchain = m_swapchain;
+
+                //Hook into the window
+#ifdef _WIN32
+                //Get HINSTANCE from HWND
+                HWND window = (HWND)rendererParams.window;
+                HINSTANCE instance;
+                instance = (HINSTANCE)GetWindowLongPtr(window, GWLP_HINSTANCE);
+
+                VkWin32SurfaceCreateInfoKHR creationInfo;
+                creationInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+                creationInfo.pNext = nullptr;
+                creationInfo.flags = 0; //Unused in Vulkan 1.0.3;
+                creationInfo.hinstance = instance;
+                creationInfo.hwnd = window;
+
+                err = vkCreateWin32SurfaceKHR(m_instance, &creationInfo, nullptr, &m_surface);
+
+                if (err != VK_SUCCESS)
+                {
+                    HT_DEBUG_PRINTF("Error creating VkSurface for Win32 window");
+                    return false;
+                }
+#endif
+
+#ifdef HT_SYS_LINUX
+                VkXcbSurfaceCreateInfoKHR creationInfo;
+                creationInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+                creationInfo.pNext = nullptr;
+                creationInfo.flags = 0;
+                creationInfo.connection = (xcb_connection_t*)params.display;
+                creationInfo.window = *(uint32_t*)params.window;
+
+                err = vkCreateXcbSurfaceKHR(m_instance, &creationInfo, nullptr, &m_surface);
+
+                if (err != VK_SUCCESS)
+                {
+                    HT_DEBUG_PRINTF("Error creating VkSurface for Xcb window");
+
+                    return false;
+                }
+#endif
+                return true;
+            }
+
+            bool VKSwapchain::prepareSwapchain(VKRenderer* renderer, VkFormat preferredColorFormat, VkColorSpaceKHR colorSpace, std::vector<VkPresentModeKHR> presentModes, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D surfaceExtents)
+            {
+                VkResult err;
+                VkSwapchainKHR oldSwapchain = VK_NULL_HANDLE;
 
                 //Use mailbox mode if available as it's the lowest-latency non-tearing mode
                 //If that's not available try immediate mode which SHOULD be available and is fast but tears
@@ -517,7 +573,7 @@ namespace Hatchit {
                 VkSwapchainCreateInfoKHR swapchainInfo;
                 swapchainInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
                 swapchainInfo.pNext = nullptr;
-                swapchainInfo.surface = surface;
+                swapchainInfo.surface = m_surface;
                 swapchainInfo.minImageCount = desiredNumberOfSwapchainImages;
                 swapchainInfo.imageFormat = preferredColorFormat;
                 swapchainInfo.imageColorSpace = colorSpace;
@@ -548,7 +604,7 @@ namespace Hatchit {
                     fpDestroySwapchainKHR(m_device, oldSwapchain, nullptr);
 
                 //Get the swapchain images
-                uint32_t swapchainImageCount;
+                uint32_t swapchainImageCount = 0;
                 err = fpGetSwapchainImagesKHR(m_device, m_swapchain, &swapchainImageCount, nullptr);
                 if (err != VK_SUCCESS)
                 {
@@ -625,16 +681,15 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKSwapchain::prepareSwapchainDepth(VKRenderer* renderer, VkExtent2D extent)
+            bool VKSwapchain::prepareSwapchainDepth(VKRenderer* renderer, const VkFormat& preferredDepthFormat, VkExtent2D extent)
             {
                 VkResult err;
-                const VkFormat depthFormat = renderer->GetPreferredDepthFormat();
 
                 VkImageCreateInfo image;
                 image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
                 image.pNext = nullptr;
                 image.imageType = VK_IMAGE_TYPE_2D;
-                image.format = depthFormat;
+                image.format = preferredDepthFormat;
                 image.extent = { extent.width, extent.height, 1 };
                 image.mipLevels = 1;
                 image.arrayLayers = 1;
@@ -663,13 +718,13 @@ namespace Hatchit {
                 view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
                 view.pNext = nullptr;
                 view.image = VK_NULL_HANDLE;
-                view.format = depthFormat;
+                view.format = preferredDepthFormat;
                 view.subresourceRange = depthSubresourceRange;
                 view.flags = 0;
                 view.components = components;
                 view.viewType = VK_IMAGE_VIEW_TYPE_2D;
 
-                m_depthBuffer.format = depthFormat;
+                m_depthBuffer.format = preferredDepthFormat;
 
                 VkMemoryRequirements memoryRequirements;
                 bool pass;
@@ -734,7 +789,7 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKSwapchain::prepareRenderPass(VkFormat preferredColorFormat) 
+            bool VKSwapchain::prepareRenderPass(const VkFormat& preferredColorFormat)
             {
                 VkAttachmentDescription attachments[2];
                 attachments[0].format = preferredColorFormat;
@@ -927,6 +982,59 @@ namespace Hatchit {
                 }
 
                 return true;
+            }
+
+            void VKSwapchain::destroySurface() 
+            {
+                vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+            }
+            void VKSwapchain::destroyPipeline()
+            {
+                VKRenderer* renderer = VKRenderer::RendererInstance;
+
+                delete m_pipeline;
+
+                vkFreeMemory(m_device, m_vertexBuffer.memory, nullptr);
+                vkDestroyBuffer(m_device, m_vertexBuffer.buffer, nullptr);
+
+                vkFreeDescriptorSets(m_device, renderer->GetVKDescriptorPool(), 1, &m_descriptorSet);
+            }
+            void VKSwapchain::destroyDepth()
+            {
+                //Destroy depth
+                vkDestroyImageView(m_device, m_depthBuffer.view, nullptr);
+                vkDestroyImage(m_device, m_depthBuffer.image, nullptr);
+                vkFreeMemory(m_device, m_depthBuffer.memory, nullptr);
+            }
+            void VKSwapchain::destroyFramebuffers()
+            {
+                //Clear out framebuffers
+                for (uint32_t i = 0; i < m_swapchainBuffers.size(); i++)
+                    vkDestroyFramebuffer(m_device, m_framebuffers[i], nullptr);
+                m_framebuffers.clear();
+            }
+            void VKSwapchain::destroySwapchainBuffers()
+            {
+                uint32_t bufferCount = static_cast<uint32_t>(m_swapchainBuffers.size());
+
+                for (uint32_t i = 0; i < bufferCount; i++)
+                {
+                    //vkDestroyImage(m_device, m_swapchainBuffers[i].image, nullptr);
+                    vkDestroyImageView(m_device, m_swapchainBuffers[i].view, nullptr);
+
+                    vkFreeCommandBuffers(m_device, m_commandPool, 1, &m_swapchainBuffers[i].command);
+                }
+
+                vkFreeCommandBuffers(m_device, m_commandPool, bufferCount, m_postPresentCommands.data());
+                vkFreeCommandBuffers(m_device, m_commandPool, bufferCount, m_prePresentCommands.data());
+            }
+            void VKSwapchain::destroyRenderPass() 
+            {
+                vkDestroyRenderPass(m_device, m_renderPass, nullptr);
+            }
+            void VKSwapchain::destroySwapchain()
+            {
+                fpDestroySwapchainKHR(m_device, m_swapchain, nullptr);
             }
 
         }

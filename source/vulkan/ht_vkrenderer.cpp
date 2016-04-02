@@ -71,32 +71,111 @@ namespace Hatchit {
 
             bool VKRenderer::VInitialize(const RendererParams & params)
             {
+                //Store params for later
+                m_rendererParams = params;
+
                 m_clearColor.color.float32[0] = params.clearColor.r;
                 m_clearColor.color.float32[1] = params.clearColor.g;
                 m_clearColor.color.float32[2] = params.clearColor.b;
                 m_clearColor.color.float32[3] = params.clearColor.a;
 
+                if (RendererInstance == nullptr)
+                    RendererInstance = this;
+
                 /*
                 * Initialize Core Vulkan Systems: Driver layers & extensions 
                 */
-                if (!initVulkan(params))
+                if (!initVulkan())
                     return false;
                             
                 /*
                 * Initialize Vulkan swapchain
                 */
-                if (!initVulkanSwapchain(params))
+                if (!initVulkanSwapchain())
                     return false;
-
-                //We should be able to use the device and instance wherever we want at this point
-                if (RendererInstance == nullptr)
-                    RendererInstance = this;
 
                 /*
                 * Prepare Vulkan command buffers and memory systems for drawing
                 */
                 if (!prepareVulkan())
                     return false;
+
+                //TODO: remove this test code
+                VKRenderPass* renderPass = new VKRenderPass(m_device, m_commandPool);
+                renderPass->VSetWidth(m_width);
+                renderPass->VSetHeight(m_height);
+                renderPass->VSetClearColor(Color(m_clearColor.color.float32[0], m_clearColor.color.float32[1], m_clearColor.color.float32[2], m_clearColor.color.float32[3]));
+
+                m_renderTarget = new VKRenderTarget(m_width, m_height);
+                m_renderTarget->SetRenderPass(renderPass);
+
+                renderPass->VPrepare();
+                m_renderTarget->VPrepare();
+
+                renderPass->VSetRenderTarget(m_renderTarget);
+
+                m_swapchain->SetIncomingRenderTarget(m_renderTarget);
+
+                ModelHandle model = Model::GetResourceHandle("Raptor.obj");
+                //model.VInitFromFile(&meshFile);
+
+                CreateSetupCommandBuffer();
+
+                //TODO: Once JSON file is found, insert name here
+                m_sampler = new VKSampler(m_device, "");
+                m_sampler->SetColorSpace(Sampler::ColorSpace::GAMMA);
+                m_sampler->VPrepare();
+
+                m_texture = new VKTexture(m_device, "raptor.png");
+                m_texture->SetSampler(m_sampler);
+
+                Pipeline::RasterizerState rasterState = {};
+                rasterState.cullMode = Pipeline::CullMode::NONE;
+                rasterState.polygonMode = Pipeline::PolygonMode::SOLID;
+                rasterState.depthClampEnable = true;
+
+                Pipeline::MultisampleState multisampleState = {};
+                multisampleState.minSamples = 0;
+                multisampleState.samples = Pipeline::SAMPLE_1_BIT;
+
+                Math::Matrix4 view = Math::MMMatrixTranspose(Math::MMMatrixLookAt(Math::Vector3(0, 0, -5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0)));
+
+                Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f));
+
+                IPipeline* pipeline = new VKPipeline(m_device, renderPass->GetVkRenderPass(), "TestPipeline.json");
+
+                pipeline->VSetRasterState(rasterState);
+                pipeline->VSetMultisampleState(multisampleState);
+                pipeline->VPrepare();
+
+                m_material = new VKMaterial();
+
+                m_material->VSetMatrix4("object.model", Math::Matrix4());
+                m_material->VBindTexture("color", m_texture);
+                m_material->VPrepare(pipeline);
+
+                std::vector<Mesh*> meshes = model->GetMeshes();
+                IMesh* mesh = new VKMesh();
+                mesh->VBuffer(meshes[0]);
+
+                renderPass->VScheduleRenderRequest(pipeline, m_material, mesh);
+
+                Renderable renderable;
+                renderable.material = m_material;
+                renderable.mesh = mesh;
+                m_pipelineList[pipeline].push_back(renderable);
+
+                m_renderPasses.push_back(renderPass);
+
+                pipeline->VUpdate();
+                m_material->VUpdate();
+
+                renderPass->VSetView(view);
+                renderPass->VSetProj(proj);
+
+                m_swapchain->VKPrepareResources();
+
+                FlushSetupCommandBuffer();
 
                 return true;
             }
@@ -106,10 +185,7 @@ namespace Hatchit {
                 m_queueProps.clear();
 
                 if (m_swapchain != nullptr)
-                {
                     delete m_swapchain;
-                    vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
-                }
 
                 //These should all be deleted elsewhere when resources work properly
                 if(m_renderTarget != nullptr)
@@ -149,7 +225,7 @@ namespace Hatchit {
 
                 for (uint32_t i = 0; i < m_renderPasses.size(); i++)
                     delete m_renderPasses[i];
-                
+
                 m_renderPasses.clear();
 
                 if (m_device != VK_NULL_HANDLE)
@@ -181,6 +257,28 @@ namespace Hatchit {
                 //Recreate the swapchain
                 m_width = width;
                 m_height = height;
+
+                VkResult err;
+
+                err = vkQueueWaitIdle(m_queue);
+                assert(!err);
+
+                err = vkDeviceWaitIdle(m_device);
+                assert(!err);
+                
+                ////Reset all command buffers
+                //vkResetCommandPool(m_device, m_commandPool, 0);
+                
+                //for (uint32_t i = 0; i < m_renderPasses.size(); i++)
+                //    delete m_renderPasses[i];
+                //
+                //m_renderPasses.clear();
+                //
+                ////These should all be deleted elsewhere when resources work properly
+                //if (m_renderTarget != nullptr)
+                //    delete m_renderTarget;
+
+                //Reprepare the resources (including the swapchain)
                 prepareVulkan();
             }
 
@@ -219,7 +317,7 @@ namespace Hatchit {
             {
                 //TODO: Determine which physical device and thread are best to render with
 
-                m_swapchain->BuildSwapchain(m_clearColor);
+                m_swapchain->BuildSwapchainCommands(m_clearColor);
 
                 bool success = m_swapchain->VKPostPresentBarrier(m_queue);
                 assert(success);
@@ -319,7 +417,12 @@ namespace Hatchit {
                 return VK_FORMAT_D32_SFLOAT_S8_UINT;
             }
 
-            bool VKRenderer::initVulkan(const RendererParams& params) 
+            const RendererParams& VKRenderer::GetRendererParams()
+            {
+                return m_rendererParams;
+            }
+
+            bool VKRenderer::initVulkan() 
             {
                 VkResult err;
                 bool success = true;
@@ -346,7 +449,7 @@ namespace Hatchit {
 
                 m_appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
                 m_appInfo.pNext = nullptr;
-                m_appInfo.pApplicationName = params.applicationName.c_str();
+                m_appInfo.pApplicationName = m_rendererParams.applicationName.c_str();
                 m_appInfo.applicationVersion = 0;
                 m_appInfo.pEngineName = "Hatchit";
                 m_appInfo.engineVersion = 0;
@@ -434,55 +537,16 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKRenderer::initVulkanSwapchain(const RendererParams& params)
+            bool VKRenderer::initVulkanSwapchain()
             {
-                VkResult err;
+                m_swapchain = new VKSwapchain(m_instance, m_gpu, m_device, m_commandPool);
 
-                //Hook into the window
-#ifdef _WIN32
-                //Get HINSTANCE from HWND
-                HWND window = (HWND)params.window;
-                HINSTANCE instance;
-                instance = (HINSTANCE)GetWindowLongPtr(window, GWLP_HINSTANCE);
-
-                VkWin32SurfaceCreateInfoKHR creationInfo;
-                creationInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-                creationInfo.pNext = nullptr;
-                creationInfo.flags = 0; //Unused in Vulkan 1.0.3;
-                creationInfo.hinstance = instance;
-                creationInfo.hwnd = window;
-
-                err = vkCreateWin32SurfaceKHR(m_instance, &creationInfo, nullptr, &m_surface);
-
-                if (err != VK_SUCCESS)
-                {
-                    HT_DEBUG_PRINTF("Error creating VkSurface for Win32 window");
-                    return false;
-                }
-#endif
-
-#ifdef HT_SYS_LINUX
-                VkXcbSurfaceCreateInfoKHR creationInfo;
-                creationInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
-                creationInfo.pNext = nullptr;
-                creationInfo.flags = 0;
-                creationInfo.connection = (xcb_connection_t*)params.display;
-                creationInfo.window = *(uint32_t*)params.window;
-
-                err = vkCreateXcbSurfaceKHR(m_instance, &creationInfo, nullptr, &m_surface);
-
-                if(err != VK_SUCCESS)
-                {
-                    HT_DEBUG_PRINTF("Error creating VkSurface for Xcb window");
-        
-                    return false;
-                }
-#endif
+                const VkSurfaceKHR& surface = m_swapchain->VKGetSurface();
 
                 /*
                 * Setup the device queues
                 */
-                if (!setupQueues())
+                if (!setupQueues(surface))
                     return false;
 
                 /*
@@ -497,13 +561,13 @@ namespace Hatchit {
                 /*
                 * Get the supported texture format and color space
                 */
-                if (!getSupportedFormats())
+                if (!getSupportedFormats(surface))
                     return false;
+
+                VkResult err;
 
                 //Get memory information
                 vkGetPhysicalDeviceMemoryProperties(m_gpu, &m_memoryProps);
-
-                m_swapchain = new VKSwapchain(m_instance, m_gpu, m_device, m_commandPool);
 
                 //Setup semaphores and submission info
                 VkSemaphoreCreateInfo semaphoreCreateInfo = {};
@@ -969,14 +1033,14 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKRenderer::setupQueues() 
+            bool VKRenderer::setupQueues(const VkSurfaceKHR& surface)
             {
                 uint32_t i; //we reuse this for all the loops
 
                 //Find which queue we can use to present
                 VkBool32* supportsPresent = new VkBool32[m_queueProps.size()];
                 for (i = 0; i < m_queueProps.size(); i++)
-                    fpGetPhysicalDeviceSurfaceSupportKHR(m_gpu, i, m_surface, &supportsPresent[i]);
+                    fpGetPhysicalDeviceSurfaceSupportKHR(m_gpu, i, surface, &supportsPresent[i]);
 
                 //Search for a queue that can both do graphics and presentation
                 uint32_t graphicsQueueNodeIndex = UINT32_MAX;
@@ -1064,13 +1128,13 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKRenderer::getSupportedFormats() 
+            bool VKRenderer::getSupportedFormats(const VkSurfaceKHR& surface)
             {
                 VkResult err;
 
                 //Get list of supported VkFormats
                 uint32_t formatCount;
-                err = fpGetPhysicalDeviceSurfaceFormatsKHR(m_gpu, m_surface, &formatCount, nullptr);
+                err = fpGetPhysicalDeviceSurfaceFormatsKHR(m_gpu, surface, &formatCount, nullptr);
 
                 if (err != VK_SUCCESS)
                 {
@@ -1080,7 +1144,7 @@ namespace Hatchit {
 
                 //Get format list
                 VkSurfaceFormatKHR* surfaceFormats = new VkSurfaceFormatKHR[formatCount];
-                err = fpGetPhysicalDeviceSurfaceFormatsKHR(m_gpu, m_surface, &formatCount, surfaceFormats);
+                err = fpGetPhysicalDeviceSurfaceFormatsKHR(m_gpu, surface, &formatCount, surfaceFormats);
                 if (err != VK_SUCCESS || formatCount <= 0)
                 {
                     HT_DEBUG_PRINTF("VkRenderer::getSupportedFormats(): Error getting VkSurfaceFormats from device.\n");
@@ -1109,7 +1173,7 @@ namespace Hatchit {
                 commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
                 commandPoolInfo.pNext = nullptr;
                 commandPoolInfo.queueFamilyIndex = m_graphicsQueueNodeIndex;
-                commandPoolInfo.flags = 0;
+                commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
                 err = vkCreateCommandPool(m_device, &commandPoolInfo, nullptr, &m_commandPool);
 
@@ -1169,89 +1233,11 @@ namespace Hatchit {
 
                 CreateSetupCommandBuffer();
 
-                m_swapchain->VKPrepare(m_surface, m_colorSpace);
+                m_swapchain->VKPrepare(m_colorSpace);
 
                 m_width = m_swapchain->GetWidth();
                 m_height = m_swapchain->GetHeight();
 
-                FlushSetupCommandBuffer();
-
-                //TODO: remove this test code
-                VKRenderPass* renderPass = new VKRenderPass(m_device, m_commandPool);
-                renderPass->VSetWidth(m_width);
-                renderPass->VSetHeight(m_height);
-                renderPass->VSetClearColor(Color(m_clearColor.color.float32[0], m_clearColor.color.float32[1], m_clearColor.color.float32[2], m_clearColor.color.float32[3]));
-
-                m_renderTarget = new VKRenderTarget(m_width, m_height);
-                m_renderTarget->SetRenderPass(renderPass);
-
-                renderPass->VPrepare();
-                m_renderTarget->VPrepare();
-
-                renderPass->VSetRenderTarget(m_renderTarget);
-
-                m_swapchain->SetIncomingRenderTarget(m_renderTarget);
-
-                ModelHandle model = Model::GetResourceHandle("Raptor.obj");
-                //model.VInitFromFile(&meshFile);
-
-                CreateSetupCommandBuffer();
-
-                //TODO: Once JSON file is found, insert name here
-                m_sampler = new VKSampler(m_device, "");
-                m_sampler->SetColorSpace(Sampler::ColorSpace::GAMMA);
-                m_sampler->VPrepare();
-
-                m_texture = new VKTexture(m_device, "raptor.png");
-                m_texture->SetSampler(m_sampler);
-                //m_texture->VInitFromFile(&textureFile);
-
-                Pipeline::RasterizerState rasterState = {};
-                rasterState.cullMode = Pipeline::CullMode::NONE;
-                rasterState.polygonMode = Pipeline::PolygonMode::SOLID;
-                rasterState.depthClampEnable = true;
-
-                Pipeline::MultisampleState multisampleState = {};
-                multisampleState.minSamples = 0;
-                multisampleState.samples = Pipeline::SAMPLE_1_BIT;
-
-                Math::Matrix4 view = Math::MMMatrixTranspose(Math::MMMatrixLookAt(Math::Vector3(0, 0, -5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0)));
-
-                Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f));
-
-                IPipeline* pipeline = new VKPipeline(m_device, renderPass->GetVkRenderPass(), "TestPipeline.json");
-                
-                pipeline->VSetRasterState(rasterState);
-                pipeline->VSetMultisampleState(multisampleState);
-                pipeline->VPrepare();
-
-                m_material = new VKMaterial();
-
-                m_material->VSetMatrix4("object.model", Math::Matrix4());
-                m_material->VBindTexture("color", m_texture);
-                m_material->VPrepare(pipeline);
-
-                std::vector<Mesh*> meshes = model->GetMeshes();
-                IMesh* mesh = new VKMesh();
-                mesh->VBuffer(meshes[0]);
-
-                renderPass->VScheduleRenderRequest(pipeline, m_material, mesh);
-                 
-                Renderable renderable;
-                renderable.material = m_material;
-                renderable.mesh = mesh;
-                m_pipelineList[pipeline].push_back(renderable);
-
-                m_renderPasses.push_back(renderPass);
-
-                pipeline->VUpdate();
-                m_material->VUpdate();
-
-                renderPass->VSetView(view);
-                renderPass->VSetProj(proj);
-
-                m_swapchain->VKPrepareResources();
-                
                 FlushSetupCommandBuffer();
 
                 return true;
