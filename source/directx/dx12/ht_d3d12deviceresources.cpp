@@ -345,6 +345,9 @@ namespace Hatchit {
 			
 			void D3D12DeviceResources::Resize(uint32_t width, uint32_t height)
 			{
+				m_viewport.Width = static_cast<float>(width);
+				m_viewport.Height = static_cast<float>(height);
+
 				WaitForGPU();
 				
 				DestroyDeviceResources();
