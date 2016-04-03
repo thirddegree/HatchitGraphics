@@ -87,11 +87,17 @@ namespace Hatchit {
                 */
                 if (!initVulkan())
                     return false;
-                            
+
                 /*
                 * Initialize Vulkan swapchain
                 */
                 if (!initVulkanSwapchain())
+                    return false;
+
+                if (!setupCommandPool())
+                    return false;
+
+                if (!setupDescriptorPool())
                     return false;
 
                 /*
@@ -280,6 +286,12 @@ namespace Hatchit {
 
                 //Reprepare the resources (including the swapchain)
                 prepareVulkan();
+
+                err = vkQueueWaitIdle(m_queue);
+                assert(!err);
+
+                err = vkDeviceWaitIdle(m_device);
+                assert(!err);
             }
 
             void VKRenderer::VSetClearColor(const Color & color)
@@ -1085,12 +1097,6 @@ namespace Hatchit {
             //TODO: Move this functionality to other subclasses
             bool VKRenderer::prepareVulkan()
             {
-                if (!setupCommandPool())
-                    return false;
-
-                if (!setupDescriptorPool())
-                    return false;
-
                 CreateSetupCommandBuffer();
 
                 m_swapchain->VKPrepare();

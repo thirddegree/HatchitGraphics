@@ -91,8 +91,6 @@ namespace Hatchit {
                 //Clean out old data
                 if(m_swapchain != VK_NULL_HANDLE)
                 {
-                    //destroyImages();
-
                     destroyFramebuffers();
 
                     m_swapchainBuffers.clear();
@@ -303,7 +301,6 @@ namespace Hatchit {
 
             bool VKSwapchain::BuildSwapchainCommands(VkClearValue clearColor)
             {
-
                 /*
                     Allocate space for the swapchain command buffers
                 */
