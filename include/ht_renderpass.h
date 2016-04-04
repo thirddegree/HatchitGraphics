@@ -27,10 +27,11 @@
 #include <ht_platform.h>
 #include <ht_rendertarget.h>
 #include <ht_pipeline.h>
-#include <ht_gmesh.h>
+#include <ht_mesh.h>
 #include <ht_material.h>
 #include <ht_math.h>
 #include <ht_color.h>
+#include <ht_renderpass_resource.h>
 
 namespace Hatchit {
 
@@ -54,6 +55,7 @@ namespace Hatchit {
         public:
             virtual ~IRenderPass() { };
 
+            virtual bool VInitFromResource(const Resource::RenderPassHandle& handle) = 0;
             virtual bool VPrepare() = 0;
 
             //Will this be sent the Objects that it needs to render?
@@ -64,16 +66,30 @@ namespace Hatchit {
 
             virtual void VSetClearColor(Color clearColor) = 0;
 
-            void SetWidth(uint32_t width);
-            void SetHeight(uint32_t height);
+            virtual void VSetWidth(uint32_t width) = 0;
+            virtual void VSetHeight(uint32_t height) = 0;
 
-            void SetView(Math::Matrix4 view);
-            void SetProj(Math::Matrix4 proj);
+            virtual void VSetView(Math::Matrix4 view) = 0;
+            virtual void VSetProj(Math::Matrix4 proj) = 0;
 
-            void ScheduleRenderRequest(IPipeline* pipeline, IMaterial* material, IMesh* mesh);
+            virtual void VScheduleRenderRequest(IPipeline* pipeline, IMaterial* material, IMesh* mesh) = 0;
 
-            void SetRenderTarget(IRenderTarget* renderTarget);
+            virtual void VSetRenderTarget(IRenderTarget* renderTarget) = 0;
+        };
 
+        class HT_API RenderPassBase : public IRenderPass
+        {
+        public:
+            virtual bool VInitFromResource(const Resource::RenderPassHandle& handle);
+            virtual void VSetWidth(uint32_t width);
+            virtual void VSetHeight(uint32_t height);
+
+            virtual void VSetView(Math::Matrix4 view);
+            virtual void VSetProj(Math::Matrix4 proj);
+
+            virtual void VScheduleRenderRequest(IPipeline* pipeline, IMaterial* material, IMesh* mesh);
+
+            virtual void VSetRenderTarget(IRenderTarget* renderTarget);
         protected:
             void BuildRenderRequestHeirarchy();
 

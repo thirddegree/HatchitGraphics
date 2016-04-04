@@ -92,10 +92,6 @@ namespace Hatchit {
                 renderer->SetImageLayout(buffer, m_color.image, VK_IMAGE_ASPECT_COLOR_BIT,
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
-                //Transfrom texture target to the transfer source
-                renderer->SetImageLayout(buffer, m_texture.image.image, VK_IMAGE_ASPECT_COLOR_BIT,
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-
                 VkImageBlit blit;
 
                 blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -124,9 +120,6 @@ namespace Hatchit {
                 //Transform textures back
                 renderer->SetImageLayout(buffer, m_color.image, VK_IMAGE_ASPECT_COLOR_BIT,
                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
-                renderer->SetImageLayout(buffer, m_texture.image.image, VK_IMAGE_ASPECT_COLOR_BIT,
-                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
                 return true;
             }
@@ -157,8 +150,7 @@ namespace Hatchit {
                 imageInfo.pNext = nullptr;
                 imageInfo.format = m_colorFormat;
                 imageInfo.imageType = VK_IMAGE_TYPE_2D;
-                imageInfo.extent.width = m_width;
-                imageInfo.extent.height = m_height;
+                imageInfo.extent = { m_width, m_height, 1 };
                 imageInfo.mipLevels = 1;
                 imageInfo.arrayLayers = 1;
                 imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -175,9 +167,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::VPrepare(): Error creating color image!\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderTarget::VPrepare(): Error creating color image!\n");
                     return false;
                 }
 
@@ -189,18 +179,14 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::VPrepare(): Error allocating color image memory!\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderTarget::VPrepare(): Error allocating color image memory!\n");
                     return false;
                 }
 
                 err = vkBindImageMemory(device, m_color.image, m_color.memory, 0);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::VPrepare(): Error binding color image memory!\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderTarget::VPrepare(): Error binding color image memory!\n");
                     return false;
                 }
 
@@ -224,9 +210,7 @@ namespace Hatchit {
                 err = vkCreateImageView(device, &viewInfo, nullptr, &m_color.view);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::VPrepare(): Error creating color image view!\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderTarget::VPrepare(): Error creating color image view!\n");
                     return false;
                 }
 
@@ -239,15 +223,12 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::VPrepare(): Error creating depth image!\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderTarget::VPrepare(): Error creating depth image!\n");
                     return false;
                 }
 
                 viewInfo.format = m_depthFormat;
-                viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                viewInfo.image = m_depth.image;
+                viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 
                 vkGetImageMemoryRequirements(device, m_depth.image, &memReqs);
                 memAllocInfo.allocationSize = memReqs.size;
@@ -257,32 +238,32 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::VPrepare(): Error allocating depth image memory!\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderTarget::VPrepare(): Error allocating depth image memory!\n");
                     return false;
                 }
 
                 err = vkBindImageMemory(device, m_depth.image, m_depth.memory, 0);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::VPrepare(): Error binding depth image memory!\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderTarget::VPrepare(): Error binding depth image memory!\n");
                     return false;
                 }
 
-                renderer->SetImageLayout(setupCommand, m_depth.image, VK_IMAGE_ASPECT_DEPTH_BIT,
-                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+                renderer->SetImageLayout(setupCommand, m_depth.image,
+                    VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+                    VK_IMAGE_LAYOUT_UNDEFINED,
+                    VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
+                viewInfo.image = m_depth.image;
 
                 err = vkCreateImageView(device, &viewInfo, nullptr, &m_depth.view);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::VPrepare(): Error creating depth image view!\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderTarget::VPrepare(): Error creating depth image view!\n");
                     return false;
                 }
+
+                renderer->FlushSetupCommandBuffer();
 
                 //Finally create internal framebuffer
                 VkImageView attachments[2];
@@ -303,13 +284,9 @@ namespace Hatchit {
                 err = vkCreateFramebuffer(device, &framebufferInfo, nullptr, &m_framebuffer);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::VPrepare(): Error creating framebuffer!\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderTarget::VPrepare(): Error creating framebuffer!\n");
                     return false;
                 }
-
-                renderer->FlushSetupCommandBuffer();
 
                 return true;
             }
@@ -325,9 +302,7 @@ namespace Hatchit {
                 assert(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT);
                 if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::setupTargetTexture(): GPU does not support blitting!\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderTarget::setupTargetTexture(): GPU does not support blitting!\n");
                     return false;
                 }
 
@@ -342,6 +317,7 @@ namespace Hatchit {
 
                 VkImageCreateInfo imageCreateInfo = {};
                 imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+                imageCreateInfo.pNext = nullptr;
                 imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
                 imageCreateInfo.format = m_colorFormat;
                 imageCreateInfo.extent = { m_width, m_height, 1 };
@@ -361,24 +337,27 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::setupTargetTexture(): Error creating target texture image!\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderTarget::setupTargetTexture(): Error creating target texture image!\n");
                     return false;
                 }
 
                 vkGetImageMemoryRequirements(device, m_texture.image.image, &memReqs);
                 memAllocInfo.allocationSize = memReqs.size;
 
-                renderer->MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memAllocInfo.memoryTypeIndex);
+                bool success = renderer->MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memAllocInfo.memoryTypeIndex);
+                assert(success);
+                if (!success)
+                {
+                    HT_DEBUG_PRINTF("VKTexture::VBufferImage(): Failed to find memory properties!\n");
+                    return false;
+                }
+
 
                 err = vkAllocateMemory(device, &memAllocInfo, nullptr, &m_texture.image.memory);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::setupTargetTexture(): Error allocating target texture image memory!\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderTarget::setupTargetTexture(): Error allocating target texture image memory!\n");
                     return false;
                 }
 
@@ -386,9 +365,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::setupTargetTexture(): Error binding target texture image memory!\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderTarget::setupTargetTexture(): Error binding target texture image memory!\n");
                     return false;
                 }
 
@@ -416,9 +393,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::setupTargetTexture(): Error creating target texture sampler\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderTarget::setupTargetTexture(): Error creating target texture sampler\n");
                     return false;
                 }
 
@@ -436,9 +411,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::setupTargetTexture(): Error creating target texture image view\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderTarget::setupTargetTexture(): Error creating target texture image view\n");
                     return false;
                 }
 

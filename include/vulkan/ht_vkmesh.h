@@ -24,11 +24,13 @@
 
 #pragma once
 
-#include <ht_gmesh.h>
+#include <ht_mesh.h>
 #include <ht_vulkan.h>
 
 namespace Hatchit {
+
     namespace Graphics {
+
         namespace Vulkan {
 
             class HT_API VKMesh : public IMesh
@@ -37,7 +39,7 @@ namespace Hatchit {
                 VKMesh();
                 ~VKMesh();
 
-                bool VBuffer(Resource::Mesh* mesh)  override;
+                bool VBuffer(Hatchit::Resource::Mesh* mesh)  override;
 
                 UniformBlock GetVertexBlock();
                 UniformBlock GetIndexBlock();
@@ -48,5 +50,7 @@ namespace Hatchit {
             };
 
         }
+
     }
+
 }

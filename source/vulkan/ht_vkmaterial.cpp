@@ -14,6 +14,7 @@
 
 #include <ht_vkmaterial.h>
 #include <ht_vkshader.h>
+#include <ht_vktexture.h>
 #include <ht_vkrenderer.h>
 #include <ht_vkpipeline.h>
 
@@ -25,6 +26,8 @@ namespace Hatchit {
 
         namespace Vulkan {
 
+            using namespace Resource;
+
             VKMaterial::VKMaterial() 
             { 
                 //TODO: Allocate variables based on the material file
@@ -32,6 +35,15 @@ namespace Hatchit {
 
                 static_cast<Matrix4Variable*>(m_shaderVariables["object.model"])->SetData(Math::Matrix4());
             }
+
+            VKMaterial::VKMaterial(const std::string& fileName) : m_resource(Material::GetResourceHandle(fileName))
+            {
+                //TODO: Allocate variables based on the material file
+                m_shaderVariables["object.model"] = new Matrix4Variable();
+
+                static_cast<Matrix4Variable*>(m_shaderVariables["object.model"])->SetData(Math::Matrix4());
+            }
+
             VKMaterial::~VKMaterial() 
             {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
@@ -48,17 +60,12 @@ namespace Hatchit {
 
                 //TODO: Destroy FS buffer
 
-                //TODO: Destroy textures
             }
 
-            void VKMaterial::VOnLoaded()
+            void VKMaterial::VOnResourceLoaded()
             {
-                //TODO: Read the material file and set the appropriate shader variables
-
-                
-
+                //TODO: Implement what to do when resource gets loaded.
             }
-            bool VKMaterial::VInitFromFile(Core::File* file) { return true; }
 
             bool VKMaterial::VSetInt(std::string name, int data)
             {
@@ -98,13 +105,19 @@ namespace Hatchit {
                 return true;
             }
 
+            IPipeline* VKMaterial::GetPipeline()
+            {
+                return m_pipeline;
+            }
+
             bool VKMaterial::VPrepare(IPipeline* pipeline) 
             {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
                 VkDevice device = renderer->GetVKDevice();
                 VkDescriptorPool descriptorPool = renderer->GetVKDescriptorPool();
 
-                VKPipeline* vkPipeline = static_cast<VKPipeline*>(pipeline);
+                m_pipeline = pipeline;
+                VKPipeline* vkPipeline = static_cast<VKPipeline*>(m_pipeline);
 
                 m_materialLayout = vkPipeline->GetVKDescriptorSetLayouts()[1];
 
@@ -166,19 +179,18 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKMaterial::VPrepare: Failed to allocate descriptor set\n");
-#endif
+                    HT_DEBUG_PRINTF("VKMaterial::VPrepare: Failed to allocate descriptor set\n");
                     return false;
                 }
 
                 std::vector<VkWriteDescriptorSet> descSetWrites = {};
+                uint32_t descCount = 0;
 
                 VkWriteDescriptorSet uniformVSWrite = {};
                 uniformVSWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                 uniformVSWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                 uniformVSWrite.dstSet = m_materialSet;
-                uniformVSWrite.dstBinding = 0;
+                uniformVSWrite.dstBinding = descCount++;
                 uniformVSWrite.pBufferInfo = &m_uniformVSBuffer.descriptor;
                 uniformVSWrite.descriptorCount = 1;
 
@@ -186,14 +198,35 @@ namespace Hatchit {
                 //uniformFSWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                 //uniformFSWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                 //uniformFSWrite.dstSet = m_materialSet;
-                //uniformFSWrite.dstBinding = 1;
+                //uniformFSWrite.dstBinding = descCount++;
                 //uniformFSWrite.pBufferInfo = &m_uniformFSBuffer.descriptor;
                 //uniformFSWrite.descriptorCount = 1;
 
-                //TODO: Figure out the writes for the textures
-
                 descSetWrites.push_back(uniformVSWrite);
                 //descSetWrites.push_back(uniformFSWrite);
+
+                //Setup writes for textures
+                std::map<std::string, ITexture*>::iterator it;
+                for (it = m_textures.begin(); it != m_textures.end(); it++)
+                {
+                    VKTexture* texture = static_cast<VKTexture*>(it->second);
+
+                    //Create Texture description
+                    VkDescriptorImageInfo textureDescriptor = {};
+                    textureDescriptor.sampler = texture->GetSampler();
+                    textureDescriptor.imageView = texture->GetView();
+                    textureDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+                    VkWriteDescriptorSet samplerFSWrite = {};
+                    samplerFSWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                    samplerFSWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                    samplerFSWrite.dstSet = m_materialSet;
+                    samplerFSWrite.dstBinding = descCount++;
+                    samplerFSWrite.pImageInfo = &textureDescriptor;
+                    samplerFSWrite.descriptorCount = 1;
+
+                    descSetWrites.push_back(samplerFSWrite);
+                }
 
                 vkUpdateDescriptorSets(device, static_cast<uint32_t>(descSetWrites.size()), descSetWrites.data(), 0, nullptr);
 

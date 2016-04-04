@@ -22,33 +22,12 @@
 * of data that you want buffered onto the graphics card
 */
 
-#pragma once
-
-#include <ht_platform.h>
-#include <ht_model.h>
 #include <ht_mesh.h>
 
 namespace Hatchit {
     namespace Graphics {
 
-        struct Vertex
-        {
-            aiVector3D pos;
-            aiVector3D norm;
-            aiVector2D uv;
-        };
+        uint32_t IMesh::GetIndexCount() { return m_indexCount; }
 
-        class HT_API IMesh 
-        {
-        public:
-            virtual ~IMesh() {};
-
-            virtual bool VBuffer(Resource::Mesh* mesh) = 0;
-
-            uint32_t GetIndexCount();
-
-        protected:
-            uint32_t m_indexCount;
-        };
     }
 }

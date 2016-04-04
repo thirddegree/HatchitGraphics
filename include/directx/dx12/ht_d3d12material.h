@@ -32,8 +32,8 @@ namespace Hatchit {
             private:
 
                 // Inherited via IMaterial
-                virtual void VOnLoaded() override;
-                virtual bool VInitFromFile(Core::File * file) override;
+                //virtual void VOnLoaded() override;
+              
                 virtual bool VSetInt(std::string name, int data) override;
                 virtual bool VSetFloat(std::string name, float data) override;
                 virtual bool VSetFloat3(std::string name, Math::Vector3 data) override;

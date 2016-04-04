@@ -44,10 +44,10 @@ namespace Hatchit {
                 uint32_t                m_cbCount;
 
                 // Inherited via IShader
-                virtual bool VInitFromFile(Core::File * file) override;
+                //virtual bool VInitFromFile(Core::File * file) override;
           
                 // Inherited via IShader
-                virtual void VOnLoaded() override;
+                //virtual void VOnLoaded() override;
 
                 virtual bool VInitShader() = 0;
 

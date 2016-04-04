@@ -12,32 +12,30 @@
 **
 **/
 
-/**
-* \class IObjectRenderer
-* \ingroup HatchitGraphics
-*
-* \brief An interface for a class that will render something to the screen
-*
-* This class will be extended by another interface that will describe methods
-* for buffering and drawing a resource to the screen
-*/
-
 #pragma once
 
-#include <ht_platform.h>
+#include <ht_sampler_resource.h>
 
 namespace Hatchit {
 
     namespace Graphics {
 
-        class HT_API IObjectRenderer
+        class HT_API ISampler
         {
         public:
-            virtual ~IObjectRenderer() {};
+            virtual ~ISampler() = default;
 
-            ///Override to render a resource with a graphics language
-            virtual void VRender() = 0;
+            virtual bool VPrepare() = 0;
+
+            virtual void SetFilterMode(Resource::Sampler::FilterMode filterMode) = 0;
+            virtual void SetWrapMode(Resource::Sampler::WrapMode wrapMode) = 0;
+            virtual void SetColorSpace(Resource::Sampler::ColorSpace colorSpace) = 0;
             
+            virtual Resource::Sampler::FilterMode GetFilterMode() const = 0;
+            virtual Resource::Sampler::WrapMode GetWrapMode() const = 0;
+            virtual Resource::Sampler::ColorSpace GetColorSpace() const = 0;
         };
+
     }
+
 }

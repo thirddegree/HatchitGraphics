@@ -26,6 +26,7 @@
 
 #include <ht_platform.h>
 #include <ht_resourceobject.h>
+#include <ht_resource.h>
 #include <ht_texture.h>
 #include <ht_string.h>
 #include <ht_math.h>
@@ -34,25 +35,11 @@ namespace Hatchit {
 
     namespace Graphics {
 
-        enum ShaderSlot
+        class HT_API IShader
         {
-            VERTEX = 0,
-            FRAGMENT,
-            GEOMETRY,
-            TESS_CONTROL,
-            TESS_EVAL,
-            COMPUTE
-        };
-
-        class HT_API IShader : public Resource::ResourceObject
-        {
-            friend class IMaterial;
-
         public:
+            friend class IMaterial;
             virtual ~IShader() {};
-            
-            virtual void VOnLoaded() = 0;
-            virtual bool VInitFromFile(Core::File* file) = 0;
         };
     }
 }

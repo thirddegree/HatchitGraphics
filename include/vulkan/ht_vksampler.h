@@ -1,0 +1,59 @@
+/**
+**    Hatchit Engine
+**    Copyright(c) 2015 Third-Degree
+**
+**    GNU Lesser General Public License
+**    This file may be used under the terms of the GNU Lesser
+**    General Public License version 3 as published by the Free
+**    Software Foundation and appearing in the file LICENSE.LGPLv3 included
+**    in the packaging of this file. Please review the following information
+**    to ensure the GNU Lesser General Public License requirements
+**    will be met: https://www.gnu.org/licenses/lgpl.html
+**
+**/
+
+#pragma once
+
+#include <ht_sampler.h>
+#include <ht_vulkan.h>
+
+namespace Hatchit {
+
+    namespace Graphics {
+
+        namespace Vulkan {
+        
+            class HT_API VKSampler : public ISampler 
+            {
+            public:
+                VKSampler(VkDevice device, const std::string& samplerResourceFile);
+                ~VKSampler();
+
+                bool VPrepare() override;
+
+                VkSampler GetVkSampler();
+
+                // Inherited via ISampler
+                virtual void SetFilterMode(Hatchit::Resource::Sampler::FilterMode filterMode) override;
+                virtual void SetWrapMode(Hatchit::Resource::Sampler::WrapMode wrapMode) override;
+                virtual void SetColorSpace(Hatchit::Resource::Sampler::ColorSpace colorSpace) override;
+
+                virtual Hatchit::Resource::Sampler::FilterMode GetFilterMode() const override;
+                virtual Hatchit::Resource::Sampler::WrapMode GetWrapMode() const override;
+                virtual Hatchit::Resource::Sampler::ColorSpace GetColorSpace() const override;
+
+            private:
+                VkDevice m_device;
+
+                VkSampler m_sampler;
+
+                Hatchit::Resource::Sampler::FilterMode m_filterMode;
+                Hatchit::Resource::Sampler::WrapMode m_wrapMode;
+                Hatchit::Resource::Sampler::ColorSpace m_colorSpace;
+            };
+
+        }
+
+    }
+
+}

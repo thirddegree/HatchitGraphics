@@ -39,13 +39,12 @@ namespace Hatchit {
 
         class IPipeline;
 
-        class HT_API IMaterial : Resource::ResourceObject
+        class HT_API IMaterial
         {
         public:
             virtual ~IMaterial() { };
 
-            virtual void VOnLoaded() = 0;
-            virtual bool VInitFromFile(Core::File* file) = 0;
+            virtual void VOnResourceLoaded() = 0;
 
             virtual bool VSetInt(std::string name, int data) = 0;
             virtual bool VSetFloat(std::string name, float data) = 0;
@@ -59,9 +58,7 @@ namespace Hatchit {
             virtual bool VPrepare(IPipeline* pipeline) = 0;
             virtual bool VUpdate() = 0;
 
-        protected:
-            std::map<std::string, ShaderVariable*> m_shaderVariables;
-            std::map<std::string, ITexture*> m_textures;
+            virtual IPipeline* GetPipeline() = 0;
         };
     }
 }

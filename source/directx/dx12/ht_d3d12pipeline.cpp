@@ -25,18 +25,18 @@ namespace Hatchit {
 
             }
 
-            void D3D12Pipeline::VSetRasterState(const RasterizerState & rasterState)
+            void D3D12Pipeline::VSetRasterState(const Resource::Pipeline::RasterizerState & rasterState)
             {
                 //Handle cullmode
                 switch (rasterState.cullMode)
                 {
-                case CullMode::BACK:
+                case Resource::Pipeline::CullMode::BACK:
                     m_rasterDesc.CullMode = D3D12_CULL_MODE_BACK;
                     break;
-                case CullMode::FRONT:
+                case Resource::Pipeline::CullMode::FRONT:
                     m_rasterDesc.CullMode = D3D12_CULL_MODE_FRONT;
                     break;
-                case CullMode::NONE:
+                case Resource::Pipeline::CullMode::NONE:
                     m_rasterDesc.CullMode = D3D12_CULL_MODE_NONE;
                     break;
                 }
@@ -44,10 +44,10 @@ namespace Hatchit {
                 //Handle polygon mode
                 switch (rasterState.polygonMode)
                 {
-                case PolygonMode::SOLID:
+                case Resource::Pipeline::PolygonMode::SOLID:
                     m_rasterDesc.FillMode = D3D12_FILL_MODE_SOLID;
                     break;
-                case PolygonMode::LINE:
+                case Resource::Pipeline::PolygonMode::LINE:
                     m_rasterDesc.FillMode = D3D12_FILL_MODE_WIREFRAME;
                     break;
                 }
@@ -63,14 +63,18 @@ namespace Hatchit {
                 m_rasterDesc.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
             }
 
-            void D3D12Pipeline::VSetMultisampleState(const MultisampleState & multiState)
+            void D3D12Pipeline::VSetMultisampleState(const Resource::Pipeline::MultisampleState & multiState)
             {
                 
             }
 
-            void D3D12Pipeline::VLoadShader(ShaderSlot shaderSlot, IShader * shader)
+            void D3D12Pipeline::VLoadShader(Resource::Pipeline::ShaderSlot shaderSlot, Resource::ShaderHandle shader)
             {
-                
+				const BYTE*	code = shader->GetBytecode();
+				size_t	codeSize = shader->GetBytecodeSize();
+				
+				
+				
             }
 
             bool D3D12Pipeline::VPrepare()

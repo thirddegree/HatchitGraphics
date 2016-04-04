@@ -50,6 +50,8 @@ namespace Hatchit {
 
                 void VPresent()                                                     override;
 
+		void VRender(float dt)	override;
+
             private:
                 RendererParams m_params;
             };

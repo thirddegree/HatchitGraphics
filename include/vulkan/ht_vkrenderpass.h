@@ -33,10 +33,10 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            class HT_API VKRenderPass : public IRenderPass
+            class HT_API VKRenderPass : public RenderPassBase
             {
             public:
-                VKRenderPass();
+                VKRenderPass(VkDevice& device, VkCommandPool& commandPool);
                 ~VKRenderPass();
 
                 //Prepare the internal VkRenderPass
@@ -46,7 +46,7 @@ namespace Hatchit {
                 ///Render the scene
                 void VUpdate()  override;
 
-                bool VBuildCommandList() override;
+                bool VBuildCommandList()    override;
 
                 void VSetClearColor(Color clearColor);
 
@@ -54,6 +54,12 @@ namespace Hatchit {
                 VkCommandBuffer GetVkCommandBuffer();
 
             private:
+
+                bool allocateCommandBuffer();
+
+                VkDevice& m_device;
+                VkCommandPool& m_commandPool;
+
                 VkRenderPass m_renderPass;
                 VkCommandBuffer m_commandBuffer;
 

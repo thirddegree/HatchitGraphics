@@ -13,6 +13,7 @@
 **/
 
 #include <ht_d3d12renderer.h>
+#include <ht_path_singleton.h>
 #include <ht_debug.h>
 #include <wrl.h>
 #include <ht_file.h>
@@ -108,9 +109,7 @@ namespace Hatchit {
                 psoDesc.pRootSignature = m_rootSignature;
                 psoDesc.VS = CD3DX12_SHADER_BYTECODE(m_vertexShader);
                 psoDesc.PS = CD3DX12_SHADER_BYTECODE(m_pixelShader);
-                CD3DX12_RASTERIZER_DESC rsd(D3D12_DEFAULT);
-                rsd.FrontCounterClockwise = true;
-                psoDesc.RasterizerState = rsd;/* CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);*/
+                psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
                 psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
                 psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
                 psoDesc.SampleMask = UINT_MAX;
@@ -125,9 +124,7 @@ namespace Hatchit {
                 hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pipelineState));
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create pipeline state object.\n");
-#endif
+                    HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to create pipeline state object.\n");
                     return false;
                 }
 
@@ -136,16 +133,11 @@ namespace Hatchit {
                 if (FAILED(hr))
                     return false;
 
-                /*Load Susanne*/
-                Core::File file;
-                file.Open(Core::os_exec_dir() + "monkey.obj", Core::FileMode::ReadBinary);
-
-                Resource::Model m;
-                m.VInitFromFile(&file);
+				Resource::ModelHandle m = Resource::Model::GetResourceHandle("raptor.obj");
 
                 srand(time(NULL));
-                auto verts = m.GetMeshes()[0]->getVertices();
-                auto normals = m.GetMeshes()[0]->getNormals();
+                auto verts = m->GetMeshes()[0]->getVertices();
+                auto normals = m->GetMeshes()[0]->getNormals();
                 std::vector<Vertex> vertices;
                 for (size_t i = 0; i < verts.size(); i++)
                 {
@@ -165,7 +157,7 @@ namespace Hatchit {
                     vertices.push_back(vertex);
                 }
 
-                auto indices = m.GetMeshes()[0]->getIndices();
+                auto indices = m->GetMeshes()[0]->getIndices();
                 std::vector<unsigned short> indexList;
                 for (auto i : indices)
                 {
@@ -252,20 +244,28 @@ namespace Hatchit {
 
             void D3D12Renderer::VResizeBuffers(uint32_t width, uint32_t height)
             {
+				m_width = width;
+				m_height = height;
 
+				m_resources->Resize(width, height);
             }
 
             void D3D12Renderer::VRender(float dt)
             {
                 using namespace DirectX;
 
-                static float rot = 0.0f;
-                rot += dt;
-                m_constantBufferData.proj = Math::MMMatrixPerspProj(3.14f * 0.5f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f);
+                static float angle = 0.0f;
+				angle += dt;
+                m_constantBufferData.proj = Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f);
                 m_constantBufferData.view = Math::MMMatrixLookAt(Math::Vector3(0.0f, 0.0f, -5.0f),
                     Math::Vector3(0.0f, 0.0f, 1.0f),
                     Math::Vector3(0.0f, 1.0f, 0.0f));
-                m_constantBufferData.world = Math::MMMatrixRotationY(rot);
+
+				Math::Matrix4 scale = Math::MMMatrixScale(Math::Vector3(0.02f, 0.02f, 0.02f));
+				Math::Matrix4 rot = Math::MMMatrixRotationXYZ(Math::Vector3(0, angle, 0));
+				Math::Matrix4 trans = Math::MMMatrixTranslation(Math::Vector3(0, -30, 0));
+				Math::Matrix4 mat = rot * (scale * trans);
+				m_constantBufferData.world = mat;
                
                 // Update the constant buffer resource.
                 UINT8* destination = m_mappedConstantBuffer + (m_resources->GetCurrentFrameIndex() * c_alignedConstantBufferSize);
@@ -326,14 +326,12 @@ namespace Hatchit {
                 Core::File pShaderFile;
                 try
                 {
-                    vShaderFile.Open(Core::os_exec_dir() + "tri_VS.hlsl", Core::FileMode::ReadBinary);
-                    pShaderFile.Open(Core::os_exec_dir() + "tri_PS.hlsl", Core::FileMode::ReadBinary);
+                    vShaderFile.Open(Core::Path::Value(Core::Path::Directory::Shaders) + "tri_VS.hlsl", Core::FileMode::ReadBinary);
+                    pShaderFile.Open(Core::Path::Value(Core::Path::Directory::Shaders) + "tri_PS.hlsl", Core::FileMode::ReadBinary);
                 }
                 catch (std::exception& e)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("%s\n", e.what());
-#endif
+                    HT_DEBUG_PRINTF("%s\n", e.what());
                     return false;
                 }
 
