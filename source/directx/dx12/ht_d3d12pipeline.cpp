@@ -70,7 +70,7 @@ namespace Hatchit {
 
             void D3D12Pipeline::VLoadShader(Resource::Pipeline::ShaderSlot shaderSlot, Resource::ShaderHandle shader)
             {
-				BYTE*	code = shader->GetBytecode();
+				const BYTE*	code = shader->GetBytecode();
 				size_t	codeSize = shader->GetBytecodeSize();
 				
 				

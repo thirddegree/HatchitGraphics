@@ -160,7 +160,7 @@ namespace Hatchit {
             {
                 VkResult err;
 
-                BYTE* shaderBytecode = shader->GetBytecode();
+                const BYTE* shaderBytecode = shader->GetBytecode();
                 size_t shaderBytecodeSize = shader->GetBytecodeSize();
 
                 VkShaderModule shaderModule;
@@ -169,7 +169,7 @@ namespace Hatchit {
                 moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
                 moduleCreateInfo.pNext = nullptr;
                 moduleCreateInfo.codeSize = shaderBytecodeSize;
-                moduleCreateInfo.pCode = (uint32_t*)shaderBytecode;
+                moduleCreateInfo.pCode = reinterpret_cast<const uint32_t*>(shaderBytecode);
                 moduleCreateInfo.flags = 0;
 
                 err = vkCreateShaderModule(m_device, &moduleCreateInfo, nullptr, &shaderModule);
