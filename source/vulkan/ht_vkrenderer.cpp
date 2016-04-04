@@ -375,7 +375,7 @@ namespace Hatchit {
                 assert(!err);
 
                 //Reset command buffer memory back to this command pool
-                vkResetCommandPool(m_device, m_commandPool, 0);
+                //vkResetCommandPool(m_device, m_commandPool, 0);
             }
 
             VkPhysicalDevice VKRenderer::GetVKPhysicalDevice() 
