@@ -31,9 +31,9 @@ namespace Hatchit {
             virtual void SetWrapMode(Resource::Sampler::WrapMode wrapMode) = 0;
             virtual void SetColorSpace(Resource::Sampler::ColorSpace colorSpace) = 0;
             
-            virtual Resource::Sampler::FilterMode GetFilterMode() = 0;
-            virtual Resource::Sampler::WrapMode GetWrapMode() = 0;
-            virtual Resource::Sampler::ColorSpace GetColorSpace() = 0;
+            virtual Resource::Sampler::FilterMode GetFilterMode() const = 0;
+            virtual Resource::Sampler::WrapMode GetWrapMode() const = 0;
+            virtual Resource::Sampler::ColorSpace GetColorSpace() const = 0;
         };
 
     }

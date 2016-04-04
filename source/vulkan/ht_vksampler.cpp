@@ -119,17 +119,17 @@ namespace Hatchit {
                 m_colorSpace = colorSpace;
             }
 
-            Resource::Sampler::FilterMode VKSampler::GetFilterMode()
+            Resource::Sampler::FilterMode VKSampler::GetFilterMode() const
             {
                 return m_filterMode;
             }
 
-            Resource::Sampler::WrapMode VKSampler::GetWrapMode()
+            Resource::Sampler::WrapMode VKSampler::GetWrapMode() const
             {
                 return m_wrapMode;
             }
 
-            Resource::Sampler::ColorSpace VKSampler::GetColorSpace()
+            Resource::Sampler::ColorSpace VKSampler::GetColorSpace() const
             {
                 return m_colorSpace;
             }
