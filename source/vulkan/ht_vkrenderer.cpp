@@ -272,19 +272,7 @@ namespace Hatchit {
                 err = vkDeviceWaitIdle(m_device);
                 assert(!err);
                 
-                ////Reset all command buffers
-                //vkResetCommandPool(m_device, m_commandPool, 0);
-                
-                //for (uint32_t i = 0; i < m_renderPasses.size(); i++)
-                //    delete m_renderPasses[i];
-                //
-                //m_renderPasses.clear();
-                //
-                ////These should all be deleted elsewhere when resources work properly
-                //if (m_renderTarget != nullptr)
-                //    delete m_renderTarget;
-
-                //Reprepare the resources (including the swapchain)
+                //re-prepare the swapchain
                 prepareVulkan();
 
                 err = vkQueueWaitIdle(m_queue);
@@ -1152,7 +1140,6 @@ namespace Hatchit {
                 err = vkEndCommandBuffer(m_setupCommandBuffer);
                 assert(!err);
 
-                const VkCommandBuffer commands[] = { m_setupCommandBuffer };
                 VkFence nullFence = VK_NULL_HANDLE;
 
                 VkSubmitInfo submitInfo = {};
@@ -1162,7 +1149,7 @@ namespace Hatchit {
                 submitInfo.pWaitSemaphores = nullptr;
                 submitInfo.pWaitDstStageMask = nullptr;
                 submitInfo.commandBufferCount = 1;
-                submitInfo.pCommandBuffers = commands;
+                submitInfo.pCommandBuffers = &m_setupCommandBuffer;
                 submitInfo.signalSemaphoreCount = 0;
                 submitInfo.pSignalSemaphores = nullptr;
 
@@ -1172,7 +1159,7 @@ namespace Hatchit {
                 err = vkQueueWaitIdle(m_queue);
                 assert(!err);
 
-                vkFreeCommandBuffers(m_device, m_commandPool, 1, commands);
+                vkFreeCommandBuffers(m_device, m_commandPool, 1, &m_setupCommandBuffer);
                 m_setupCommandBuffer = VK_NULL_HANDLE;
             }
 
@@ -1273,7 +1260,6 @@ namespace Hatchit {
                 {
                     imageMemoryBarrier.dstAccessMask = VK_ACCESS_HOST_WRITE_BIT;
                 }
-
 
                 // Put barrier on top
                 VkPipelineStageFlags srcStageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;

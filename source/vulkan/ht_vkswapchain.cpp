@@ -88,22 +88,19 @@ namespace Hatchit {
             {
                 VkResult err;
 
+                bool recreate = false;
                 //Clean out old data
                 if(m_swapchain != VK_NULL_HANDLE)
                 {
+                    destroyDepth();
+                
+                    destroySwapchainBuffers();
+                
                     destroyFramebuffers();
-
+                
                     m_swapchainBuffers.clear();
 
-                    destroySwapchain();
-
-                    destroySurface();
-
-                    //Re-create surface
-                    VKRenderer* renderer = VKRenderer::RendererInstance;
-                    const RendererParams& rendererParams = renderer->GetRendererParams();
-                    if (!prepareSurface(rendererParams))
-                        HT_DEBUG_PRINTF("VKSwapchain(): Failed to prepare surface");
+                    recreate = true;
                 }
 
                 // Get physical device surface properties and formats
@@ -189,7 +186,7 @@ namespace Hatchit {
                 /*
                     Prepare internal render pass
                 */
-                if (!prepareRenderPass())
+                if (!recreate && !prepareRenderPass())
                     return false;
 
                 /*
@@ -499,7 +496,7 @@ namespace Hatchit {
                 VkResult err;
 
                 //Hook into the window
-#ifdef _WIN32
+#ifdef HT_SYS_WINDOWS
                 //Get HINSTANCE from HWND
                 HWND window = (HWND)rendererParams.window;
                 HINSTANCE instance;
@@ -704,6 +701,8 @@ namespace Hatchit {
             {
                 VkResult err;
                 VkSwapchainKHR oldSwapchain = VK_NULL_HANDLE;
+                if (m_swapchain != VK_NULL_HANDLE)
+                    oldSwapchain = m_swapchain;
 
                 //Use mailbox mode if available as it's the lowest-latency non-tearing mode
                 //If that's not available try immediate mode which SHOULD be available and is fast but tears
@@ -738,6 +737,7 @@ namespace Hatchit {
 
                 VkSwapchainCreateInfoKHR swapchainInfo;
                 swapchainInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+                swapchainInfo.flags = 0;
                 swapchainInfo.pNext = nullptr;
                 swapchainInfo.surface = m_surface;
                 swapchainInfo.minImageCount = desiredNumberOfSwapchainImages;
@@ -754,7 +754,6 @@ namespace Hatchit {
                 swapchainInfo.presentMode = swapchainPresentMode;
                 swapchainInfo.oldSwapchain = oldSwapchain;
                 swapchainInfo.clipped = true;
-                swapchainInfo.flags = 0;
 
                 uint32_t i; // About to be used for a bunch of loops
 
@@ -1185,8 +1184,8 @@ namespace Hatchit {
 
                 for (uint32_t i = 0; i < bufferCount; i++)
                 {
-                    //vkDestroyImage(m_device, m_swapchainBuffers[i].image, nullptr);
                     vkDestroyImageView(m_device, m_swapchainBuffers[i].view, nullptr);
+                    //vkDestroyImage(m_device, m_swapchainBuffers[i].image, nullptr); fpDestroySwapchainKHR will also destroy images
 
                     vkFreeCommandBuffers(m_device, m_commandPool, 1, &m_swapchainBuffers[i].command);
                 }

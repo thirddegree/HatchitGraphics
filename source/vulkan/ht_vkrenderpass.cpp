@@ -37,9 +37,9 @@ namespace Hatchit {
             {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
 
-                //Destroy the command buffers
-                if(m_commandBuffer != VK_NULL_HANDLE)
-                    vkFreeCommandBuffers(m_device, m_commandPool, 1, &m_commandBuffer);
+                //Command buffer will be freed with command pool
+                //if(m_commandBuffer != VK_NULL_HANDLE)
+                //    vkFreeCommandBuffers(m_device, m_commandPool, 1, &m_commandBuffer);
 
                 //Destroy the render pass
                 vkDestroyRenderPass(m_device, m_renderPass, nullptr);
