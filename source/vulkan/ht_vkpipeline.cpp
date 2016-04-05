@@ -565,6 +565,26 @@ namespace Hatchit {
             {
                 VkResult err;
 
+                //If we don't have a vertex AND fragment shader available we need to log that and fail
+                bool hasVert = false;
+                bool hasFrag = false;
+                for (uint32_t i = 0; i < m_shaderStages.size(); i++)
+                {
+                    if (m_shaderStages[i].stage & VK_SHADER_STAGE_VERTEX_BIT)
+                        hasVert = true;
+                    if (m_shaderStages[i].stage & VK_SHADER_STAGE_FRAGMENT_BIT)
+                        hasFrag = true;
+                }
+
+                if (!hasVert || !hasFrag)
+                {
+                    HT_DEBUG_PRINTF("Error: Pipeline must have both Vertex and Fragment shaders");
+                    assert(!hasVert || !hasFrag);
+
+                    return false;
+                }
+                
+
                 //Vertex info state
                 VkVertexInputBindingDescription vertexBindingDescriptions[1] = {};
 

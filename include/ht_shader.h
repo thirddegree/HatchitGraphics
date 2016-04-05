@@ -27,6 +27,7 @@
 #include <ht_platform.h>
 #include <ht_resourceobject.h>
 #include <ht_resource.h>
+#include <ht_shader_resource.h>
 #include <ht_texture.h>
 #include <ht_string.h>
 #include <ht_math.h>
@@ -40,6 +41,8 @@ namespace Hatchit {
         public:
             friend class IMaterial;
             virtual ~IShader() {};
+
+            virtual bool VInitFromResource() = 0;
         };
     }
 }
