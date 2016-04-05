@@ -51,7 +51,7 @@ namespace Hatchit {
 				VKShader* GetRawPointer();
             };
 
-			using VKShaderHandle = VKShader::Handle;
+			using VKShaderHandle = Resource::Handle<VKShader>;
         }
     }
 }
