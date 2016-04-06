@@ -441,7 +441,7 @@ namespace Hatchit {
                 for (i = 0; i < matrixList.size(); i++)
                 {
                     Math::Matrix4 mat = matrixList[i];
-                    memcpy(m_matrixPushData.data() + (16 * i), static_cast<void*>(matrixList[i].data), sizeof(float) * 16);
+                    memcpy(m_matrixPushData.data() + (16 * i), static_cast<void*>(matrixList[i].m_data), sizeof(float) * 16);
                 }
 
                 return true;
