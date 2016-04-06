@@ -82,6 +82,7 @@ namespace Hatchit {
             {
                 VkPolygonMode polyMode;
                 VkCullModeFlagBits cullMode;
+                VkFrontFace frontFace;
 
                 switch (rasterState.polygonMode)
                 {
@@ -109,12 +110,17 @@ namespace Hatchit {
                     break;
                 }
 
+                if (rasterState.frontCounterClockwise)
+                    frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+                else
+                    frontFace = VK_FRONT_FACE_CLOCKWISE;
+
                 m_rasterizationState = {}; //default setup
                 m_rasterizationState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
                 m_rasterizationState.pNext = nullptr;
                 m_rasterizationState.polygonMode = polyMode;
                 m_rasterizationState.cullMode = cullMode;
-                m_rasterizationState.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+                m_rasterizationState.frontFace = frontFace;
                 m_rasterizationState.depthClampEnable = rasterState.depthClampEnable;
                 m_rasterizationState.rasterizerDiscardEnable = rasterState.discardEnable;
                 m_rasterizationState.depthBiasEnable = VK_FALSE;

@@ -122,7 +122,7 @@ namespace Hatchit {
 
                 m_swapchain->SetIncomingRenderTarget(m_renderTarget);
 
-                ModelHandle model = Model::GetHandle("Raptor.obj");
+                ModelHandle model = Model::GetHandle("Raptor2.obj");
                 //model.VInitFromFile(&meshFile);
 
                 CreateSetupCommandBuffer();
@@ -135,23 +135,12 @@ namespace Hatchit {
                 m_texture = new VKTexture(m_device, "raptor.png");
                 m_texture->SetSampler(m_sampler);
 
-                Pipeline::RasterizerState rasterState = {};
-                rasterState.cullMode = Pipeline::CullMode::NONE;
-                rasterState.polygonMode = Pipeline::PolygonMode::SOLID;
-                rasterState.depthClampEnable = true;
-
-                Pipeline::MultisampleState multisampleState = {};
-                multisampleState.minSamples = 0;
-                multisampleState.samples = Pipeline::SAMPLE_1_BIT;
-
                 Math::Matrix4 view = Math::MMMatrixTranspose(Math::MMMatrixLookAt(Math::Vector3(0, 0, -5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0)));
 
                 Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f));
 
                 IPipeline* pipeline = new VKPipeline(m_device, renderPass->GetVkRenderPass(), "TestPipeline.json");
 
-                pipeline->VSetRasterState(rasterState);
-                pipeline->VSetMultisampleState(multisampleState);
                 pipeline->VPrepare();
 
                 m_material = new VKMaterial();
@@ -337,12 +326,12 @@ namespace Hatchit {
                 commandBuffers.push_back(m_swapchain->VKGetCurrentCommand());
 
                 //Example code for rotation
-                Math::Matrix4 scale = Math::MMMatrixScale(Math::Vector3(0.02f, 0.02f, 0.02f));
+                Math::Matrix4 scale = Math::MMMatrixScale(Math::Vector3(1.0f, 1.0f, 1.0f));
                 Math::Matrix4 rot = Math::MMMatrixRotationXYZ(Math::Vector3(0, m_angle += dt, 0));
-                Math::Matrix4 trans = Math::MMMatrixTranslation(Math::Vector3(0, -30, 0));
-                Math::Matrix4 mat = Math::MMMatrixTranspose(rot * (scale * trans));
+                Math::Matrix4 trans = Math::MMMatrixTranslation(Math::Vector3(0, 0, 3));
+                Math::Matrix4 mat = trans * scale * rot;
 
-                m_material->VSetMatrix4("object.model", mat);
+                m_material->VSetMatrix4("object.model", MMMatrixTranspose(mat));
                 m_material->VUpdate();
 
                 VkResult err;
