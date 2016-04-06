@@ -42,7 +42,7 @@ namespace Hatchit {
             friend class IMaterial;
             virtual ~IShader() {};
 
-            virtual bool VInitFromResource() = 0;
+            virtual bool VInitFromResource(Resource::ShaderHandle shaderHandle) = 0;
         };
     }
 }

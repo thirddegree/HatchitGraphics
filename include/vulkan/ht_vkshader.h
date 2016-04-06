@@ -36,22 +36,21 @@ namespace Hatchit {
             class HT_API VKShader : public Core::RefCounted<VKShader>, public IShader
             {
                 friend class IMaterial;
-				friend class VKRenderer;
-				friend class VKSwapchain;
+                friend class VKRenderer;
+                friend class VKSwapchain;
             public:
-				VKShader(std::string fileName);
-				VKShader(VKShader&&) = default;
+                VKShader(std::string fileName);
+                VKShader(VKShader&&) = default;
                 ~VKShader();
 
-				//virtual bool VInitFromFile(const std::string& file) override;
+                virtual bool VInitFromResource(Resource::ShaderHandle shaderHandle) override;
                 VkShaderModule GetShaderModule();
 
             private:
                 VkShaderModule m_shader;
-				VKShader* GetRawPointer();
             };
 
-			using VKShaderHandle = Core::Handle<VKShader>;
+            using VKShaderHandle = Core::Handle<VKShader>;
         }
     }
 }

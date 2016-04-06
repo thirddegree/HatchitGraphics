@@ -29,17 +29,12 @@ namespace Hatchit {
                 vkDestroyShaderModule(device, m_shader, nullptr);
             }
 
-            /*bool VKShader::VInitFromFile(const std::string& file)
+            bool VKShader::VInitFromResource(Resource::ShaderHandle shaderHandle)
             {
-				Core::File f;
-				f.Open(Core::os_exec_dir() + file, Core::FileMode::ReadBinary);
-
-
                 VkDevice device = VKRenderer::RendererInstance->GetVKDevice();
 
-                size_t size = f.SizeBytes();
-                BYTE* shaderCode = new BYTE[size];
-                f.Read(shaderCode, size);
+                size_t size = shaderHandle->GetBytecodeSize();
+                const BYTE* shaderCode = shaderHandle->GetBytecode();
 
                 VkResult err;
 
@@ -47,7 +42,7 @@ namespace Hatchit {
                 moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
                 moduleCreateInfo.pNext = nullptr;
                 moduleCreateInfo.codeSize = size;
-                moduleCreateInfo.pCode = (uint32_t*)shaderCode;
+                moduleCreateInfo.pCode = (uint32_t*)(shaderCode);
                 moduleCreateInfo.flags = 0;
 
                 err = vkCreateShaderModule(device, &moduleCreateInfo, nullptr, &m_shader);
@@ -59,17 +54,12 @@ namespace Hatchit {
                 }
 
                 return true;
-            }*/
+            }
 
             VkShaderModule VKShader::GetShaderModule()
             {
                 return m_shader;
             }
-
-			VKShader* VKShader::GetRawPointer()
-			{
-				return this;
-			}
         }
     }
 }
