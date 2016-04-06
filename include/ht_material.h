@@ -26,7 +26,6 @@
 
 #include <ht_platform.h>
 #include <ht_shader.h>
-#include <ht_resourceobject.h>
 #include <ht_shadervariable.h>
 #include <ht_math.h>
 #include <ht_debug.h>

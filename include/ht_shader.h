@@ -25,7 +25,6 @@
 #pragma once
 
 #include <ht_platform.h>
-#include <ht_resourceobject.h>
 #include <ht_resource.h>
 #include <ht_shader_resource.h>
 #include <ht_texture.h>
