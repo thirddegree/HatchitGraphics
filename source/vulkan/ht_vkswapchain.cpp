@@ -204,11 +204,13 @@ namespace Hatchit {
 
                 VkResult err;
 
-                IShaderHandle vsShader = VKShader::GetHandle("screen_VS.spv").DynamicCastHandle<IShader>();
-                //vsShader.VInitFromFile("screen_VS.spv");
+                Resource::ShaderHandle vsShaderResource = Resource::Shader::GetHandle("screen_VS.spv");
+                VKShaderHandle vsShader = VKShader::GetHandle("VKscreen_VS");
+                vsShader->VInitFromResource(vsShaderResource);
 
-                IShaderHandle fsShader = VKShader::GetHandle("screen_FS.spv").DynamicCastHandle<IShader>();
-                //fsShader.VInitFromFile("screen_FS.spv");
+                Resource::ShaderHandle fsShaderResource = Resource::Shader::GetHandle("screen_FS.spv");
+                VKShaderHandle fsShader = VKShader::GetHandle("VKscreen_FS");
+                fsShader->VInitFromResource(fsShaderResource);
 
                 Pipeline::RasterizerState rasterState = {};
                 rasterState.cullMode = Pipeline::CullMode::NONE;
@@ -220,8 +222,8 @@ namespace Hatchit {
                 multisampleState.samples = Pipeline::SAMPLE_1_BIT;
 
                 m_pipeline = new VKPipeline(m_device, &m_renderPass);
-                m_pipeline->VLoadShader(Pipeline::ShaderSlot::VERTEX, vsShader);
-                m_pipeline->VLoadShader(Pipeline::ShaderSlot::FRAGMENT, fsShader);
+                m_pipeline->VLoadShader(Pipeline::ShaderSlot::VERTEX, vsShader.StaticCastHandle<IShader>());
+                m_pipeline->VLoadShader(Pipeline::ShaderSlot::FRAGMENT, fsShader.StaticCastHandle<IShader>());
                 m_pipeline->VSetRasterState(rasterState);
                 m_pipeline->VSetMultisampleState(multisampleState);
 
