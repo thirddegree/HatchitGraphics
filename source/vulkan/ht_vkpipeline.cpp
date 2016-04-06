@@ -43,11 +43,20 @@ namespace Hatchit {
                 VAddShaderVariables(m_resource->GetShaderVariables());
 
                 //Load all shaders
-                std::map<Pipeline::ShaderSlot, ShaderHandle> shaderHandles = m_resource->GetSPVShaderPaths();
+                std::map<Pipeline::ShaderSlot, std::string> shaderPaths = m_resource->GetSPVShaderPaths();
+                std::map<Pipeline::ShaderSlot, Resource::ShaderHandle> shaderHandles = m_resource->GetSPVShaderHandles();
 
-                std::map<Pipeline::ShaderSlot, ShaderHandle>::iterator it;
-                for (it = shaderHandles.begin(); it != shaderHandles.end(); it++)
-                    VLoadShader(it->first, it->second);
+                std::map<Pipeline::ShaderSlot, std::string>::iterator it;
+                for (it = shaderPaths.begin(); it != shaderPaths.end(); it++)
+                {
+                    //Get the actual shader handle
+                    VKShaderHandle shaderHandle = VKShader::GetHandle("VK"+it->second);
+                    Resource::ShaderHandle shaderResourceHandle = shaderHandles[it->first];
+
+                    shaderHandle->VInitFromResource(shaderResourceHandle);
+
+                    VLoadShader(it->first, shaderHandle.StaticCastHandle<IShader>());
+                }
             }
             VKPipeline::~VKPipeline() 
             {
@@ -154,28 +163,14 @@ namespace Hatchit {
 
             /* Load a shader into a shader slot for the pipeline
             * \param shaderSlot The slot that you want the shader in; vertex, fragment etc.
-            * \param shader A pointer to the shader that you want to load to the given shader slot
+            * \param shaderHandle A handle to the shader that you want to load to the given shader slot
             */
-            void VKPipeline::VLoadShader(Pipeline::ShaderSlot shaderSlot, ShaderHandle shader)
+            void VKPipeline::VLoadShader(Pipeline::ShaderSlot shaderSlot, IShaderHandle shaderHandle)
             {
-                VkResult err;
+                VKShaderHandle shader = shaderHandle.DynamicCastHandle<VKShader>();
+                m_shaderHandles[shaderSlot] = shader;
 
-                const BYTE* shaderBytecode = shader->GetBytecode();
-                size_t shaderBytecodeSize = shader->GetBytecodeSize();
-
-                VkShaderModule shaderModule;
-
-                VkShaderModuleCreateInfo moduleCreateInfo = {};
-                moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-                moduleCreateInfo.pNext = nullptr;
-                moduleCreateInfo.codeSize = shaderBytecodeSize;
-                moduleCreateInfo.pCode = reinterpret_cast<const uint32_t*>(shaderBytecode);
-                moduleCreateInfo.flags = 0;
-
-                err = vkCreateShaderModule(m_device, &moduleCreateInfo, nullptr, &shaderModule);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                    HT_DEBUG_PRINTF("VKShader::VInitFromFile(): Error creating shader module\n");
+                VkShaderModule shaderModule = shader->GetShaderModule();
 
                 VkShaderStageFlagBits shaderType;
 

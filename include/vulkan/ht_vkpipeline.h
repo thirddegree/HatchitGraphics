@@ -63,7 +63,7 @@ namespace Hatchit {
                 * \param shaderSlot The slot that you want the shader in; vertex, fragment etc.
                 * \param shader A pointer to the shader that you want to load to the given shader slot
                 */
-                void VLoadShader(Hatchit::Resource::Pipeline::ShaderSlot shaderSlot, Hatchit::Resource::ShaderHandle shader)        override;
+                void VLoadShader(Hatchit::Resource::Pipeline::ShaderSlot shaderSlot, IShaderHandle shader)        override;
 
                 /* Add a map of existing shader variables into this pipeline
                 * \param shaderVariables the map of existing shader variables you want to add
@@ -94,6 +94,7 @@ namespace Hatchit {
                 void SendPushConstants(VkCommandBuffer commandBuffer);
             protected:
                 Hatchit::Resource::PipelineHandle m_resource;
+                std::map<Resource::Pipeline::ShaderSlot, VKShaderHandle> m_shaderHandles;
 
                 //Input
                 VkDevice& m_device;
@@ -105,7 +106,7 @@ namespace Hatchit {
 
                 bool useGivenLayout = false;
                 std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts; //0 is this pipeline set layout, 1 is the material set layout
-                VkPipelineLayout        m_pipelineLayout;
+                VkPipelineLayout m_pipelineLayout;
 
                 VkPipelineCache m_pipelineCache;
                 VkPipeline      m_pipeline;

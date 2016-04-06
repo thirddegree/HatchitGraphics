@@ -21,12 +21,16 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKShader::VKShader(std::string fileName) : Core::RefCounted<VKShader>(std::move(fileName)) {}
+            VKShader::VKShader(std::string fileName) : Core::RefCounted<VKShader>(std::move(fileName)) 
+            {
+                m_shader = VK_NULL_HANDLE;
+            }
             VKShader::~VKShader() 
             {
                 VkDevice device = VKRenderer::RendererInstance->GetVKDevice();
 
-                vkDestroyShaderModule(device, m_shader, nullptr);
+                if(m_shader != VK_NULL_HANDLE)
+                    vkDestroyShaderModule(device, m_shader, nullptr);
             }
 
             bool VKShader::VInitFromResource(Resource::ShaderHandle shaderHandle)
