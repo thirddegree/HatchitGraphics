@@ -122,7 +122,7 @@ namespace Hatchit {
 
                 m_swapchain->SetIncomingRenderTarget(m_renderTarget);
 
-                ModelHandle model = Model::GetResourceHandle("Raptor.obj");
+                ModelHandle model = Model::GetHandle("Raptor.obj");
                 //model.VInitFromFile(&meshFile);
 
                 CreateSetupCommandBuffer();

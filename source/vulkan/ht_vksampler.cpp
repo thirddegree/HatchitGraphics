@@ -27,7 +27,7 @@ namespace Hatchit {
             VKSampler::VKSampler(VkDevice device, const std::string& samplerResourceFile) :
                 m_device(device)
             {
-                Resource::SamplerHandle handle = Resource::Sampler::GetResourceHandle(samplerResourceFile);
+                Resource::SamplerHandle handle = Resource::Sampler::GetHandle(samplerResourceFile);
 
                 if (handle.IsValid())
                 {
