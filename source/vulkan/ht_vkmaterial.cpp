@@ -36,7 +36,7 @@ namespace Hatchit {
                 static_cast<Matrix4Variable*>(m_shaderVariables["object.model"])->SetData(Math::Matrix4());
             }
 
-            VKMaterial::VKMaterial(const std::string& fileName) : m_resource(Material::GetResourceHandle(fileName))
+            VKMaterial::VKMaterial(const std::string& fileName) : m_resource(Material::GetHandle(fileName))
             {
                 //TODO: Allocate variables based on the material file
                 m_shaderVariables["object.model"] = new Matrix4Variable();

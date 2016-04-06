@@ -133,7 +133,7 @@ namespace Hatchit {
                 if (FAILED(hr))
                     return false;
 
-				Resource::ModelHandle m = Resource::Model::GetResourceHandle("raptor.obj");
+				Resource::ModelHandle m = Resource::Model::GetHandle("raptor.obj");
 
                 srand(time(NULL));
                 auto verts = m->GetMeshes()[0]->getVertices();

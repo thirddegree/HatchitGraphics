@@ -28,14 +28,14 @@ namespace Hatchit {
             VKPipeline::VKPipeline(VkDevice& device, const VkRenderPass* renderPass) :
                 m_device(device),
                 m_renderPass(renderPass),
-                m_resource(Pipeline::GetResourceHandle(""))
+                m_resource(Pipeline::GetHandle(""))
             {
             }
 
             VKPipeline::VKPipeline(VkDevice& device, const VkRenderPass* renderPass, const std::string& fileName) : 
                 m_device(device),
                 m_renderPass(renderPass),
-                m_resource(Pipeline::GetResourceHandle(fileName))
+                m_resource(Pipeline::GetHandle(fileName))
             { 
                 VSetRasterState(m_resource->GetRasterizationState());
                 VSetMultisampleState(m_resource->GetMultisampleState());
