@@ -703,10 +703,6 @@ namespace Hatchit {
                     return false;
                 }
 
-                //At this point we can unload shader modules that don't need to be sent to anymore pipelines
-                for(VkPipelineShaderStageCreateInfo shaderStageInfo : m_shaderStages)
-                    vkDestroyShaderModule(m_device, shaderStageInfo.module, nullptr);
-
                 return true;
             }
 
