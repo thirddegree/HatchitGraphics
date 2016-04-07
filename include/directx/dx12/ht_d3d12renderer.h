@@ -66,6 +66,8 @@ namespace Hatchit {
                 ID3D12DescriptorHeap*       m_cbDescriptorHeap;
                 uint32_t                    m_cbDescriptorSize;
                 uint8_t*                    m_mappedConstantBuffer;
+
+                D3D12Pipeline*              m_pipeline;
      
                 Color                       m_clearColor;
 

@@ -23,7 +23,18 @@ namespace Hatchit {
             D3D12Pipeline::D3D12Pipeline(ID3D12Device* device, ID3D12RootSignature* rootSignature)
             {
                 m_device = device;
+                m_pipelineState = nullptr;
                 m_rootSignature = rootSignature;
+            }
+
+            D3D12Pipeline::~D3D12Pipeline()
+            {
+                ReleaseCOM(m_pipelineState);
+            }
+
+            ID3D12PipelineState* D3D12Pipeline::GetPipeline()
+            {
+                return m_pipelineState;
             }
             
             void D3D12Pipeline::VSetMultisampleState(const Resource::Pipeline::MultisampleState& msState)
@@ -42,13 +53,11 @@ namespace Hatchit {
                 const Resource::Pipeline::InputLayout& _layout = handle->GetInputLayout();
                 for (int i = 0; i < _layout.elements.size(); i++)
                 {
-                    Resource::Pipeline::InputElement element = _layout.elements[i];
-
                     D3D12_INPUT_ELEMENT_DESC elementDesc;
-                    elementDesc.SemanticName = element.semanticName.c_str();
-                    elementDesc.SemanticIndex = element.semanticIndex;
-                    elementDesc.InputSlot = element.slot;
-                    elementDesc.Format = InputFormatFromElement(element);
+                    elementDesc.SemanticName = _layout.elements[i].semanticName.c_str();
+                    elementDesc.SemanticIndex = _layout.elements[i].semanticIndex;
+                    elementDesc.InputSlot = _layout.elements[i].slot;
+                    elementDesc.Format = InputFormatFromElement(_layout.elements[i]);
                     elementDesc.AlignedByteOffset = (i == 0) ? 0 : D3D12_APPEND_ALIGNED_ELEMENT;
                     elementDesc.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
                     elementDesc.InstanceDataStepRate = 0;
@@ -104,6 +113,51 @@ namespace Hatchit {
                 return false;
             }
 
+            bool D3D12Pipeline::VUpdate()
+            {
+                return false;
+            }
+
+            bool D3D12Pipeline::VAddShaderVariables(std::map<std::string, Resource::ShaderVariable*> shaderVariables)
+            {
+                return false;
+            }
+
+            bool D3D12Pipeline::VSetInt(std::string name, int data)
+            {
+                return false;
+            }
+
+            bool D3D12Pipeline::VSetDouble(std::string name, double data)
+            {
+                return false;
+            }
+
+            bool D3D12Pipeline::VSetFloat(std::string name, float data)
+            {
+                return false;
+            }
+
+            bool D3D12Pipeline::VSetFloat2(std::string name, Math::Vector2 data)
+            {
+                return false;
+            }
+
+            bool D3D12Pipeline::VSetFloat3(std::string name, Math::Vector3 data)
+            {
+                return false;
+            }
+
+            bool D3D12Pipeline::VSetFloat4(std::string name, Math::Vector4 data)
+            {
+                return false;
+            }
+
+            bool D3D12Pipeline::VSetMatrix4(std::string name, Math::Matrix4 data)
+            {
+                return false;
+            }
+
             D3D12_RASTERIZER_DESC D3D12Pipeline::RasterDescFromHandle(const Resource::PipelineHandle& handle)
             {
                 D3D12_RASTERIZER_DESC desc;
@@ -153,7 +207,7 @@ namespace Hatchit {
                 std::map<Resource::Pipeline::ShaderSlot, Resource::ShaderHandle> handles = handle->GetCSOShaderHandles();
 
                 D3D12ShaderHandle _handle = D3D12Shader::GetHandle("D3D12"+paths[slot]);
-                if (_handle.IsValid())
+                if(handles[slot].IsValid())
                 {
                     if (!_handle->IsInitialized())
                        _handle->VInitFromResource(handles[slot]);
@@ -164,7 +218,7 @@ namespace Hatchit {
                 }
                 else
                 {
-                    return CD3DX12_SHADER_BYTECODE();
+                    return CD3DX12_SHADER_BYTECODE(nullptr, 0);
                 }
             }
 

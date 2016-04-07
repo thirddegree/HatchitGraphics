@@ -32,6 +32,7 @@ namespace Hatchit {
             D3D12Renderer::D3D12Renderer()
             {
                 m_pipelineState = nullptr;
+                m_pipeline = nullptr;
                 m_rootSignature = nullptr;
                 m_vertexShader = nullptr;
                 m_pixelShader = nullptr;
@@ -43,6 +44,7 @@ namespace Hatchit {
             D3D12Renderer::~D3D12Renderer()
             {
                 delete m_resources;
+                delete m_pipeline;
                 ReleaseCOM(m_rootSignature);
                 ReleaseCOM(m_pipelineState);
                 ReleaseCOM(m_vertexShader);
@@ -96,40 +98,12 @@ namespace Hatchit {
                     return false;
                 
                 /*Create Pipeline State*/
-                // Define the vertex input layout.
-                D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
-                {
-                    { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-                    { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA , 0},
-                    { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
-                };
-
-                D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-                psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
-                psoDesc.pRootSignature = m_rootSignature;
-                psoDesc.VS = CD3DX12_SHADER_BYTECODE(m_vertexShader);
-                psoDesc.PS = CD3DX12_SHADER_BYTECODE(m_pixelShader);
-                psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-                psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-                psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-                psoDesc.SampleMask = UINT_MAX;
-                psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-                psoDesc.NumRenderTargets = 1;
-                psoDesc.RTVFormats[0] = DXGI_FORMAT_B8G8R8A8_UNORM;
-                psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
-                psoDesc.SampleDesc.Count = 1;
-                
-                
-
-                hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pipelineState));
-                if (FAILED(hr))
-                {
-                    HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to create pipeline state object.\n");
-                    return false;
-                }
+             
+                m_pipeline = new D3D12Pipeline(m_resources->GetDevice(), m_rootSignature);
+                m_pipeline->VInitialize(Resource::Pipeline::GetHandle("TestPipeline.json"));
 
                 /*Create command list*/
-                hr = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_resources->GetCommandAllocator(), m_pipelineState, IID_PPV_ARGS(&m_commandList));
+                hr = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_resources->GetCommandAllocator(), m_pipeline->GetPipeline(), IID_PPV_ARGS(&m_commandList));
                 if (FAILED(hr))
                     return false;
 
@@ -272,7 +246,7 @@ namespace Hatchit {
                 memcpy(destination, &m_constantBufferData, sizeof(m_constantBufferData));
 
                 m_resources->GetCommandAllocator()->Reset();
-                m_commandList->Reset(m_resources->GetCommandAllocator(), m_pipelineState);
+                m_commandList->Reset(m_resources->GetCommandAllocator(), m_pipeline->GetPipeline());
 
                 m_commandList->SetGraphicsRootSignature(m_rootSignature);
                 ID3D12DescriptorHeap* ppHeaps[] = { m_cbDescriptorHeap };

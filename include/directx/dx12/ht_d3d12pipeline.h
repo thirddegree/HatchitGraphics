@@ -31,12 +31,28 @@ namespace Hatchit {
             public:
                 D3D12Pipeline(ID3D12Device* device, ID3D12RootSignature* rootSignature);
 
+                ~D3D12Pipeline();
+
+                ID3D12PipelineState* GetPipeline();
+
                 // Inherited via IPipeline
                 virtual bool VInitialize(const Resource::PipelineHandle handle) override;
                 virtual void VSetRasterState(const Resource::Pipeline::RasterizerState & rasterState) override;
                 virtual void VSetMultisampleState(const Resource::Pipeline::MultisampleState & multiState) override;
                 virtual void VLoadShader(Resource::Pipeline::ShaderSlot shaderSlot, IShaderHandle shader) override;
                 virtual bool VPrepare() override;
+                virtual bool VUpdate() override;
+
+
+                virtual bool VAddShaderVariables(std::map<std::string, Resource::ShaderVariable*> shaderVariables) override;
+
+                virtual bool VSetInt(std::string name, int data) override;
+                virtual bool VSetDouble(std::string name, double data) override;
+                virtual bool VSetFloat(std::string name, float data) override;
+                virtual bool VSetFloat2(std::string name, Math::Vector2 data) override;
+                virtual bool VSetFloat3(std::string name, Math::Vector3 data) override;
+                virtual bool VSetFloat4(std::string name, Math::Vector4 data) override;
+                virtual bool VSetMatrix4(std::string name, Math::Matrix4 data) override;
 
             private:
                 D3D12_GRAPHICS_PIPELINE_STATE_DESC m_description;

@@ -33,7 +33,7 @@ namespace Hatchit {
                 D3D12Shader(D3D12Shader&&) = default;
                 ~D3D12Shader();
 
-                bool VInitFromResource(Resource::ShaderHandle handle) override;
+                bool VInitFromResource(Resource::ShaderHandle handle);
 
                 D3D12_SHADER_BYTECODE GetBytecode();
 
