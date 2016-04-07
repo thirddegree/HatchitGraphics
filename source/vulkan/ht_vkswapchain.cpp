@@ -204,10 +204,6 @@ namespace Hatchit {
 
                 VkResult err;
 
-                VKShaderHandle vsShader = VKShader::GetHandle("screen_VS.spv");
-
-                VKShaderHandle fsShader = VKShader::GetHandle("screen_FS.spv");
-
                 Pipeline::RasterizerState rasterState = {};
                 rasterState.cullMode = Pipeline::CullMode::NONE;
                 rasterState.polygonMode = Pipeline::PolygonMode::SOLID;
@@ -218,10 +214,6 @@ namespace Hatchit {
                 multisampleState.samples = Pipeline::SAMPLE_1_BIT;
 
                 m_pipeline = new VKPipeline(m_device, &m_renderPass);
-                m_pipeline->VLoadShader(Pipeline::ShaderSlot::VERTEX, vsShader.StaticCastHandle<IShader>());
-                m_pipeline->VLoadShader(Pipeline::ShaderSlot::FRAGMENT, fsShader.StaticCastHandle<IShader>());
-                m_pipeline->VSetRasterState(rasterState);
-                m_pipeline->VSetMultisampleState(multisampleState);
 
                 //Prepare descriptor set layout
 
@@ -245,7 +237,7 @@ namespace Hatchit {
                 }
 
                 m_pipeline->SetVKDescriptorSetLayout(m_descriptorSetLayout);
-                m_pipeline->VPrepare();
+                m_pipeline->VInitialize(Resource::Pipeline::GetHandle("SwapchainPipeline.json"));
 
                 //Setup the descriptor sets
                 VkDescriptorSetAllocateInfo allocInfo = {};

@@ -37,10 +37,6 @@ namespace Hatchit {
 
                 // Inherited via IPipeline
                 virtual bool VInitialize(const Resource::PipelineHandle handle) override;
-                virtual void VSetRasterState(const Resource::Pipeline::RasterizerState & rasterState) override;
-                virtual void VSetMultisampleState(const Resource::Pipeline::MultisampleState & multiState) override;
-                virtual void VLoadShader(Resource::Pipeline::ShaderSlot shaderSlot, IShaderHandle shader) override;
-                virtual bool VPrepare() override;
                 virtual bool VUpdate() override;
 
 

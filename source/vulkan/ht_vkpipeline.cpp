@@ -25,25 +25,39 @@ namespace Hatchit {
 
             using namespace Resource;
 
-            VKPipeline::VKPipeline(VkDevice& device, const VkRenderPass* renderPass) :
+            VKPipeline::VKPipeline(const VkDevice& device, const VkRenderPass* renderPass) :
                 m_device(device),
-                m_renderPass(renderPass),
-                m_resource(Pipeline::GetHandle(""))
+                m_renderPass(renderPass)
             {
             }
 
-            VKPipeline::VKPipeline(VkDevice& device, const VkRenderPass* renderPass, const std::string& fileName) : 
-                m_device(device),
-                m_renderPass(renderPass),
-                m_resource(Pipeline::GetHandle(fileName))
-            { 
-                VSetRasterState(m_resource->GetRasterizationState());
-                VSetMultisampleState(m_resource->GetMultisampleState());
+            VKPipeline::~VKPipeline() 
+            {
+                VKRenderer* renderer = VKRenderer::RendererInstance;
 
-                VAddShaderVariables(m_resource->GetShaderVariables());
+                vkDestroyPipeline(m_device, m_pipeline, nullptr);
+                vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
+                vkDestroyPipelineCache(m_device, m_pipelineCache, nullptr);
+
+                for (size_t i = 0; i < m_descriptorSetLayouts.size(); i++)
+                    vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayouts[i], nullptr);
+            }
+
+            bool VKPipeline::VInitialize(const Resource::PipelineHandle handle)
+            {
+                if (!handle.IsValid())
+                {
+                    return false;
+                    HT_DEBUG_PRINTF("VKPipeline::VInitialize() ERROR: Handle was invalid");
+                }
+
+                setRasterState(handle->GetRasterizationState());
+                setMultisampleState(handle->GetMultisampleState());
+
+                VAddShaderVariables(handle->GetShaderVariables());
 
                 //Load all shaders
-                std::map<Pipeline::ShaderSlot, std::string> shaderPaths = m_resource->GetSPVShaderPaths();
+                std::map<Pipeline::ShaderSlot, std::string> shaderPaths = handle->GetSPVShaderPaths();
 
                 std::map<Pipeline::ShaderSlot, std::string>::iterator it;
                 for (it = shaderPaths.begin(); it != shaderPaths.end(); it++)
@@ -51,165 +65,17 @@ namespace Hatchit {
                     //Get the actual shader handle
                     VKShaderHandle shaderHandle = VKShader::GetHandle(it->second);
 
-                    VLoadShader(it->first, shaderHandle.StaticCastHandle<IShader>());
+                    loadShader(it->first, shaderHandle.StaticCastHandle<IShader>());
                 }
-            }
-            VKPipeline::~VKPipeline() 
-            {
-                VKRenderer* renderer = VKRenderer::RendererInstance;
 
-                VkDevice device = renderer->GetVKDevice();
+                if (!prepareLayouts())
+                    return false;
 
-                vkDestroyPipeline(device, m_pipeline, nullptr);
-                vkDestroyPipelineLayout(device, m_pipelineLayout, nullptr);
-                vkDestroyPipelineCache(device, m_pipelineCache, nullptr);
 
-                for (size_t i = 0; i < m_descriptorSetLayouts.size(); i++)
-                    vkDestroyDescriptorSetLayout(device, m_descriptorSetLayouts[i], nullptr);
-            }
+                if (!preparePipeline())
+                    return false;
 
-            bool VKPipeline::VInitialize(const Resource::PipelineHandle handle)
-            {
                 return true;
-            }
-
-            //If we wanted to allow users to control blending states
-            //void VSetColorBlendAttachments(ColorBlendState* colorBlendStates) override;
-
-            /* Set the rasterization state for this pipeline
-            * \param rasterState A struct containing rasterization options
-            */
-            void VKPipeline::VSetRasterState(const Pipeline::RasterizerState& rasterState)
-            {
-                VkPolygonMode polyMode;
-                VkCullModeFlagBits cullMode;
-                VkFrontFace frontFace;
-
-                switch (rasterState.polygonMode)
-                {
-                case Pipeline::PolygonMode::SOLID:
-                    polyMode = VK_POLYGON_MODE_FILL;
-                    break;
-                case Pipeline::PolygonMode::LINE:
-                    polyMode = VK_POLYGON_MODE_LINE;
-                    break;
-                default:
-                    polyMode = VK_POLYGON_MODE_FILL;
-                    break;
-                }
-
-                switch (rasterState.cullMode)
-                {
-                case Pipeline::NONE:
-                    cullMode = VK_CULL_MODE_NONE;
-                    break;
-                case Pipeline::FRONT:
-                    cullMode = VK_CULL_MODE_FRONT_BIT;
-                    break;
-                case Pipeline::BACK:
-                    cullMode = VK_CULL_MODE_BACK_BIT;
-                    break;
-                }
-
-                if (rasterState.frontCounterClockwise)
-                    frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-                else
-                    frontFace = VK_FRONT_FACE_CLOCKWISE;
-
-                m_rasterizationState = {}; //default setup
-                m_rasterizationState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-                m_rasterizationState.pNext = nullptr;
-                m_rasterizationState.polygonMode = polyMode;
-                m_rasterizationState.cullMode = cullMode;
-                m_rasterizationState.frontFace = frontFace;
-                m_rasterizationState.depthClampEnable = rasterState.depthClampEnable;
-                m_rasterizationState.rasterizerDiscardEnable = rasterState.discardEnable;
-                m_rasterizationState.depthBiasEnable = VK_FALSE;
-            }
-
-            /* Set the multisampling state for this pipeline
-            * \param multiState A struct containing multisampling options
-            */
-            void VKPipeline::VSetMultisampleState(const Pipeline::MultisampleState& multiState)
-            {
-                VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT;
-
-                switch (multiState.samples)
-                {
-                case Pipeline::SAMPLE_1_BIT:
-                    sampleCount = VK_SAMPLE_COUNT_1_BIT;
-                    break;
-                case Pipeline::SAMPLE_2_BIT:
-                    sampleCount = VK_SAMPLE_COUNT_2_BIT;
-                    break;
-                case Pipeline::SAMPLE_4_BIT:
-                    sampleCount = VK_SAMPLE_COUNT_4_BIT;
-                    break;
-                case Pipeline::SAMPLE_8_BIT:
-                    sampleCount = VK_SAMPLE_COUNT_8_BIT;
-                    break;
-                case Pipeline::SAMPLE_16_BIT:
-                    sampleCount = VK_SAMPLE_COUNT_16_BIT;
-                    break;
-                case Pipeline::SAMPLE_32_BIT:
-                    sampleCount = VK_SAMPLE_COUNT_32_BIT;
-                    break;
-                case Pipeline::SAMPLE_64_BIT:
-                    sampleCount = VK_SAMPLE_COUNT_64_BIT;
-                    break;
-                }
-
-                m_multisampleState = {};
-                m_multisampleState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-                m_multisampleState.pNext = nullptr;
-                m_multisampleState.pSampleMask = nullptr;
-                m_multisampleState.rasterizationSamples = sampleCount;
-                m_multisampleState.sampleShadingEnable = multiState.perSampleShading;
-                m_multisampleState.minSampleShading = multiState.minSamples;
-            }
-
-            /* Load a shader into a shader slot for the pipeline
-            * \param shaderSlot The slot that you want the shader in; vertex, fragment etc.
-            * \param shaderHandle A handle to the shader that you want to load to the given shader slot
-            */
-            void VKPipeline::VLoadShader(Pipeline::ShaderSlot shaderSlot, IShaderHandle shaderHandle)
-            {
-                VKShaderHandle shader = shaderHandle.DynamicCastHandle<VKShader>();
-                m_shaderHandles[shaderSlot] = shader;
-
-                VkShaderModule shaderModule = shader->GetShaderModule();
-
-                VkShaderStageFlagBits shaderType;
-
-                switch (shaderSlot)
-                {
-                case Pipeline::ShaderSlot::VERTEX:
-                    shaderType = VK_SHADER_STAGE_VERTEX_BIT;
-                    break;
-                case Pipeline::ShaderSlot::FRAGMENT:
-                    shaderType = VK_SHADER_STAGE_FRAGMENT_BIT;
-                    break;
-                case Pipeline::ShaderSlot::GEOMETRY:
-                    shaderType = VK_SHADER_STAGE_GEOMETRY_BIT;
-                    break;
-                case Pipeline::ShaderSlot::TESS_CONTROL:
-                    shaderType = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-                    break;
-                case Pipeline::ShaderSlot::TESS_EVAL:
-                    shaderType = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-                    break;
-                case Pipeline::ShaderSlot::COMPUTE:
-                    shaderType = VK_SHADER_STAGE_COMPUTE_BIT;
-                    break;
-                }
-
-                VkPipelineShaderStageCreateInfo shaderStage = {};
-                shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-                shaderStage.stage = shaderType;
-                shaderStage.module = shaderModule;
-                shaderStage.pName = "main";
-
-                m_shaderStages.push_back(shaderStage);
             }
 
             bool VKPipeline::VAddShaderVariables(std::map<std::string, ShaderVariable*> shaderVariables)
@@ -334,26 +200,6 @@ namespace Hatchit {
                 return true;
             }
 
-            ///Have Vulkan create a pipeline with these settings
-            bool VKPipeline::VPrepare()
-            {
-                //Get the renderer for use later
-                VKRenderer* renderer = VKRenderer::RendererInstance;
-
-                //Get objects from renderer
-                VkDevice device = renderer->GetVKDevice();
-                VkDescriptorPool descriptorPool = renderer->GetVKDescriptorPool();
-
-                if (!prepareLayouts(device))
-                    return false;
-
-
-                if (!preparePipeline(device))
-                    return false;
-
-                return true;
-            }
-
             bool VKPipeline::VUpdate()
             {
                 //TODO: Organize push constant data other than just matricies
@@ -460,7 +306,148 @@ namespace Hatchit {
                 m_descriptorSetLayouts.push_back(descriptorSetLayout);
             }
 
-            bool VKPipeline::prepareLayouts(VkDevice device)
+            VkPipeline                          VKPipeline::GetVKPipeline() { return m_pipeline; }
+            VkPipelineLayout                    VKPipeline::GetVKPipelineLayout() { return m_pipelineLayout; }
+            std::vector<VkDescriptorSetLayout>  VKPipeline::GetVKDescriptorSetLayouts() { return m_descriptorSetLayouts; }
+
+            void VKPipeline::SendPushConstants(VkCommandBuffer commandBuffer)
+            {
+                //Send a push for each type of data to send; vectors, matricies, ints etc.
+                uint32_t dataSize = static_cast<uint32_t>(m_matrixPushData.size() * sizeof(float));
+                vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, dataSize, m_matrixPushData.data());
+            }
+
+            /*
+                Private Methods
+            */
+
+            void VKPipeline::setRasterState(const Pipeline::RasterizerState& rasterState)
+            {
+                VkPolygonMode polyMode;
+                VkCullModeFlagBits cullMode;
+                VkFrontFace frontFace;
+
+                switch (rasterState.polygonMode)
+                {
+                case Pipeline::PolygonMode::SOLID:
+                    polyMode = VK_POLYGON_MODE_FILL;
+                    break;
+                case Pipeline::PolygonMode::LINE:
+                    polyMode = VK_POLYGON_MODE_LINE;
+                    break;
+                default:
+                    polyMode = VK_POLYGON_MODE_FILL;
+                    break;
+                }
+
+                switch (rasterState.cullMode)
+                {
+                case Pipeline::NONE:
+                    cullMode = VK_CULL_MODE_NONE;
+                    break;
+                case Pipeline::FRONT:
+                    cullMode = VK_CULL_MODE_FRONT_BIT;
+                    break;
+                case Pipeline::BACK:
+                    cullMode = VK_CULL_MODE_BACK_BIT;
+                    break;
+                }
+
+                if (rasterState.frontCounterClockwise)
+                    frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+                else
+                    frontFace = VK_FRONT_FACE_CLOCKWISE;
+
+                m_rasterizationState = {}; //default setup
+                m_rasterizationState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+                m_rasterizationState.pNext = nullptr;
+                m_rasterizationState.polygonMode = polyMode;
+                m_rasterizationState.cullMode = cullMode;
+                m_rasterizationState.frontFace = frontFace;
+                m_rasterizationState.depthClampEnable = rasterState.depthClampEnable;
+                m_rasterizationState.rasterizerDiscardEnable = rasterState.discardEnable;
+                m_rasterizationState.depthBiasEnable = VK_FALSE;
+            }
+
+            void VKPipeline::setMultisampleState(const Pipeline::MultisampleState& multiState)
+            {
+                VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT;
+
+                switch (multiState.samples)
+                {
+                case Pipeline::SAMPLE_1_BIT:
+                    sampleCount = VK_SAMPLE_COUNT_1_BIT;
+                    break;
+                case Pipeline::SAMPLE_2_BIT:
+                    sampleCount = VK_SAMPLE_COUNT_2_BIT;
+                    break;
+                case Pipeline::SAMPLE_4_BIT:
+                    sampleCount = VK_SAMPLE_COUNT_4_BIT;
+                    break;
+                case Pipeline::SAMPLE_8_BIT:
+                    sampleCount = VK_SAMPLE_COUNT_8_BIT;
+                    break;
+                case Pipeline::SAMPLE_16_BIT:
+                    sampleCount = VK_SAMPLE_COUNT_16_BIT;
+                    break;
+                case Pipeline::SAMPLE_32_BIT:
+                    sampleCount = VK_SAMPLE_COUNT_32_BIT;
+                    break;
+                case Pipeline::SAMPLE_64_BIT:
+                    sampleCount = VK_SAMPLE_COUNT_64_BIT;
+                    break;
+                }
+
+                m_multisampleState = {};
+                m_multisampleState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+                m_multisampleState.pNext = nullptr;
+                m_multisampleState.pSampleMask = nullptr;
+                m_multisampleState.rasterizationSamples = sampleCount;
+                m_multisampleState.sampleShadingEnable = multiState.perSampleShading;
+                m_multisampleState.minSampleShading = multiState.minSamples;
+            }
+
+            void VKPipeline::loadShader(Pipeline::ShaderSlot shaderSlot, IShaderHandle shaderHandle)
+            {
+                VKShaderHandle shader = shaderHandle.DynamicCastHandle<VKShader>();
+                m_shaderHandles[shaderSlot] = shader;
+
+                VkShaderModule shaderModule = shader->GetShaderModule();
+
+                VkShaderStageFlagBits shaderType;
+
+                switch (shaderSlot)
+                {
+                case Pipeline::ShaderSlot::VERTEX:
+                    shaderType = VK_SHADER_STAGE_VERTEX_BIT;
+                    break;
+                case Pipeline::ShaderSlot::FRAGMENT:
+                    shaderType = VK_SHADER_STAGE_FRAGMENT_BIT;
+                    break;
+                case Pipeline::ShaderSlot::GEOMETRY:
+                    shaderType = VK_SHADER_STAGE_GEOMETRY_BIT;
+                    break;
+                case Pipeline::ShaderSlot::TESS_CONTROL:
+                    shaderType = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+                    break;
+                case Pipeline::ShaderSlot::TESS_EVAL:
+                    shaderType = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+                    break;
+                case Pipeline::ShaderSlot::COMPUTE:
+                    shaderType = VK_SHADER_STAGE_COMPUTE_BIT;
+                    break;
+                }
+
+                VkPipelineShaderStageCreateInfo shaderStage = {};
+                shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+                shaderStage.stage = shaderType;
+                shaderStage.module = shaderModule;
+                shaderStage.pName = "main";
+
+                m_shaderStages.push_back(shaderStage);
+            }
+
+            bool VKPipeline::prepareLayouts()
             {
                 VkResult err;
 
@@ -513,7 +500,7 @@ namespace Hatchit {
 
                     m_descriptorSetLayouts.resize(2);
 
-                    err = vkCreateDescriptorSetLayout(device, &perPassDescriptorLayoutInfo, nullptr, &m_descriptorSetLayouts[0]);
+                    err = vkCreateDescriptorSetLayout(m_device, &perPassDescriptorLayoutInfo, nullptr, &m_descriptorSetLayouts[0]);
                     assert(!err);
                     if (err != VK_SUCCESS)
                     {
@@ -521,7 +508,7 @@ namespace Hatchit {
                         return false;
                     }
 
-                    err = vkCreateDescriptorSetLayout(device, &perObjectDescriptorLayoutInfo, nullptr, &m_descriptorSetLayouts[1]);
+                    err = vkCreateDescriptorSetLayout(m_device, &perObjectDescriptorLayoutInfo, nullptr, &m_descriptorSetLayouts[1]);
                     assert(!err);
                     if (err != VK_SUCCESS)
                     {
@@ -552,7 +539,7 @@ namespace Hatchit {
                 pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size());
                 pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data();
 
-                err = vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout);
+                err = vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -563,7 +550,7 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKPipeline::preparePipeline(VkDevice device)
+            bool VKPipeline::preparePipeline()
             {
                 VkResult err;
 
@@ -688,7 +675,7 @@ namespace Hatchit {
                 VkPipelineCacheCreateInfo pipelineCacheInfo = {};
                 pipelineCacheInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
 
-                err = vkCreatePipelineCache(device, &pipelineCacheInfo, nullptr, &m_pipelineCache);
+                err = vkCreatePipelineCache(m_device, &pipelineCacheInfo, nullptr, &m_pipelineCache);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -696,7 +683,7 @@ namespace Hatchit {
                     return false;
                 }
 
-                err = vkCreateGraphicsPipelines(device, m_pipelineCache, 1, &pipelineInfo, nullptr, &m_pipeline);
+                err = vkCreateGraphicsPipelines(m_device, m_pipelineCache, 1, &pipelineInfo, nullptr, &m_pipeline);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -707,16 +694,6 @@ namespace Hatchit {
                 return true;
             }
 
-            VkPipeline                          VKPipeline::GetVKPipeline()             { return m_pipeline; }
-            VkPipelineLayout                    VKPipeline::GetVKPipelineLayout()       { return m_pipelineLayout; }
-            std::vector<VkDescriptorSetLayout>  VKPipeline::GetVKDescriptorSetLayouts() { return m_descriptorSetLayouts; }
-
-            void VKPipeline::SendPushConstants(VkCommandBuffer commandBuffer)
-            {
-                //Send a push for each type of data to send; vectors, matricies, ints etc.
-                uint32_t dataSize = static_cast<uint32_t>(m_matrixPushData.size() * sizeof(float));
-                vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, dataSize, m_matrixPushData.data());
-            }
         }
     }
 }

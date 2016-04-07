@@ -36,11 +36,6 @@ namespace Hatchit {
             {
                 return m_pipelineState;
             }
-            
-            void D3D12Pipeline::VSetMultisampleState(const Resource::Pipeline::MultisampleState& msState)
-            {
-
-            }
 
             bool D3D12Pipeline::VInitialize(const Resource::PipelineHandle handle)
             {
@@ -95,22 +90,6 @@ namespace Hatchit {
                 }
 
                 return true;
-            }
-
-            void D3D12Pipeline::VSetRasterState(const Resource::Pipeline::RasterizerState & rasterState)
-            {
-                
-            }
-
-            void D3D12Pipeline::VLoadShader(Resource::Pipeline::ShaderSlot shaderSlot, IShaderHandle shader)
-            {
-				
-            }
-
-            bool D3D12Pipeline::VPrepare()
-            {
-                
-                return false;
             }
 
             bool D3D12Pipeline::VUpdate()

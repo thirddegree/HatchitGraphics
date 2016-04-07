@@ -137,9 +137,8 @@ namespace Hatchit {
 
                 Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f));
 
-                IPipeline* pipeline = new VKPipeline(m_device, renderPass->GetVkRenderPass(), "TestPipeline.json");
-
-                pipeline->VPrepare();
+                IPipeline* pipeline = new VKPipeline(m_device, renderPass->GetVkRenderPass());
+                pipeline->VInitialize(Resource::Pipeline::GetHandle("TestPipeline.json"));
 
                 m_material = new VKMaterial();
 

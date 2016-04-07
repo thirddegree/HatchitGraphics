@@ -42,30 +42,13 @@ namespace Hatchit {
             class HT_API VKPipeline : public IPipeline
             {
             public:
-                VKPipeline(VkDevice& device, const VkRenderPass* renderPass);
-                VKPipeline(VkDevice& device, const VkRenderPass* renderPass, const std::string& fileName);
+                VKPipeline(const VkDevice& device, const VkRenderPass* renderPass);
                 ~VKPipeline();
-
-                //If we wanted to allow users to control blending states
-                //void VSetColorBlendAttachments(ColorBlendState* colorBlendStates) override;
 
                 bool VInitialize(const Resource::PipelineHandle handle) override;
 
-                /* Set the rasterization state for this pipeline
-                * \param rasterState A struct containing rasterization options
-                */
-                void VSetRasterState(const Hatchit::Resource::Pipeline::RasterizerState& rasterState)        override;
-
-                /* Set the multisampling state for this pipeline
-                * \param multiState A struct containing multisampling options
-                */
-                void VSetMultisampleState(const Hatchit::Resource::Pipeline::MultisampleState& multiState)   override;
-
-                /* Load a shader into a shader slot for the pipeline
-                * \param shaderSlot The slot that you want the shader in; vertex, fragment etc.
-                * \param shader A pointer to the shader that you want to load to the given shader slot
-                */
-                void VLoadShader(Hatchit::Resource::Pipeline::ShaderSlot shaderSlot, IShaderHandle shader)        override;
+                ///Have Vulkan update the descriptor sets in this pipeline
+                bool VUpdate()                                                  override;
 
                 /* Add a map of existing shader variables into this pipeline
                 * \param shaderVariables the map of existing shader variables you want to add
@@ -80,13 +63,6 @@ namespace Hatchit {
                 bool VSetFloat4(std::string name, Math::Vector4 data)           override;
                 bool VSetMatrix4(std::string name, Math::Matrix4 data)          override;
 
-                ///Have Vulkan create a pipeline with these settings
-                bool VPrepare()                                                 override;
-
-                ///Have Vulkan update the descriptor sets in this pipeline
-                bool VUpdate()                                                  override;
-
-                //TODO: Remove this when we can just reflect shaders instead
                 void SetVKDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout);
 
                 VkPipeline                          GetVKPipeline();
@@ -96,11 +72,10 @@ namespace Hatchit {
                 void SendPushConstants(VkCommandBuffer commandBuffer);
 
             protected:
-                Hatchit::Resource::PipelineHandle m_resource;
                 std::map<Resource::Pipeline::ShaderSlot, VKShaderHandle> m_shaderHandles;
 
                 //Input
-                VkDevice& m_device;
+                const VkDevice& m_device;
                 const VkRenderPass* m_renderPass;
 
                 VkPipelineRasterizationStateCreateInfo m_rasterizationState;
@@ -122,8 +97,24 @@ namespace Hatchit {
                 std::vector<float>  m_matrixPushData;
 
             private:
-                bool prepareLayouts(VkDevice device);
-                bool preparePipeline(VkDevice device);
+                /* Set the rasterization state for this pipeline
+                * \param rasterState A struct containing rasterization options
+                */
+                void setRasterState(const Hatchit::Resource::Pipeline::RasterizerState& rasterState);
+
+                /* Set the multisampling state for this pipeline
+                * \param multiState A struct containing multisampling options
+                */
+                void setMultisampleState(const Hatchit::Resource::Pipeline::MultisampleState& multiState);
+
+                /* Load a shader into a shader slot for the pipeline
+                * \param shaderSlot The slot that you want the shader in; vertex, fragment etc.
+                * \param shader A pointer to the shader that you want to load to the given shader slot
+                */
+                void loadShader(Hatchit::Resource::Pipeline::ShaderSlot shaderSlot, IShaderHandle shader);
+
+                bool prepareLayouts();
+                bool preparePipeline();
             };
         }
     }
