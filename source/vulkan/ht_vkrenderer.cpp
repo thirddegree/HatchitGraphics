@@ -372,27 +372,27 @@ namespace Hatchit {
                 return m_gpu;
             }
 
-            VkDevice VKRenderer::GetVKDevice() 
+            const VkDevice& VKRenderer::GetVKDevice() const
             {
                 return m_device;
             }
 
-            VkInstance VKRenderer::GetVKInstance() 
+            const VkInstance& VKRenderer::GetVKInstance() const
             {
                 return m_instance;
             }
 
-            VkCommandPool VKRenderer::GetVKCommandPool()
+            const VkCommandPool& VKRenderer::GetVKCommandPool() const
             {
                 return m_commandPool;
             }
 
-            VkDescriptorPool VKRenderer::GetVKDescriptorPool() 
+            const VkDescriptorPool& VKRenderer::GetVKDescriptorPool() const
             {
                 return m_descriptorPool;
             }
 
-            VkCommandBuffer VKRenderer::GetSetupCommandBuffer() 
+            const VkCommandBuffer& VKRenderer::GetSetupCommandBuffer() const
             {
                 return m_setupCommandBuffer;
             }

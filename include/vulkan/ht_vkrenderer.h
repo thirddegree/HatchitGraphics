@@ -76,24 +76,24 @@ namespace Hatchit {
                 /* Get the core Vulkan device
                 * \return The VkDevice
                 */
-                VkDevice GetVKDevice();
+                const VkDevice& GetVKDevice() const;
 
                 /* Get the core Vulkan instance
                 * \return The VkInstance for the app
                 */
-                VkInstance GetVKInstance();
+                const VkInstance& GetVKInstance() const;
 
                 /* Get the core Vulkan command pool
                 * \return a vulkan command pool
                 */
-                VkCommandPool GetVKCommandPool();
+                const VkCommandPool& GetVKCommandPool() const;
 
                 /* Get the core Vulkan descriptor pool
                 * \reutrn a vulkan descriptor pool
                 */
-                VkDescriptorPool GetVKDescriptorPool();
+                const VkDescriptorPool& GetVKDescriptorPool() const;
 
-                VkCommandBuffer GetSetupCommandBuffer();
+                const VkCommandBuffer& GetSetupCommandBuffer() const;
 
                 VkFormat GetPreferredImageFormat();
                 VkFormat GetPreferredDepthFormat();
