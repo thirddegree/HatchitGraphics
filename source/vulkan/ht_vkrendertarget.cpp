@@ -169,6 +169,12 @@ namespace Hatchit {
 
                 setupCommand = renderer->GetSetupCommandBuffer();
 
+                //If width and height are set to 0 use the width and height of the screen instead
+                if(m_width == 0)
+                    m_width = renderer->GetWidth();
+                if (m_height == 0)
+                    m_height = renderer->GetHeight();
+
                 VkResult err;
 
                 //Color attachment
