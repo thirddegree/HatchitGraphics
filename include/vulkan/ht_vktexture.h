@@ -34,7 +34,7 @@ namespace Hatchit {
                 VkSampler GetSampler();
                 VkImageView GetView();
 
-                virtual void SetSampler(ISampler* sampler) override;
+                virtual void SetSampler(ISamplerHandle sampler) override;
 
                 virtual uint32_t GetWidth() const override;
                 virtual uint32_t GetHeight() const override;
@@ -52,7 +52,7 @@ namespace Hatchit {
 
                 Resource::TextureHandle m_resource;
 
-                ISampler* m_sampler;
+                VKSamplerHandle m_sampler;
             };
 
         }

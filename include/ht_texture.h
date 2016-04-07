@@ -28,7 +28,7 @@ namespace Hatchit {
         public:
             virtual ~ITexture() { }
         
-            virtual void SetSampler(ISampler* sampler) = 0;
+            virtual void SetSampler(ISamplerHandle sampler) = 0;
 
             virtual uint32_t GetWidth()  const = 0;
             virtual uint32_t GetHeight() const = 0;

@@ -15,6 +15,7 @@
 #pragma once
 
 #include <ht_sampler.h>
+#include <ht_sampler_resource.h>
 #include <ht_vulkan.h>
 
 namespace Hatchit {
@@ -23,10 +24,10 @@ namespace Hatchit {
 
         namespace Vulkan {
         
-            class HT_API VKSampler : public ISampler 
+            class HT_API VKSampler : public Core::RefCounted<VKSampler>, public ISampler
             {
             public:
-                VKSampler(VkDevice device, const std::string& samplerResourceFile);
+                VKSampler(const std::string& samplerResourceFile);
                 ~VKSampler();
 
                 bool VPrepare() override;
@@ -43,7 +44,7 @@ namespace Hatchit {
                 virtual Hatchit::Resource::Sampler::ColorSpace GetColorSpace() const override;
 
             private:
-                VkDevice m_device;
+                const VkDevice& m_device;
 
                 VkSampler m_sampler;
 
@@ -52,6 +53,7 @@ namespace Hatchit {
                 Hatchit::Resource::Sampler::ColorSpace m_colorSpace;
             };
 
+			using VKSamplerHandle = Core::Handle<VKSampler>;
         }
 
     }

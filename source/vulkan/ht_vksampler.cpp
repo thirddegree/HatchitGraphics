@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <ht_vkrenderer.h>
 #include <ht_vksampler.h>
 #include <ht_debug.h>
 #include <cassert>
@@ -24,8 +25,8 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKSampler::VKSampler(VkDevice device, const std::string& samplerResourceFile) :
-                m_device(device)
+            VKSampler::VKSampler(const std::string& samplerResourceFile) :
+                m_device(VKRenderer::RendererInstance->GetVKDevice())
             {
                 Resource::SamplerHandle handle = Resource::Sampler::GetHandle(samplerResourceFile);
 

@@ -53,7 +53,6 @@ namespace Hatchit {
 
                 m_renderTarget = nullptr;
                 m_texture = nullptr;
-                m_sampler = nullptr;
 
                 m_instance = VK_NULL_HANDLE;
 
@@ -128,8 +127,7 @@ namespace Hatchit {
                 CreateSetupCommandBuffer();
 
                 //TODO: Once JSON file is found, insert name here
-                m_sampler = new VKSampler(m_device, "");
-                m_sampler->SetColorSpace(Sampler::ColorSpace::GAMMA);
+				m_sampler = VKSampler::GetHandle("TestSampler.json").StaticCastHandle<ISampler>();
                 m_sampler->VPrepare();
 
                 m_texture = new VKTexture(m_device, "raptor.png");
@@ -187,8 +185,6 @@ namespace Hatchit {
                     delete m_renderTarget;
                 if (m_texture != nullptr)
                     delete m_texture;
-                if (m_sampler != nullptr)
-                    delete m_sampler;
                 
                 std::map<IPipeline*, std::vector<Renderable>>::iterator it;
                 for (it = m_pipelineList.begin(); it != m_pipelineList.end(); it++)

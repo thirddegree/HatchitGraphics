@@ -36,6 +36,8 @@ namespace Hatchit {
             virtual Resource::Sampler::ColorSpace GetColorSpace() const = 0;
         };
 
+		using ISamplerHandle = Core::Handle<ISampler>;
+
     }
 
 }

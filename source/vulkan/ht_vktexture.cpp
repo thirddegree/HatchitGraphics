@@ -36,14 +36,14 @@ namespace Hatchit {
 
             VkSampler VKTexture::GetSampler()
             { 
-                VKSampler* vkSampler = static_cast<VKSampler*>(m_sampler);
-                return vkSampler->GetVkSampler(); 
+				return m_sampler->GetVkSampler();
             }
             VkImageView VKTexture::GetView() { return m_view; }
 
-            void VKTexture::SetSampler(ISampler* sampler)
+            void VKTexture::SetSampler(ISamplerHandle samplerHandle)
             {
-                m_sampler = std::move(sampler);
+				VKSamplerHandle vkSamplerHandle = samplerHandle.DynamicCastHandle<VKSampler>();
+                m_sampler = std::move(vkSamplerHandle);
                 VBufferImage();
             }
 
