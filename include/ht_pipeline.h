@@ -43,6 +43,12 @@ namespace Hatchit {
         {
        public:
             virtual ~IPipeline() {};
+
+            /*
+            * Initialize GPU pipeline object from resource file
+            * \param handle The handle to loaded pipeline resource file
+            */
+            virtual bool VInitialize(const Resource::PipelineHandle handle) = 0;
            
             //If we wanted to allow users to control blending states
             //virtual void VSetColorBlendAttachments(ColorBlendState* colorBlendStates) = 0;

@@ -26,32 +26,25 @@ namespace Hatchit {
         namespace DX
         {
 
-            class HT_API D3D12Shader : public IShader
+            class HT_API D3D12Shader : public Core::RefCounted<D3D12Shader>, public IShader
             {
-                typedef std::unordered_map<std::string, uint32_t> TextureTable;
-                typedef std::unordered_map<std::string, uint32_t> SamplerTable;
             public:
-                D3D12Shader();
+                D3D12Shader(std::string fileName);
+                D3D12Shader(D3D12Shader&&) = default;
+                ~D3D12Shader();
 
-                virtual ~D3D12Shader();
+                bool VInitFromResource(Resource::ShaderHandle handle) override;
+
+                D3D12_SHADER_BYTECODE GetBytecode();
+
+                bool IsInitialized();
 
             private:
-                uint32_t					m_constantBufferCount;
-                ID3D12ShaderReflection* m_reflection;
-                ID3DBlob*               m_blob;
-                TextureTable            m_texTable;
-                SamplerTable            m_samTable;
-                uint32_t                m_cbCount;
-
-                // Inherited via IShader
-                //virtual bool VInitFromFile(Core::File * file) override;
-          
-                // Inherited via IShader
-                //virtual void VOnLoaded() override;
-
-                virtual bool VInitShader() = 0;
-
+                ID3DBlob*                   m_blob;
+                bool                        m_initialized;
+              
             };
+            using D3D12ShaderHandle = Core::Handle<D3D12Shader>;
         }
     }
 }

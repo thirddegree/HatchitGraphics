@@ -261,10 +261,10 @@ namespace Hatchit {
                     Math::Vector3(0.0f, 0.0f, 1.0f),
                     Math::Vector3(0.0f, 1.0f, 0.0f));
 
-				Math::Matrix4 scale = Math::MMMatrixScale(Math::Vector3(0.02f, 0.02f, 0.02f));
+				Math::Matrix4 scale = Math::MMMatrixScale(Math::Vector3(1.0f, 1.0f, 1.0f));
 				Math::Matrix4 rot = Math::MMMatrixRotationXYZ(Math::Vector3(0, angle, 0));
-				Math::Matrix4 trans = Math::MMMatrixTranslation(Math::Vector3(0, -30, 0));
-				Math::Matrix4 mat = rot * (scale * trans);
+				Math::Matrix4 trans = Math::MMMatrixTranslation(Math::Vector3(0, -1, 0));
+                Math::Matrix4 mat = trans * scale * rot; // rot * (scale * trans);
 				m_constantBufferData.world = mat;
                
                 // Update the constant buffer resource.

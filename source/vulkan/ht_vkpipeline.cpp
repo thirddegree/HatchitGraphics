@@ -68,6 +68,11 @@ namespace Hatchit {
                     vkDestroyDescriptorSetLayout(device, m_descriptorSetLayouts[i], nullptr);
             }
 
+            bool VKPipeline::VInitialize(const Resource::PipelineHandle handle)
+            {
+                return true;
+            }
+
             //If we wanted to allow users to control blending states
             //void VSetColorBlendAttachments(ColorBlendState* colorBlendStates) override;
 

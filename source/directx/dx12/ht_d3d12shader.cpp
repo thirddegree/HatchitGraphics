@@ -22,78 +22,43 @@ namespace Hatchit {
         namespace DX
         {
 
-            D3D12Shader::D3D12Shader()
+            D3D12Shader::D3D12Shader(std::string fileName)
+                : Core::RefCounted<D3D12Shader>(std::move(fileName))
             {
-                m_reflection = nullptr;
                 m_blob = nullptr;
-                m_cbCount = 0;
+                m_initialized = false;
             }
 
             D3D12Shader::~D3D12Shader()
             {
-
+                ReleaseCOM(m_blob);
             }
 
-            //bool D3D12Shader::VInitFromFile(Core::File * file)
-            //{
-            //    //size_t size = file->SizeBytes();
-            //    //m_data = new BYTE[size];
-            //    //file->Read(static_cast<BYTE*>(m_data), size);
+            bool D3D12Shader::VInitFromResource(Resource::ShaderHandle handle)
+            {
+                HRESULT hr = S_OK;
+                hr = D3DCreateBlob(handle->GetBytecodeSize(), &m_blob);
+                if (FAILED(hr))
+                {
+                    HT_DEBUG_PRINTF("Failed to create shader blob.\n");
+                    return false;
+                }
+                memcpy(m_blob->GetBufferPointer(), handle->GetBytecode(), handle->GetBytecodeSize());
 
-            //    return false;
-            //}
+                m_initialized = true;
 
-//            void D3D12Shader::VOnLoaded()
-//            {
-//                //Initialize shader with data
-//                if (!this->VInitShader())
-//                {
-//                    HT_DEBUG_PRINTF("D3D12Shader::VOnLoaded, Failed to initialize shader.\n");
-//                    return;
-//                }
-//
-//                if (!m_reflection)
-//                {
-//                    //Reflect shader info
-//                    D3DReflect(m_blob->GetBufferPointer(), m_blob->GetBufferSize(),
-//                        __uuidof(ID3D12ShaderReflection), reinterpret_cast<void**>(&m_reflection));
-//                }
-//
-//                //Get description of shader
-//                D3D12_SHADER_DESC desc;
-//                m_reflection->GetDesc(&desc);
-//
-//                //Create array of constant buffers
-//                //
-//                //
-//
-//                //Handle bound resources
-//                uint32_t count = desc.BoundResources;
-//                for (uint32_t i = 0; i < count; i++)
-//                {
-//                    //Get the resource description
-//                    D3D12_SHADER_INPUT_BIND_DESC resourceDesc;
-//                    m_reflection->GetResourceBindingDesc(i, &resourceDesc);
-//
-//                    //Check type
-//                    switch (resourceDesc.Type)
-//                    {
-//                    case D3D_SIT_TEXTURE:
-//                    case D3D_SIT_STRUCTURED:
-//                        m_texTable.insert(std::make_pair(resourceDesc.Name, resourceDesc.BindCount));
-//                        break;
-//                    case D3D_SIT_SAMPLER:
-//                        m_samTable.insert(std::make_pair(resourceDesc.Name, resourceDesc.BindCount));
-//                        break;
-//                    }
-//                }
-//
-//                //Loop over all constant buffers
-//                for (uint32_t i = 0; i < m_cbCount; i++)
-//                {
-//
-//                }
-//            }
+                return true;
+            }
+
+            D3D12_SHADER_BYTECODE D3D12Shader::GetBytecode()
+            {
+                return CD3DX12_SHADER_BYTECODE(m_blob);
+            }
+
+            bool D3D12Shader::IsInitialized()
+            {
+                return m_initialized;
+            }
 
         }
     }

@@ -49,6 +49,8 @@ namespace Hatchit {
                 //If we wanted to allow users to control blending states
                 //void VSetColorBlendAttachments(ColorBlendState* colorBlendStates) override;
 
+                bool VInitialize(const Resource::PipelineHandle handle) override;
+
                 /* Set the rasterization state for this pipeline
                 * \param rasterState A struct containing rasterization options
                 */

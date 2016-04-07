@@ -19,6 +19,7 @@
 #include <ht_renderer.h>
 #include <ht_d3d12vertexbuffer.h>
 #include <ht_d3d12indexbuffer.h>
+#include <ht_d3d12pipeline.h>
 #include <ht_d3d12deviceresources.h>
 #include <ht_math.h>
 #include <DirectXMath.h>
