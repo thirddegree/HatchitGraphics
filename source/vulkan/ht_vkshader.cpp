@@ -21,25 +21,17 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKShader::VKShader(const std::string& fileName) : Core::RefCounted<VKShader>(std::move(fileName)) 
+            using namespace Resource;
+
+            VKShader::VKShader(const std::string& fileName) :
+                m_device(VKRenderer::RendererInstance->GetVKDevice()),
+                Core::RefCounted<VKShader>(std::move(fileName)) 
             {
                 m_shader = VK_NULL_HANDLE;
-                VInitFromResource(Resource::Shader::GetHandle(fileName));
-            }
-            VKShader::~VKShader() 
-            {
-                VkDevice device = VKRenderer::RendererInstance->GetVKDevice();
+                ShaderHandle shaderResourceHandle = Shader::GetHandle(fileName);
 
-                if(m_shader != VK_NULL_HANDLE)
-                    vkDestroyShaderModule(device, m_shader, nullptr);
-            }
-
-            bool VKShader::VInitFromResource(Resource::ShaderHandle shaderHandle)
-            {
-                VkDevice device = VKRenderer::RendererInstance->GetVKDevice();
-
-                size_t size = shaderHandle->GetBytecodeSize();
-                const BYTE* shaderCode = shaderHandle->GetBytecode();
+                size_t size = shaderResourceHandle->GetBytecodeSize();
+                const BYTE* shaderCode = shaderResourceHandle->GetBytecode();
 
                 VkResult err;
 
@@ -50,15 +42,17 @@ namespace Hatchit {
                 moduleCreateInfo.pCode = (uint32_t*)(shaderCode);
                 moduleCreateInfo.flags = 0;
 
-                err = vkCreateShaderModule(device, &moduleCreateInfo, nullptr, &m_shader);
+                err = vkCreateShaderModule(m_device, &moduleCreateInfo, nullptr, &m_shader);
                 assert(!err);
                 if (err != VK_SUCCESS)
-                {
                     HT_DEBUG_PRINTF("VKShader::VInitFromFile(): Error creating shader module\n");
-                    return false;
-                }
+            }
+            VKShader::~VKShader() 
+            {
+                VkDevice device = VKRenderer::RendererInstance->GetVKDevice();
 
-                return true;
+                if(m_shader != VK_NULL_HANDLE)
+                    vkDestroyShaderModule(device, m_shader, nullptr);
             }
 
             VkShaderModule VKShader::GetShaderModule()

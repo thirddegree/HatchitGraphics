@@ -43,10 +43,10 @@ namespace Hatchit {
                 VKShader(VKShader&&) = default;
                 ~VKShader();
 
-                virtual bool VInitFromResource(Resource::ShaderHandle shaderHandle) override;
                 VkShaderModule GetShaderModule();
 
             private:
+                const VkDevice& m_device;
                 VkShaderModule m_shader;
             };
 
