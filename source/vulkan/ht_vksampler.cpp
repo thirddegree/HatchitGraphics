@@ -25,10 +25,11 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKSampler::VKSampler(const std::string& samplerResourceFile) :
+            VKSampler::VKSampler(std::string ID, const std::string& fileName) :
+                RefCounted<VKSampler>(std::move(ID)),
                 m_device(VKRenderer::RendererInstance->GetVKDevice())
             {
-                Resource::SamplerHandle handle = Resource::Sampler::GetHandle(samplerResourceFile);
+                Resource::SamplerHandle handle = Resource::Sampler::GetHandleFromFileName(fileName);
 
                 if (handle.IsValid())
                 {

@@ -111,7 +111,7 @@ namespace Hatchit {
                 renderPass->VSetHeight(m_height);
                 renderPass->VSetClearColor(Color(m_clearColor.color.float32[0], m_clearColor.color.float32[1], m_clearColor.color.float32[2], m_clearColor.color.float32[3]));
 
-                m_renderTarget = new VKRenderTarget("TestRenderTarget.json");
+                m_renderTarget = new VKRenderTarget("TestRenderTarget.json", "TestRenderTarget.json");
                 m_renderTarget->SetRenderPass(renderPass);
 
                 renderPass->VPrepare();
@@ -121,13 +121,13 @@ namespace Hatchit {
 
                 m_swapchain->SetIncomingRenderTarget(m_renderTarget);
 
-                ModelHandle model = Model::GetHandle("Raptor.obj");
+                ModelHandle model = Model::GetHandleFromFileName("Raptor.obj");
                 //model.VInitFromFile(&meshFile);
 
                 CreateSetupCommandBuffer();
 
                 //TODO: Once JSON file is found, insert name here
-				m_sampler = VKSampler::GetHandle("TestSampler.json").StaticCastHandle<ISampler>();
+				m_sampler = VKSampler::GetHandleFromFileName("TestSampler.json").StaticCastHandle<ISampler>();
                 m_sampler->VPrepare();
 
                 m_texture = new VKTexture(m_device, "raptor.png");
@@ -138,7 +138,7 @@ namespace Hatchit {
                 Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f));
 
                 IPipeline* pipeline = new VKPipeline(m_device, renderPass->GetVkRenderPass());
-                pipeline->VInitialize(Resource::Pipeline::GetHandle("TestPipeline.json"));
+                pipeline->VInitialize(Resource::Pipeline::GetHandleFromFileName("TestPipeline.json"));
 
                 m_material = new VKMaterial();
 

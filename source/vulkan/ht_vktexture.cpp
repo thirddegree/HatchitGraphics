@@ -23,7 +23,7 @@ namespace Hatchit {
 
             VKTexture::VKTexture(VkDevice device, const std::string& fileName) :
                 m_device(device),
-                m_resource(Resource::Texture::GetHandle(fileName)) 
+                m_resource(Resource::Texture::GetHandleFromFileName(fileName)) 
             {
             }
 

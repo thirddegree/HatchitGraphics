@@ -23,12 +23,12 @@ namespace Hatchit {
 
             using namespace Resource;
 
-            VKShader::VKShader(const std::string& fileName) :
+            VKShader::VKShader(std::string ID, const std::string& fileName) :
                 m_device(VKRenderer::RendererInstance->GetVKDevice()),
-                Core::RefCounted<VKShader>(std::move(fileName)) 
+                Core::RefCounted<VKShader>(std::move(ID)) 
             {
                 m_shader = VK_NULL_HANDLE;
-                ShaderHandle shaderResourceHandle = Shader::GetHandle(fileName);
+                ShaderHandle shaderResourceHandle = Shader::GetHandleFromFileName(fileName);
 
                 size_t size = shaderResourceHandle->GetBytecodeSize();
                 const BYTE* shaderCode = shaderResourceHandle->GetBytecode();
