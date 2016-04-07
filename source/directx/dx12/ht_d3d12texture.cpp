@@ -48,7 +48,7 @@ namespace Hatchit
                 return 0;
             }
 
-            void D3D12Texture::SetSampler(ISampler* sampler)
+            void D3D12Texture::SetSampler(ISamplerHandle sampler)
             {
 
             }
