@@ -44,16 +44,12 @@ namespace Hatchit {
 
                 //Load all shaders
                 std::map<Pipeline::ShaderSlot, std::string> shaderPaths = m_resource->GetSPVShaderPaths();
-                std::map<Pipeline::ShaderSlot, Resource::ShaderHandle> shaderHandles = m_resource->GetSPVShaderHandles();
 
                 std::map<Pipeline::ShaderSlot, std::string>::iterator it;
                 for (it = shaderPaths.begin(); it != shaderPaths.end(); it++)
                 {
                     //Get the actual shader handle
-                    VKShaderHandle shaderHandle = VKShader::GetHandle("VK"+it->second);
-                    Resource::ShaderHandle shaderResourceHandle = shaderHandles[it->first];
-
-                    shaderHandle->VInitFromResource(shaderResourceHandle);
+                    VKShaderHandle shaderHandle = VKShader::GetHandle(it->second);
 
                     VLoadShader(it->first, shaderHandle.StaticCastHandle<IShader>());
                 }

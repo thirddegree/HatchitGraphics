@@ -204,13 +204,9 @@ namespace Hatchit {
 
                 VkResult err;
 
-                Resource::ShaderHandle vsShaderResource = Resource::Shader::GetHandle("screen_VS.spv");
-                VKShaderHandle vsShader = VKShader::GetHandle("VKscreen_VS");
-                vsShader->VInitFromResource(vsShaderResource);
+                VKShaderHandle vsShader = VKShader::GetHandle("screen_VS.spv");
 
-                Resource::ShaderHandle fsShaderResource = Resource::Shader::GetHandle("screen_FS.spv");
-                VKShaderHandle fsShader = VKShader::GetHandle("VKscreen_FS");
-                fsShader->VInitFromResource(fsShaderResource);
+                VKShaderHandle fsShader = VKShader::GetHandle("screen_FS.spv");
 
                 Pipeline::RasterizerState rasterState = {};
                 rasterState.cullMode = Pipeline::CullMode::NONE;

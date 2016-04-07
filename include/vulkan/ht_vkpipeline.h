@@ -92,6 +92,7 @@ namespace Hatchit {
                 std::vector<VkDescriptorSetLayout>  GetVKDescriptorSetLayouts();
                 
                 void SendPushConstants(VkCommandBuffer commandBuffer);
+
             protected:
                 Hatchit::Resource::PipelineHandle m_resource;
                 std::map<Resource::Pipeline::ShaderSlot, VKShaderHandle> m_shaderHandles;

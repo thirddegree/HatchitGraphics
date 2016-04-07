@@ -112,7 +112,7 @@ namespace Hatchit {
                 renderPass->VSetHeight(m_height);
                 renderPass->VSetClearColor(Color(m_clearColor.color.float32[0], m_clearColor.color.float32[1], m_clearColor.color.float32[2], m_clearColor.color.float32[3]));
 
-                m_renderTarget = new VKRenderTarget(m_width, m_height);
+                m_renderTarget = new VKRenderTarget(m_device, m_width, m_height);
                 m_renderTarget->SetRenderPass(renderPass);
 
                 renderPass->VPrepare();

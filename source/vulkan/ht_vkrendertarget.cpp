@@ -33,32 +33,61 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKRenderTarget::VKRenderTarget(uint32_t width, uint32_t height) 
+            using namespace Resource;
+
+            VKRenderTarget::VKRenderTarget(const VkDevice& device, uint32_t width, uint32_t height) :
+                m_device(device)
             {
                 m_width = width;
                 m_height = height;
+
+                VKRenderer* renderer = VKRenderer::RendererInstance;
+                m_colorFormat = renderer->GetPreferredImageFormat();
+            }
+            VKRenderTarget::VKRenderTarget(const std::string& fileName) :
+                m_device(VKRenderer::RendererInstance->GetVKDevice()),
+                Core::RefCounted<VKRenderTarget>(std::move(fileName)),
+                m_resource(RenderTarget::GetHandle(fileName))
+                
+            {
+                m_width = m_resource->GetWidth();
+                m_height = m_resource->GetHeight();
+
+                std::string formatString = m_resource->GetFormat();
+
+                //Determine format bit from resource's string
+                if (formatString == "BGRA")
+                {
+                    m_colorFormat = VK_FORMAT_B8G8R8A8_UNORM;
+                }
+                else if (formatString == "RGBA")
+                {
+                    m_colorFormat = VK_FORMAT_R8G8B8A8_UNORM;
+                }
+                else //If it's not valid or provided; query the renderer for the preferred format
+                {
+                    VKRenderer* renderer = VKRenderer::RendererInstance;
+                    m_colorFormat = renderer->GetPreferredImageFormat();
+                }
             }
 
             VKRenderTarget::~VKRenderTarget() 
             {
-                VKRenderer* renderer = VKRenderer::RendererInstance;
-                VkDevice device = renderer->GetVKDevice();
+                vkFreeMemory(m_device, m_color.memory, nullptr);
+                vkDestroyImage(m_device, m_color.image, nullptr);
+                vkDestroyImageView(m_device, m_color.view, nullptr);
 
-                vkFreeMemory(device, m_color.memory, nullptr);
-                vkDestroyImage(device, m_color.image, nullptr);
-                vkDestroyImageView(device, m_color.view, nullptr);
+                vkFreeMemory(m_device, m_depth.memory, nullptr);
+                vkDestroyImage(m_device, m_depth.image, nullptr);
+                vkDestroyImageView(m_device, m_depth.view, nullptr);
 
-                vkFreeMemory(device, m_depth.memory, nullptr);
-                vkDestroyImage(device, m_depth.image, nullptr);
-                vkDestroyImageView(device, m_depth.view, nullptr);
+                vkDestroyFramebuffer(m_device, m_framebuffer, nullptr);
 
-                vkDestroyFramebuffer(device, m_framebuffer, nullptr);
+                vkFreeMemory(m_device, m_texture.image.memory, nullptr);
+                vkDestroyImage(m_device, m_texture.image.image, nullptr);
+                vkDestroyImageView(m_device, m_texture.image.view, nullptr);
 
-                vkFreeMemory(device, m_texture.image.memory, nullptr);
-                vkDestroyImage(device, m_texture.image.image, nullptr);
-                vkDestroyImageView(device, m_texture.image.view, nullptr);
-
-                vkDestroySampler(device, m_texture.sampler, nullptr);
+                vkDestroySampler(m_device, m_texture.sampler, nullptr);
             } 
 
             bool VKRenderTarget::VPrepare()
@@ -132,10 +161,8 @@ namespace Hatchit {
 
             bool VKRenderTarget::setupFramebuffer(VKRenderer* renderer) 
             {
-                VkDevice device = renderer->GetVKDevice();
                 VkCommandBuffer setupCommand;
 
-                m_colorFormat = renderer->GetPreferredImageFormat();
                 m_depthFormat = renderer->GetPreferredDepthFormat();
 
                 renderer->CreateSetupCommandBuffer();
@@ -163,7 +190,7 @@ namespace Hatchit {
 
                 VkMemoryRequirements memReqs;
 
-                err = vkCreateImage(device, &imageInfo, nullptr, &m_color.image);
+                err = vkCreateImage(m_device, &imageInfo, nullptr, &m_color.image);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -171,11 +198,11 @@ namespace Hatchit {
                     return false;
                 }
 
-                vkGetImageMemoryRequirements(device, m_color.image, &memReqs);
+                vkGetImageMemoryRequirements(m_device, m_color.image, &memReqs);
                 memAllocInfo.allocationSize = memReqs.size;
                 renderer->MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memAllocInfo.memoryTypeIndex);
 
-                err = vkAllocateMemory(device, &memAllocInfo, nullptr, &m_color.memory);
+                err = vkAllocateMemory(m_device, &memAllocInfo, nullptr, &m_color.memory);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -183,7 +210,7 @@ namespace Hatchit {
                     return false;
                 }
 
-                err = vkBindImageMemory(device, m_color.image, m_color.memory, 0);
+                err = vkBindImageMemory(m_device, m_color.image, m_color.memory, 0);
                 if (err != VK_SUCCESS)
                 {
                     HT_DEBUG_PRINTF("VKRenderTarget::VPrepare(): Error binding color image memory!\n");
@@ -207,7 +234,7 @@ namespace Hatchit {
                 viewInfo.subresourceRange.layerCount = 1;
                 viewInfo.image = m_color.image;
 
-                err = vkCreateImageView(device, &viewInfo, nullptr, &m_color.view);
+                err = vkCreateImageView(m_device, &viewInfo, nullptr, &m_color.view);
                 if (err != VK_SUCCESS)
                 {
                     HT_DEBUG_PRINTF("VKRenderTarget::VPrepare(): Error creating color image view!\n");
@@ -218,7 +245,7 @@ namespace Hatchit {
                 imageInfo.format = m_depthFormat;
                 imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
-                err = vkCreateImage(device, &imageInfo, nullptr, &(m_depth.image));
+                err = vkCreateImage(m_device, &imageInfo, nullptr, &(m_depth.image));
 
                 assert(!err);
                 if (err != VK_SUCCESS)
@@ -230,11 +257,11 @@ namespace Hatchit {
                 viewInfo.format = m_depthFormat;
                 viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 
-                vkGetImageMemoryRequirements(device, m_depth.image, &memReqs);
+                vkGetImageMemoryRequirements(m_device, m_depth.image, &memReqs);
                 memAllocInfo.allocationSize = memReqs.size;
                 renderer->MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memAllocInfo.memoryTypeIndex);
 
-                err = vkAllocateMemory(device, &memAllocInfo, nullptr, &m_depth.memory);
+                err = vkAllocateMemory(m_device, &memAllocInfo, nullptr, &m_depth.memory);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -242,7 +269,7 @@ namespace Hatchit {
                     return false;
                 }
 
-                err = vkBindImageMemory(device, m_depth.image, m_depth.memory, 0);
+                err = vkBindImageMemory(m_device, m_depth.image, m_depth.memory, 0);
                 if (err != VK_SUCCESS)
                 {
                     HT_DEBUG_PRINTF("VKRenderTarget::VPrepare(): Error binding depth image memory!\n");
@@ -256,7 +283,7 @@ namespace Hatchit {
 
                 viewInfo.image = m_depth.image;
 
-                err = vkCreateImageView(device, &viewInfo, nullptr, &m_depth.view);
+                err = vkCreateImageView(m_device, &viewInfo, nullptr, &m_depth.view);
                 if (err != VK_SUCCESS)
                 {
                     HT_DEBUG_PRINTF("VKRenderTarget::VPrepare(): Error creating depth image view!\n");
@@ -281,7 +308,7 @@ namespace Hatchit {
                 framebufferInfo.height = m_height;
                 framebufferInfo.layers = 1;
 
-                err = vkCreateFramebuffer(device, &framebufferInfo, nullptr, &m_framebuffer);
+                err = vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_framebuffer);
                 if (err != VK_SUCCESS)
                 {
                     HT_DEBUG_PRINTF("VKRenderTarget::VPrepare(): Error creating framebuffer!\n");
@@ -305,8 +332,6 @@ namespace Hatchit {
                     HT_DEBUG_PRINTF("VKRenderTarget::setupTargetTexture(): GPU does not support blitting!\n");
                     return false;
                 }
-
-                VkDevice device = renderer->GetVKDevice();
 
                 renderer->CreateSetupCommandBuffer();
 
@@ -333,7 +358,7 @@ namespace Hatchit {
                 
                 VkMemoryRequirements memReqs;
 
-                err = vkCreateImage(device, &imageCreateInfo, nullptr, &m_texture.image.image);
+                err = vkCreateImage(m_device, &imageCreateInfo, nullptr, &m_texture.image.image);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -341,7 +366,7 @@ namespace Hatchit {
                     return false;
                 }
 
-                vkGetImageMemoryRequirements(device, m_texture.image.image, &memReqs);
+                vkGetImageMemoryRequirements(m_device, m_texture.image.image, &memReqs);
                 memAllocInfo.allocationSize = memReqs.size;
 
                 bool success = renderer->MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memAllocInfo.memoryTypeIndex);
@@ -353,7 +378,7 @@ namespace Hatchit {
                 }
 
 
-                err = vkAllocateMemory(device, &memAllocInfo, nullptr, &m_texture.image.memory);
+                err = vkAllocateMemory(m_device, &memAllocInfo, nullptr, &m_texture.image.memory);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -361,7 +386,7 @@ namespace Hatchit {
                     return false;
                 }
 
-                err = vkBindImageMemory(device, m_texture.image.image, m_texture.image.memory, 0);
+                err = vkBindImageMemory(m_device, m_texture.image.image, m_texture.image.memory, 0);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -389,7 +414,7 @@ namespace Hatchit {
                 samplerInfo.maxLod = 0.0f;
                 samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
                 
-                err = vkCreateSampler(device, &samplerInfo, nullptr, &m_texture.sampler);
+                err = vkCreateSampler(m_device, &samplerInfo, nullptr, &m_texture.sampler);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -407,7 +432,7 @@ namespace Hatchit {
                 viewInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
                 viewInfo.image = m_texture.image.image;
 
-                err = vkCreateImageView(device, &viewInfo, nullptr, &m_texture.image.view);
+                err = vkCreateImageView(m_device, &viewInfo, nullptr, &m_texture.image.view);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {

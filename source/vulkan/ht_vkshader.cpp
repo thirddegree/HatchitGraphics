@@ -21,9 +21,10 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKShader::VKShader(std::string fileName) : Core::RefCounted<VKShader>(std::move(fileName)) 
+            VKShader::VKShader(const std::string& fileName) : Core::RefCounted<VKShader>(std::move(fileName)) 
             {
                 m_shader = VK_NULL_HANDLE;
+                VInitFromResource(Resource::Shader::GetHandle(fileName));
             }
             VKShader::~VKShader() 
             {

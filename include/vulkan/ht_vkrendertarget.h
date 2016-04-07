@@ -35,10 +35,11 @@ namespace Hatchit {
 
             class VKRenderer;
 
-            class HT_API VKRenderTarget : public IRenderTarget
+            class HT_API VKRenderTarget : public Core::RefCounted<VKRenderTarget>, public IRenderTarget
             {
             public:
-                VKRenderTarget(uint32_t width, uint32_t height);
+                VKRenderTarget(const VkDevice& device, uint32_t width, uint32_t height);
+                VKRenderTarget(const std::string& fileName);
                 ~VKRenderTarget();
 
                 ///Prepare the render target with Vulkan
@@ -57,6 +58,10 @@ namespace Hatchit {
                 Texture&        GetVKTexture();
 
             protected:
+                const VkDevice& m_device;
+
+                Hatchit::Resource::RenderTargetHandle m_resource;
+
                 VkFormat m_colorFormat;
                 VkFormat m_depthFormat;
 
@@ -69,6 +74,8 @@ namespace Hatchit {
                 bool setupFramebuffer(VKRenderer* renderer);
                 bool setupTargetTexture(VKRenderer* renderer);
             };
+
+            using VKRenderTargetHandle = Core::Handle<VKRenderTarget>;
         }
     }
 }
