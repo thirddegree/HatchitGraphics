@@ -95,10 +95,10 @@ namespace Hatchit {
 
                 const VkCommandBuffer& GetSetupCommandBuffer() const;
 
-                VkFormat GetPreferredImageFormat();
-                VkFormat GetPreferredDepthFormat();
+                const VkFormat& GetPreferredImageFormat() const;
+                const VkFormat& GetPreferredDepthFormat() const;
 
-                const RendererParams& GetRendererParams();
+                const RendererParams& GetRendererParams() const;
 
                 void CreateSetupCommandBuffer();
                 void FlushSetupCommandBuffer();

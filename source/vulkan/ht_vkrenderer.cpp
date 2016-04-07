@@ -397,16 +397,16 @@ namespace Hatchit {
                 return m_setupCommandBuffer;
             }
 
-            VkFormat VKRenderer::GetPreferredImageFormat() 
+            const VkFormat& VKRenderer::GetPreferredImageFormat() const
             {
                 return m_swapchain->VKGetPreferredColorFormat();
             }
-            VkFormat VKRenderer::GetPreferredDepthFormat() 
+            const VkFormat& VKRenderer::GetPreferredDepthFormat() const
             {
                 return m_swapchain->VKGetPreferredDepthFormat();
             }
 
-            const RendererParams& VKRenderer::GetRendererParams()
+            const RendererParams& VKRenderer::GetRendererParams() const
             {
                 return m_rendererParams;
             }
