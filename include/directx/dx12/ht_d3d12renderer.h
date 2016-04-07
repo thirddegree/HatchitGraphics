@@ -73,19 +73,11 @@ namespace Hatchit {
 
                 //Demo only
                 float                       m_aspectRatio;
-                ID3D12Resource*             m_vertexBuffer;
-                ID3D12Resource*             m_indexBuffer;
                 ID3D12Resource*             m_constantBuffer;
-                ID3DBlob*                   m_vertexShader;
-                ID3DBlob*                   m_pixelShader;
-                D3D12_VERTEX_BUFFER_VIEW	m_vertexBufferView;
-                D3D12_INDEX_BUFFER_VIEW		m_indexBufferView;
 
                 D3D12VertexBuffer*          m_vBuffer;
                 D3D12IndexBuffer*           m_iBuffer;
                 size_t                      m_numIndices;
-
-                bool LoadShaderFiles();
 
                 ConstantBuffer              m_constantBufferData;
                 static const UINT c_alignedConstantBufferSize = (sizeof(ConstantBuffer) + 255) & ~255;

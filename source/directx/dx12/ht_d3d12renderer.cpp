@@ -33,9 +33,6 @@ namespace Hatchit {
             {
                 m_pipelineState = nullptr;
                 m_pipeline = nullptr;
-                m_rootSignature = nullptr;
-                m_vertexShader = nullptr;
-                m_pixelShader = nullptr;
                 m_commandList = nullptr;
                 m_vBuffer = nullptr;
                 m_iBuffer = nullptr;
@@ -45,10 +42,7 @@ namespace Hatchit {
             {
                 delete m_resources;
                 delete m_pipeline;
-                ReleaseCOM(m_rootSignature);
                 ReleaseCOM(m_pipelineState);
-                ReleaseCOM(m_vertexShader);
-                ReleaseCOM(m_pixelShader);
                 ReleaseCOM(m_commandList);
                 ReleaseCOM(m_constantBuffer);
                 ReleaseCOM(m_cbDescriptorHeap);
@@ -69,37 +63,11 @@ namespace Hatchit {
                 if (!m_resources->Initialize((HWND)params.window, params.viewportWidth, params.viewportHeight))
                     return false;
 
-                
                 auto device = m_resources->GetDevice();
 
-                /*Create Root Signature with one slot for Constant Buffer*/
-                CD3DX12_DESCRIPTOR_RANGE range;
-                CD3DX12_ROOT_PARAMETER   parameter;
-
-                range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
-                parameter.InitAsDescriptorTable(1, &range, D3D12_SHADER_VISIBILITY_VERTEX);
-
-                D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
-                    D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT | // Only the input assembler stage needs access to the constant buffer.
-                    D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
-                    D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
-                    D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
-                    D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
-                CD3DX12_ROOT_SIGNATURE_DESC descRootSignature;
-                descRootSignature.Init(1, &parameter, 0, nullptr, rootSignatureFlags);
-
-                Microsoft::WRL::ComPtr<ID3DBlob> pSignature;
-                Microsoft::WRL::ComPtr<ID3DBlob> pError;
-                D3D12SerializeRootSignature(&descRootSignature, D3D_ROOT_SIGNATURE_VERSION_1, pSignature.GetAddressOf(), pError.GetAddressOf());
-                device->CreateRootSignature(0, pSignature->GetBufferPointer(), pSignature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature));
-
-                /*Load shader files*/
-                if (!LoadShaderFiles())
-                    return false;
-                
                 /*Create Pipeline State*/
              
-                m_pipeline = new D3D12Pipeline(m_resources->GetDevice(), m_rootSignature);
+                m_pipeline = new D3D12Pipeline(m_resources->GetDevice(), m_resources->GetRootSignature());
                 m_pipeline->VInitialize(Resource::Pipeline::GetHandle("TestPipeline.json"));
 
                 /*Create command list*/
@@ -248,7 +216,7 @@ namespace Hatchit {
                 m_resources->GetCommandAllocator()->Reset();
                 m_commandList->Reset(m_resources->GetCommandAllocator(), m_pipeline->GetPipeline());
 
-                m_commandList->SetGraphicsRootSignature(m_rootSignature);
+                m_commandList->SetGraphicsRootSignature(m_resources->GetRootSignature());
                 ID3D12DescriptorHeap* ppHeaps[] = { m_cbDescriptorHeap };
                 m_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
@@ -290,75 +258,6 @@ namespace Hatchit {
                 m_resources->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
                 m_resources->WaitForGPU();
-            }
-
-            bool D3D12Renderer::LoadShaderFiles()
-            {
-                HRESULT hr = S_OK;
-
-                Core::File vShaderFile;
-                Core::File pShaderFile;
-                try
-                {
-                    vShaderFile.Open(Core::Path::Value(Core::Path::Directory::Shaders) + "tri_VS.hlsl", Core::FileMode::ReadBinary);
-                    pShaderFile.Open(Core::Path::Value(Core::Path::Directory::Shaders) + "tri_PS.hlsl", Core::FileMode::ReadBinary);
-                }
-                catch (std::exception& e)
-                {
-                    HT_DEBUG_PRINTF("%s\n", e.what());
-                    return false;
-                }
-
-                BYTE* vShaderData = new BYTE[vShaderFile.SizeBytes()];
-                vShaderFile.Read(vShaderData, vShaderFile.SizeBytes()); //read all of the file into memory
-
-                DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
-#ifdef _DEBUG
-                // Set the D3DCOMPILE_DEBUG flag to embed debug information in the shaders.
-                // Setting this flag improves the shader debugging experience, but still allows
-                // the shaders to be optimized and to run exactly the way they will run in
-                // the release configuration of this program.
-                dwShaderFlags |= D3DCOMPILE_DEBUG;
-
-                // Disable optimizations to further improve shader debugging
-                dwShaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
-#endif
-
-                ID3DBlob* errorBlob = nullptr;
-                hr = D3DCompile2(vShaderData, vShaderFile.SizeBytes(), nullptr, nullptr,
-                    nullptr, "main", "vs_5_0", dwShaderFlags, NULL, NULL, nullptr, NULL,
-                    &m_vertexShader, &errorBlob);
-                if (FAILED(hr))
-                {
-                    if (errorBlob)
-                    {
-                        OutputDebugStringA(reinterpret_cast<const char*>(errorBlob->GetBufferPointer()));
-                        ReleaseCOM(errorBlob);
-                    }
-                    return false;
-                }
-                ReleaseCOM(errorBlob);
-                delete[] vShaderData;
-
-
-                BYTE* pShaderData = new BYTE[pShaderFile.SizeBytes()];
-                pShaderFile.Read(pShaderData, pShaderFile.SizeBytes());
-                hr = D3DCompile2(pShaderData, pShaderFile.SizeBytes(), nullptr, nullptr,
-                    nullptr, "main", "ps_5_0", dwShaderFlags, NULL, NULL, nullptr, NULL,
-                    &m_pixelShader, &errorBlob);
-                if (FAILED(hr))
-                {
-                    if (errorBlob)
-                    {
-                        OutputDebugStringA(reinterpret_cast<const char*>(errorBlob->GetBufferPointer()));
-                        ReleaseCOM(errorBlob);
-                    }
-                    return false;
-                }
-                ReleaseCOM(errorBlob);
-                delete[] pShaderData;
-
-                return true;
             }
 
         }

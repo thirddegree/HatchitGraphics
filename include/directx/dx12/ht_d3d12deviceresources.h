@@ -40,6 +40,7 @@ namespace Hatchit {
 				
             
                 ID3D12Device*           GetDevice();
+                ID3D12RootSignature*    GetRootSignature();
                 IDXGISwapChain3*        GetSwapChain();
                 ID3D12Resource*         GetRenderTarget();
                 ID3D12Resource*         GetDepthStencil();
@@ -61,6 +62,7 @@ namespace Hatchit {
                 D3D12_VIEWPORT              m_viewport;
                 D3D12_RECT                  m_scissorRect;
                 ID3D12Device*               m_device;
+                ID3D12RootSignature*        m_rootSignature;
                 IDXGISwapChain3*            m_swapChain;
 				DXGI_SWAP_CHAIN_DESC		m_swapChainDesc;
                 ID3D12CommandQueue*         m_commandQueue;
