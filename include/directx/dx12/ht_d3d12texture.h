@@ -35,6 +35,7 @@ namespace Hatchit
                 //void Upload(ID3D12GraphicsCommandList* commandList);
 
                 void SetSampler(ISamplerHandle sampler) override;
+
                 uint32_t GetWidth() const override;
                 uint32_t GetHeight() const override;
 

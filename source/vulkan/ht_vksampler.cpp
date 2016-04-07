@@ -52,10 +52,21 @@ namespace Hatchit {
 
                 switch (m_wrapMode)
                 {
+				case Resource::Sampler::WrapMode::MIRROR:
+					vkWrapMode = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+					break;
+				case Resource::Sampler::WrapMode::MIRROR_ONCE:
+					vkWrapMode = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
+					break;
+				case Resource::Sampler::WrapMode::BORDER:
+					vkWrapMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+					break;
                 case Resource::Sampler::WrapMode::CLAMP:
                     vkWrapMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-                case Resource::Sampler::WrapMode::REPEAT:
+					break;
+                case Resource::Sampler::WrapMode::WRAP:
                     vkWrapMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+					break;
                 default:
                     vkWrapMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
                     break;
