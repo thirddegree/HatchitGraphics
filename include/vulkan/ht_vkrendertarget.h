@@ -38,7 +38,6 @@ namespace Hatchit {
             class HT_API VKRenderTarget : public Core::RefCounted<VKRenderTarget>, public IRenderTarget
             {
             public:
-                VKRenderTarget(const VkDevice& device, uint32_t width, uint32_t height);
                 VKRenderTarget(std::string ID, const std::string& fileName);
                 ~VKRenderTarget();
 

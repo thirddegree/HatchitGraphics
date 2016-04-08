@@ -36,7 +36,7 @@ namespace Hatchit {
             class HT_API VKRenderPass : public Core::RefCounted<VKRenderPass>, public RenderPassBase
             {
             public:
-                VKRenderPass(const std::string& fileName);
+                VKRenderPass(std::string ID, const std::string& fileName);
                 ~VKRenderPass();
 
                 //Prepare the internal VkRenderPass

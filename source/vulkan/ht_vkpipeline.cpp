@@ -25,9 +25,9 @@ namespace Hatchit {
 
             using namespace Resource;
 
-            VKPipeline::VKPipeline(const std::string& fileName) :
+            VKPipeline::VKPipeline(std::string ID, const std::string& fileName) :
                 m_device(VKRenderer::RendererInstance->GetVKDevice()),
-                Core::RefCounted<VKPipeline>(std::move(fileName))
+                Core::RefCounted<VKPipeline>(std::move(ID))
             {
             }
 
@@ -70,7 +70,7 @@ namespace Hatchit {
 
                 //Get a handle to a compatible render pass
                 std::string renderPassPath = handle->GetRenderPassPath();
-                m_renderPassHandle = VKRenderPass::GetHandle(renderPassPath);
+                m_renderPassHandle = VKRenderPass::GetHandleFromFileName(renderPassPath);
 
                 if (!prepareLayouts())
                     return false;

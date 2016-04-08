@@ -211,7 +211,7 @@ namespace Hatchit {
                 multisampleState.minSamples = 0;
                 multisampleState.samples = Pipeline::SAMPLE_1_BIT;
 
-                m_pipeline = VKPipeline::GetHandle("SwapchainPipeline.json");
+                m_pipeline = VKPipeline::GetHandleFromFileName("SwapchainPipeline.json");
 
                 //Prepare descriptor set layout
 

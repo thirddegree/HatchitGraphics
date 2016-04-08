@@ -28,20 +28,20 @@ namespace Hatchit {
 
             using namespace Resource;
 
-            VKMaterial::VKMaterial(const std::string& fileName) :
+            VKMaterial::VKMaterial(std::string ID, const std::string& fileName) :
                 m_device(VKRenderer::RendererInstance->GetVKDevice()),
-                Core::RefCounted<VKMaterial>(std::move(fileName))
+                Core::RefCounted<VKMaterial>(std::move(ID))
             {
-                m_materialResourceHandle = Hatchit::Resource::Material::GetHandle(fileName);
+                m_materialResourceHandle = Hatchit::Resource::Material::GetHandleFromFileName(fileName);
 
                 //Gather resources and handles
-                m_pipeline = VKPipeline::GetHandle(m_materialResourceHandle->GetPipelinePath());
+                m_pipeline = VKPipeline::GetHandleFromFileName(m_materialResourceHandle->GetPipelinePath());
                 m_shaderVariables = m_materialResourceHandle->GetShaderVariables();
 
                 std::vector<std::string> texturePaths = m_materialResourceHandle->GetTexturePaths();
                 for (size_t i = 0; i < texturePaths.size(); i++)
                 {
-                    VKTextureHandle textureHandle = VKTexture::GetHandle(texturePaths[i]);
+                    VKTextureHandle textureHandle = VKTexture::GetHandleFromFileName(texturePaths[i]);
                     m_textures[texturePaths[i]] = textureHandle.StaticCastHandle<ITexture>();
                 }
 

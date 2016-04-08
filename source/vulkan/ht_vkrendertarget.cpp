@@ -35,15 +35,6 @@ namespace Hatchit {
 
             using namespace Resource;
 
-            VKRenderTarget::VKRenderTarget(const VkDevice& device, uint32_t width, uint32_t height) :
-                m_device(device)
-            {
-                m_width = width;
-                m_height = height;
-
-                VKRenderer* renderer = VKRenderer::RendererInstance;
-                m_colorFormat = renderer->GetPreferredImageFormat();
-            }
             VKRenderTarget::VKRenderTarget(std::string ID, const std::string& fileName) :
                 m_device(VKRenderer::RendererInstance->GetVKDevice()),
                 Core::RefCounted<VKRenderTarget>(std::move(ID)),

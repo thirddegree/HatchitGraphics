@@ -25,10 +25,10 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKRenderPass::VKRenderPass(const std::string& fileName) :
+            VKRenderPass::VKRenderPass(std::string ID, const std::string& fileName) :
                 m_device(VKRenderer::RendererInstance->GetVKDevice()), 
                 m_commandPool(VKRenderer::RendererInstance->GetVKCommandPool()),
-                Core::RefCounted<VKRenderPass>(std::move(fileName))
+                Core::RefCounted<VKRenderPass>(std::move(ID))
             {
                 m_width = 0;
                 m_height = 0;
@@ -36,7 +36,7 @@ namespace Hatchit {
                 m_commandBuffer = VK_NULL_HANDLE;
 
                 //Load resources
-                m_renderPassResourceHandle = Resource::RenderPass::GetHandle(fileName);
+                m_renderPassResourceHandle = Resource::RenderPass::GetHandleFromFileName(fileName);
                 
                 if (m_renderPassResourceHandle.IsValid())
                 {
@@ -45,13 +45,13 @@ namespace Hatchit {
 
                     for (size_t i = 0; i < inputPaths.size(); i++)
                     {
-                        IRenderTargetHandle inputTargetHandle = VKRenderTarget::GetHandle(inputPaths[i]).StaticCastHandle<IRenderTarget>();
+                        IRenderTargetHandle inputTargetHandle = VKRenderTarget::GetHandleFromFileName(inputPaths[i]).StaticCastHandle<IRenderTarget>();
                         m_inputRenderTargets.push_back(inputTargetHandle);
                     }
 
                     for (size_t i = 0; i < outputPaths.size(); i++)
                     {
-                        IRenderTargetHandle outputTargetHandle = VKRenderTarget::GetHandle(outputPaths[i]).StaticCastHandle<IRenderTarget>();
+                        IRenderTargetHandle outputTargetHandle = VKRenderTarget::GetHandleFromFileName(outputPaths[i]).StaticCastHandle<IRenderTarget>();
                         m_outputRenderTargets.push_back(outputTargetHandle);
                     }
 
