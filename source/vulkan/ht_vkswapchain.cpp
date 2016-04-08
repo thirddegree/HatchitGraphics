@@ -34,8 +34,6 @@ namespace Hatchit {
                 m_device = device;
                 m_commandPool = commandPool;
 
-                m_inputTexture = nullptr;
-
                 /*
                 Prepare surface
                 */
@@ -213,7 +211,7 @@ namespace Hatchit {
                 multisampleState.minSamples = 0;
                 multisampleState.samples = Pipeline::SAMPLE_1_BIT;
 
-                m_pipeline = new VKPipeline(m_device, &m_renderPass);
+                m_pipeline = VKPipeline::GetHandleFromFileName("SwapchainPipeline.json");
 
                 //Prepare descriptor set layout
 
@@ -237,7 +235,7 @@ namespace Hatchit {
                 }
 
                 m_pipeline->SetVKDescriptorSetLayout(m_descriptorSetLayout);
-                m_pipeline->VInitialize(Resource::Pipeline::GetHandle("SwapchainPipeline.json"));
+                m_pipeline->VInitialize(Resource::Pipeline::GetHandleFromFileName("SwapchainPipeline.json"));
 
                 //Setup the descriptor sets
                 VkDescriptorSetAllocateInfo allocInfo = {};
@@ -254,9 +252,9 @@ namespace Hatchit {
                     return false;
                 }
 
-                if (m_inputTexture != nullptr)
+                if (m_inputTexture.IsValid())
                 {
-                    Texture inputTexture = ((VKRenderTarget*)m_inputTexture)->GetVKTexture();
+                    Texture inputTexture = m_inputTexture.DynamicCastHandle<VKRenderTarget>()->GetVKTexture();
 
                     // Image descriptor for the color map texture
                     VkDescriptorImageInfo texDescriptor = {};
@@ -1146,8 +1144,6 @@ namespace Hatchit {
             void VKSwapchain::destroyPipeline()
             {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
-
-                delete m_pipeline;
 
                 vkFreeMemory(m_device, m_vertexBuffer.memory, nullptr);
                 vkDestroyBuffer(m_device, m_vertexBuffer.buffer, nullptr);

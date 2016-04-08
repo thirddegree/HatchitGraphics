@@ -100,17 +100,18 @@ namespace Hatchit {
             ///Present a frame to the screen via a backbuffer
             virtual void VPresent() = 0;
 
-            void AddRenderPass(IRenderPass* renderPass);
+            void AddRenderPass(IRenderPassHandle renderPass);
             void RemoveRenderPass(uint32_t index);
 
-            uint32_t GetWidth();
-            uint32_t GetHeight();
+            uint32_t GetWidth() const;
+            uint32_t GetHeight() const;
 
         protected:
-            std::vector<IRenderPass*> m_renderPasses;
+            std::vector<IRenderPassHandle> m_renderPasses;
 
             uint32_t m_width;
             uint32_t m_height;
+
         };
 
     }

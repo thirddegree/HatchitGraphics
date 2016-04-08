@@ -25,10 +25,11 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKSampler::VKSampler(const std::string& samplerResourceFile) :
+            VKSampler::VKSampler(std::string ID, const std::string& fileName) :
+                RefCounted<VKSampler>(std::move(ID)),
                 m_device(VKRenderer::RendererInstance->GetVKDevice())
             {
-                Resource::SamplerHandle handle = Resource::Sampler::GetHandle(samplerResourceFile);
+                Resource::SamplerHandle handle = Resource::Sampler::GetHandleFromFileName(fileName);
 
                 if (handle.IsValid())
                 {
@@ -52,21 +53,21 @@ namespace Hatchit {
 
                 switch (m_wrapMode)
                 {
-				case Resource::Sampler::WrapMode::MIRROR:
-					vkWrapMode = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-					break;
-				case Resource::Sampler::WrapMode::MIRROR_ONCE:
-					vkWrapMode = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
-					break;
-				case Resource::Sampler::WrapMode::BORDER:
-					vkWrapMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-					break;
+                case Resource::Sampler::WrapMode::MIRROR:
+                    vkWrapMode = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+                    break;
+                case Resource::Sampler::WrapMode::MIRROR_ONCE:
+                    vkWrapMode = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
+                    break;
+                case Resource::Sampler::WrapMode::BORDER:
+                    vkWrapMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+                    break;
                 case Resource::Sampler::WrapMode::CLAMP:
                     vkWrapMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-					break;
+                    break;
                 case Resource::Sampler::WrapMode::WRAP:
                     vkWrapMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-					break;
+                    break;
                 default:
                     vkWrapMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
                     break;
