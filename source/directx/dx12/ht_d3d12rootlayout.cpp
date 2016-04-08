@@ -184,12 +184,20 @@ namespace Hatchit
 			
 			D3D12_ROOT_SIGNATURE_FLAGS D3D12RootLayout::RootSignatureFlagsFromHandle(const Resource::RootLayoutHandle& handle)
 			{
-				D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
-					D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT | // Only the input assembler stage needs access to the constant buffer.
-					D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
-					D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
-					D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
-					D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
+				using namespace Resource;
+
+				D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
+
+				if (handle->GetDescriptorFlags().TestFlag(RootLayout::LAYOUT_ALLOW_INPUT_ASSEMLBER_INPUT_LAYOUT))
+					rootSignatureFlags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+				if (handle->GetDescriptorFlags().TestFlag(RootLayout::LAYOUT_DENY_VERTEX_SHADER_ROOT_ACCESS))
+					rootSignatureFlags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS;
+				if (handle->GetDescriptorFlags().TestFlag(RootLayout::LAYOUT_DENY_TESS_CONTROL_SHADER_ROOT_ACCESS))
+					rootSignatureFlags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS;
+				if (handle->GetDescriptorFlags().TestFlag(RootLayout::LAYOUT_DENY_TESS_EVAL_SHADER_ROOT_ACCESS))
+					rootSignatureFlags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS;
+				if (handle->GetDescriptorFlags().TestFlag(RootLayout::LAYOUT_DENY_FRAGMENT_SHADER_ROOT_ACCESS))
+					rootSignatureFlags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
 
 				return rootSignatureFlags;
 			}
