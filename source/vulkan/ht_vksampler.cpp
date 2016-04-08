@@ -25,9 +25,12 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKSampler::VKSampler(std::string ID, const std::string& fileName) :
+            VKSampler::VKSampler(std::string ID) :
                 RefCounted<VKSampler>(std::move(ID)),
                 m_device(VKRenderer::RendererInstance->GetVKDevice())
+            {}
+
+            bool VKSampler::Initialize(const std::string& fileName)
             {
                 Resource::SamplerHandle handle = Resource::Sampler::GetHandleFromFileName(fileName);
 
@@ -36,6 +39,12 @@ namespace Hatchit {
                     m_filterMode = handle->GetFilterMode();
                     m_wrapMode = handle->GetWrapMode();
                     m_colorSpace = handle->GetColorSpace();
+                    return true;
+                }
+                else
+                {
+                    HT_DEBUG_PRINTF("Unable to initialize VKSampler: Missing Resource from file %s", fileName);
+                    return false;
                 }
             }
             VKSampler::~VKSampler() 

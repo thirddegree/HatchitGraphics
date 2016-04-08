@@ -28,20 +28,23 @@ namespace Hatchit {
 
             using namespace Resource;
 
-            VKMaterial::VKMaterial(std::string ID, const std::string& fileName) :
+            VKMaterial::VKMaterial(std::string ID) :
                 m_device(VKRenderer::RendererInstance->GetVKDevice()),
-                Core::RefCounted<VKMaterial>(std::move(ID))
+                Core::RefCounted<VKMaterial>(std::move(ID)) {}
+
+            bool VKMaterial::Initialize(const std::string& fileName)
             {
                 m_materialResourceHandle = Hatchit::Resource::Material::GetHandleFromFileName(fileName);
 
                 //Gather resources and handles
-                m_pipeline = VKPipeline::GetHandleFromFileName(m_materialResourceHandle->GetPipelinePath());
+                Resource::PipelineHandle pipelineResource = Resource::Pipeline::GetHandleFromFileName(m_materialResourceHandle->GetPipelinePath());
+                m_pipeline = VKPipeline::GetHandle(m_materialResourceHandle->GetPipelinePath(), pipelineResource, nullptr);
                 m_shaderVariables = m_materialResourceHandle->GetShaderVariables();
 
                 std::vector<std::string> texturePaths = m_materialResourceHandle->GetTexturePaths();
                 for (size_t i = 0; i < texturePaths.size(); i++)
                 {
-                    VKTextureHandle textureHandle = VKTexture::GetHandleFromFileName(texturePaths[i]);
+                    VKTextureHandle textureHandle = VKTexture::GetHandle(texturePaths[i], texturePaths[i]);
                     m_textures[texturePaths[i]] = textureHandle.StaticCastHandle<ITexture>();
                 }
 
@@ -61,6 +64,8 @@ namespace Hatchit {
                 m_uniformVSBuffer.descriptor.range = sizeof(Math::Matrix4);
 
                 setupDescriptorSet(descriptorPool);
+
+                return true;
             }
 
             VKMaterial::~VKMaterial() 

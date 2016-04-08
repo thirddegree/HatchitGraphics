@@ -42,10 +42,10 @@ namespace Hatchit {
             class HT_API VKPipeline : public Core::RefCounted<VKPipeline>, public IPipeline
             {
             public:
-                VKPipeline(std::string ID, const std::string& fileName);
+                VKPipeline(std::string ID);
                 ~VKPipeline();
 
-                bool VInitialize(const Resource::PipelineHandle handle) override;
+                bool Initialize(const Resource::PipelineHandle handle, VkDescriptorSetLayout layout);
 
                 ///Have Vulkan update the descriptor sets in this pipeline
                 bool VUpdate()                                                  override;

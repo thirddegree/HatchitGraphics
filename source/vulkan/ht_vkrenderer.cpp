@@ -103,9 +103,9 @@ namespace Hatchit {
                     return false;
 
                 //TODO: remove this test code
-                VKRenderPassHandle renderPass = VKRenderPass::GetHandleFromFileName("TestRenderPass.json");
+                VKRenderPassHandle renderPass = VKRenderPass::GetHandle("TestRenderPass.json", "TestRenderPass.json");
 
-                m_renderTarget = VKRenderTarget::GetHandleFromFileName("TestRenderTarget.json").StaticCastHandle<IRenderTarget>();
+                m_renderTarget = VKRenderTarget::GetHandle("TestRenderTarget.json", "TestRenderTarget.json").StaticCastHandle<IRenderTarget>();
 
                 m_swapchain->SetIncomingRenderTarget(m_renderTarget);
 
@@ -115,21 +115,21 @@ namespace Hatchit {
                 CreateSetupCommandBuffer();
 
                 //TODO: Once JSON file is found, insert name here
-				m_sampler = VKSampler::GetHandleFromFileName("TestSampler.json").StaticCastHandle<ISampler>();
+				m_sampler = VKSampler::GetHandle("TestSampler.json", "TestSampler.json").StaticCastHandle<ISampler>();
                 m_sampler->VPrepare();
 
-                m_texture = VKTexture::GetHandleFromFileName("raptor.png").StaticCastHandle<ITexture>();
+                m_texture = VKTexture::GetHandle("raptor.png", "raptor.png").StaticCastHandle<ITexture>();
                 m_texture->SetSampler(m_sampler);
 
                 Math::Matrix4 view = Math::MMMatrixTranspose(Math::MMMatrixLookAt(Math::Vector3(0, 0, -5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0)));
 
                 Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f));
 
-                IPipelineHandle pipeline = VKPipeline::GetHandleFromFileName("TestPipeline.json").StaticCastHandle<IPipeline>();
-                pipeline->VInitialize(Resource::Pipeline::GetHandleFromFileName("TestPipeline.json"));
+                Resource::PipelineHandle pipelineResource = Resource::Pipeline::GetHandleFromFileName("TestPipeline.json");
+                IPipelineHandle pipeline = VKPipeline::GetHandle("TestPipeline.json", pipelineResource, nullptr).StaticCastHandle<IPipeline>();
 
 
-                m_material = VKMaterial::GetHandleFromFileName("TestMaterial.json").StaticCastHandle<IMaterial>();
+                m_material = VKMaterial::GetHandle("TestMaterial.json", "TestMaterial.json").StaticCastHandle<IMaterial>();
 
                 std::vector<Mesh*> meshes = model->GetMeshes();
                 IMesh* mesh = new VKMesh();
