@@ -39,7 +39,7 @@ namespace Hatchit {
             {
             public:
                 VKRenderTarget(const VkDevice& device, uint32_t width, uint32_t height);
-                VKRenderTarget(const std::string& fileName);
+                VKRenderTarget(std::string ID, const std::string& fileName);
                 ~VKRenderTarget();
 
                 ///Prepare the render target with Vulkan

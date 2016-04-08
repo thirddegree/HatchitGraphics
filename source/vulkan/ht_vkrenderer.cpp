@@ -109,13 +109,13 @@ namespace Hatchit {
 
                 m_swapchain->SetIncomingRenderTarget(m_renderTarget);
 
-                ModelHandle model = Model::GetHandle("Raptor.obj");
+                ModelHandle model = Model::GetHandleFromFileName("Raptor.obj");
                 //model.VInitFromFile(&meshFile);
 
                 CreateSetupCommandBuffer();
 
                 //TODO: Once JSON file is found, insert name here
-				m_sampler = VKSampler::GetHandle("TestSampler.json").StaticCastHandle<ISampler>();
+				m_sampler = VKSampler::GetHandleFromFileName("TestSampler.json").StaticCastHandle<ISampler>();
                 m_sampler->VPrepare();
 
                 m_texture = VKTexture::GetHandle("raptor.png").StaticCastHandle<ITexture>();
@@ -127,6 +127,7 @@ namespace Hatchit {
 
                 IPipelineHandle pipeline = VKPipeline::GetHandle("TestPipeline.json").StaticCastHandle<IPipeline>();
                 pipeline->VInitialize(Resource::Pipeline::GetHandle("TestPipeline.json"));
+
 
                 m_material = VKMaterial::GetHandle("TestMaterial.json").StaticCastHandle<IMaterial>();
 
