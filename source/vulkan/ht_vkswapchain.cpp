@@ -211,7 +211,8 @@ namespace Hatchit {
                 multisampleState.minSamples = 0;
                 multisampleState.samples = Pipeline::SAMPLE_1_BIT;
 
-                m_pipeline = VKPipeline::GetHandleFromFileName("SwapchainPipeline.json");
+                Resource::PipelineHandle pHandle = Resource::Pipeline::GetHandleFromFileName("SwapchainPipeline.json");
+                m_pipeline = VKPipeline::GetHandle("SwapchainPipeline.json", pHandle);
 
                 //Prepare descriptor set layout
 
@@ -235,7 +236,7 @@ namespace Hatchit {
                 }
 
                 m_pipeline->SetVKDescriptorSetLayout(m_descriptorSetLayout);
-                m_pipeline->VInitialize(Resource::Pipeline::GetHandleFromFileName("SwapchainPipeline.json"));
+                //m_pipeline->VInitialize(Resource::Pipeline::GetHandleFromFileName("SwapchainPipeline.json"));
 
                 //Setup the descriptor sets
                 VkDescriptorSetAllocateInfo allocInfo = {};

@@ -25,16 +25,16 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKRenderPass::VKRenderPass(std::string ID, const std::string& fileName) :
+            VKRenderPass::VKRenderPass(std::string ID) :
                 m_device(VKRenderer::RendererInstance->GetVKDevice()), 
                 m_commandPool(VKRenderer::RendererInstance->GetVKCommandPool()),
-                Core::RefCounted<VKRenderPass>(std::move(ID))
+                Core::RefCounted<VKRenderPass>(std::move(ID)),
+                m_commandBuffer(VK_NULL_HANDLE),
+                m_renderPass(VK_NULL_HANDLE)
+            {}
+
+            bool VKRenderPass::Initialize(const std::string& fileName)
             {
-                m_width = 0;
-                m_height = 0;
-
-                m_commandBuffer = VK_NULL_HANDLE;
-
                 //Load resources
                 m_renderPassResourceHandle = Resource::RenderPass::GetHandleFromFileName(fileName);
                 
@@ -45,22 +45,27 @@ namespace Hatchit {
 
                     for (size_t i = 0; i < inputPaths.size(); i++)
                     {
-                        IRenderTargetHandle inputTargetHandle = VKRenderTarget::GetHandleFromFileName(inputPaths[i]).StaticCastHandle<IRenderTarget>();
+                        IRenderTargetHandle inputTargetHandle = VKRenderTarget::GetHandle(inputPaths[i], inputPaths[i]).StaticCastHandle<IRenderTarget>();
                         m_inputRenderTargets.push_back(inputTargetHandle);
                     }
 
                     for (size_t i = 0; i < outputPaths.size(); i++)
                     {
-                        IRenderTargetHandle outputTargetHandle = VKRenderTarget::GetHandleFromFileName(outputPaths[i]).StaticCastHandle<IRenderTarget>();
+                        IRenderTargetHandle outputTargetHandle = VKRenderTarget::GetHandle(outputPaths[i], outputPaths[i]).StaticCastHandle<IRenderTarget>();
                         m_outputRenderTargets.push_back(outputTargetHandle);
                     }
 
                     if(!VPrepare())
+                    {
                         HT_DEBUG_PRINTF("Error: Tried to load VKRenderPass but preperation failed!\n");
+                        return false;
+                    }
+                    return true;
                 }
                 else
                 {
                     HT_DEBUG_PRINTF("Error: Tried to load VKRenderPass but the resource handle was invalid!\n");
+                    return false;
                 }
             }
             VKRenderPass::~VKRenderPass() 
@@ -72,7 +77,8 @@ namespace Hatchit {
                 //    vkFreeCommandBuffers(m_device, m_commandPool, 1, &m_commandBuffer);
 
                 //Destroy the render pass
-                vkDestroyRenderPass(m_device, m_renderPass, nullptr);
+                if(m_renderPass != VK_NULL_HANDLE)
+                    vkDestroyRenderPass(m_device, m_renderPass, nullptr);
             }
 
             bool VKRenderPass::VPrepare()

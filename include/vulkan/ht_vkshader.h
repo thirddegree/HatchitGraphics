@@ -39,9 +39,12 @@ namespace Hatchit {
                 friend class VKRenderer;
                 friend class VKSwapchain;
             public:
-                VKShader(std::string ID, const std::string& fileName);
+                VKShader(std::string ID);
                 VKShader(VKShader&&) = default;
                 ~VKShader();
+
+                //Required function for all RefCounted classes
+                bool Initialize(const std::string& fileName);
 
                 VkShaderModule GetShaderModule();
 

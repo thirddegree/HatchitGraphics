@@ -35,12 +35,15 @@ namespace Hatchit {
 
             using namespace Resource;
 
-            VKRenderTarget::VKRenderTarget(std::string ID, const std::string& fileName) :
+            VKRenderTarget::VKRenderTarget(std::string ID) :
                 m_device(VKRenderer::RendererInstance->GetVKDevice()),
-                Core::RefCounted<VKRenderTarget>(std::move(ID)),
-                m_resource(RenderTarget::GetHandleFromFileName(fileName))
-                
+                Core::RefCounted<VKRenderTarget>(std::move(ID))
+            {}
+
+            bool VKRenderTarget::Initialize(const std::string& fileName)
             {
+                m_resource = RenderTarget::GetHandleFromFileName(fileName);
+                
                 m_width = m_resource->GetWidth();
                 m_height = m_resource->GetHeight();
 
@@ -62,7 +65,11 @@ namespace Hatchit {
                 }
 
                 if (!VPrepare())
+                {
                     HT_DEBUG_PRINTF("Error: VKRenderTarget did not prepare properly");
+                    return false;
+                }
+                return true;
             }
 
             VKRenderTarget::~VKRenderTarget() 
