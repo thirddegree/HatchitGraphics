@@ -16,7 +16,8 @@
 
 #include <ht_platform.h>
 #include <ht_directx.h>
-#include <ht_rootlayout.h>
+#include <ht_rendertarget.h>
+#include <ht_rendertarget_resource.h>
 
 namespace Hatchit
 {
@@ -24,26 +25,15 @@ namespace Hatchit
 	{
 		namespace DX
 		{
-			class HT_API D3D12RootLayout : public IRootLayout
+			class HT_API D3D12RenderTarget : public IRenderTarget
 			{
 			public:
-				D3D12RootLayout(ID3D12Device* device);
+				D3D12RenderTarget();
 
-				~D3D12RootLayout();
-
-				bool VInitialize(const Resource::RootLayoutHandle handle) override;
-
-				ID3D12RootSignature* GetRootSignature();
+				bool Initialize(Resource::RenderTargetHandle handle, ID3D12Device* device);
 
 			private:
-				ID3D12RootSignature*  m_rootSignature;
-				ID3D12Device*		  m_device;
-
-				std::vector<D3D12_DESCRIPTOR_RANGE*> m_allocatedRanges;
-
-				void								        PostInitCleanup();
-                std::vector<D3D12_STATIC_SAMPLER_DESC>      SamplerDescsFromHandle(const Resource::RootLayoutHandle& handle);
-				D3D12_ROOT_SIGNATURE_FLAGS			        RootSignatureFlagsFromHandle(const Resource::RootLayoutHandle& handle);
+				ID3D12Resource* m_resource;
 			};
 		}
 	}

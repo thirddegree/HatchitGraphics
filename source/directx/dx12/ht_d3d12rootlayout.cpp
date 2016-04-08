@@ -62,32 +62,32 @@ namespace Hatchit
 							parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 							switch (p.visibility)
 							{
-								case RootLayout::Parameter::Visibility::VERTEX:
+								case RootLayout::ShaderVisibility::VERTEX:
 								{
 									parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 								} break;
 
-								case RootLayout::Parameter::Visibility::TESS_CONTROL:
+								case RootLayout::ShaderVisibility::TESS_CONTROL:
 								{
 									parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_HULL;
 								} break;
 
-								case RootLayout::Parameter::Visibility::TESS_EVAL:
+								case RootLayout::ShaderVisibility::TESS_EVAL:
 								{
 									parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
 								} break;
 
-								case RootLayout::Parameter::Visibility::GEOMETRY:
+								case RootLayout::ShaderVisibility::GEOMETRY:
 								{
 									parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
 								} break;
 
-								case RootLayout::Parameter::Visibility::FRAGMENT:
+								case RootLayout::ShaderVisibility::FRAGMENT:
 								{
 									parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 								} break;
 
-								case RootLayout::Parameter::Visibility::ALL:
+								case RootLayout::ShaderVisibility::ALL:
 								{
 									parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 								} break;
@@ -143,6 +143,9 @@ namespace Hatchit
 					_RootParameters.push_back(parameter);
 				}
 
+                /*Create Static Samplers*/
+                
+
 				rootDesc.NumParameters = handle->GetParameterCount();
 				rootDesc.pParameters = &_RootParameters[0];
 				rootDesc.NumStaticSamplers = 0;
@@ -171,6 +174,7 @@ namespace Hatchit
 					ReleaseCOM(_signature);
 					return false;
 				}
+                PostInitCleanup();
 				
 				return true;
 			}
@@ -201,6 +205,21 @@ namespace Hatchit
 
 				return rootSignatureFlags;
 			}
+
+            std::vector<D3D12_STATIC_SAMPLER_DESC> D3D12RootLayout::SamplerDescsFromHandle(const Resource::RootLayoutHandle& handle)
+            {
+                using namespace Resource;
+
+                std::vector<D3D12_STATIC_SAMPLER_DESC>  _descs;
+                std::vector<RootLayout::Sampler> _RootSamplers = handle->GetSamplers();
+                for (auto sampler : _RootSamplers)
+                {
+                    D3D12_STATIC_SAMPLER_DESC desc;
+                    
+                }
+
+                return _descs;
+            }
 		}
 	}
 }
