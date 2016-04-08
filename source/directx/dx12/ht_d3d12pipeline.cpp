@@ -185,7 +185,7 @@ namespace Hatchit {
                 std::map<Resource::Pipeline::ShaderSlot, std::string> paths = handle->GetCSOShaderPaths();
                 std::map<Resource::Pipeline::ShaderSlot, Resource::ShaderHandle> handles = handle->GetCSOShaderHandles();
 
-                D3D12ShaderHandle _handle = D3D12Shader::GetHandle("D3D12"+paths[slot]);
+                D3D12ShaderHandle _handle = D3D12Shader::GetHandle("D3D12"+paths[slot], "");
                 if(handles[slot].IsValid())
                 {
                     if (!_handle->IsInitialized())

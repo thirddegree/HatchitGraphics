@@ -22,8 +22,8 @@ namespace Hatchit {
         namespace DX
         {
 
-            D3D12Shader::D3D12Shader(std::string fileName)
-                : Core::RefCounted<D3D12Shader>(std::move(fileName))
+            D3D12Shader::D3D12Shader(std::string ID, std::string s)
+                : Core::RefCounted<D3D12Shader>(std::move(ID))
             {
                 m_blob = nullptr;
                 m_initialized = false;

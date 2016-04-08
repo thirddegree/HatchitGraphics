@@ -276,32 +276,9 @@ namespace Hatchit {
                 m_scissorRect.right = static_cast<LONG>(width);
                 m_scissorRect.bottom = static_cast<LONG>(height);
 
-				Resource::RootLayoutHandle handle = Resource::RootLayout::GetHandle("TestRootDescriptor.json");
+				Resource::RootLayoutHandle handle = Resource::RootLayout::GetHandleFromFileName("TestRootDescriptor.json");
 				m_rootLayout = new D3D12RootLayout(m_device);
 				m_rootLayout->VInitialize(handle);
-
-
-                /*Create Root Signature with one slot for Constant Buffer*/
-                //CD3DX12_DESCRIPTOR_RANGE range;
-                //CD3DX12_ROOT_PARAMETER   parameter;
-
-                //range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
-                //parameter.InitAsDescriptorTable(1, &range, D3D12_SHADER_VISIBILITY_VERTEX);
-
-                //D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
-                //    D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT | // Only the input assembler stage needs access to the constant buffer.
-                //    D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
-                //    D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
-                //    D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
-                //    D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
-                //CD3DX12_ROOT_SIGNATURE_DESC descRootSignature;
-                //descRootSignature.Init(1, &parameter, 0, nullptr, rootSignatureFlags);
-
-                //Microsoft::WRL::ComPtr<ID3DBlob> pSignature;
-                //Microsoft::WRL::ComPtr<ID3DBlob> pError;
-                //D3D12SerializeRootSignature(&descRootSignature, D3D_ROOT_SIGNATURE_VERSION_1, pSignature.GetAddressOf(), pError.GetAddressOf());
-
-                //m_device->CreateRootSignature(0, pSignature->GetBufferPointer(), pSignature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature));
 
                 return true;
             }
