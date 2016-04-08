@@ -235,7 +235,7 @@ namespace Hatchit {
                 }
 
                 m_pipeline->SetVKDescriptorSetLayout(m_descriptorSetLayout);
-                m_pipeline->VInitialize(Resource::Pipeline::GetHandle("SwapchainPipeline.json"));
+                m_pipeline->VInitialize(Resource::Pipeline::GetHandleFromFileName("SwapchainPipeline.json"));
 
                 //Setup the descriptor sets
                 VkDescriptorSetAllocateInfo allocInfo = {};

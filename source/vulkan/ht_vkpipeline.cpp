@@ -63,7 +63,7 @@ namespace Hatchit {
                 for (it = shaderPaths.begin(); it != shaderPaths.end(); it++)
                 {
                     //Get the actual shader handle
-                    VKShaderHandle shaderHandle = VKShader::GetHandle(it->second);
+                    VKShaderHandle shaderHandle = VKShader::GetHandleFromFileName(it->second);
 
                     loadShader(it->first, shaderHandle.StaticCastHandle<IShader>());
                 }

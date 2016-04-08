@@ -27,7 +27,7 @@ namespace Hatchit {
             class HT_API VKSampler : public Core::RefCounted<VKSampler>, public ISampler
             {
             public:
-                VKSampler(const std::string& samplerResourceFile);
+                VKSampler(std::string ID, const std::string& fileName);
                 ~VKSampler();
 
                 bool VPrepare() override;

@@ -44,10 +44,10 @@ namespace Hatchit {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
                 m_colorFormat = renderer->GetPreferredImageFormat();
             }
-            VKRenderTarget::VKRenderTarget(const std::string& fileName) :
+            VKRenderTarget::VKRenderTarget(std::string ID, const std::string& fileName) :
                 m_device(VKRenderer::RendererInstance->GetVKDevice()),
-                Core::RefCounted<VKRenderTarget>(std::move(fileName)),
-                m_resource(RenderTarget::GetHandle(fileName))
+                Core::RefCounted<VKRenderTarget>(std::move(ID)),
+                m_resource(RenderTarget::GetHandleFromFileName(fileName))
                 
             {
                 m_width = m_resource->GetWidth();
