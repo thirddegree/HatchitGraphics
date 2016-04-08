@@ -29,13 +29,11 @@ namespace Hatchit {
                 RefCounted<VKSampler>(std::move(ID)),
                 m_device(VKRenderer::RendererInstance->GetVKDevice())
             {
-                Resource::SamplerHandle handle = Resource::Sampler::GetHandleFromFileName(fileName);
+                Resource::SamplerHandle handle = Resource::MutableSampler::GetHandleFromFileName(fileName);
 
                 if (handle.IsValid())
                 {
-                    m_filterMode = handle->GetFilterMode();
-                    m_wrapMode = handle->GetWrapMode();
-                    m_colorSpace = handle->GetColorSpace();
+                    
                 }
             }
             VKSampler::~VKSampler() 
@@ -45,57 +43,26 @@ namespace Hatchit {
 
             bool VKSampler::VPrepare() 
             {
+                Resource::SamplerHandle handle = Resource::MutableSampler::GetHandleFromFileName(m_fileName);
+
+                if (!handle.IsValid())
+                {
+                    HT_DEBUG_PRINTF("Failed to retrieve handle for VKSampler prepar()\n");
+                    return false;
+                }
+
                 VkResult err;
-
-                //Determine some sampler settings
-                VkSamplerAddressMode vkWrapMode = {};
-                VkFilter vkFilterMode = {};
-
-                switch (m_wrapMode)
-                {
-                case Resource::Sampler::WrapMode::MIRROR:
-                    vkWrapMode = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-                    break;
-                case Resource::Sampler::WrapMode::MIRROR_ONCE:
-                    vkWrapMode = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
-                    break;
-                case Resource::Sampler::WrapMode::BORDER:
-                    vkWrapMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-                    break;
-                case Resource::Sampler::WrapMode::CLAMP:
-                    vkWrapMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-                    break;
-                case Resource::Sampler::WrapMode::WRAP:
-                    vkWrapMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-                    break;
-                default:
-                    vkWrapMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-                    break;
-                }
-
-                switch (m_filterMode)
-                {
-                case Resource::Sampler::FilterMode::NEAREST:
-                    vkFilterMode = VK_FILTER_NEAREST;
-                    break;
-                case Resource::Sampler::FilterMode::BILINEAR:
-                    vkFilterMode = VK_FILTER_LINEAR;
-                    break;
-                default:
-                    vkFilterMode = VK_FILTER_LINEAR;
-                    break;
-                }
 
                 //Setup the sampler
                 VkSamplerCreateInfo samplerInfo = {};
                 samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
                 samplerInfo.pNext = nullptr;
-                samplerInfo.magFilter = vkFilterMode;
-                samplerInfo.minFilter = vkFilterMode;
+                samplerInfo.magFilter = VKFilterModeFromType(handle->GetFilter().mag);
+                samplerInfo.minFilter = VKFilterModeFromType(handle->GetFilter().min);
                 samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-                samplerInfo.addressModeU = vkWrapMode;
-                samplerInfo.addressModeV = vkWrapMode;
-                samplerInfo.addressModeW = vkWrapMode;
+                samplerInfo.addressModeU = VKAddressModeFromType(handle->GetAddress().u);
+                samplerInfo.addressModeV = VKAddressModeFromType(handle->GetAddress().v);
+                samplerInfo.addressModeW = VKAddressModeFromType(handle->GetAddress().w);
                 samplerInfo.mipLodBias = 0.0f;
                 samplerInfo.compareOp = VK_COMPARE_OP_NEVER;
                 samplerInfo.minLod = 0.0f;
@@ -117,34 +84,42 @@ namespace Hatchit {
 
             VkSampler VKSampler::GetVkSampler() { return m_sampler; }
 
-            void VKSampler::SetFilterMode(Resource::Sampler::FilterMode filterMode)
+            VkSamplerAddressMode VKSampler::VKAddressModeFromType(Resource::Sampler::AddressMode mode)
             {
-                m_filterMode = filterMode;
+                using namespace Resource;
+
+                switch (mode)
+                {
+                case Sampler::AddressMode::CLAMP:
+                    return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                case Sampler::AddressMode::WRAP:
+                    return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+                case Sampler::AddressMode::BORDER:
+                    return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+                case Sampler::AddressMode::MIRROR:
+                    return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+                case Sampler::AddressMode::MIRROR_ONCE:
+                    return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
+                }
+
+                return VK_SAMPLER_ADDRESS_MODE_REPEAT;
             }
 
-            void VKSampler::SetWrapMode(Resource::Sampler::WrapMode wrapMode)
+            VkFilter VKSampler::VKFilterModeFromType(Resource::Sampler::FilterMode mode)
             {
-                m_wrapMode = wrapMode;
-            }
+                using namespace Resource;
+                
+                switch (mode)
+                {
+                case Sampler::FilterMode::BILINEAR:
+                    return VK_FILTER_LINEAR;
+                case Sampler::FilterMode::NEAREST:
+                    return VK_FILTER_NEAREST;
+                default:
+                    break;
+                }
 
-            void VKSampler::SetColorSpace(Resource::Sampler::ColorSpace colorSpace)
-            {
-                m_colorSpace = colorSpace;
-            }
-
-            Resource::Sampler::FilterMode VKSampler::GetFilterMode() const
-            {
-                return m_filterMode;
-            }
-
-            Resource::Sampler::WrapMode VKSampler::GetWrapMode() const
-            {
-                return m_wrapMode;
-            }
-
-            Resource::Sampler::ColorSpace VKSampler::GetColorSpace() const
-            {
-                return m_colorSpace;
+                return VK_FILTER_LINEAR;
             }
 
         }
