@@ -36,8 +36,11 @@ namespace Hatchit {
             class HT_API VKRenderPass : public Core::RefCounted<VKRenderPass>, public RenderPassBase
             {
             public:
-                VKRenderPass(std::string ID, const std::string& fileName);
+                VKRenderPass(std::string ID);
                 ~VKRenderPass();
+
+                //Required function for all RefCounted classes
+                bool Initialize(const std::string& fileName);
 
                 //Prepare the internal VkRenderPass
                 bool VPrepare() override;
