@@ -55,6 +55,18 @@ namespace Hatchit {
                 {
                     m_colorFormat = VK_FORMAT_R8G8B8A8_UNORM;
                 }
+                else if (formatString == "BGR")
+                {
+                    m_colorFormat = VK_FORMAT_B8G8R8A8_UNORM;
+                }
+                else if (formatString == "RGB")
+                {
+                    m_colorFormat = VK_FORMAT_R8G8B8A8_UNORM;
+                }
+                else if (formatString == "R")
+                {
+                    m_colorFormat = VK_FORMAT_R32_SFLOAT;
+                }
                 else //If it's not valid or provided; query the renderer for the preferred format
                 {
                     VKRenderer* renderer = VKRenderer::RendererInstance;

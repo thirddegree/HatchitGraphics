@@ -58,8 +58,6 @@ namespace Hatchit {
                 Hatchit::Resource::RenderTargetHandle m_resource;
 
                 VkFormat m_colorFormat;
-                VkFramebuffer m_framebuffer;
-
                 Texture m_texture;
 
                 bool setupTargetTexture(VKRenderer* renderer);

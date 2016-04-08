@@ -103,9 +103,9 @@ namespace Hatchit {
                     return false;
 
                 //TODO: remove this test code
-                VKRenderPassHandle renderPass = VKRenderPass::GetHandleFromFileName("TestRenderPass.json");
+                VKRenderPassHandle renderPass = VKRenderPass::GetHandleFromFileName("DeferredPass.json");
 
-                m_renderTarget = VKRenderTarget::GetHandleFromFileName("TestRenderTarget.json").StaticCastHandle<IRenderTarget>();
+                m_renderTarget = VKRenderTarget::GetHandleFromFileName("DeferredColor.json").StaticCastHandle<IRenderTarget>();
 
                 m_swapchain->SetIncomingRenderTarget(m_renderTarget);
 
@@ -115,7 +115,7 @@ namespace Hatchit {
                 CreateSetupCommandBuffer();
 
                 //TODO: Once JSON file is found, insert name here
-				m_sampler = VKSampler::GetHandleFromFileName("TestSampler.json").StaticCastHandle<ISampler>();
+                m_sampler = VKSampler::GetHandleFromFileName("DeferredSampler.json").StaticCastHandle<ISampler>();
                 m_sampler->VPrepare();
 
                 m_texture = VKTexture::GetHandleFromFileName("raptor.png").StaticCastHandle<ITexture>();
@@ -125,11 +125,11 @@ namespace Hatchit {
 
                 Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f));
 
-                IPipelineHandle pipeline = VKPipeline::GetHandleFromFileName("TestPipeline.json").StaticCastHandle<IPipeline>();
-                pipeline->VInitialize(Resource::Pipeline::GetHandleFromFileName("TestPipeline.json"));
+                IPipelineHandle pipeline = VKPipeline::GetHandleFromFileName("DeferredPipeline.json").StaticCastHandle<IPipeline>();
+                pipeline->VInitialize(Resource::Pipeline::GetHandleFromFileName("DeferredPipeline.json"));
 
 
-                m_material = VKMaterial::GetHandleFromFileName("TestMaterial.json").StaticCastHandle<IMaterial>();
+                m_material = VKMaterial::GetHandleFromFileName("DeferredMaterial.json").StaticCastHandle<IMaterial>();
 
                 std::vector<Mesh*> meshes = model->GetMeshes();
                 IMesh* mesh = new VKMesh();

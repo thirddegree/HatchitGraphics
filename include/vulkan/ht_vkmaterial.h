@@ -71,7 +71,7 @@ namespace Hatchit {
                 VkDescriptorSet m_materialSet;
 
                 UniformBlock m_uniformVSBuffer;
-                UniformBlock m_uniformFSBuffer;
+                //UniformBlock m_uniformFSBuffer;
                 std::vector<UniformBlock> m_fragmentTextures;
 
                 VKPipelineHandle m_pipeline;

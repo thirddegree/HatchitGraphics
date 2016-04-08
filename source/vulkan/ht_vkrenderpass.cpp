@@ -124,9 +124,10 @@ namespace Hatchit {
                 //Get the current clear color from the renderer
                 VkClearValue clearColor = renderer->GetClearColor();
 
-                VkClearValue clearValues[2] = {};
-                clearValues[0] = clearColor;
-                clearValues[1].depthStencil = { 1.0f, 0 };
+                std::vector<VkClearValue> clearValues;
+                for (size_t i = 0; i < m_outputRenderTargets.size(); i++)
+                    clearValues.push_back(clearColor);
+                clearValues.push_back({1.0f, 0.0f});
 
                 VkRenderPassBeginInfo renderPassBeginInfo = {};
                 renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -137,8 +138,8 @@ namespace Hatchit {
                 renderPassBeginInfo.renderArea.offset.y = 0;
                 renderPassBeginInfo.renderArea.extent.width = m_width;
                 renderPassBeginInfo.renderArea.extent.height = m_height;
-                renderPassBeginInfo.clearValueCount = 2;
-                renderPassBeginInfo.pClearValues = clearValues;
+                renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+                renderPassBeginInfo.pClearValues = clearValues.data();
 
                 VkViewport viewport = {};
                 viewport.width = static_cast<float>(m_width);
@@ -291,7 +292,7 @@ namespace Hatchit {
                 attachmentDescriptions.push_back(depthAttachment);
 
                 VkAttachmentReference depthReference = {};
-                depthReference.attachment = 1;
+                depthReference.attachment = static_cast<uint32_t>(attachmentReferences.size());
                 depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
                 VkSubpassDescription subpass = {};
