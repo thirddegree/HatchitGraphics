@@ -31,7 +31,7 @@ namespace Hatchit
 
                 // Inherited via IMeshRenderer
                 virtual void VSetMesh(IMesh * mesh) override;
-                virtual void VSetMaterial(IMaterial * material) override;
+                virtual void VSetMaterial(IMaterialHandle material) override;
                 virtual void VSetRenderPass(IRenderPass * renderPass) override;
                 virtual void VRender() override;
             };

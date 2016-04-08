@@ -33,10 +33,10 @@ namespace Hatchit {
                 m_mesh = static_cast<VKMesh*>(mesh);
             }
 
-            void VKMeshRenderer::VSetMaterial(IMaterial* material)
+            void VKMeshRenderer::VSetMaterial(IMaterialHandle material)
             {
-                m_material = static_cast<VKMaterial*>(material);
-                m_pipeline = static_cast<VKPipeline*>(material->GetPipeline());
+                m_material = material;
+                m_pipeline = material->GetPipeline();
             }
 
             void VKMeshRenderer::VSetRenderPass(IRenderPass* renderPass)

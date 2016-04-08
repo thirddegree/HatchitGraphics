@@ -19,6 +19,7 @@
 #include <ht_renderer.h>
 #include <ht_vkrenderpass.h>
 #include <ht_vkswapchain.h>
+#include <ht_vkmaterial.h>
 #include <ht_string.h>
 #include <vector>
 
@@ -100,6 +101,8 @@ namespace Hatchit {
 
                 const RendererParams& GetRendererParams() const;
 
+                const VkClearValue& GetClearColor() const;
+
                 void CreateSetupCommandBuffer();
                 void FlushSetupCommandBuffer();
 
@@ -114,7 +117,7 @@ namespace Hatchit {
                 std::vector<const char*>    m_enabledLayerNames;
                 std::vector<const char*>    m_enabledExtensionNames;
 
-                std::map<IPipeline*, std::vector<Renderable>> m_pipelineList;
+                std::map<IPipelineHandle, std::vector<Renderable>> m_pipelineList;
 
                 RendererParams m_rendererParams; //We will need these later to re-create the swapchain if the window resizes
 
@@ -141,10 +144,10 @@ namespace Hatchit {
                 VkClearValue                            m_clearColor;
 
                 //Resources we want loaded elsewhere
-                IRenderTarget* m_renderTarget;
-                IMaterial* m_material;
-                ITexture* m_texture;
-				ISamplerHandle m_sampler;
+                IRenderTargetHandle m_renderTarget;
+                IMaterialHandle m_material;
+                ITextureHandle m_texture;
+                ISamplerHandle m_sampler;
 
                 float m_angle = 0;
 

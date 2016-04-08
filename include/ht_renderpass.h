@@ -39,14 +39,14 @@ namespace Hatchit {
 
         struct RenderRequest 
         {
-            IPipeline*  pipeline;
-            IMaterial*  material;
+            IPipelineHandle  pipeline;
+            IMaterialHandle  material;
             IMesh*      mesh;
         };
 
         struct Renderable 
         {
-            IMaterial*  material;
+            IMaterialHandle  material;
             IMesh*      mesh;
         };
 
@@ -64,47 +64,43 @@ namespace Hatchit {
 
             virtual bool VBuildCommandList() =  0;
 
-            virtual void VSetClearColor(Color clearColor) = 0;
-
-            virtual void VSetWidth(uint32_t width) = 0;
-            virtual void VSetHeight(uint32_t height) = 0;
-
             virtual void VSetView(Math::Matrix4 view) = 0;
             virtual void VSetProj(Math::Matrix4 proj) = 0;
 
-            virtual void VScheduleRenderRequest(IPipeline* pipeline, IMaterial* material, IMesh* mesh) = 0;
-
-            virtual void VSetRenderTarget(IRenderTarget* renderTarget) = 0;
+            virtual void VScheduleRenderRequest(IPipelineHandle pipeline, IMaterialHandle material, IMesh* mesh) = 0;
         };
 
         class HT_API RenderPassBase : public IRenderPass
         {
         public:
             virtual bool VInitFromResource(const Resource::RenderPassHandle& handle);
-            virtual void VSetWidth(uint32_t width);
-            virtual void VSetHeight(uint32_t height);
 
             virtual void VSetView(Math::Matrix4 view);
             virtual void VSetProj(Math::Matrix4 proj);
 
-            virtual void VScheduleRenderRequest(IPipeline* pipeline, IMaterial* material, IMesh* mesh);
-
-            virtual void VSetRenderTarget(IRenderTarget* renderTarget);
+            virtual void VScheduleRenderRequest(IPipelineHandle pipeline, IMaterialHandle material, IMesh* mesh);
         protected:
             void BuildRenderRequestHeirarchy();
 
             //Input
             std::vector<RenderRequest> m_renderRequests;
-            std::map<IPipeline*, std::vector<Renderable>> m_pipelineList;
+            std::map<IPipelineHandle, std::vector<Renderable>> m_pipelineList;
 
+            std::vector<IRenderTargetHandle> m_inputRenderTargets;
+
+            //Output
+            std::vector<IRenderTargetHandle> m_outputRenderTargets;
+
+            //Internals
             uint32_t m_width;
             uint32_t m_height;
 
             Math::Matrix4 m_view;
             Math::Matrix4 m_proj;
 
-            //Output
-            IRenderTarget* m_renderTarget;
+            Resource::RenderPassHandle m_renderPassResourceHandle;
         };
+
+        using IRenderPassHandle = Core::Handle<IRenderPass>;
     }
 }

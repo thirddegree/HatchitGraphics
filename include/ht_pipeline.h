@@ -69,5 +69,7 @@ namespace Hatchit {
         protected:
             std::map<std::string, Resource::ShaderVariable*> m_shaderVariables;
         };
+
+       using IPipelineHandle = Core::Handle<IPipeline>;
     }
 }

@@ -28,7 +28,7 @@ namespace Hatchit
             void D3D12MeshRenderer::VSetMesh(IMesh * mesh)
             {
             }
-            void D3D12MeshRenderer::VSetMaterial(IMaterial * material)
+            void D3D12MeshRenderer::VSetMaterial(IMaterialHandle material)
             {
             }
             void D3D12MeshRenderer::VSetRenderPass(IRenderPass * renderPass)

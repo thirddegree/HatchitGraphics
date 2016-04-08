@@ -25,9 +25,9 @@ namespace Hatchit {
 
             using namespace Resource;
 
-            VKPipeline::VKPipeline(const VkDevice& device, const VkRenderPass* renderPass) :
-                m_device(device),
-                m_renderPass(renderPass)
+            VKPipeline::VKPipeline(const std::string& fileName) :
+                m_device(VKRenderer::RendererInstance->GetVKDevice()),
+                Core::RefCounted<VKPipeline>(std::move(fileName))
             {
             }
 
@@ -53,7 +53,7 @@ namespace Hatchit {
 
                 setRasterState(handle->GetRasterizationState());
                 setMultisampleState(handle->GetMultisampleState());
-
+                
                 VAddShaderVariables(handle->GetShaderVariables());
 
                 //Load all shaders
@@ -68,9 +68,12 @@ namespace Hatchit {
                     loadShader(it->first, shaderHandle.StaticCastHandle<IShader>());
                 }
 
+                //Get a handle to a compatible render pass
+                std::string renderPassPath = handle->GetRenderPassPath();
+                m_renderPassHandle = VKRenderPass::GetHandle(renderPassPath);
+
                 if (!prepareLayouts())
                     return false;
-
 
                 if (!preparePipeline())
                     return false;
@@ -660,7 +663,7 @@ namespace Hatchit {
                 VkGraphicsPipelineCreateInfo pipelineInfo = {};
                 pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
                 pipelineInfo.layout = m_pipelineLayout;
-                pipelineInfo.renderPass = *m_renderPass;
+                pipelineInfo.renderPass = m_renderPassHandle->GetVkRenderPass();
                 pipelineInfo.stageCount = static_cast<uint32_t>(m_shaderStages.size());
                 pipelineInfo.pVertexInputState = &vertexInputState;
                 pipelineInfo.pInputAssemblyState = &inputAssemblyState;

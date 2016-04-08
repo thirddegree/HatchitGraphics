@@ -25,10 +25,10 @@ namespace Hatchit {
     
         namespace Vulkan {
 
-            class HT_API VKTexture : public ITexture
+            class HT_API VKTexture : public Core::RefCounted<VKTexture>, public ITexture
             {
             public:
-                VKTexture(VkDevice device, const std::string& fileName);
+                VKTexture(const std::string& fileName);
                 virtual ~VKTexture();
 
                 VkSampler GetSampler();
@@ -55,8 +55,8 @@ namespace Hatchit {
                 VKSamplerHandle m_sampler;
             };
 
+            using VKTextureHandle = Core::Handle<VKTexture>;
+
         }
-
     }
-
 }

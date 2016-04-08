@@ -43,19 +43,15 @@ namespace Hatchit {
                 ~VKRenderTarget();
 
                 ///Prepare the render target with Vulkan
-                bool VPrepare()     override;
-                ///Override to bind the render target for reading with Vulkan
-                void VReadBind()    override;
-                ///Override to bind the render target to be written to with Vulkan
-                void VWriteBind()   override;
+                bool VPrepare() override;
 
-                bool Blit(VkCommandBuffer commandBuffer);
+                bool Blit(VkCommandBuffer commandBuffer, const Image& image);
 
-                VkFramebuffer   GetVKFramebuffer();
-                Image           GetVKColor();
-                Image           GetVKDepth();
+                const VkFormat&         GetVKColorFormat() const;
+                const Texture&          GetVKTexture() const;
 
-                Texture&        GetVKTexture();
+                const uint32_t& GetWidth() const;
+                const uint32_t& GetHeight() const;
 
             protected:
                 const VkDevice& m_device;
@@ -63,15 +59,10 @@ namespace Hatchit {
                 Hatchit::Resource::RenderTargetHandle m_resource;
 
                 VkFormat m_colorFormat;
-                VkFormat m_depthFormat;
-
-                Image m_color;
-                Image m_depth;
                 VkFramebuffer m_framebuffer;
 
                 Texture m_texture;
 
-                bool setupFramebuffer(VKRenderer* renderer);
                 bool setupTargetTexture(VKRenderer* renderer);
             };
 

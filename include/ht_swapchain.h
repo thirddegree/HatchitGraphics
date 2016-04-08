@@ -39,14 +39,14 @@ namespace Hatchit {
         public:
             virtual ~ISwapchain() {}
 
-            void SetIncomingRenderTarget(IRenderTarget* inputTexture);
+            void SetIncomingRenderTarget(IRenderTargetHandle inputTexture);
 
             uint32_t GetWidth();
             uint32_t GetHeight();
 
         protected:
             //Input
-            IRenderTarget* m_inputTexture;
+            IRenderTargetHandle m_inputTexture;
 
             //For rendering
             IPipeline* m_pipeline;

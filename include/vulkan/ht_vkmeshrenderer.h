@@ -53,7 +53,7 @@ namespace Hatchit {
                 * \param material the material you want to render with
                 * The material should also store the appropriate pipeline
                 */
-                void VSetMaterial(IMaterial* material)          override;
+                void VSetMaterial(IMaterialHandle material)     override;
 
                 /* Set which render pass will be bound to this command buffer
                 * \param renderPass A pointer to the render pass that this will be a part of
@@ -64,10 +64,10 @@ namespace Hatchit {
                 void VRender()                                  override;
 
             protected:
-                VKRenderPass*   m_renderPass;
-                VKPipeline*     m_pipeline;
-                VKMaterial*     m_material;
-                VKMesh*         m_mesh;
+                VKRenderPass*           m_renderPass;
+                IPipelineHandle         m_pipeline;
+                IMaterialHandle         m_material;
+                VKMesh*                 m_mesh;
 
             };
         }

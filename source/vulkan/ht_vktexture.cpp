@@ -21,10 +21,13 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKTexture::VKTexture(VkDevice device, const std::string& fileName) :
-                m_device(device),
-                m_resource(Resource::Texture::GetHandle(fileName)) 
+            VKTexture::VKTexture(const std::string& fileName) :
+                m_device(VKRenderer::RendererInstance->GetVKDevice()),
+                m_resource(Resource::Texture::GetHandle(fileName)),
+                Core::RefCounted<VKTexture>(std::move(fileName))
             {
+                //if (!VBufferImage())
+                //    HT_DEBUG_PRINTF("Error creating VKTexture in constructor");
             }
 
             VKTexture::~VKTexture() 
@@ -36,13 +39,13 @@ namespace Hatchit {
 
             VkSampler VKTexture::GetSampler()
             { 
-				return m_sampler->GetVkSampler();
+                return m_sampler->GetVkSampler();
             }
             VkImageView VKTexture::GetView() { return m_view; }
 
             void VKTexture::SetSampler(ISamplerHandle samplerHandle)
             {
-				VKSamplerHandle vkSamplerHandle = samplerHandle.DynamicCastHandle<VKSampler>();
+                VKSamplerHandle vkSamplerHandle = samplerHandle.DynamicCastHandle<VKSampler>();
                 m_sampler = std::move(vkSamplerHandle);
                 VBufferImage();
             }

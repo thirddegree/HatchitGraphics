@@ -51,9 +51,6 @@ namespace Hatchit {
 
                 m_swapchain = nullptr;
 
-                m_renderTarget = nullptr;
-                m_texture = nullptr;
-
                 m_instance = VK_NULL_HANDLE;
 
                 m_device = VK_NULL_HANDLE;
@@ -106,18 +103,9 @@ namespace Hatchit {
                     return false;
 
                 //TODO: remove this test code
-                VKRenderPass* renderPass = new VKRenderPass(m_device, m_commandPool);
-                renderPass->VSetWidth(m_width);
-                renderPass->VSetHeight(m_height);
-                renderPass->VSetClearColor(Color(m_clearColor.color.float32[0], m_clearColor.color.float32[1], m_clearColor.color.float32[2], m_clearColor.color.float32[3]));
+                VKRenderPassHandle renderPass = VKRenderPass::GetHandle("TestRenderPass.json");
 
-                m_renderTarget = new VKRenderTarget("TestRenderTarget.json");
-                m_renderTarget->SetRenderPass(renderPass);
-
-                renderPass->VPrepare();
-                m_renderTarget->VPrepare();
-
-                renderPass->VSetRenderTarget(m_renderTarget);
+                m_renderTarget = VKRenderTarget::GetHandle("TestRenderTarget.json").StaticCastHandle<IRenderTarget>();
 
                 m_swapchain->SetIncomingRenderTarget(m_renderTarget);
 
@@ -130,21 +118,17 @@ namespace Hatchit {
 				m_sampler = VKSampler::GetHandle("TestSampler.json").StaticCastHandle<ISampler>();
                 m_sampler->VPrepare();
 
-                m_texture = new VKTexture(m_device, "raptor.png");
+                m_texture = VKTexture::GetHandle("raptor.png").StaticCastHandle<ITexture>();
                 m_texture->SetSampler(m_sampler);
 
                 Math::Matrix4 view = Math::MMMatrixTranspose(Math::MMMatrixLookAt(Math::Vector3(0, 0, -5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0)));
 
                 Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f));
 
-                IPipeline* pipeline = new VKPipeline(m_device, renderPass->GetVkRenderPass());
+                IPipelineHandle pipeline = VKPipeline::GetHandle("TestPipeline.json").StaticCastHandle<IPipeline>();
                 pipeline->VInitialize(Resource::Pipeline::GetHandle("TestPipeline.json"));
 
-                m_material = new VKMaterial();
-
-                m_material->VSetMatrix4("object.model", Math::Matrix4());
-                m_material->VBindTexture("color", m_texture);
-                m_material->VPrepare(pipeline);
+                m_material = VKMaterial::GetHandle("TestMaterial.json").StaticCastHandle<IMaterial>();
 
                 std::vector<Mesh*> meshes = model->GetMeshes();
                 IMesh* mesh = new VKMesh();
@@ -157,7 +141,7 @@ namespace Hatchit {
                 renderable.mesh = mesh;
                 m_pipelineList[pipeline].push_back(renderable);
 
-                m_renderPasses.push_back(renderPass);
+                m_renderPasses.push_back(renderPass.StaticCastHandle<IRenderPass>());
 
                 pipeline->VUpdate();
                 m_material->VUpdate();
@@ -178,29 +162,15 @@ namespace Hatchit {
 
                 if (m_swapchain != nullptr)
                     delete m_swapchain;
-
-                //These should all be deleted elsewhere when resources work properly
-                if(m_renderTarget != nullptr)
-                    delete m_renderTarget;
-                if (m_texture != nullptr)
-                    delete m_texture;
                 
-                std::map<IPipeline*, std::vector<Renderable>>::iterator it;
+                std::map<IPipelineHandle, std::vector<Renderable>>::iterator it;
                 for (it = m_pipelineList.begin(); it != m_pipelineList.end(); it++)
                 {
-                    delete it->first;
-
                     std::vector<Renderable> renderables = it->second;
 
                     for (uint32_t i = 0; i < renderables.size(); i++)
                     {
                         Renderable r = renderables[i];
-
-                        if (r.material != nullptr)
-                        {
-                            delete r.material;
-                            r.material = nullptr;
-                        }
 
                         if (r.mesh != nullptr)
                         {
@@ -211,10 +181,6 @@ namespace Hatchit {
                     it->second.clear();
                 }
                 m_pipelineList.clear();
-
-
-                for (uint32_t i = 0; i < m_renderPasses.size(); i++)
-                    delete m_renderPasses[i];
 
                 m_renderPasses.clear();
 
@@ -311,7 +277,7 @@ namespace Hatchit {
 
                 for (size_t i = 0; i < m_renderPasses.size(); i++)
                 {
-                    VKRenderPass* renderPass = static_cast<VKRenderPass*>(m_renderPasses[i]);
+                    VKRenderPassHandle renderPass = m_renderPasses[i].DynamicCastHandle<VKRenderPass>();
 
                     renderPass->VBuildCommandList();
                     commandBuffers.push_back(renderPass->GetVkCommandBuffer());
@@ -406,6 +372,11 @@ namespace Hatchit {
                 return m_rendererParams;
             }
 
+            const VkClearValue& VKRenderer::GetClearColor() const
+            {
+                return m_clearColor; 
+            }
+
             bool VKRenderer::initVulkan() 
             {
                 VkResult err;
@@ -437,7 +408,7 @@ namespace Hatchit {
                 m_appInfo.applicationVersion = 0;
                 m_appInfo.pEngineName = "Hatchit";
                 m_appInfo.engineVersion = 0;
-                m_appInfo.apiVersion = VK_API_VERSION;
+                m_appInfo.apiVersion = VK_MAKE_VERSION(1,0,5);
 
                 /*
                 * Setup Vulkan instance create info
@@ -816,6 +787,8 @@ namespace Hatchit {
                 }
 
                 uniformBlock->descriptor.buffer = uniformBlock->buffer;
+                uniformBlock->descriptor.offset = 0;
+                uniformBlock->descriptor.range = dataSize;
 
                 return true;
             }

@@ -23,14 +23,6 @@ namespace Hatchit
             //Initialize from file here
             return true;
         }
-        void RenderPassBase::VSetWidth(uint32_t width)
-        {
-            m_width = std::move(width);
-        }
-        void RenderPassBase::VSetHeight(uint32_t height)
-        {
-            m_height = std::move(height);
-        }
 
         void RenderPassBase::VSetView(Math::Matrix4 view)
         {
@@ -41,7 +33,7 @@ namespace Hatchit
             m_proj = std::move(proj);
         }
 
-        void RenderPassBase::VScheduleRenderRequest(IPipeline* pipeline, IMaterial* material, IMesh* mesh)
+        void RenderPassBase::VScheduleRenderRequest(IPipelineHandle pipeline, IMaterialHandle material, IMesh* mesh)
         {
             RenderRequest renderRequest = {};
 
@@ -55,11 +47,6 @@ namespace Hatchit
             m_renderRequests.push_back(renderRequest);
         }
 
-        void RenderPassBase::VSetRenderTarget(IRenderTarget* renderTarget)
-        {
-            m_renderTarget = std::move(renderTarget);
-        }
-
         void RenderPassBase::BuildRenderRequestHeirarchy()
         {
             uint32_t i;
@@ -69,7 +56,7 @@ namespace Hatchit
             {
                 RenderRequest renderRequest = m_renderRequests[i];
 
-                IPipeline* pipeline = renderRequest.pipeline;
+                IPipelineHandle pipeline = renderRequest.pipeline;
 
                 m_pipelineList[pipeline].clear();
             }
@@ -79,8 +66,8 @@ namespace Hatchit
             {
                 RenderRequest renderRequest = m_renderRequests[i];
 
-                IPipeline* pipeline = renderRequest.pipeline;
-                IMaterial* material = renderRequest.material;
+                IPipelineHandle pipeline = renderRequest.pipeline;
+                IMaterialHandle material = renderRequest.material;
                 IMesh* mesh = renderRequest.mesh;
 
                 m_pipelineList[pipeline].clear();
