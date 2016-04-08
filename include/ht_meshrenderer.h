@@ -47,7 +47,7 @@ namespace Hatchit {
             * \param material the material you want to render with
             * The material should also store the appropriate pipeline
             */
-            virtual void VSetMaterial(IMaterial* material) = 0;
+            virtual void VSetMaterial(IMaterialHandle material) = 0;
 
             /* Set which render pass this will be a part of
             * \param renderPass A pointer to the render pass that this will be a part of

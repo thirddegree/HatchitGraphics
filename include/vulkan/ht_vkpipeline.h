@@ -39,10 +39,10 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            class HT_API VKPipeline : public IPipeline
+            class HT_API VKPipeline : public Core::RefCounted<VKPipeline>, public IPipeline
             {
             public:
-                VKPipeline(const VkDevice& device, const VkRenderPass* renderPass);
+                VKPipeline(std::string ID, const std::string& fileName);
                 ~VKPipeline();
 
                 bool VInitialize(const Resource::PipelineHandle handle) override;
@@ -76,7 +76,7 @@ namespace Hatchit {
 
                 //Input
                 const VkDevice& m_device;
-                const VkRenderPass* m_renderPass;
+                VKRenderPassHandle m_renderPassHandle;
 
                 VkPipelineRasterizationStateCreateInfo m_rasterizationState;
                 VkPipelineMultisampleStateCreateInfo m_multisampleState;
@@ -116,6 +116,8 @@ namespace Hatchit {
                 bool prepareLayouts();
                 bool preparePipeline();
             };
+
+            using VKPipelineHandle = Core::Handle<VKPipeline>;
         }
     }
 }

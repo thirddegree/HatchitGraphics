@@ -36,5 +36,7 @@ namespace Hatchit {
         protected:
             virtual bool VBufferImage() = 0;
         };
+
+        using ITextureHandle = Core::Handle<ITexture>;
     }
 }

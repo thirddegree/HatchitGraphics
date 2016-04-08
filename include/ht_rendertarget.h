@@ -47,18 +47,10 @@ namespace Hatchit {
 
             ///Prepare the render target with a graphics language
             virtual bool VPrepare() = 0;
-            ///Override to bind the render target for reading with a graphics language
-            virtual void VReadBind() = 0;
-            ///Override to bind the render target to be written to with a graphics language
-            virtual void VWriteBind() = 0;
-
-            void SetRenderPass(IRenderPass* renderPass);
 
         protected:
             uint32_t m_width;
             uint32_t m_height;
-
-            IRenderPass* m_renderPass;
         };
 
         using IRenderTargetHandle = Core::Handle<IRenderTarget>;

@@ -217,6 +217,7 @@ namespace Hatchit {
                 m_commandList->Reset(m_resources->GetCommandAllocator(), m_pipeline->GetPipeline());
 
                 m_commandList->SetGraphicsRootSignature(m_resources->GetRootSignature());
+				
                 ID3D12DescriptorHeap* ppHeaps[] = { m_cbDescriptorHeap };
                 m_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 

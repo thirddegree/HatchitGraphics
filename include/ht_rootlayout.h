@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 ThirdDegree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -12,13 +12,21 @@
 **
 **/
 
-#include <ht_rendertarget.h>
+#pragma once
 
-namespace Hatchit {
+#include <ht_platform.h>
+#include <ht_rootlayout_resource.h>
 
-    namespace Graphics {
+namespace Hatchit
+{
+	namespace Graphics
+	{
+		class HT_API IRootLayout
+		{
+		public:
+			virtual ~IRootLayout() { };
 
-        void IRenderTarget::SetRenderPass(IRenderPass* renderPass) { m_renderPass = renderPass; }
-
-    }
+			virtual bool VInitialize(const Resource::RootLayoutHandle handle) = 0;
+		};
+	}
 }

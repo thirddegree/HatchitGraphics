@@ -89,7 +89,7 @@ namespace Hatchit {
                 VkColorSpaceKHR m_colorSpace;
 
                 VkRenderPass            m_renderPass;
-                VKPipeline*             m_pipeline;
+                VKPipelineHandle        m_pipeline;
                 VkDescriptorSetLayout   m_descriptorSetLayout;
                 VkDescriptorSet         m_descriptorSet;
 
