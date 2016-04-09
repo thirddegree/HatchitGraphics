@@ -33,16 +33,22 @@ namespace Hatchit {
                 bool VPrepare() override;
 
                 VkSampler GetVkSampler();
+                VkFormat  GetVkColorSpace();
 
             private:
                 const VkDevice&             m_device;
                 VkSampler                   m_sampler;
+                VkFormat                    m_colorSpace;
                 std::string                 m_fileName;
                 Hatchit::Resource::Sampler  m_base;
 
 
                 VkSamplerAddressMode    VKAddressModeFromType(Resource::Sampler::AddressMode mode);
                 VkFilter                VKFilterModeFromType(Resource::Sampler::FilterMode mode);
+                VkFormat                VKColorSpaceFromType(Resource::Sampler::ColorSpace space);
+                VkCompareOp             VKCompareOpFromType(Resource::Sampler::CompareOperation op);
+                VkSamplerMipmapMode     VKMipMapModeFromType(Resource::Sampler::MipMode mode);
+                VkBorderColor           VKBorderColorFromType(Resource::Sampler::BorderColor color);
             };
 
 			using VKSamplerHandle = Core::Handle<VKSampler>;

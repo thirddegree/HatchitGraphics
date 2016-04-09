@@ -69,18 +69,7 @@ namespace Hatchit {
                 VkFormat format;
                 if (m_resource->GetChannels() == 4)
                 {
-                    switch (m_sampler->GetColorSpace())
-                    {
-                    case Resource::Sampler::ColorSpace::GAMMA:
-                        format = VK_FORMAT_R8G8B8A8_SRGB;
-                        break;
-                    case Resource::Sampler::ColorSpace::LINEAR:
-                        format = VK_FORMAT_R8G8B8A8_UNORM;
-                        break;
-                    default:
-                        format = VK_FORMAT_R8G8B8A8_UNORM;
-                        break;
-                    }
+                    format = m_sampler->GetVkColorSpace();
                 }
                 else
                 {
