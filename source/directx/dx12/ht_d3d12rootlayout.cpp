@@ -354,7 +354,7 @@ namespace Hatchit
                 using namespace Resource;
 
                 std::vector<D3D12_STATIC_SAMPLER_DESC>  _descs;
-                std::vector<RootLayout::Sampler> _RootSamplers = handle->GetSamplers();
+                std::vector<Sampler> _RootSamplers = handle->GetSamplers();
                 for (auto sampler : _RootSamplers)
                 {
                     D3D12_STATIC_SAMPLER_DESC desc;

@@ -28,14 +28,6 @@ namespace Hatchit {
             virtual bool VDeferredInitialize(Resource::SamplerHandle resource) = 0;
 
             virtual bool VPrepare() = 0;
-
-            virtual void SetFilterMode(Resource::Sampler::FilterMode filterMode) = 0;
-            virtual void SetWrapMode(Resource::Sampler::WrapMode wrapMode) = 0;
-            virtual void SetColorSpace(Resource::Sampler::ColorSpace colorSpace) = 0;
-            
-            virtual Resource::Sampler::FilterMode GetFilterMode() const = 0;
-            virtual Resource::Sampler::WrapMode GetWrapMode() const = 0;
-            virtual Resource::Sampler::ColorSpace GetColorSpace() const = 0;
         };
 
 		using ISamplerHandle = Core::Handle<ISampler>;
