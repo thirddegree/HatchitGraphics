@@ -103,11 +103,13 @@ namespace Hatchit {
                     return false;
 
                 //TODO: remove this test code
-                VKRenderPassHandle renderPass = VKRenderPass::GetHandleFromFileName("DeferredPass.json");
+                VKRenderPassHandle renderPass = VKRenderPass::GetHandle("VKRenderPass:DeferredPass", "DeferredPass.json");
+                renderPass->VDeferredInitialize(Resource::RenderPass::GetHandleFromFileName("DeferredPass.json"));
 
-                m_renderTarget = VKRenderTarget::GetHandleFromFileName("DeferredColor.json").StaticCastHandle<IRenderTarget>();
+                IRenderTargetHandle incomingTarget = VKRenderTarget::GetHandle("DeferredColor.json", "DeferredColor.json").StaticCastHandle<IRenderTarget>();
+                incomingTarget->VDeferredInitialize(Resource::RenderTarget::GetHandleFromFileName("DeferredColor.json"));
 
-                m_swapchain->SetIncomingRenderTarget(m_renderTarget);
+                m_swapchain->SetIncomingRenderTarget(incomingTarget);
 
                 ModelHandle model = Model::GetHandleFromFileName("Raptor.obj");
                 //model.VInitFromFile(&meshFile);
@@ -115,21 +117,24 @@ namespace Hatchit {
                 CreateSetupCommandBuffer();
 
                 //TODO: Once JSON file is found, insert name here
-                m_sampler = VKSampler::GetHandleFromFileName("DeferredSampler.json").StaticCastHandle<ISampler>();
-                m_sampler->VPrepare();
+                m_sampler = VKSampler::GetHandle("DeferredSampler.json", "DeferredSampler.json").StaticCastHandle<ISampler>();
+                m_sampler->VDeferredInitialize("DeferredSampler.json");
 
-                m_texture = VKTexture::GetHandleFromFileName("raptor.png").StaticCastHandle<ITexture>();
+                m_texture = VKTexture::GetHandle("raptor.png", "raptor.png").StaticCastHandle<ITexture>();
+                m_texture->VDeferredInitialize(Resource::Texture::GetHandleFromFileName("raptor.png"));
                 m_texture->SetSampler(m_sampler);
 
                 Math::Matrix4 view = Math::MMMatrixTranspose(Math::MMMatrixLookAt(Math::Vector3(0, 0, -5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0)));
 
                 Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f));
 
-                IPipelineHandle pipeline = VKPipeline::GetHandleFromFileName("DeferredPipeline.json").StaticCastHandle<IPipeline>();
-                pipeline->VInitialize(Resource::Pipeline::GetHandleFromFileName("DeferredPipeline.json"));
+                Resource::PipelineHandle pipelineResource = Resource::Pipeline::GetHandleFromFileName("DeferredPipeline.json");
+                IPipelineHandle pipeline = VKPipeline::GetHandle("DeferredPipeline.json", pipelineResource, nullptr).StaticCastHandle<IPipeline>();
+                pipeline->VDeferredInitialize(pipelineResource);
 
 
-                m_material = VKMaterial::GetHandleFromFileName("DeferredMaterial.json").StaticCastHandle<IMaterial>();
+                m_material = VKMaterial::GetHandle("DeferredMaterial.json", "DeferredMaterial.json").StaticCastHandle<IMaterial>();
+                m_material->VDeferredInitialize(Resource::Material::GetHandleFromFileName("DeferredMaterial.json"));
 
                 std::vector<Mesh*> meshes = model->GetMeshes();
                 IMesh* mesh = new VKMesh();
@@ -184,6 +189,12 @@ namespace Hatchit {
                 m_pipelineList.clear();
 
                 m_renderPasses.clear();
+
+                m_material.Release();
+                m_texture.Release();
+                m_renderTarget.Release();
+                m_sampler.Release();
+
 
                 if (m_device != VK_NULL_HANDLE)
                 {

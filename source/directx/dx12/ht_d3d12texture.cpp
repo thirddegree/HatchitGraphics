@@ -15,6 +15,7 @@
 #include <ht_d3d12texture.h>
 #include <ht_image.h>
 #include <ht_debug.h>
+#include <ht_texture_resource.h>
 
 namespace Hatchit
 {
@@ -36,6 +37,11 @@ namespace Hatchit
                 ReleaseCOM(m_uploadHeap);
                 
                 delete m_bitmap;
+            }
+
+            bool D3D12Texture::VDeferredInitialize(Resource::TextureHandle resource)
+            {
+                return true;
             }
 
             uint32_t D3D12Texture::GetHeight() const

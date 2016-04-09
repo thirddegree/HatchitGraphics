@@ -25,6 +25,11 @@ namespace Hatchit
 
 			}
 
+            bool D3D12RenderTarget::VDeferredInitialize(Resource::RenderTargetHandle resource)
+            {
+                return true;
+            }
+
 			bool D3D12RenderTarget::Initialize(Resource::RenderTargetHandle handle, ID3D12Device* device)
 			{
                 

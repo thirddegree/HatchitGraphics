@@ -30,6 +30,8 @@ namespace Hatchit
 			public:
 				D3D12RenderTarget();
 
+                bool VDeferredInitialize(Resource::RenderTargetHandle resource) override;
+
 				bool Initialize(Resource::RenderTargetHandle handle, ID3D12Device* device);
 
 			private:

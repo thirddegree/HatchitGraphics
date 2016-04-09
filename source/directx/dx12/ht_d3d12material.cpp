@@ -13,6 +13,7 @@
 **/
 
 #include <ht_d3d12material.h>
+#include <ht_material_resource.h>
 
 namespace Hatchit {
     
@@ -23,6 +24,11 @@ namespace Hatchit {
             D3D12Material::D3D12Material()
             {
 
+            }
+
+            bool D3D12Material::VDeferredInitialize(Resource::MaterialHandle resource)
+            {
+                return true;
             }
 
             /*void D3D12Material::VOnLoaded()

@@ -25,8 +25,8 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKRenderPass::VKRenderPass(std::string ID, const std::string& fileName) :
-                m_device(VKRenderer::RendererInstance->GetVKDevice()), 
+            VKRenderPass::VKRenderPass(std::string ID) :
+                m_device(VKRenderer::RendererInstance->GetVKDevice()),
                 m_commandPool(VKRenderer::RendererInstance->GetVKCommandPool()),
                 Core::RefCounted<VKRenderPass>(std::move(ID))
             {
@@ -34,35 +34,8 @@ namespace Hatchit {
                 m_height = 0;
 
                 m_commandBuffer = VK_NULL_HANDLE;
-
-                //Load resources
-                m_renderPassResourceHandle = Resource::RenderPass::GetHandleFromFileName(fileName);
-                
-                if (m_renderPassResourceHandle.IsValid())
-                {
-                    std::vector<std::string> inputPaths = m_renderPassResourceHandle->GetInputPaths();
-                    std::vector<std::string> outputPaths = m_renderPassResourceHandle->GetOutputPaths();
-
-                    for (size_t i = 0; i < inputPaths.size(); i++)
-                    {
-                        IRenderTargetHandle inputTargetHandle = VKRenderTarget::GetHandleFromFileName(inputPaths[i]).StaticCastHandle<IRenderTarget>();
-                        m_inputRenderTargets.push_back(inputTargetHandle);
-                    }
-
-                    for (size_t i = 0; i < outputPaths.size(); i++)
-                    {
-                        IRenderTargetHandle outputTargetHandle = VKRenderTarget::GetHandleFromFileName(outputPaths[i]).StaticCastHandle<IRenderTarget>();
-                        m_outputRenderTargets.push_back(outputTargetHandle);
-                    }
-
-                    if(!VPrepare())
-                        HT_DEBUG_PRINTF("Error: Tried to load VKRenderPass but preperation failed!\n");
-                }
-                else
-                {
-                    HT_DEBUG_PRINTF("Error: Tried to load VKRenderPass but the resource handle was invalid!\n");
-                }
             }
+
             VKRenderPass::~VKRenderPass() 
             {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
@@ -75,16 +48,81 @@ namespace Hatchit {
                 vkDestroyRenderPass(m_device, m_renderPass, nullptr);
             }
 
-            bool VKRenderPass::VPrepare()
+            bool VKRenderPass::Initialize(const std::string& fileName)
             {
-                if (!setupRenderPass())
-                    return false;
-                if (!setupAttachmentImages())
-                    return false;
-                if (!setupFramebuffer())
-                    return false;
+                ////Load resources
+                //m_renderPassResourceHandle = Resource::RenderPass::GetHandleFromFileName(fileName);
 
+                //if (m_renderPassResourceHandle.IsValid())
+                //{
+                //    std::vector<std::string> inputPaths = m_renderPassResourceHandle->GetInputPaths();
+                //    std::vector<std::string> outputPaths = m_renderPassResourceHandle->GetOutputPaths();
+
+                //    for (size_t i = 0; i < inputPaths.size(); i++)
+                //    {
+                //        IRenderTargetHandle inputTargetHandle = VKRenderTarget::GetHandle(inputPaths[i], inputPaths[i]).StaticCastHandle<IRenderTarget>();
+                //        m_inputRenderTargets.push_back(inputTargetHandle);
+                //    }
+
+                //    for (size_t i = 0; i < outputPaths.size(); i++)
+                //    {
+                //        IRenderTargetHandle outputTargetHandle = VKRenderTarget::GetHandle(outputPaths[i], outputPaths[i]).StaticCastHandle<IRenderTarget>();
+                //        m_outputRenderTargets.push_back(outputTargetHandle);
+                //    }
+
+                //    if (!VPrepare())
+                //    {
+                //        HT_DEBUG_PRINTF("Error: Tried to load VKRenderPass but preperation failed!\n");
+                //        return false;
+                //    }
+                //    return true;
+                //}
+                //else
+                //{
+                //    HT_DEBUG_PRINTF("Error: Tried to load VKRenderPass but the resource handle was invalid!\n");
+                //    return false;
+                //}
                 return true;
+            }
+
+            bool VKRenderPass::VDeferredInitialize(Resource::RenderPassHandle resource)
+            {
+                m_renderPassResourceHandle = std::move(resource);
+                if (m_renderPassResourceHandle.IsValid())
+                {
+                    std::vector<std::string> inputPaths = m_renderPassResourceHandle->GetInputPaths();
+                    std::vector<std::string> outputPaths = m_renderPassResourceHandle->GetOutputPaths();
+
+                    for (size_t i = 0; i < inputPaths.size(); i++)
+                    {
+                        IRenderTargetHandle inputTargetHandle = VKRenderTarget::GetHandle(inputPaths[i], inputPaths[i]).StaticCastHandle<IRenderTarget>();
+                        inputTargetHandle->VDeferredInitialize(Resource::RenderTarget::GetHandleFromFileName(inputPaths[i]));
+                        m_inputRenderTargets.push_back(inputTargetHandle);
+                    }
+
+                    for (size_t i = 0; i < outputPaths.size(); i++)
+                    {
+                        IRenderTargetHandle outputTargetHandle = VKRenderTarget::GetHandle(outputPaths[i], outputPaths[i]).StaticCastHandle<IRenderTarget>();
+                        outputTargetHandle->VDeferredInitialize(Resource::RenderTarget::GetHandleFromFileName(outputPaths[i]));
+                        m_outputRenderTargets.push_back(outputTargetHandle);
+                    }
+
+                    //Contents from VPrepare
+                    if (!setupRenderPass())
+                        return false;
+                    if (!setupAttachmentImages())
+                        return false;
+                    if (!setupFramebuffer())
+                        return false;
+
+                    return true;
+
+                }
+                else
+                {
+                    HT_DEBUG_PRINTF("Error: Tried to load VKRenderPass but the resource handle was invalid!\n");
+                    return false;
+                }
             }
 
             ///Render the scene

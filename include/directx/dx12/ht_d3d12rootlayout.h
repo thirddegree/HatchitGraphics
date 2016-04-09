@@ -31,6 +31,8 @@ namespace Hatchit
 
 				~D3D12RootLayout();
 
+                bool VDeferredInitialize(Resource::RootLayoutHandle resource) override;
+
 				bool VInitialize(const Resource::RootLayoutHandle handle) override;
 
 				ID3D12RootSignature* GetRootSignature();

@@ -27,10 +27,15 @@ namespace Hatchit {
             class HT_API VKSampler : public Core::RefCounted<VKSampler>, public ISampler
             {
             public:
-                VKSampler(std::string ID, const std::string& fileName);
+                VKSampler(std::string ID);
                 ~VKSampler();
 
-                bool VPrepare() override;
+                //Required function of RefCounted classes
+                bool Initialize(const std::string& fileName);
+
+                bool VDeferredInitialize(const std::string& fileName) override;
+
+                //bool VPrepare() override;
 
                 VkSampler GetVkSampler();
                 VkFormat  GetVkColorSpace();

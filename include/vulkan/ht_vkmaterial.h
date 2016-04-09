@@ -42,8 +42,13 @@ namespace Hatchit {
             class HT_API VKMaterial : public Core::RefCounted<VKMaterial>, public IMaterial
             {
             public:
-                VKMaterial(std::string ID, const std::string& fileName);
+                VKMaterial(std::string ID);
                 ~VKMaterial();
+
+                //Required function for RefCounted class
+                bool Initialize(const std::string& fileName);
+
+                bool VDeferredInitialize(Resource::MaterialHandle resource) override;
 
                 bool VSetInt(std::string name, int data)                    override;
                 bool VSetFloat(std::string name, float data)                override;

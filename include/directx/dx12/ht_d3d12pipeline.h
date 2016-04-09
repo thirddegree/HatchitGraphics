@@ -35,8 +35,10 @@ namespace Hatchit {
 
                 ID3D12PipelineState* GetPipeline();
 
+                virtual bool VDeferredInitialize(Resource::PipelineHandle resource) override;
+
                 // Inherited via IPipeline
-                virtual bool VInitialize(const Resource::PipelineHandle handle) override;
+                virtual bool VInitialize(const Resource::PipelineHandle handle);
                 virtual bool VUpdate() override;
 
 

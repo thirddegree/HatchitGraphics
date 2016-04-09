@@ -37,6 +37,61 @@ namespace Hatchit {
                 return m_pipelineState;
             }
 
+            bool D3D12Pipeline::VDeferredInitialize(Resource::PipelineHandle resource)
+            {
+                HRESULT hr = S_OK;
+
+                m_description = {};
+
+                /*Build Input Layout*/
+                std::vector<D3D12_INPUT_ELEMENT_DESC> _elements;
+                const Resource::Pipeline::InputLayout& _layout = resource->GetInputLayout();
+                for (int i = 0; i < _layout.elements.size(); i++)
+                {
+                    D3D12_INPUT_ELEMENT_DESC elementDesc;
+                    elementDesc.SemanticName = _layout.elements[i].semanticName.c_str();
+                    elementDesc.SemanticIndex = _layout.elements[i].semanticIndex;
+                    elementDesc.InputSlot = _layout.elements[i].slot;
+                    elementDesc.Format = InputFormatFromElement(_layout.elements[i]);
+                    elementDesc.AlignedByteOffset = (i == 0) ? 0 : D3D12_APPEND_ALIGNED_ELEMENT;
+                    elementDesc.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+                    elementDesc.InstanceDataStepRate = 0;
+
+                    _elements.push_back(elementDesc);
+                }
+
+                D3D12_INPUT_LAYOUT_DESC inputLayoutDesc;
+                inputLayoutDesc.pInputElementDescs = &_elements[0];
+                inputLayoutDesc.NumElements = _elements.size();
+
+                /*Build Pipeline State Object*/
+                m_description.InputLayout = inputLayoutDesc;
+                m_description.pRootSignature = m_rootSignature;
+                m_description.VS = ShaderBytecodeFromHandle(Resource::Pipeline::VERTEX, resource);
+                m_description.GS = ShaderBytecodeFromHandle(Resource::Pipeline::GEOMETRY, resource);
+                m_description.HS = ShaderBytecodeFromHandle(Resource::Pipeline::TESS_CONTROL, resource);
+                m_description.DS = ShaderBytecodeFromHandle(Resource::Pipeline::TESS_EVAL, resource);
+                m_description.PS = ShaderBytecodeFromHandle(Resource::Pipeline::FRAGMENT, resource);
+                m_description.RasterizerState = RasterDescFromHandle(resource);
+                m_description.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+                m_description.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+                m_description.SampleMask = UINT_MAX;
+                m_description.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+                m_description.NumRenderTargets = 1;
+                m_description.RTVFormats[0] = DXGI_FORMAT_B8G8R8A8_UNORM;
+                m_description.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+                m_description.SampleDesc.Count = 1;
+
+                hr = m_device->CreateGraphicsPipelineState(&m_description, IID_PPV_ARGS(&m_pipelineState));
+                if (FAILED(hr))
+                {
+                    HT_DEBUG_PRINTF("Failed to create pipeline state object.\n");
+                    return false;
+                }
+
+                return true;
+            }
+
             bool D3D12Pipeline::VInitialize(const Resource::PipelineHandle handle)
             {
                 HRESULT hr = S_OK;
@@ -185,7 +240,7 @@ namespace Hatchit {
                 std::map<Resource::Pipeline::ShaderSlot, std::string> paths = handle->GetCSOShaderPaths();
                 std::map<Resource::Pipeline::ShaderSlot, Resource::ShaderHandle> handles = handle->GetCSOShaderHandles();
 
-                D3D12ShaderHandle _handle = D3D12Shader::GetHandle("D3D12"+paths[slot], "");
+                D3D12ShaderHandle _handle = D3D12Shader::GetHandle("D3D12"+paths[slot]);
                 if(handles[slot].IsValid())
                 {
                     if (!_handle->IsInitialized())

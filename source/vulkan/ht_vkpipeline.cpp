@@ -25,7 +25,7 @@ namespace Hatchit {
 
             using namespace Resource;
 
-            VKPipeline::VKPipeline(std::string ID, const std::string& fileName) :
+            VKPipeline::VKPipeline(std::string ID) :
                 m_device(VKRenderer::RendererInstance->GetVKDevice()),
                 Core::RefCounted<VKPipeline>(std::move(ID))
             {
@@ -43,7 +43,50 @@ namespace Hatchit {
                     vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayouts[i], nullptr);
             }
 
-            bool VKPipeline::VInitialize(const Resource::PipelineHandle handle)
+            bool VKPipeline::Initialize(const Resource::PipelineHandle handle, VkDescriptorSetLayout layout)
+            {
+                //if (!handle.IsValid())
+                //{
+                //    return false;
+                //    HT_DEBUG_PRINTF("VKPipeline::VInitialize() ERROR: Handle was invalid");
+                //}
+
+                //if (layout != VK_NULL_HANDLE)
+                //{
+                //    SetVKDescriptorSetLayout(layout);
+                //}
+
+                //setRasterState(handle->GetRasterizationState());
+                //setMultisampleState(handle->GetMultisampleState());
+                //
+                //VAddShaderVariables(handle->GetShaderVariables());
+
+                ////Load all shaders
+                //std::map<Pipeline::ShaderSlot, std::string> shaderPaths = handle->GetSPVShaderPaths();
+
+                //std::map<Pipeline::ShaderSlot, std::string>::iterator it;
+                //for (it = shaderPaths.begin(); it != shaderPaths.end(); it++)
+                //{
+                //    //Get the actual shader handle
+                //    VKShaderHandle shaderHandle = VKShader::GetHandle(it->second, it->second);
+
+                //    loadShader(it->first, shaderHandle.StaticCastHandle<IShader>());
+                //}
+
+                ////Get a handle to a compatible render pass
+                //std::string renderPassPath = handle->GetRenderPassPath();
+                //m_renderPassHandle = VKRenderPass::GetHandle(renderPassPath, renderPassPath);
+
+                //if (!prepareLayouts())
+                //    return false;
+
+                //if (!preparePipeline())
+                //    return false;
+
+                return true;
+            }
+
+            bool VKPipeline::VDeferredInitialize(const Resource::PipelineHandle handle)
             {
                 if (!handle.IsValid())
                 {
@@ -53,7 +96,7 @@ namespace Hatchit {
 
                 setRasterState(handle->GetRasterizationState());
                 setMultisampleState(handle->GetMultisampleState());
-                
+
                 VAddShaderVariables(handle->GetShaderVariables());
 
                 //Load all shaders
@@ -63,19 +106,21 @@ namespace Hatchit {
                 for (it = shaderPaths.begin(); it != shaderPaths.end(); it++)
                 {
                     //Get the actual shader handle
-                    VKShaderHandle shaderHandle = VKShader::GetHandleFromFileName(it->second);
+                    VKShaderHandle shaderHandle = VKShader::GetHandle(it->second, it->second);
+                    shaderHandle->VDeferredInitialize(Resource::Shader::GetHandleFromFileName(it->second));
 
                     loadShader(it->first, shaderHandle.StaticCastHandle<IShader>());
                 }
 
                 //Get a handle to a compatible render pass
                 std::string renderPassPath = handle->GetRenderPassPath();
-                m_renderPassHandle = VKRenderPass::GetHandleFromFileName(renderPassPath);
+                VKRenderPassHandle renderPass = VKRenderPass::GetHandle(renderPassPath, renderPassPath);
+                renderPass->VDeferredInitialize(Resource::RenderPass::GetHandleFromFileName(renderPassPath));
 
                 if (!prepareLayouts())
                     return false;
 
-                if (!preparePipeline())
+                if (!preparePipeline(renderPass))
                     return false;
 
                 return true;
@@ -553,7 +598,7 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKPipeline::preparePipeline()
+            bool VKPipeline::preparePipeline(const VKRenderPassHandle& passHandle)
             {
                 VkResult err;
 
@@ -663,7 +708,7 @@ namespace Hatchit {
                 VkGraphicsPipelineCreateInfo pipelineInfo = {};
                 pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
                 pipelineInfo.layout = m_pipelineLayout;
-                pipelineInfo.renderPass = m_renderPassHandle->GetVkRenderPass();
+                pipelineInfo.renderPass = passHandle->GetVkRenderPass();
                 pipelineInfo.stageCount = static_cast<uint32_t>(m_shaderStages.size());
                 pipelineInfo.pVertexInputState = &vertexInputState;
                 pipelineInfo.pInputAssemblyState = &inputAssemblyState;
