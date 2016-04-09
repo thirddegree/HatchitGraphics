@@ -42,48 +42,18 @@ namespace Hatchit {
                 m_width = 0;
                 m_height = 0;
             }
+
+            VKRenderTarget::~VKRenderTarget()
+            {
+                vkFreeMemory(m_device, m_texture.image.memory, nullptr);
+                vkDestroyImage(m_device, m_texture.image.image, nullptr);
+                vkDestroyImageView(m_device, m_texture.image.view, nullptr);
+
+                vkDestroySampler(m_device, m_texture.sampler, nullptr);
+            }
             
             bool VKRenderTarget::Initialize(const std::string& fileName)
             {
-                //m_resource = RenderTarget::GetHandleFromFileName(fileName);
-
-                //m_width = m_resource->GetWidth();
-                //m_height = m_resource->GetHeight();
-
-                //std::string formatString = m_resource->GetFormat();
-
-                ////Determine format bit from resource's string
-                //if (formatString == "BGRA")
-                //{
-                //    m_colorFormat = VK_FORMAT_B8G8R8A8_UNORM;
-                //}
-                //else if (formatString == "RGBA")
-                //{
-                //    m_colorFormat = VK_FORMAT_R8G8B8A8_UNORM;
-                //}
-                //else if (formatString == "BGR")
-                //{
-                //    m_colorFormat = VK_FORMAT_B8G8R8A8_UNORM;
-                //}
-                //else if (formatString == "RGB")
-                //{
-                //    m_colorFormat = VK_FORMAT_R8G8B8A8_UNORM;
-                //}
-                //else if (formatString == "R")
-                //{
-                //    m_colorFormat = VK_FORMAT_R32_SFLOAT;
-                //}
-                //else //If it's not valid or provided; query the renderer for the preferred format
-                //{
-                //    VKRenderer* renderer = VKRenderer::RendererInstance;
-                //    m_colorFormat = renderer->GetPreferredImageFormat();
-                //}
-
-                //if (!VPrepare())
-                //{
-                //    HT_DEBUG_PRINTF("Error: VKRenderTarget did not prepare properly");
-                //    return false;
-                //}
                 return true;
             }
 
@@ -129,15 +99,6 @@ namespace Hatchit {
                 }
                 return true;
             }
-
-            VKRenderTarget::~VKRenderTarget() 
-            {
-                vkFreeMemory(m_device, m_texture.image.memory, nullptr);
-                vkDestroyImage(m_device, m_texture.image.image, nullptr);
-                vkDestroyImageView(m_device, m_texture.image.view, nullptr);
-
-                vkDestroySampler(m_device, m_texture.sampler, nullptr);
-            } 
 
             bool VKRenderTarget::VPrepare()
             {

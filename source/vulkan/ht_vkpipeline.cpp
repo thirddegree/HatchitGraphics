@@ -114,13 +114,13 @@ namespace Hatchit {
 
                 //Get a handle to a compatible render pass
                 std::string renderPassPath = handle->GetRenderPassPath();
-                m_renderPassHandle = VKRenderPass::GetHandle(renderPassPath, renderPassPath);
-                m_renderPassHandle->VDeferredInitialize(Resource::RenderPass::GetHandleFromFileName(renderPassPath));
+                VKRenderPassHandle renderPass = VKRenderPass::GetHandle(renderPassPath, renderPassPath);
+                renderPass->VDeferredInitialize(Resource::RenderPass::GetHandleFromFileName(renderPassPath));
 
                 if (!prepareLayouts())
                     return false;
 
-                if (!preparePipeline())
+                if (!preparePipeline(renderPass))
                     return false;
 
                 return true;
@@ -598,7 +598,7 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKPipeline::preparePipeline()
+            bool VKPipeline::preparePipeline(const VKRenderPassHandle& passHandle)
             {
                 VkResult err;
 
@@ -708,7 +708,7 @@ namespace Hatchit {
                 VkGraphicsPipelineCreateInfo pipelineInfo = {};
                 pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
                 pipelineInfo.layout = m_pipelineLayout;
-                pipelineInfo.renderPass = m_renderPassHandle->GetVkRenderPass();
+                pipelineInfo.renderPass = passHandle->GetVkRenderPass();
                 pipelineInfo.stageCount = static_cast<uint32_t>(m_shaderStages.size());
                 pipelineInfo.pVertexInputState = &vertexInputState;
                 pipelineInfo.pInputAssemblyState = &inputAssemblyState;

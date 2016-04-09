@@ -78,7 +78,6 @@ namespace Hatchit {
 
                 //Input
                 const VkDevice& m_device;
-                VKRenderPassHandle m_renderPassHandle;
 
                 VkPipelineRasterizationStateCreateInfo m_rasterizationState;
                 VkPipelineMultisampleStateCreateInfo m_multisampleState;
@@ -116,7 +115,7 @@ namespace Hatchit {
                 void loadShader(Hatchit::Resource::Pipeline::ShaderSlot shaderSlot, IShaderHandle shader);
 
                 bool prepareLayouts();
-                bool preparePipeline();
+                bool preparePipeline(const VKRenderPassHandle& passHandle);
             };
 
             using VKPipelineHandle = Core::Handle<VKPipeline>;

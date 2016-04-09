@@ -106,10 +106,10 @@ namespace Hatchit {
                 VKRenderPassHandle renderPass = VKRenderPass::GetHandle("VKRenderPass:DeferredPass", "DeferredPass.json");
                 renderPass->VDeferredInitialize(Resource::RenderPass::GetHandleFromFileName("DeferredPass.json"));
 
-                m_renderTarget = VKRenderTarget::GetHandle("DeferredColor.json", "DeferredColor.json").StaticCastHandle<IRenderTarget>();
-                m_renderTarget->VDeferredInitialize(Resource::RenderTarget::GetHandleFromFileName("DeferredColor.json"));
+                IRenderTargetHandle incomingTarget = VKRenderTarget::GetHandle("DeferredColor.json", "DeferredColor.json").StaticCastHandle<IRenderTarget>();
+                incomingTarget->VDeferredInitialize(Resource::RenderTarget::GetHandleFromFileName("DeferredColor.json"));
 
-                m_swapchain->SetIncomingRenderTarget(m_renderTarget);
+                m_swapchain->SetIncomingRenderTarget(incomingTarget);
 
                 ModelHandle model = Model::GetHandleFromFileName("Raptor.obj");
                 //model.VInitFromFile(&meshFile);
@@ -189,6 +189,12 @@ namespace Hatchit {
                 m_pipelineList.clear();
 
                 m_renderPasses.clear();
+
+                m_material.Release();
+                m_texture.Release();
+                m_renderTarget.Release();
+                m_sampler.Release();
+
 
                 if (m_device != VK_NULL_HANDLE)
                 {
