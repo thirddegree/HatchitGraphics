@@ -63,7 +63,7 @@ namespace Hatchit {
                 samplerInfo.compareOp = VKCompareOpFromType(handle->GetCompareOp());
                 samplerInfo.minLod = handle->GetMinLOD();
                 samplerInfo.maxLod = handle->GetMaxLOD();
-                samplerInfo.maxAnisotropy = handle->GetMaxAnisotropy();
+                samplerInfo.maxAnisotropy = static_cast<float>(handle->GetMaxAnisotropy());
                 samplerInfo.anisotropyEnable = VK_TRUE;
                 samplerInfo.borderColor = VKBorderColorFromType(handle->GetBorderColor());
                 m_colorSpace = VKColorSpaceFromType(handle->GetColorSpace());
