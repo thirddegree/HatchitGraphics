@@ -29,14 +29,8 @@ namespace Hatchit {
                 RefCounted<VKSampler>(std::move(ID)),
                 m_device(VKRenderer::RendererInstance->GetVKDevice())
             {
-                Resource::SamplerHandle handle = Resource::Sampler::GetHandleFromFileName(fileName);
-
-                if (handle.IsValid())
-                {
-                    m_filterMode = handle->GetFilterMode();
-                    m_wrapMode = handle->GetWrapMode();
-                    m_colorSpace = handle->GetColorSpace();
-                }
+                m_fileName = fileName;
+                m_sampler = nullptr;
             }
             VKSampler::~VKSampler() 
             {
@@ -45,64 +39,34 @@ namespace Hatchit {
 
             bool VKSampler::VPrepare() 
             {
+                Resource::SamplerHandle handle = Resource::MutableSampler::GetHandleFromFileName(m_fileName);
+
+                if (!handle.IsValid())
+                {
+                    HT_DEBUG_PRINTF("Failed to retrieve handle for VKSampler prepar()\n");
+                    return false;
+                }
+
                 VkResult err;
-
-                //Determine some sampler settings
-                VkSamplerAddressMode vkWrapMode = {};
-                VkFilter vkFilterMode = {};
-
-                switch (m_wrapMode)
-                {
-                case Resource::Sampler::WrapMode::MIRROR:
-                    vkWrapMode = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-                    break;
-                case Resource::Sampler::WrapMode::MIRROR_ONCE:
-                    vkWrapMode = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
-                    break;
-                case Resource::Sampler::WrapMode::BORDER:
-                    vkWrapMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-                    break;
-                case Resource::Sampler::WrapMode::CLAMP:
-                    vkWrapMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-                    break;
-                case Resource::Sampler::WrapMode::WRAP:
-                    vkWrapMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-                    break;
-                default:
-                    vkWrapMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-                    break;
-                }
-
-                switch (m_filterMode)
-                {
-                case Resource::Sampler::FilterMode::NEAREST:
-                    vkFilterMode = VK_FILTER_NEAREST;
-                    break;
-                case Resource::Sampler::FilterMode::BILINEAR:
-                    vkFilterMode = VK_FILTER_LINEAR;
-                    break;
-                default:
-                    vkFilterMode = VK_FILTER_LINEAR;
-                    break;
-                }
 
                 //Setup the sampler
                 VkSamplerCreateInfo samplerInfo = {};
                 samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
                 samplerInfo.pNext = nullptr;
-                samplerInfo.magFilter = vkFilterMode;
-                samplerInfo.minFilter = vkFilterMode;
-                samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-                samplerInfo.addressModeU = vkWrapMode;
-                samplerInfo.addressModeV = vkWrapMode;
-                samplerInfo.addressModeW = vkWrapMode;
-                samplerInfo.mipLodBias = 0.0f;
-                samplerInfo.compareOp = VK_COMPARE_OP_NEVER;
-                samplerInfo.minLod = 0.0f;
-                samplerInfo.maxLod = 0.0f;
-                samplerInfo.maxAnisotropy = 8;
+                samplerInfo.magFilter = VKFilterModeFromType(handle->GetFilter().mag);
+                samplerInfo.minFilter = VKFilterModeFromType(handle->GetFilter().min);
+                samplerInfo.mipmapMode = VKMipMapModeFromType(handle->GetMipMode());
+                samplerInfo.addressModeU = VKAddressModeFromType(handle->GetAddress().u);
+                samplerInfo.addressModeV = VKAddressModeFromType(handle->GetAddress().v);
+                samplerInfo.addressModeW = VKAddressModeFromType(handle->GetAddress().w);
+                samplerInfo.mipLodBias = handle->GetMipLODBias();
+                samplerInfo.compareOp = VKCompareOpFromType(handle->GetCompareOp());
+                samplerInfo.minLod = handle->GetMinLOD();
+                samplerInfo.maxLod = handle->GetMaxLOD();
+                samplerInfo.maxAnisotropy = handle->GetMaxAnisotropy();
                 samplerInfo.anisotropyEnable = VK_TRUE;
-                samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+                samplerInfo.borderColor = VKBorderColorFromType(handle->GetBorderColor());
+                m_colorSpace = VKColorSpaceFromType(handle->GetColorSpace());
 
                 err = vkCreateSampler(m_device, &samplerInfo, nullptr, &m_sampler);
                 assert(!err);
@@ -115,36 +79,129 @@ namespace Hatchit {
                 return true;
             }
 
-            VkSampler VKSampler::GetVkSampler() { return m_sampler; }
-
-            void VKSampler::SetFilterMode(Resource::Sampler::FilterMode filterMode)
-            {
-                m_filterMode = filterMode;
+            VkSampler VKSampler::GetVkSampler()
+            { 
+                return m_sampler; 
             }
 
-            void VKSampler::SetWrapMode(Resource::Sampler::WrapMode wrapMode)
-            {
-                m_wrapMode = wrapMode;
-            }
-
-            void VKSampler::SetColorSpace(Resource::Sampler::ColorSpace colorSpace)
-            {
-                m_colorSpace = colorSpace;
-            }
-
-            Resource::Sampler::FilterMode VKSampler::GetFilterMode() const
-            {
-                return m_filterMode;
-            }
-
-            Resource::Sampler::WrapMode VKSampler::GetWrapMode() const
-            {
-                return m_wrapMode;
-            }
-
-            Resource::Sampler::ColorSpace VKSampler::GetColorSpace() const
+            VkFormat VKSampler::GetVkColorSpace()
             {
                 return m_colorSpace;
+            }
+
+            VkSamplerAddressMode VKSampler::VKAddressModeFromType(Resource::Sampler::AddressMode mode)
+            {
+                using namespace Resource;
+
+                switch (mode)
+                {
+                case Sampler::AddressMode::CLAMP:
+                    return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                case Sampler::AddressMode::WRAP:
+                    return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+                case Sampler::AddressMode::BORDER:
+                    return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+                case Sampler::AddressMode::MIRROR:
+                    return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+                case Sampler::AddressMode::MIRROR_ONCE:
+                    return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
+                }
+
+                return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            }
+
+            VkFilter VKSampler::VKFilterModeFromType(Resource::Sampler::FilterMode mode)
+            {
+                using namespace Resource;
+                
+                switch (mode)
+                {
+                case Sampler::FilterMode::BILINEAR:
+                    return VK_FILTER_LINEAR;
+                case Sampler::FilterMode::NEAREST:
+                    return VK_FILTER_NEAREST;
+                default:
+                    break;
+                }
+
+                return VK_FILTER_LINEAR;
+            }
+
+            VkFormat VKSampler::VKColorSpaceFromType(Resource::Sampler::ColorSpace space)
+            {
+                using namespace Resource;
+
+                switch (space)
+                {
+                case Sampler::ColorSpace::GAMMA:
+                    return VK_FORMAT_R8G8B8A8_SRGB;
+                case Sampler::ColorSpace::LINEAR:
+                    return VK_FORMAT_R8G8B8A8_UNORM;
+                default:
+                    return VK_FORMAT_R8G8B8A8_UNORM;
+                }
+
+            }
+
+
+            VkCompareOp VKSampler::VKCompareOpFromType(Resource::Sampler::CompareOperation op)
+            {
+                using namespace Resource;
+
+                switch (op)
+                {
+                case Sampler::CompareOperation::COMPARE_OP_ALWAYS:
+                    return VK_COMPARE_OP_ALWAYS;
+                case Sampler::CompareOperation::COMPARE_OP_EQUAL:
+                    return VK_COMPARE_OP_EQUAL;
+                case Sampler::CompareOperation::COMPARE_OP_GREATER:
+                    return VK_COMPARE_OP_GREATER;
+                case Sampler::CompareOperation::COMPARE_OP_GREATER_EQUAL:
+                    return VK_COMPARE_OP_GREATER_OR_EQUAL;
+                case Sampler::CompareOperation::COMPARE_OP_LESS:
+                    return VK_COMPARE_OP_LESS;
+                case Sampler::CompareOperation::COMPARE_OP_LESS_EQUAL:
+                    return VK_COMPARE_OP_LESS_OR_EQUAL;
+                case Sampler::CompareOperation::COMPARE_OP_NEVER:
+                    return VK_COMPARE_OP_NEVER;
+                case Sampler::CompareOperation::COMPARE_OP_NOT_EQUAL:
+                    return VK_COMPARE_OP_NOT_EQUAL;
+                default:
+                    return VK_COMPARE_OP_NEVER;
+                }
+            }
+
+            VkSamplerMipmapMode VKSampler::VKMipMapModeFromType(Resource::Sampler::MipMode mode)
+            {
+                using namespace Resource;
+
+                switch (mode)
+                {
+                case Sampler::MipMode::LINEAR:
+                    return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+                case Sampler::MipMode::NEAREST:
+                    return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+                default:
+                    return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+                }
+
+            }
+
+            VkBorderColor VKSampler::VKBorderColorFromType(Resource::Sampler::BorderColor color)
+            {
+                using namespace Resource;
+
+                switch (color)
+                {
+                case Sampler::BorderColor::COLOR_OPAQUE_BLACK:
+                    return VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+                case Sampler::BorderColor::COLOR_OPAQUE_WHITE:
+                    return VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+                case Sampler::BorderColor::COLOR_TRANSPARENT_BLACK:
+                    return VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+                default:
+                    return VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+                }
             }
 
         }

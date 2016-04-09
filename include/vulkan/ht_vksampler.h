@@ -33,24 +33,22 @@ namespace Hatchit {
                 bool VPrepare() override;
 
                 VkSampler GetVkSampler();
-
-                // Inherited via ISampler
-                virtual void SetFilterMode(Hatchit::Resource::Sampler::FilterMode filterMode) override;
-                virtual void SetWrapMode(Hatchit::Resource::Sampler::WrapMode wrapMode) override;
-                virtual void SetColorSpace(Hatchit::Resource::Sampler::ColorSpace colorSpace) override;
-
-                virtual Hatchit::Resource::Sampler::FilterMode GetFilterMode() const override;
-                virtual Hatchit::Resource::Sampler::WrapMode GetWrapMode() const override;
-                virtual Hatchit::Resource::Sampler::ColorSpace GetColorSpace() const override;
+                VkFormat  GetVkColorSpace();
 
             private:
-                const VkDevice& m_device;
+                const VkDevice&             m_device;
+                VkSampler                   m_sampler;
+                VkFormat                    m_colorSpace;
+                std::string                 m_fileName;
+                Hatchit::Resource::Sampler  m_base;
 
-                VkSampler m_sampler;
 
-                Hatchit::Resource::Sampler::FilterMode m_filterMode;
-                Hatchit::Resource::Sampler::WrapMode m_wrapMode;
-                Hatchit::Resource::Sampler::ColorSpace m_colorSpace;
+                VkSamplerAddressMode    VKAddressModeFromType(Resource::Sampler::AddressMode mode);
+                VkFilter                VKFilterModeFromType(Resource::Sampler::FilterMode mode);
+                VkFormat                VKColorSpaceFromType(Resource::Sampler::ColorSpace space);
+                VkCompareOp             VKCompareOpFromType(Resource::Sampler::CompareOperation op);
+                VkSamplerMipmapMode     VKMipMapModeFromType(Resource::Sampler::MipMode mode);
+                VkBorderColor           VKBorderColorFromType(Resource::Sampler::BorderColor color);
             };
 
 			using VKSamplerHandle = Core::Handle<VKSampler>;
