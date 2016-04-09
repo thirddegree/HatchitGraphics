@@ -42,10 +42,8 @@ namespace Hatchit {
                 //Required function for RefCounted classes
                 bool Initialize(const std::string& fileName);
 
-                bool VDeferredInitialize(Resource::RenderPassHandle resource);
-
                 //Prepare the internal VkRenderPass
-                bool VPrepare() override;
+                bool VDeferredInitialize(Resource::RenderPassHandle resource);
 
                 //Will this be sent the Objects that it needs to render?
                 ///Render the scene

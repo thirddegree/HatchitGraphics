@@ -25,9 +25,9 @@ namespace Hatchit {
         public:
             virtual ~ISampler() = default;
 
-            virtual bool VDeferredInitialize(Resource::SamplerHandle resource) = 0;
+            virtual bool VDeferredInitialize(const std::string& fileName) = 0;
 
-            virtual bool VPrepare() = 0;
+            //virtual bool VPrepare() = 0;
         };
 
 		using ISamplerHandle = Core::Handle<ISampler>;

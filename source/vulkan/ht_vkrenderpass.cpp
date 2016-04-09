@@ -107,30 +107,22 @@ namespace Hatchit {
                         m_outputRenderTargets.push_back(outputTargetHandle);
                     }
 
-                    if (!VPrepare())
-                    {
-                        HT_DEBUG_PRINTF("Error: Tried to load VKRenderPass but preperation failed!\n");
+                    //Contents from VPrepare
+                    if (!setupRenderPass())
                         return false;
-                    }
+                    if (!setupAttachmentImages())
+                        return false;
+                    if (!setupFramebuffer())
+                        return false;
+
                     return true;
+
                 }
                 else
                 {
                     HT_DEBUG_PRINTF("Error: Tried to load VKRenderPass but the resource handle was invalid!\n");
                     return false;
                 }
-            }
-
-            bool VKRenderPass::VPrepare()
-            {
-                if (!setupRenderPass())
-                    return false;
-                if (!setupAttachmentImages())
-                    return false;
-                if (!setupFramebuffer())
-                    return false;
-
-                return true;
             }
 
             ///Render the scene

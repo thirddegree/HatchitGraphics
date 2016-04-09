@@ -56,7 +56,7 @@ namespace Hatchit {
             virtual ~IRenderPass() { };
 
             virtual bool VDeferredInitialize(Resource::RenderPassHandle handle) = 0;
-            virtual bool VPrepare() = 0;
+            //virtual bool VPrepare() = 0;
 
             //Will this be sent the Objects that it needs to render?
             ///Render the the given objects with the given pipeline to a texture

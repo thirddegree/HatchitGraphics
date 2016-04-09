@@ -106,7 +106,7 @@ namespace Hatchit {
                 VKRenderPassHandle renderPass = VKRenderPass::GetHandle("VKRenderPass:DeferredPass", "DeferredPass.json");
                 renderPass->VDeferredInitialize(Resource::RenderPass::GetHandleFromFileName("DeferredPass.json"));
 
-                m_renderTarget = VKRenderTarget::GetHandle("VKRenderTarget:DeferredColor", "DeferredColor.json").StaticCastHandle<IRenderTarget>();
+                m_renderTarget = VKRenderTarget::GetHandle("DeferredColor.json", "DeferredColor.json").StaticCastHandle<IRenderTarget>();
                 m_renderTarget->VDeferredInitialize(Resource::RenderTarget::GetHandleFromFileName("DeferredColor.json"));
 
                 m_swapchain->SetIncomingRenderTarget(m_renderTarget);
@@ -118,8 +118,7 @@ namespace Hatchit {
 
                 //TODO: Once JSON file is found, insert name here
                 m_sampler = VKSampler::GetHandle("DeferredSampler.json", "DeferredSampler.json").StaticCastHandle<ISampler>();
-                m_sampler->VDeferredInitialize(Resource::Sampler::GetHandleFromFileName("DeferredSampler.json"));
-                m_sampler->VPrepare();
+                m_sampler->VDeferredInitialize("DeferredSampler.json");
 
                 m_texture = VKTexture::GetHandle("raptor.png", "raptor.png").StaticCastHandle<ITexture>();
                 m_texture->VDeferredInitialize(Resource::Texture::GetHandleFromFileName("raptor.png"));

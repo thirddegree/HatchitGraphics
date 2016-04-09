@@ -44,27 +44,12 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKSampler::VDeferredInitialize(Resource::SamplerHandle resource)
+            bool VKSampler::VDeferredInitialize(const std::string& fileName)
             {
-                if (resource.IsValid())
-                {
-                    m_filterMode = resource->GetFilterMode();
-                    m_wrapMode = resource->GetWrapMode();
-                    m_colorSpace = resource->GetColorSpace();
-                    return true;
-                }
-                else
-                {
-                    HT_DEBUG_PRINTF("Unable to initialize VKSampler: Error, unable to read from resource");
-                    return false;
-            }
-            VKSampler::~VKSampler() 
-            {
-                vkDestroySampler(m_device, m_sampler, nullptr);
-            }
+                m_fileName = fileName;
+                m_sampler = nullptr;
 
-            bool VKSampler::VPrepare() 
-            {
+                //Contents of old VPrepare
                 Resource::SamplerHandle handle = Resource::MutableSampler::GetHandleFromFileName(m_fileName);
 
                 if (!handle.IsValid())
@@ -104,6 +89,52 @@ namespace Hatchit {
 
                 return true;
             }
+            VKSampler::~VKSampler() 
+            {
+                vkDestroySampler(m_device, m_sampler, nullptr);
+            }
+
+            //bool VKSampler::VPrepare() 
+            //{
+            //    Resource::SamplerHandle handle = Resource::MutableSampler::GetHandleFromFileName(m_fileName);
+
+            //    if (!handle.IsValid())
+            //    {
+            //        HT_DEBUG_PRINTF("Failed to retrieve handle for VKSampler prepar()\n");
+            //        return false;
+            //    }
+
+            //    VkResult err;
+
+            //    //Setup the sampler
+            //    VkSamplerCreateInfo samplerInfo = {};
+            //    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+            //    samplerInfo.pNext = nullptr;
+            //    samplerInfo.magFilter = VKFilterModeFromType(handle->GetFilter().mag);
+            //    samplerInfo.minFilter = VKFilterModeFromType(handle->GetFilter().min);
+            //    samplerInfo.mipmapMode = VKMipMapModeFromType(handle->GetMipMode());
+            //    samplerInfo.addressModeU = VKAddressModeFromType(handle->GetAddress().u);
+            //    samplerInfo.addressModeV = VKAddressModeFromType(handle->GetAddress().v);
+            //    samplerInfo.addressModeW = VKAddressModeFromType(handle->GetAddress().w);
+            //    samplerInfo.mipLodBias = handle->GetMipLODBias();
+            //    samplerInfo.compareOp = VKCompareOpFromType(handle->GetCompareOp());
+            //    samplerInfo.minLod = handle->GetMinLOD();
+            //    samplerInfo.maxLod = handle->GetMaxLOD();
+            //    samplerInfo.maxAnisotropy = static_cast<float>(handle->GetMaxAnisotropy());
+            //    samplerInfo.anisotropyEnable = VK_TRUE;
+            //    samplerInfo.borderColor = VKBorderColorFromType(handle->GetBorderColor());
+            //    m_colorSpace = VKColorSpaceFromType(handle->GetColorSpace());
+
+            //    err = vkCreateSampler(m_device, &samplerInfo, nullptr, &m_sampler);
+            //    assert(!err);
+            //    if (err != VK_SUCCESS)
+            //    {
+            //        HT_DEBUG_PRINTF("VKTexture::VBufferImage(): Failed to create sampler!\n");
+            //        return false;
+            //    }
+
+            //    return true;
+            //}
 
             VkSampler VKSampler::GetVkSampler()
             { 
