@@ -16,6 +16,7 @@
 
 #include <ht_platform.h>
 #include <ht_directx.h>
+#include <ht_d3d12rootlayout.h>
 
 namespace Hatchit {
     namespace Graphics {
@@ -62,7 +63,7 @@ namespace Hatchit {
                 D3D12_VIEWPORT              m_viewport;
                 D3D12_RECT                  m_scissorRect;
                 ID3D12Device*               m_device;
-                ID3D12RootSignature*        m_rootSignature;
+				D3D12RootLayout*			m_rootLayout;
                 IDXGISwapChain3*            m_swapChain;
 				DXGI_SWAP_CHAIN_DESC		m_swapChainDesc;
                 ID3D12CommandQueue*         m_commandQueue;

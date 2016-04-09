@@ -32,7 +32,7 @@ namespace Hatchit {
 
             bool VKSampler::Initialize(const std::string& fileName)
             {
-                Resource::SamplerHandle handle = Resource::Sampler::GetHandleFromFileName(fileName);
+                /*Resource::SamplerHandle handle = Resource::Sampler::GetHandleFromFileName(fileName);
 
                 if (handle.IsValid())
                 {
@@ -44,6 +44,23 @@ namespace Hatchit {
                 else
                 {
                     HT_DEBUG_PRINTF("Unable to initialize VKSampler: Missing Resource from file %s", fileName);
+                    return false;
+                }*/
+                return true;
+            }
+
+            bool VKSampler::VDeferredInitialize(Resource::SamplerHandle resource)
+            {
+                if (resource.IsValid())
+                {
+                    m_filterMode = resource->GetFilterMode();
+                    m_wrapMode = resource->GetWrapMode();
+                    m_colorSpace = resource->GetColorSpace();
+                    return true;
+                }
+                else
+                {
+                    HT_DEBUG_PRINTF("Unable to initialize VKSampler: Error, unable to read from resource");
                     return false;
                 }
             }

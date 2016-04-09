@@ -32,18 +32,62 @@ namespace Hatchit {
             {
                 m_width = 0;
                 m_height = 0;
+
+                m_commandBuffer = VK_NULL_HANDLE;
+            }
+
+            VKRenderPass::~VKRenderPass() 
+            {
+                VKRenderer* renderer = VKRenderer::RendererInstance;
+
+                //Command buffer will be freed with command pool
+                //if(m_commandBuffer != VK_NULL_HANDLE)
+                //    vkFreeCommandBuffers(m_device, m_commandPool, 1, &m_commandBuffer);
+
+                //Destroy the render pass
+                vkDestroyRenderPass(m_device, m_renderPass, nullptr);
             }
 
             bool VKRenderPass::Initialize(const std::string& fileName)
             {
-                m_width = 0;
-                m_height = 0;
+                ////Load resources
+                //m_renderPassResourceHandle = Resource::RenderPass::GetHandleFromFileName(fileName);
 
-                m_commandBuffer = VK_NULL_HANDLE;
+                //if (m_renderPassResourceHandle.IsValid())
+                //{
+                //    std::vector<std::string> inputPaths = m_renderPassResourceHandle->GetInputPaths();
+                //    std::vector<std::string> outputPaths = m_renderPassResourceHandle->GetOutputPaths();
 
-                //Load resources
-                m_renderPassResourceHandle = Resource::RenderPass::GetHandleFromFileName(fileName);
-                
+                //    for (size_t i = 0; i < inputPaths.size(); i++)
+                //    {
+                //        IRenderTargetHandle inputTargetHandle = VKRenderTarget::GetHandle(inputPaths[i], inputPaths[i]).StaticCastHandle<IRenderTarget>();
+                //        m_inputRenderTargets.push_back(inputTargetHandle);
+                //    }
+
+                //    for (size_t i = 0; i < outputPaths.size(); i++)
+                //    {
+                //        IRenderTargetHandle outputTargetHandle = VKRenderTarget::GetHandle(outputPaths[i], outputPaths[i]).StaticCastHandle<IRenderTarget>();
+                //        m_outputRenderTargets.push_back(outputTargetHandle);
+                //    }
+
+                //    if (!VPrepare())
+                //    {
+                //        HT_DEBUG_PRINTF("Error: Tried to load VKRenderPass but preperation failed!\n");
+                //        return false;
+                //    }
+                //    return true;
+                //}
+                //else
+                //{
+                //    HT_DEBUG_PRINTF("Error: Tried to load VKRenderPass but the resource handle was invalid!\n");
+                //    return false;
+                //}
+                return true;
+            }
+
+            bool VKRenderPass::VDeferredInitialize(Resource::RenderPassHandle resource)
+            {
+                m_renderPassResourceHandle = std::move(resource);
                 if (m_renderPassResourceHandle.IsValid())
                 {
                     std::vector<std::string> inputPaths = m_renderPassResourceHandle->GetInputPaths();
@@ -52,12 +96,14 @@ namespace Hatchit {
                     for (size_t i = 0; i < inputPaths.size(); i++)
                     {
                         IRenderTargetHandle inputTargetHandle = VKRenderTarget::GetHandle(inputPaths[i], inputPaths[i]).StaticCastHandle<IRenderTarget>();
+                        inputTargetHandle->VDeferredInitialize(Resource::RenderTarget::GetHandleFromFileName(inputPaths[i]));
                         m_inputRenderTargets.push_back(inputTargetHandle);
                     }
 
                     for (size_t i = 0; i < outputPaths.size(); i++)
                     {
                         IRenderTargetHandle outputTargetHandle = VKRenderTarget::GetHandle(outputPaths[i], outputPaths[i]).StaticCastHandle<IRenderTarget>();
+                        outputTargetHandle->VDeferredInitialize(Resource::RenderTarget::GetHandleFromFileName(outputPaths[i]));
                         m_outputRenderTargets.push_back(outputTargetHandle);
                     }
 
@@ -73,17 +119,6 @@ namespace Hatchit {
                     HT_DEBUG_PRINTF("Error: Tried to load VKRenderPass but the resource handle was invalid!\n");
                     return false;
                 }
-            }
-            VKRenderPass::~VKRenderPass() 
-            {
-                VKRenderer* renderer = VKRenderer::RendererInstance;
-
-                //Command buffer will be freed with command pool
-                //if(m_commandBuffer != VK_NULL_HANDLE)
-                //    vkFreeCommandBuffers(m_device, m_commandPool, 1, &m_commandBuffer);
-
-                //Destroy the render pass
-                vkDestroyRenderPass(m_device, m_renderPass, nullptr);
             }
 
             bool VKRenderPass::VPrepare()
@@ -135,9 +170,10 @@ namespace Hatchit {
                 //Get the current clear color from the renderer
                 VkClearValue clearColor = renderer->GetClearColor();
 
-                VkClearValue clearValues[2] = {};
-                clearValues[0] = clearColor;
-                clearValues[1].depthStencil = { 1.0f, 0 };
+                std::vector<VkClearValue> clearValues;
+                for (size_t i = 0; i < m_outputRenderTargets.size(); i++)
+                    clearValues.push_back(clearColor);
+                clearValues.push_back({1.0f, 0.0f});
 
                 VkRenderPassBeginInfo renderPassBeginInfo = {};
                 renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -148,8 +184,8 @@ namespace Hatchit {
                 renderPassBeginInfo.renderArea.offset.y = 0;
                 renderPassBeginInfo.renderArea.extent.width = m_width;
                 renderPassBeginInfo.renderArea.extent.height = m_height;
-                renderPassBeginInfo.clearValueCount = 2;
-                renderPassBeginInfo.pClearValues = clearValues;
+                renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+                renderPassBeginInfo.pClearValues = clearValues.data();
 
                 VkViewport viewport = {};
                 viewport.width = static_cast<float>(m_width);
@@ -302,7 +338,7 @@ namespace Hatchit {
                 attachmentDescriptions.push_back(depthAttachment);
 
                 VkAttachmentReference depthReference = {};
-                depthReference.attachment = 1;
+                depthReference.attachment = static_cast<uint32_t>(attachmentReferences.size());
                 depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
                 VkSubpassDescription subpass = {};

@@ -34,6 +34,7 @@
 #include <ht_types.h>
 #include <ht_string.h>
 #include <ht_renderpass.h>
+#include <ht_camera.h>
 
 namespace Hatchit {
 
@@ -71,6 +72,8 @@ namespace Hatchit {
         class HT_API IRenderer
         {
         public:
+            static IRenderer* Instance;
+            
             virtual ~IRenderer() { };
             
             /** Initialize the renderer
@@ -106,12 +109,18 @@ namespace Hatchit {
             uint32_t GetWidth() const;
             uint32_t GetHeight() const;
 
+            void RegisterCamera(Camera camera, uint32_t flags);
+
         protected:
+
             std::vector<IRenderPassHandle> m_renderPasses;
+            //A collection of renderpass layers. Each layer may contain multiple render passes.
+            std::vector<std::vector<IRenderPassHandle>> m_renderPassLayers;
+            //A collection of cameras sorted by renderpass layer. Repopulated each frame.
+            std::vector<std::vector<Graphics::Camera>> m_renderPassCameras;
 
             uint32_t m_width;
             uint32_t m_height;
-
         };
 
     }

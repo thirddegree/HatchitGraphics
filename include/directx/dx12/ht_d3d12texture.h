@@ -21,6 +21,17 @@
 
 namespace Hatchit
 {
+    namespace Core
+    {
+        template<typename VarType>
+        class Handle;
+    }
+
+    namespace Resource
+    {
+        class Texture;
+    }
+
     namespace Graphics
     {
         namespace DX
@@ -31,6 +42,8 @@ namespace Hatchit
                 D3D12Texture(ID3D12Device* device);
 
                 ~D3D12Texture();
+
+                bool VDeferredInitialize(Core::Handle<const Resource::Texture> resource) override;
 
                 //void Upload(ID3D12GraphicsCommandList* commandList);
 

@@ -68,14 +68,14 @@ namespace Hatchit {
                 /*Create Pipeline State*/
              
                 m_pipeline = new D3D12Pipeline(m_resources->GetDevice(), m_resources->GetRootSignature());
-                m_pipeline->VInitialize(Resource::Pipeline::GetHandle("TestPipeline.json"));
+                m_pipeline->VInitialize(Resource::Pipeline::GetHandleFromFileName("TestPipeline.json"));
 
                 /*Create command list*/
                 hr = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_resources->GetCommandAllocator(), m_pipeline->GetPipeline(), IID_PPV_ARGS(&m_commandList));
                 if (FAILED(hr))
                     return false;
 
-				Resource::ModelHandle m = Resource::Model::GetHandle("raptor.obj");
+				Resource::ModelHandle m = Resource::Model::GetHandleFromFileName("raptor.obj");
 
                 srand(time(NULL));
                 auto verts = m->GetMeshes()[0]->getVertices();
@@ -217,6 +217,7 @@ namespace Hatchit {
                 m_commandList->Reset(m_resources->GetCommandAllocator(), m_pipeline->GetPipeline());
 
                 m_commandList->SetGraphicsRootSignature(m_resources->GetRootSignature());
+				
                 ID3D12DescriptorHeap* ppHeaps[] = { m_cbDescriptorHeap };
                 m_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 

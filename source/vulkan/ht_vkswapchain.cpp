@@ -236,6 +236,8 @@ namespace Hatchit {
                 
                 Resource::PipelineHandle pipelineResource = Resource::Pipeline::GetHandleFromFileName("SwapchainPipeline.json");
                 m_pipeline = VKPipeline::GetHandle("SwapchainPipeline.json", pipelineResource, m_descriptorSetLayout);
+                m_pipeline->SetVKDescriptorSetLayout(m_descriptorSetLayout);
+                m_pipeline->VDeferredInitialize(pipelineResource);
 
                 //Setup the descriptor sets
                 VkDescriptorSetAllocateInfo allocInfo = {};

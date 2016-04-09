@@ -47,6 +47,8 @@ namespace Hatchit {
 
                 bool Initialize(const Resource::PipelineHandle handle, VkDescriptorSetLayout layout);
 
+                bool VDeferredInitialize(Resource::PipelineHandle handle) override;
+
                 ///Have Vulkan update the descriptor sets in this pipeline
                 bool VUpdate()                                                  override;
 

@@ -39,6 +39,8 @@ namespace Hatchit {
         public:
             virtual ~IRenderTarget() { };
 
+            virtual bool VDeferredInitialize(Resource::RenderTargetHandle resource) = 0;
+
             /* Initialize a render target from a JSON resource
             * \param resourceRenderTarget A handle to the JSON RenderTarget resource
             * \return True on success, false on failure

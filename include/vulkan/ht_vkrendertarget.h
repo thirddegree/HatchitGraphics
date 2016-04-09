@@ -44,6 +44,8 @@ namespace Hatchit {
                 //Required function from RefCounted classes
                 bool Initialize(const std::string& fileName);
 
+                bool VDeferredInitialize(Resource::RenderTargetHandle resource) override;
+
                 ///Prepare the render target with Vulkan
                 bool VPrepare() override;
 
@@ -61,8 +63,6 @@ namespace Hatchit {
                 Hatchit::Resource::RenderTargetHandle m_resource;
 
                 VkFormat m_colorFormat;
-                VkFramebuffer m_framebuffer;
-
                 Texture m_texture;
 
                 bool setupTargetTexture(VKRenderer* renderer);

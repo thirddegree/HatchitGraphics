@@ -48,6 +48,8 @@ namespace Hatchit {
                 //Required function for RefCounted class
                 bool Initialize(const std::string& fileName);
 
+                bool VDeferredInitialize(Resource::MaterialHandle resource) override;
+
                 bool VSetInt(std::string name, int data)                    override;
                 bool VSetFloat(std::string name, float data)                override;
                 bool VSetFloat3(std::string name, Math::Vector3 data)       override;
@@ -74,7 +76,7 @@ namespace Hatchit {
                 VkDescriptorSet m_materialSet;
 
                 UniformBlock m_uniformVSBuffer;
-                UniformBlock m_uniformFSBuffer;
+                //UniformBlock m_uniformFSBuffer;
                 std::vector<UniformBlock> m_fragmentTextures;
 
                 VKPipelineHandle m_pipeline;

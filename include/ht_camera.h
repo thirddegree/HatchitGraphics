@@ -13,37 +13,41 @@
 **/
 
 /**
-* \class IShader
+* \class IMaterial
 * \ingroup HatchitGraphics
 *
-* \brief An interface for a class that will load a shader with a graphics language
+* \brief An interface for a material to draw objects with
 *
-* This will be extended by another class that will implement its methods to load
-* and compile a shader with a given graphics language
+* This class will be extended by a class that will implement its
+* methods with ones that will make calls to a graphics language
 */
 
 #pragma once
 
 #include <ht_platform.h>
-#include <ht_resource.h>
-#include <ht_shader_resource.h>
-#include <ht_texture.h>
-#include <ht_string.h>
 #include <ht_math.h>
 
 namespace Hatchit {
 
     namespace Graphics {
 
-        class HT_API IShader
+        class HT_API Camera
         {
         public:
-            friend class IMaterial;
-            virtual ~IShader() {};
+            Camera() = default;
+            Camera(Math::Matrix4 view, Math::Matrix4 projection);
+            ~Camera(void) = default;
 
-            virtual bool VDeferredInitialize(Resource::ShaderHandle resource) = 0;
+            void SetView(Math::Matrix4 view);
+            void SetProjection(Math::Matrix4 projection);
+            uint32_t GetLayerFlags();
+
+            void RegisterCamera();
+
+        private:
+            Math::Matrix4 m_view;
+            Math::Matrix4 m_projection;
+            uint32_t m_layerflags;
         };
-
-        using IShaderHandle = Core::Handle<IShader>;
     }
 }

@@ -29,9 +29,13 @@ namespace Hatchit {
             class HT_API D3D12Shader : public Core::RefCounted<D3D12Shader>, public IShader
             {
             public:
-                D3D12Shader(std::string fileName);
+                D3D12Shader(std::string ID);
                 D3D12Shader(D3D12Shader&&) = default;
                 ~D3D12Shader();
+
+                bool Initialize(int = 0);
+
+                bool VDeferredInitialize(Resource::ShaderHandle resource) override;
 
                 bool VInitFromResource(Resource::ShaderHandle handle);
 

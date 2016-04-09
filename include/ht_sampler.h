@@ -25,6 +25,8 @@ namespace Hatchit {
         public:
             virtual ~ISampler() = default;
 
+            virtual bool VDeferredInitialize(Resource::SamplerHandle resource) = 0;
+
             virtual bool VPrepare() = 0;
 
             virtual void SetFilterMode(Resource::Sampler::FilterMode filterMode) = 0;

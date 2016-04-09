@@ -33,6 +33,8 @@ namespace Hatchit {
                 //Required function of RefCounted classes
                 bool Initialize(const std::string& fileName);
 
+                bool VDeferredInitialize(Resource::SamplerHandle resource) override;
+
                 bool VPrepare() override;
 
                 VkSampler GetVkSampler();

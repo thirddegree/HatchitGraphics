@@ -20,6 +20,17 @@
 
 namespace Hatchit {
 
+    namespace Core
+    {
+        template<typename VarType>
+        class Handle;
+    }
+
+    namespace Resource
+    {
+        class Material;
+    }
+
     namespace Graphics {
 
         namespace DX
@@ -28,6 +39,8 @@ namespace Hatchit {
             {
             public:
                 D3D12Material();
+
+                virtual bool VDeferredInitialize(Core::Handle<const Resource::Material> resource) override;
 
             private:
 

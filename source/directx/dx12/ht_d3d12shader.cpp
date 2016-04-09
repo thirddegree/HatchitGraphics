@@ -22,8 +22,8 @@ namespace Hatchit {
         namespace DX
         {
 
-            D3D12Shader::D3D12Shader(std::string fileName)
-                : Core::RefCounted<D3D12Shader>(std::move(fileName))
+            D3D12Shader::D3D12Shader(std::string ID)
+                : Core::RefCounted<D3D12Shader>(std::move(ID))
             {
                 m_blob = nullptr;
                 m_initialized = false;
@@ -32,6 +32,27 @@ namespace Hatchit {
             D3D12Shader::~D3D12Shader()
             {
                 ReleaseCOM(m_blob);
+            }
+
+            bool D3D12Shader::Initialize(int)
+            {
+                return true;
+            }
+
+            bool D3D12Shader::VDeferredInitialize(Resource::ShaderHandle resource)
+            {
+                HRESULT hr = S_OK;
+                hr = D3DCreateBlob(resource->GetBytecodeSize(), &m_blob);
+                if (FAILED(hr))
+                {
+                    HT_DEBUG_PRINTF("Failed to create shader blob.\n");
+                    return false;
+                }
+                memcpy(m_blob->GetBufferPointer(), resource->GetBytecode(), resource->GetBytecodeSize());
+
+                m_initialized = true;
+
+                return true;
             }
 
             bool D3D12Shader::VInitFromResource(Resource::ShaderHandle handle)
