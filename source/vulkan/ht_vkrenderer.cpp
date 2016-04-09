@@ -103,6 +103,9 @@ namespace Hatchit {
                     return false;
 
                 //TODO: remove this test code
+                m_rootLayout = new VKRootLayout(m_device);
+                m_rootLayout->VInitialize(Resource::RootLayout::GetHandleFromFileName("TestRootDescriptor.json"));
+
                 VKRenderPassHandle renderPass = VKRenderPass::GetHandleFromFileName("DeferredPass.json");
 
                 m_renderTarget = VKRenderTarget::GetHandleFromFileName("DeferredColor.json").StaticCastHandle<IRenderTarget>();

@@ -19,14 +19,14 @@
 
 namespace Hatchit
 {
-	namespace Graphics
-	{
-		class HT_API IRootLayout
-		{
-		public:
-			virtual ~IRootLayout() { };
+    namespace Graphics
+    {
+        class HT_API IRootLayout
+        {
+        public:
+            virtual ~IRootLayout() { };
 
-			virtual bool VInitialize(const Resource::RootLayoutHandle handle) = 0;
-		};
-	}
+            virtual bool VInitialize(const Resource::RootLayoutHandle handle) = 0;
+        };
+    }
 }

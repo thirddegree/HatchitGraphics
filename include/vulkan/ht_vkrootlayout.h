@@ -15,35 +15,34 @@
 #pragma once
 
 #include <ht_platform.h>
-#include <ht_directx.h>
+#include <ht_vulkan.h>
 #include <ht_rootlayout.h>
 
 namespace Hatchit
 {
     namespace Graphics
     {
-        namespace DX
+        namespace Vulkan
         {
-            class HT_API D3D12RootLayout : public IRootLayout
+            class HT_API VKRootLayout : public IRootLayout
             {
             public:
-                D3D12RootLayout(ID3D12Device* device);
+                VKRootLayout(const VkDevice& device);
 
-                ~D3D12RootLayout();
+                ~VKRootLayout();
 
                 bool VInitialize(const Resource::RootLayoutHandle handle) override;
 
-                ID3D12RootSignature* GetRootSignature();
+                const VkPipelineLayout& VKGetPipelineLayout() const;
+                std::vector<VkDescriptorSetLayout> VKGetDescriptorSetLayouts() const;
+                std::vector<VkPushConstantRange> VKGetPushConstantRanges() const;
 
             private:
-                ID3D12RootSignature*  m_rootSignature;
-                ID3D12Device*         m_device;
+                const VkDevice& m_device;
 
-                std::vector<D3D12_DESCRIPTOR_RANGE*> m_allocatedRanges;
-
-                void                                        PostInitCleanup();
-                std::vector<D3D12_STATIC_SAMPLER_DESC>      SamplerDescsFromHandle(const Resource::RootLayoutHandle& handle);
-                D3D12_ROOT_SIGNATURE_FLAGS                  RootSignatureFlagsFromHandle(const Resource::RootLayoutHandle& handle);
+                VkPipelineLayout m_pipelineLayout;
+                std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;
+                std::vector<VkPushConstantRange> m_pushConstantRanges;
             };
         }
     }

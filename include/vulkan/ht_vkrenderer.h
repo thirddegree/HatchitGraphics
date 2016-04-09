@@ -20,6 +20,7 @@
 #include <ht_vkrenderpass.h>
 #include <ht_vkswapchain.h>
 #include <ht_vkmaterial.h>
+#include <ht_vkrootlayout.h>
 #include <ht_string.h>
 #include <vector>
 
@@ -144,6 +145,7 @@ namespace Hatchit {
                 VkClearValue                            m_clearColor;
 
                 //Resources we want loaded elsewhere
+                IRootLayout* m_rootLayout;
                 IRenderTargetHandle m_renderTarget;
                 IMaterialHandle m_material;
                 ITextureHandle m_texture;
