@@ -420,7 +420,7 @@ namespace Hatchit {
                 m_appInfo.applicationVersion = 0;
                 m_appInfo.pEngineName = "Hatchit";
                 m_appInfo.engineVersion = 0;
-                m_appInfo.apiVersion = VK_MAKE_VERSION(1,0,5);
+                m_appInfo.apiVersion = VK_API_VERSION_1_0;
 
                 /*
                 * Setup Vulkan instance create info
@@ -557,9 +557,9 @@ namespace Hatchit {
                 assert(!err);
 
                 m_enabledLayerNames = {
-                    "VK_LAYER_GOOGLE_threading",      "VK_LAYER_LUNARG_mem_tracker",
-                    "VK_LAYER_LUNARG_object_tracker", "VK_LAYER_LUNARG_draw_state",
-                    "VK_LAYER_LUNARG_param_checker",  "VK_LAYER_LUNARG_swapchain",
+                    "VK_LAYER_GOOGLE_threading",      "VK_LAYER_LUNARG_core_validation",
+                    "VK_LAYER_LUNARG_object_tracker", "VK_LAYER_LUNARG_parameter_validation",
+                    "VK_LAYER_LUNARG_standard_validation",  "VK_LAYER_LUNARG_swapchain",
                     "VK_LAYER_LUNARG_device_limits",  "VK_LAYER_LUNARG_image",
                     "VK_LAYER_GOOGLE_unique_objects",
                 };
