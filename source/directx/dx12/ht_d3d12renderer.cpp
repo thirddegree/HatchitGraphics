@@ -77,7 +77,6 @@ namespace Hatchit {
 
 				Resource::ModelHandle m = Resource::Model::GetHandleFromFileName("raptor.obj");
 
-                srand(time(NULL));
                 auto verts = m->GetMeshes()[0]->getVertices();
                 auto normals = m->GetMeshes()[0]->getNormals();
                 std::vector<Vertex> vertices;
@@ -103,20 +102,20 @@ namespace Hatchit {
                 std::vector<unsigned short> indexList;
                 for (auto i : indices)
                 {
-                    for (int n = 0; n < i.mNumIndices; n++)
+                    for (uint32_t n = 0; n < i.mNumIndices; n++)
                     {
                         indexList.push_back(i.mIndices[n]);
                     }
                 }
 
-                m_vBuffer = new D3D12VertexBuffer(vertices.size());
+                m_vBuffer = new D3D12VertexBuffer(static_cast<uint32_t>(vertices.size()));
                 m_vBuffer->Initialize(device);
-                m_vBuffer->UpdateSubData(m_commandList, 0, vertices.size(), &vertices[0]);
+                m_vBuffer->UpdateSubData(m_commandList, 0, static_cast<uint32_t>(vertices.size()), &vertices[0]);
 
                 m_numIndices = indexList.size();
-                m_iBuffer = new D3D12IndexBuffer(indexList.size());
+                m_iBuffer = new D3D12IndexBuffer(static_cast<uint32_t>(indexList.size()));
                 m_iBuffer->Initialize(device);
-                m_iBuffer->UpdateSubData(m_commandList, 0, m_numIndices, &indexList[0]);
+                m_iBuffer->UpdateSubData(m_commandList, 0, static_cast<uint32_t>(m_numIndices), &indexList[0]);
 
                 
                 /*Create a descriptor heap for the constant buffers*/
@@ -246,7 +245,7 @@ namespace Hatchit {
                 m_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
                 m_commandList->IASetVertexBuffers(0, 1, &m_vBuffer->GetView());
                 m_commandList->IASetIndexBuffer(&m_iBuffer->GetView());
-                m_commandList->DrawIndexedInstanced(m_numIndices, 1, 0, 0, 0);
+                m_commandList->DrawIndexedInstanced(static_cast<uint32_t>(m_numIndices), 1, 0, 0, 0);
 
                 // Indicate that the render target will now be used to present when the command list is done executing.
                 CD3DX12_RESOURCE_BARRIER presentResourceBarrier =

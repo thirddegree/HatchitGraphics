@@ -62,7 +62,7 @@ namespace Hatchit {
 
                 D3D12_INPUT_LAYOUT_DESC inputLayoutDesc;
                 inputLayoutDesc.pInputElementDescs = &_elements[0];
-                inputLayoutDesc.NumElements = _elements.size();
+                inputLayoutDesc.NumElements = static_cast<uint32_t>(_elements.size());
 
                 /*Build Pipeline State Object*/
                 m_description.InputLayout = inputLayoutDesc;
@@ -117,7 +117,7 @@ namespace Hatchit {
 
                 D3D12_INPUT_LAYOUT_DESC inputLayoutDesc;
                 inputLayoutDesc.pInputElementDescs = &_elements[0];
-                inputLayoutDesc.NumElements = _elements.size();
+                inputLayoutDesc.NumElements = static_cast<uint32_t>(_elements.size());
 
                 /*Build Pipeline State Object*/
                 m_description.InputLayout = inputLayoutDesc;

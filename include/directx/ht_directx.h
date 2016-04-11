@@ -31,6 +31,14 @@
 
 #include <ht_math.h>
 
+#ifndef HT_D3D12_DEBUGNAME
+    #if defined(_DEBUG) || defined(D3D12_ASSIGN_DEBUG_NAMES)
+    #define HT_D3D12_DEBUGNAME(object, name) Hatchit::Graphics::DX::RegisterDebugName(object, name)
+    #else
+    #define HT_D3D12_DEBUGNAME(object, name)
+    #endif
+#endif
+
 namespace Hatchit {
 
     namespace Graphics {
@@ -48,11 +56,13 @@ namespace Hatchit {
             }
 
             inline
-            void RegisterDebugName(ID3D12Object* object, LPCWSTR name)
+            void RegisterDebugName(ID3D12Object* object, LPCSTR name)
             {
+                std::wstringstream ss;
+                ss << name;
                 if(object)
                 {
-                    object->SetName(name);
+                    object->SetName(ss.str().c_str());
                 }
             }
 

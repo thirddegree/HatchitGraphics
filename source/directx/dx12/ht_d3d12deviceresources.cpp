@@ -40,13 +40,6 @@ namespace Hatchit {
 
             D3D12DeviceResources::~D3D12DeviceResources()
             {
-                /*ID3D12DebugDevice* _interface;
-                if (SUCCEEDED(m_device->QueryInterface(&_interface)))
-                {
-                    _interface->ReportLiveDeviceObjects(D3D12_RLDO_DETAIL | D3D12_RLDO_SUMMARY | D3D12_RLDO_IGNORE_INTERNAL);
-                    _interface->Release();
-                }*/
-//                m_rootLayout.Release();
                 ReleaseCOM(m_device);
                 ReleaseCOM(m_swapChain);
                 ReleaseCOM(m_renderTargetViewHeap);

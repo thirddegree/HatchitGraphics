@@ -13,6 +13,7 @@
 **/
 
 #include <ht_d3d12rootlayout.h>
+#include <ht_debug.h>
 
 namespace Hatchit
 {
@@ -46,7 +47,7 @@ namespace Hatchit
                 /*Build RootParameter Collection*/
                 std::vector<D3D12_ROOT_PARAMETER> _RootParameters;
                 std::vector<RootLayout::Parameter> parameters = resource->GetParameters();
-                for (int i = 0; i < resource->GetParameterCount(); i++)
+                for (uint32_t i = 0; i < resource->GetParameterCount(); i++)
                 {
                     D3D12_ROOT_PARAMETER  parameter = {};
                     RootLayout::Parameter p = parameters[i];
@@ -93,7 +94,7 @@ namespace Hatchit
                         table.NumDescriptorRanges = p.data.table.rangeCount;
                         D3D12_DESCRIPTOR_RANGE* _ranges = new D3D12_DESCRIPTOR_RANGE[table.NumDescriptorRanges];
                         m_allocatedRanges.push_back(_ranges);
-                        for (int j = 0; j < table.NumDescriptorRanges; j++)
+                        for (uint32_t j = 0; j < table.NumDescriptorRanges; j++)
                         {
                             D3D12_DESCRIPTOR_RANGE _range;
                             RootLayout::Range r = p.data.table.ranges[j];
@@ -170,7 +171,7 @@ namespace Hatchit
                     ReleaseCOM(_signature);
                     return false;
                 }
-                DX::RegisterDebugName(m_rootSignature, (wchar_t*)resource.GetName().c_str());
+                HT_D3D12_DEBUGNAME(m_rootSignature, ("D3D12RootLayout [" + fileName + "]").c_str());
                 PostInitCleanup();
 
                 return true;
