@@ -416,7 +416,7 @@ namespace Hatchit {
                 m_appInfo.applicationVersion = 0;
                 m_appInfo.pEngineName = "Hatchit";
                 m_appInfo.engineVersion = 0;
-                m_appInfo.apiVersion = VK_API_VERSION;
+                m_appInfo.apiVersion = VK_MAKE_VERSION(1,0,8);
 
                 /*
                 * Setup Vulkan instance create info
