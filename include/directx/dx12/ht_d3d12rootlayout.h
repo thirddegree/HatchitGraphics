@@ -17,6 +17,7 @@
 #include <ht_platform.h>
 #include <ht_directx.h>
 #include <ht_rootlayout.h>
+#include <ht_refcounted.h>
 
 namespace Hatchit
 {
@@ -24,22 +25,21 @@ namespace Hatchit
 	{
 		namespace DX
 		{
-			class HT_API D3D12RootLayout : public IRootLayout
+			class HT_API D3D12RootLayout : public Core::RefCounted<D3D12RootLayout>, public IRootLayout
 			{
 			public:
-				D3D12RootLayout(ID3D12Device* device);
+				D3D12RootLayout(std::string ID);
 
 				~D3D12RootLayout();
 
-                bool VDeferredInitialize(Resource::RootLayoutHandle resource) override;
+                //bool VDeferredInitialize(Resource::RootLayoutHandle resource) override;
 
-				bool VInitialize(const Resource::RootLayoutHandle handle) override;
+				bool Initialize(const std::string& fileName, ID3D12Device* device);
 
 				ID3D12RootSignature* GetRootSignature();
 
 			private:
 				ID3D12RootSignature*  m_rootSignature;
-				ID3D12Device*		  m_device;
 
 				std::vector<D3D12_DESCRIPTOR_RANGE*> m_allocatedRanges;
 
@@ -47,6 +47,7 @@ namespace Hatchit
                 std::vector<D3D12_STATIC_SAMPLER_DESC>      SamplerDescsFromHandle(const Resource::RootLayoutHandle& handle);
 				D3D12_ROOT_SIGNATURE_FLAGS			        RootSignatureFlagsFromHandle(const Resource::RootLayoutHandle& handle);
 			};
+            using D3D12RootLayoutHandle = Core::Handle<D3D12RootLayout>;
 		}
 	}
 }

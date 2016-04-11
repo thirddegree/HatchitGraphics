@@ -22,6 +22,7 @@
 
 #ifdef DX12_SUPPORT
 #include <d3d12.h>
+#include <d3d12sdklayers.h>
 #include <d3dx12.h>
 #endif
 
@@ -43,6 +44,15 @@ namespace Hatchit {
                 {
                     t->Release();
                     t = nullptr;
+                }
+            }
+
+            inline
+            void RegisterDebugName(ID3D12Object* object, LPCWSTR name)
+            {
+                if(object)
+                {
+                    object->SetName(name);
                 }
             }
 

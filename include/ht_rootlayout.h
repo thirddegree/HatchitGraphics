@@ -26,9 +26,9 @@ namespace Hatchit
 		public:
 			virtual ~IRootLayout() { };
 
-            virtual bool VDeferredInitialize(Resource::RootLayoutHandle resource) = 0;
+            //virtual bool VDeferredInitialize(Resource::RootLayoutHandle resource) = 0;
 
-			virtual bool VInitialize(const Resource::RootLayoutHandle handle) = 0;
+			//virtual bool VInitialize(const Resource::RootLayoutHandle handle) = 0;
 		};
 	}
 }
