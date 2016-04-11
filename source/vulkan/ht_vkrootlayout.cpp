@@ -132,7 +132,7 @@ namespace Hatchit
                         break;
 
                         //Push Constants
-                        case RootLayout::Parameter::Type::CONSTANT:
+                        case RootLayout::Parameter::Type::CONSTANTS:
                         {
                             VkPushConstantRange pushConstantRange;
                             pushConstantRange.stageFlags = shaderStages;
@@ -167,6 +167,8 @@ namespace Hatchit
                                 break;
                             }
                             
+                            //Size is also based off of the value count
+                            size *= p.data.constant.valueCount;
                             pushConstantRange.size = size;
                             currentPushContentOffset += size; //Increment offset for the next possible push constant
 

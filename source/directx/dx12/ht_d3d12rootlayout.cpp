@@ -137,7 +137,7 @@ namespace Hatchit
                             _RootParameters.push_back(parameter);
                         } break;
 
-                        case RootLayout::Parameter::Type::CONSTANT:
+                        case RootLayout::Parameter::Type::CONSTANTS:
                         {
                             D3D12_ROOT_PARAMETER parameter = {};
                             switch (p.visibility)
@@ -293,7 +293,7 @@ namespace Hatchit
                 case Sampler::BorderColor::COLOR_TRANSPARENT_BLACK:
                     return D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
                 default:
-                    D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
+                    return D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
                 }
             }
 
