@@ -26,11 +26,6 @@ namespace Hatchit {
 
             }
 
-            bool D3D12Material::VDeferredInitialize(Resource::MaterialHandle resource)
-            {
-                return true;
-            }
-
             /*void D3D12Material::VOnLoaded()
             {
             }*/

@@ -53,12 +53,6 @@ namespace Hatchit {
                 return true;
             }
 
-            bool D3D12Shader::VDeferredInitialize(Resource::ShaderHandle resource)
-            {
-                
-                return true;
-            }
-
             D3D12_SHADER_BYTECODE D3D12Shader::GetBytecode()
             {
                 return CD3DX12_SHADER_BYTECODE(m_blob);

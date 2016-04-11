@@ -95,11 +95,6 @@ namespace Hatchit {
                 return true;
             }
 
-            bool D3D12Pipeline::VDeferredInitialize(Resource::PipelineHandle resource)
-            {
-                return false;
-            }
-
             bool D3D12Pipeline::VInitialize(const Resource::PipelineHandle handle)
             {
                 return false;

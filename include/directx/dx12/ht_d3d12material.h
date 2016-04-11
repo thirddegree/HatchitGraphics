@@ -40,8 +40,6 @@ namespace Hatchit {
             public:
                 D3D12Material();
 
-                virtual bool VDeferredInitialize(Core::Handle<const Resource::Material> resource) override;
-
             private:
 
                 // Inherited via IMaterial

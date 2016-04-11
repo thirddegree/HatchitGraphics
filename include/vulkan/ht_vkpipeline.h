@@ -45,9 +45,7 @@ namespace Hatchit {
                 VKPipeline(std::string ID);
                 ~VKPipeline();
 
-                bool Initialize(const Resource::PipelineHandle handle, VkDescriptorSetLayout layout);
-
-                bool VDeferredInitialize(Resource::PipelineHandle handle) override;
+                bool Initialize(const std::string& fileName, VkDescriptorSetLayout layout);
 
                 ///Have Vulkan update the descriptor sets in this pipeline
                 bool VUpdate()                                                  override;
@@ -64,8 +62,6 @@ namespace Hatchit {
                 bool VSetFloat3(std::string name, Math::Vector3 data)           override;
                 bool VSetFloat4(std::string name, Math::Vector4 data)           override;
                 bool VSetMatrix4(std::string name, Math::Matrix4 data)          override;
-
-                void SetVKDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout);
 
                 VkPipeline                          GetVKPipeline();
                 VkPipelineLayout                    GetVKPipelineLayout();

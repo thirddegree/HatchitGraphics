@@ -38,12 +38,8 @@ namespace Hatchit {
 
                 bool Initialize(const std::string& fileName, ID3D12Device* device, ID3D12RootSignature* root);
 
-                virtual bool VDeferredInitialize(Resource::PipelineHandle resource) override;
-
-                // Inherited via IPipeline
                 virtual bool VInitialize(const Resource::PipelineHandle handle);
                 virtual bool VUpdate() override;
-
 
                 virtual bool VAddShaderVariables(std::map<std::string, Resource::ShaderVariable*> shaderVariables) override;
 

@@ -128,13 +128,9 @@ namespace Hatchit {
 
                 Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f));
 
-                Resource::PipelineHandle pipelineResource = Resource::Pipeline::GetHandleFromFileName("DeferredPipeline.json");
-                IPipelineHandle pipeline = VKPipeline::GetHandle("DeferredPipeline.json", pipelineResource, nullptr).StaticCastHandle<IPipeline>();
-                pipeline->VDeferredInitialize(pipelineResource);
-
+                IPipelineHandle pipeline = VKPipeline::GetHandle("DeferredPipeline.json", "DeferredPipeline.json", nullptr).StaticCastHandle<IPipeline>();
 
                 m_material = VKMaterial::GetHandle("DeferredMaterial.json", "DeferredMaterial.json").StaticCastHandle<IMaterial>();
-                m_material->VDeferredInitialize(Resource::Material::GetHandleFromFileName("DeferredMaterial.json"));
 
                 std::vector<Mesh*> meshes = model->GetMeshes();
                 IMesh* mesh = new VKMesh();

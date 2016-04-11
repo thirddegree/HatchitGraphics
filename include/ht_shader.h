@@ -40,8 +40,6 @@ namespace Hatchit {
         public:
             friend class IMaterial;
             virtual ~IShader() {};
-
-            virtual bool VDeferredInitialize(Resource::ShaderHandle resource) = 0;
         };
 
         using IShaderHandle = Core::Handle<IShader>;

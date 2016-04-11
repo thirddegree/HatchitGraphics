@@ -43,12 +43,6 @@ namespace Hatchit {
         {
        public:
             virtual ~IPipeline() {};
-
-            /*
-            * Initialize GPU pipeline object from resource file
-            * \param handle The handle to loaded pipeline resource file
-            */
-            virtual bool VDeferredInitialize(Resource::PipelineHandle handle) = 0;
            
             /* Add a map of existing shader variables into this pipeline
             * \param shaderVariables the map of existing shader variables you want to add

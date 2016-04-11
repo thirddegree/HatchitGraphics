@@ -35,9 +35,6 @@ namespace Hatchit {
 
                 bool Initialize(const std::string& fileName);
 
-                bool VDeferredInitialize(Resource::ShaderHandle resource) override;
-
-
                 D3D12_SHADER_BYTECODE GetBytecode();
 
             private:
