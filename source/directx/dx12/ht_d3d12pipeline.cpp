@@ -238,14 +238,10 @@ namespace Hatchit {
             D3D12_SHADER_BYTECODE D3D12Pipeline::ShaderBytecodeFromHandle(Resource::Pipeline::ShaderSlot slot, const Resource::PipelineHandle & handle)
             {
                 std::map<Resource::Pipeline::ShaderSlot, std::string> paths = handle->GetCSOShaderPaths();
-                std::map<Resource::Pipeline::ShaderSlot, Resource::ShaderHandle> handles = handle->GetCSOShaderHandles();
-
-                D3D12ShaderHandle _handle = D3D12Shader::GetHandle("D3D12"+paths[slot]);
-                if(handles[slot].IsValid())
+                
+                D3D12ShaderHandle _handle = D3D12Shader::GetHandle(paths[slot], paths[slot]);
+                if(_handle.IsValid())
                 {
-                    if (!_handle->IsInitialized())
-                       _handle->VInitFromResource(handles[slot]);
-
                     m_shaders[slot] = _handle;
 
                     return _handle->GetBytecode();

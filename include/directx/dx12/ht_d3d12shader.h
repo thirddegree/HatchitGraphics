@@ -33,19 +33,15 @@ namespace Hatchit {
                 D3D12Shader(D3D12Shader&&) = default;
                 ~D3D12Shader();
 
-                bool Initialize(int = 0);
+                bool Initialize(const std::string& fileName);
 
                 bool VDeferredInitialize(Resource::ShaderHandle resource) override;
 
-                bool VInitFromResource(Resource::ShaderHandle handle);
 
                 D3D12_SHADER_BYTECODE GetBytecode();
 
-                bool IsInitialized();
-
             private:
                 ID3DBlob*                   m_blob;
-                bool                        m_initialized;
               
             };
             using D3D12ShaderHandle = Core::Handle<D3D12Shader>;
