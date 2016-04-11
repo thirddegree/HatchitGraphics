@@ -97,7 +97,7 @@ namespace Hatchit
                             table.NumDescriptorRanges = p.data.table.rangeCount;
                             D3D12_DESCRIPTOR_RANGE* _ranges = new D3D12_DESCRIPTOR_RANGE[table.NumDescriptorRanges];
                             m_allocatedRanges.push_back(_ranges);
-                            for (int j = 0; j < table.NumDescriptorRanges; j++)
+                            for (uint32_t j = 0; j < table.NumDescriptorRanges; j++)
                             {
                                 D3D12_DESCRIPTOR_RANGE _range;
                                 RootLayout::Range r = p.data.table.ranges[j];

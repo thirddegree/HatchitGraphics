@@ -38,6 +38,7 @@ namespace Hatchit
                     return false;
 
                 std::vector<RootLayout::Parameter> parameters = handle->GetParameters();
+                uint32_t currentPushContentOffset = 0; //How many bytes the next push constant should be offset by
 
                 for (uint32_t i = 0; i < handle->GetParameterCount(); i++)
                 {
@@ -78,8 +79,10 @@ namespace Hatchit
 
                     switch (p.type)
                     {
+                        //Descriptor Set Layouts
                         case RootLayout::Parameter::Type::TABLE:
                         {
+                            //Each "Range" is a descriptor type
                             std::vector<RootLayout::Range> ranges = p.data.table.ranges;
                             for (uint32_t j = 0; j < p.data.table.rangeCount; j++)
                             {
@@ -124,8 +127,50 @@ namespace Hatchit
                             m_descriptorSetLayouts.push_back(descriptorSetLayout);
                         } 
                         break;
-                    }
 
+                        //Push Constants
+                        case RootLayout::Parameter::Type::CONSTANT:
+                        {
+                            VkPushConstantRange pushConstantRange;
+                            pushConstantRange.stageFlags = shaderStages;
+                            pushConstantRange.offset = currentPushContentOffset;
+                            
+                            //Size is based off reported constant type and must be a multiple of 4
+                            uint32_t size;
+                            ShaderVariable::Type type = p.data.constant.type;
+
+                            switch(type)
+                            {
+                            case ShaderVariable::Type::INT:
+                                size = sizeof(uint32_t);
+                                break;
+                            case ShaderVariable::Type::DOUBLE:
+                                size = sizeof(double);
+                                break;
+                            case ShaderVariable::Type::FLOAT:
+                                size = sizeof(float);
+                                break;
+                            case ShaderVariable::Type::FLOAT2:
+                                size = sizeof(float) * 2;
+                                break;
+                            case ShaderVariable::Type::FLOAT3:
+                                size = sizeof(float) * 3;
+                                break;
+                            case ShaderVariable::Type::FLOAT4:
+                                size = sizeof(float) * 4;
+                                break;
+                            case ShaderVariable::Type::MAT4:
+                                size = sizeof(float) * 16;
+                                break;
+                            }
+                            
+                            pushConstantRange.size = size;
+                            currentPushContentOffset += size; //Increment offset for the next possible push constant
+
+                            m_pushConstantRanges.push_back(pushConstantRange);
+                        }
+                        break;
+                    }
                 }
 
                 //Use all the defined push constants and descriptor layouts to make the pipeline layout
@@ -135,8 +180,9 @@ namespace Hatchit
                 pipelineLayoutInfo.flags = 0;
                 pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(m_descriptorSetLayouts.size());
                 pipelineLayoutInfo.pSetLayouts = m_descriptorSetLayouts.data();
-                //pipelineLayoutInfo.
-
+                pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(m_pushConstantRanges.size());
+                pipelineLayoutInfo.pPushConstantRanges = m_pushConstantRanges.data();
+                
                 err = vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout);
                 assert(!err);
                 if (err != VK_SUCCESS)
