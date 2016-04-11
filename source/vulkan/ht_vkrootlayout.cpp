@@ -20,17 +20,20 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            VKRootLayout::VKRootLayout(const VkDevice& device) :
-                m_device(device)
+            VKRootLayout::VKRootLayout(std::string ID) :
+                Core::RefCounted<VKRootLayout>(std::move(ID))
             {
                 m_pipelineLayout = VK_NULL_HANDLE;
+                
             }
 
             VKRootLayout::~VKRootLayout() {}
 
-            bool VKRootLayout::VInitialize(const Resource::RootLayoutHandle handle) 
+            bool VKRootLayout::Initialize(const std::string& fileName, const VkDevice& device) 
             {
                 using namespace Resource;
+
+                RootLayoutHandle handle = RootLayout::GetHandleFromFileName(fileName);
 
                 VkResult err;
 
@@ -116,7 +119,7 @@ namespace Hatchit
                             descriptorSetLayoutInfo.pBindings = descriptorSetLayoutBindings.data();
 
                             VkDescriptorSetLayout descriptorSetLayout;
-                            err = vkCreateDescriptorSetLayout(m_device, &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout);
+                            err = vkCreateDescriptorSetLayout(device, &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout);
                             assert(!err);
                             if (err != VK_SUCCESS)
                             {
@@ -183,7 +186,7 @@ namespace Hatchit
                 pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(m_pushConstantRanges.size());
                 pipelineLayoutInfo.pPushConstantRanges = m_pushConstantRanges.data();
                 
-                err = vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout);
+                err = vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {

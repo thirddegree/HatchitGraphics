@@ -24,26 +24,27 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            class HT_API VKRootLayout : public IRootLayout
+            class HT_API VKRootLayout : public Core::RefCounted<VKRootLayout>, public IRootLayout
             {
             public:
-                VKRootLayout(const VkDevice& device);
+                VKRootLayout(std::string ID);
 
                 ~VKRootLayout();
 
-                bool VInitialize(const Resource::RootLayoutHandle handle) override;
+                bool Initialize(const std::string& fileName, const VkDevice& device);
 
                 const VkPipelineLayout& VKGetPipelineLayout() const;
                 std::vector<VkDescriptorSetLayout> VKGetDescriptorSetLayouts() const;
                 std::vector<VkPushConstantRange> VKGetPushConstantRanges() const;
 
             private:
-                const VkDevice& m_device;
 
                 VkPipelineLayout m_pipelineLayout;
                 std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;
                 std::vector<VkPushConstantRange> m_pushConstantRanges;
             };
+
+            using VKRootLayoutHandle = Core::Handle<VKRootLayout>;
         }
     }
 }

@@ -29,7 +29,6 @@ namespace Hatchit {
                 m_renderTargetViewHeap = nullptr;
                 m_commandAllocator = nullptr;
                 m_commandQueue = nullptr;
-				m_rootLayout = nullptr;
                
                 m_fence = nullptr;
               
@@ -41,7 +40,6 @@ namespace Hatchit {
 
             D3D12DeviceResources::~D3D12DeviceResources()
             {
-				delete m_rootLayout;
                 ReleaseCOM(m_device);
                 ReleaseCOM(m_swapChain);
                 ReleaseCOM(m_renderTargetViewHeap);
@@ -277,8 +275,7 @@ namespace Hatchit {
                 m_scissorRect.bottom = static_cast<LONG>(height);
 
 				Resource::RootLayoutHandle handle = Resource::RootLayout::GetHandleFromFileName("TestRootDescriptor.json");
-				m_rootLayout = new D3D12RootLayout(m_device);
-				m_rootLayout->VInitialize(handle);
+                m_rootLayout = D3D12RootLayout::GetHandle("TestRootDescriptor.json", "TestRootDescriptor.json", m_device);
 
                 return true;
             }

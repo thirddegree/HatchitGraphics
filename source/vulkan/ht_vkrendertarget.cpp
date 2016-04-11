@@ -35,16 +35,31 @@ namespace Hatchit {
 
             using namespace Resource;
 
-            VKRenderTarget::VKRenderTarget(std::string ID, const std::string& fileName) :
+            VKRenderTarget::VKRenderTarget(std::string ID) :
                 m_device(VKRenderer::RendererInstance->GetVKDevice()),
-                Core::RefCounted<VKRenderTarget>(std::move(ID)),
-                m_resource(RenderTarget::GetHandleFromFileName(fileName))
-                
+                Core::RefCounted<VKRenderTarget>(std::move(ID))
             {
-                m_width = m_resource->GetWidth();
-                m_height = m_resource->GetHeight();
+                m_width = 0;
+                m_height = 0;
+            }
 
-                std::string formatString = m_resource->GetFormat();
+            VKRenderTarget::~VKRenderTarget()
+            {
+                vkFreeMemory(m_device, m_texture.image.memory, nullptr);
+                vkDestroyImage(m_device, m_texture.image.image, nullptr);
+                vkDestroyImageView(m_device, m_texture.image.view, nullptr);
+
+                vkDestroySampler(m_device, m_texture.sampler, nullptr);
+            }
+            
+            bool VKRenderTarget::Initialize(const std::string& fileName)
+            {
+                Resource::RenderTargetHandle handle = RenderTarget::GetHandleFromFileName(fileName);
+
+                m_width = handle->GetWidth();
+                m_height = handle->GetHeight();
+
+                std::string formatString = handle->GetFormat();
 
                 //Determine format bit from resource's string
                 if (formatString == "BGRA")
@@ -74,17 +89,12 @@ namespace Hatchit {
                 }
 
                 if (!VPrepare())
+                {
                     HT_DEBUG_PRINTF("Error: VKRenderTarget did not prepare properly");
+                    return false;
+                }
+                return true;
             }
-
-            VKRenderTarget::~VKRenderTarget() 
-            {
-                vkFreeMemory(m_device, m_texture.image.memory, nullptr);
-                vkDestroyImage(m_device, m_texture.image.image, nullptr);
-                vkDestroyImageView(m_device, m_texture.image.view, nullptr);
-
-                vkDestroySampler(m_device, m_texture.sampler, nullptr);
-            } 
 
             bool VKRenderTarget::VPrepare()
             {

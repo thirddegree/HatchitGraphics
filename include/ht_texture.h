@@ -21,12 +21,25 @@
 
 namespace Hatchit {
 
+    namespace Core
+    {
+        template<typename VarType>
+        class Handle;
+    }
+
+    namespace Resource
+    {
+        class Texture;
+    }
+
     namespace Graphics {
 
         class HT_API ITexture
         {
         public:
             virtual ~ITexture() { }
+
+            virtual bool VDeferredInitialize(Core::Handle<const Resource::Texture> resource) = 0;
         
             virtual void SetSampler(ISamplerHandle sampler) = 0;
 

@@ -145,7 +145,7 @@ namespace Hatchit {
                 VkClearValue                            m_clearColor;
 
                 //Resources we want loaded elsewhere
-                IRootLayout* m_rootLayout;
+                VKRootLayoutHandle m_rootLayout;
                 IRenderTargetHandle m_renderTarget;
                 IMaterialHandle m_material;
                 ITextureHandle m_texture;

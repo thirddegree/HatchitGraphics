@@ -63,7 +63,7 @@ namespace Hatchit {
                 D3D12_VIEWPORT              m_viewport;
                 D3D12_RECT                  m_scissorRect;
                 ID3D12Device*               m_device;
-				D3D12RootLayout*			m_rootLayout;
+                D3D12RootLayoutHandle	    m_rootLayout;
                 IDXGISwapChain3*            m_swapChain;
 				DXGI_SWAP_CHAIN_DESC		m_swapChainDesc;
                 ID3D12CommandQueue*         m_commandQueue;

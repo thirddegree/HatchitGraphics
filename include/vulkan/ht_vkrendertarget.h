@@ -38,8 +38,11 @@ namespace Hatchit {
             class HT_API VKRenderTarget : public Core::RefCounted<VKRenderTarget>, public IRenderTarget
             {
             public:
-                VKRenderTarget(std::string ID, const std::string& fileName);
+                VKRenderTarget(std::string ID);
                 ~VKRenderTarget();
+
+                //Required function from RefCounted classes
+                bool Initialize(const std::string& fileName);
 
                 ///Prepare the render target with Vulkan
                 bool VPrepare() override;
@@ -54,8 +57,6 @@ namespace Hatchit {
 
             protected:
                 const VkDevice& m_device;
-
-                Hatchit::Resource::RenderTargetHandle m_resource;
 
                 VkFormat m_colorFormat;
                 Texture m_texture;

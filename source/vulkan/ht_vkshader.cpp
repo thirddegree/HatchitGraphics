@@ -23,11 +23,15 @@ namespace Hatchit {
 
             using namespace Resource;
 
-            VKShader::VKShader(std::string ID, const std::string& fileName) :
+            VKShader::VKShader(std::string ID) :
                 m_device(VKRenderer::RendererInstance->GetVKDevice()),
-                Core::RefCounted<VKShader>(std::move(ID)) 
+                Core::RefCounted<VKShader>(std::move(ID)),
+                m_shader(VK_NULL_HANDLE)
+            {}
+
+            bool VKShader::Initialize(const std::string& fileName)
             {
-                m_shader = VK_NULL_HANDLE;
+                /*m_shader = VK_NULL_HANDLE;
                 ShaderHandle shaderResourceHandle = Shader::GetHandleFromFileName(fileName);
 
                 size_t size = shaderResourceHandle->GetBytecodeSize();
@@ -45,7 +49,36 @@ namespace Hatchit {
                 err = vkCreateShaderModule(m_device, &moduleCreateInfo, nullptr, &m_shader);
                 assert(!err);
                 if (err != VK_SUCCESS)
+                {
                     HT_DEBUG_PRINTF("VKShader::VInitFromFile(): Error creating shader module\n");
+                    return false;
+                }*/
+                return true;
+            }
+
+            bool VKShader::VDeferredInitialize(Resource::ShaderHandle resource)
+            {
+                m_shader = VK_NULL_HANDLE;
+                size_t size = resource->GetBytecodeSize();
+                const BYTE* shaderCode = resource->GetBytecode();
+
+                VkResult err;
+
+                VkShaderModuleCreateInfo moduleCreateInfo = {};
+                moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+                moduleCreateInfo.pNext = nullptr;
+                moduleCreateInfo.codeSize = size;
+                moduleCreateInfo.pCode = (uint32_t*)(shaderCode);
+                moduleCreateInfo.flags = 0;
+
+                err = vkCreateShaderModule(m_device, &moduleCreateInfo, nullptr, &m_shader);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+                    HT_DEBUG_PRINTF("VKShader::VInitFromFile(): Error creating shader module\n");
+                    return false;
+                }
+                return true;
             }
             VKShader::~VKShader() 
             {

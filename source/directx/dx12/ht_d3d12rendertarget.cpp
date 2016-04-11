@@ -16,21 +16,21 @@
 
 namespace Hatchit
 {
-	namespace Graphics
-	{
-		namespace DX
-		{
-			D3D12RenderTarget::D3D12RenderTarget()
-			{
+    namespace Graphics
+    {
+        namespace DX
+        {
+            D3D12RenderTarget::D3D12RenderTarget()
+            {
 
-			}
+            }
 
-			bool D3D12RenderTarget::Initialize(Resource::RenderTargetHandle handle, ID3D12Device* device)
-			{
+            bool D3D12RenderTarget::Initialize(Resource::RenderTargetHandle handle, ID3D12Device* device)
+            {
                 
 
-				return true;
-			}
-		}
-	}
+                return true;
+            }
+        }
+    }
 }

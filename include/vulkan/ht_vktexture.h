@@ -28,8 +28,13 @@ namespace Hatchit {
             class HT_API VKTexture : public Core::RefCounted<VKTexture>, public ITexture
             {
             public:
-                VKTexture(std::string ID, const std::string& fileName);
+                VKTexture(std::string ID);
                 virtual ~VKTexture();
+
+                //Required function for RefCounted classes
+                bool Initialize(const std::string& fileName);
+
+                bool VDeferredInitialize(Resource::TextureHandle resource) override;
 
                 VkSampler GetSampler();
                 VkImageView GetView();

@@ -35,6 +35,17 @@
 
 namespace Hatchit {
 
+    namespace Core
+    {
+        template<typename VarType>
+        class Handle;
+    }
+
+    namespace Resource
+    {
+        class Material;
+    }
+
     namespace Graphics {
 
         class IPipeline;
@@ -43,6 +54,8 @@ namespace Hatchit {
         {
         public:
             virtual ~IMaterial() { };
+
+            virtual bool VDeferredInitialize(Core::Handle<const Resource::Material> resource) = 0;
 
             virtual bool VSetInt(std::string name, int data) = 0;
             virtual bool VSetFloat(std::string name, float data) = 0;

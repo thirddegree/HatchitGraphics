@@ -21,20 +21,20 @@
 
 namespace Hatchit
 {
-	namespace Graphics
-	{
-		namespace DX
-		{
-			class HT_API D3D12RenderTarget : public IRenderTarget
-			{
-			public:
-				D3D12RenderTarget();
+    namespace Graphics
+    {
+        namespace DX
+        {
+            class HT_API D3D12RenderTarget : public IRenderTarget
+            {
+            public:
+                D3D12RenderTarget();
 
-				bool Initialize(Resource::RenderTargetHandle handle, ID3D12Device* device);
+                bool Initialize(Resource::RenderTargetHandle handle, ID3D12Device* device);
 
-			private:
-				ID3D12Resource* m_resource;
-			};
-		}
-	}
+            private:
+                ID3D12Resource* m_resource;
+            };
+        }
+    }
 }
