@@ -45,8 +45,13 @@ namespace Hatchit
 
                 void                                        PostInitCleanup();
                 std::vector<D3D12_STATIC_SAMPLER_DESC>      SamplerDescsFromHandle(const Resource::RootLayoutHandle& handle);
-
+               
                 D3D12_ROOT_SIGNATURE_FLAGS			        RootSignatureFlagsFromHandle(const Resource::RootLayoutHandle& handle);
+            
+                D3D12_COMPARISON_FUNC                       CompareOpFromType(const Resource::Sampler::CompareOperation op);
+                D3D12_STATIC_BORDER_COLOR                   BorderColorFromType(const Resource::Sampler::BorderColor color);
+                D3D12_FILTER                                FilterFromType(const Resource::Sampler::Filter& filter);
+                D3D12_TEXTURE_ADDRESS_MODE                  AddressModeFromType(const Resource::Sampler::AddressMode mode);
             };
             using D3D12RootLayoutHandle = Core::Handle<D3D12RootLayout>;
         }

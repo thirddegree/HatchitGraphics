@@ -41,7 +41,7 @@ namespace Hatchit {
         {
             IPipelineHandle  pipeline;
             IMaterialHandle  material;
-            IMesh*      mesh;
+            IMesh*           mesh;
         };
 
         struct Renderable 

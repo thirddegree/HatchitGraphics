@@ -49,102 +49,147 @@ namespace Hatchit
                 std::vector<RootLayout::Parameter> parameters = resource->GetParameters();
                 for (uint32_t i = 0; i < resource->GetParameterCount(); i++)
                 {
-                    D3D12_ROOT_PARAMETER  parameter = {};
+                    
                     RootLayout::Parameter p = parameters[i];
 
                     switch (p.type)
                     {
-                    case RootLayout::Parameter::Type::TABLE:
-                    {
-                        parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-                        switch (p.visibility)
+                        case RootLayout::Parameter::Type::TABLE:
                         {
-                        case RootLayout::ShaderVisibility::VERTEX:
-                        {
-                            parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-                        } break;
-
-                        case RootLayout::ShaderVisibility::TESS_CONTROL:
-                        {
-                            parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_HULL;
-                        } break;
-
-                        case RootLayout::ShaderVisibility::TESS_EVAL:
-                        {
-                            parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
-                        } break;
-
-                        case RootLayout::ShaderVisibility::GEOMETRY:
-                        {
-                            parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
-                        } break;
-
-                        case RootLayout::ShaderVisibility::FRAGMENT:
-                        {
-                            parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-                        } break;
-
-                        case RootLayout::ShaderVisibility::ALL:
-                        {
-                            parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-                        } break;
-                        }
-
-                        D3D12_ROOT_DESCRIPTOR_TABLE table;
-                        table.NumDescriptorRanges = p.data.table.rangeCount;
-                        D3D12_DESCRIPTOR_RANGE* _ranges = new D3D12_DESCRIPTOR_RANGE[table.NumDescriptorRanges];
-                        m_allocatedRanges.push_back(_ranges);
-                        for (uint32_t j = 0; j < table.NumDescriptorRanges; j++)
-                        {
-                            D3D12_DESCRIPTOR_RANGE _range;
-                            RootLayout::Range r = p.data.table.ranges[j];
-                            _range.NumDescriptors = r.numDescriptors;
-                            switch (r.type)
+                            D3D12_ROOT_PARAMETER  parameter = {};
+                            parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+                            switch (p.visibility)
                             {
-                            case RootLayout::Range::Type::CONSTANT_BUFFER:
-                            {
-                                _range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-                            } break;
+                                case RootLayout::ShaderVisibility::VERTEX:
+                                {
+                                    parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+                                } break;
 
-                            case RootLayout::Range::Type::SAMPLER:
-                            {
-                                _range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
-                            } break;
+                                case RootLayout::ShaderVisibility::TESS_CONTROL:
+                                {
+                                    parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_HULL;
+                                } break;
 
-                            case RootLayout::Range::Type::SHADER_RESOURCE:
-                            {
-                                _range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-                            } break;
+                                case RootLayout::ShaderVisibility::TESS_EVAL:
+                                {
+                                    parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
+                                } break;
 
-                            case RootLayout::Range::Type::UNORDERED_ACCESS:
-                            {
-                                _range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-                            } break;
+                                case RootLayout::ShaderVisibility::GEOMETRY:
+                                {
+                                    parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
+                                } break;
 
-                            default:
-                                break;
+                                case RootLayout::ShaderVisibility::FRAGMENT:
+                                {
+                                    parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+                                } break;
+
+                                case RootLayout::ShaderVisibility::ALL:
+                                {
+                                    parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+                                } break;
                             }
-                            _range.BaseShaderRegister = r.baseRegister;
-                            _range.RegisterSpace = r.registerSpace;
-                            _range.OffsetInDescriptorsFromTableStart = 0;
 
-                            _ranges[j] = _range;
-                        }
-                        table.pDescriptorRanges = _ranges;
+                            D3D12_ROOT_DESCRIPTOR_TABLE table;
+                            table.NumDescriptorRanges = p.data.table.rangeCount;
+                            D3D12_DESCRIPTOR_RANGE* _ranges = new D3D12_DESCRIPTOR_RANGE[table.NumDescriptorRanges];
+                            m_allocatedRanges.push_back(_ranges);
+                            for (uint32_t j = 0; j < table.NumDescriptorRanges; j++)
+                            {
+                                D3D12_DESCRIPTOR_RANGE _range;
+                                RootLayout::Range r = p.data.table.ranges[j];
+                                _range.NumDescriptors = r.numDescriptors;
+                                switch (r.type)
+                                {
+                                case RootLayout::Range::Type::CONSTANT_BUFFER:
+                                {
+                                    _range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+                                } break;
 
+                                case RootLayout::Range::Type::SAMPLER:
+                                {
+                                    _range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
+                                } break;
 
-                        parameter.DescriptorTable = table;
-                    } break;
+                                case RootLayout::Range::Type::SHADER_RESOURCE:
+                                {
+                                    _range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+                                } break;
+
+                                case RootLayout::Range::Type::UNORDERED_ACCESS:
+                                {
+                                    _range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+                                } break;
+
+                                default:
+                                    break;
+                                }
+                                _range.BaseShaderRegister = r.baseRegister;
+                                _range.RegisterSpace = r.registerSpace;
+                                _range.OffsetInDescriptorsFromTableStart = 0;
+
+                                _ranges[j] = _range;
+                            }
+                            table.pDescriptorRanges = _ranges;
+                            parameter.DescriptorTable = table;
+
+                            _RootParameters.push_back(parameter);
+                        } break;
+
+                        case RootLayout::Parameter::Type::CONSTANT:
+                        {
+                            D3D12_ROOT_PARAMETER parameter = {};
+                            switch (p.visibility)
+                            {
+                                case RootLayout::ShaderVisibility::VERTEX:
+                                {
+                                    parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+                                } break;
+
+                                case RootLayout::ShaderVisibility::TESS_CONTROL:
+                                {
+                                    parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_HULL;
+                                } break;
+
+                                case RootLayout::ShaderVisibility::TESS_EVAL:
+                                {
+                                    parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
+                                } break;
+
+                                case RootLayout::ShaderVisibility::GEOMETRY:
+                                {
+                                    parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
+                                } break;
+
+                                case RootLayout::ShaderVisibility::FRAGMENT:
+                                {
+                                    parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+                                } break;
+
+                                case RootLayout::ShaderVisibility::ALL:
+                                {
+                                    parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+                                } break;
+                            }
+                            parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+                            parameter.Constants.Num32BitValues = p.data.constant.valueCount;
+                            parameter.Constants.ShaderRegister = p.data.constant.shaderRegister;
+                            parameter.Constants.RegisterSpace = p.data.constant.registerSpace;
+                            
+                            _RootParameters.push_back(parameter);
+                        } break;
+
                     }
 
-                    _RootParameters.push_back(parameter);
                 }
 
                 /*Create Static Samplers*/
+                std::vector<D3D12_STATIC_SAMPLER_DESC> _Samplers = SamplerDescsFromHandle(resource);
                 rootDesc.NumParameters = resource->GetParameterCount();
                 rootDesc.pParameters = &_RootParameters[0];
-                rootDesc.NumStaticSamplers = 0;
-                rootDesc.pStaticSamplers = nullptr;
+                rootDesc.NumStaticSamplers = static_cast<uint32_t>(resource->GetSamplers().size());
+                rootDesc.pStaticSamplers = &_Samplers[0];
                 rootDesc.Flags = RootSignatureFlagsFromHandle(resource);
 
                 ID3DBlob* _signature = nullptr;
@@ -208,6 +253,86 @@ namespace Hatchit
                 return rootSignatureFlags;
             }
 
+            D3D12_COMPARISON_FUNC D3D12RootLayout::CompareOpFromType(const Resource::Sampler::CompareOperation op)
+            {
+                using namespace Resource;
+
+                switch (op)
+                {
+                case Sampler::CompareOperation::COMPARE_OP_ALWAYS:
+                    return D3D12_COMPARISON_FUNC_ALWAYS;
+                case Sampler::CompareOperation::COMPARE_OP_EQUAL:
+                    return D3D12_COMPARISON_FUNC_EQUAL;
+                case Sampler::CompareOperation::COMPARE_OP_GREATER:
+                    return D3D12_COMPARISON_FUNC_GREATER;
+                case Sampler::CompareOperation::COMPARE_OP_GREATER_EQUAL:
+                    return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+                case Sampler::CompareOperation::COMPARE_OP_LESS:
+                    return D3D12_COMPARISON_FUNC_LESS;
+                case Sampler::CompareOperation::COMPARE_OP_LESS_EQUAL:
+                    return D3D12_COMPARISON_FUNC_LESS_EQUAL;
+                case Sampler::CompareOperation::COMPARE_OP_NEVER:
+                    return D3D12_COMPARISON_FUNC_NEVER;
+                case Sampler::CompareOperation::COMPARE_OP_NOT_EQUAL:
+                    return D3D12_COMPARISON_FUNC_NOT_EQUAL;
+                default:
+                    return D3D12_COMPARISON_FUNC_NEVER;
+                }
+            }
+
+            D3D12_STATIC_BORDER_COLOR D3D12RootLayout::BorderColorFromType(const Resource::Sampler::BorderColor color)
+            {
+                using namespace Resource;
+
+                switch (color)
+                {
+                case Sampler::BorderColor::COLOR_OPAQUE_WHITE:
+                    return D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
+                case Sampler::BorderColor::COLOR_OPAQUE_BLACK:
+                    return D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
+                case Sampler::BorderColor::COLOR_TRANSPARENT_BLACK:
+                    return D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+                default:
+                    D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
+                }
+            }
+
+            D3D12_FILTER D3D12RootLayout::FilterFromType(const Resource::Sampler::Filter& filter)
+            {
+                using namespace Resource;
+
+                if (filter.mag == Sampler::FilterMode::NEAREST &&
+                    filter.min == Sampler::FilterMode::NEAREST)
+                    return D3D12_FILTER_MIN_MAG_MIP_POINT;
+                else if (filter.mag == Sampler::FilterMode::BILINEAR &&
+                    filter.min == Sampler::FilterMode::BILINEAR)
+                    return D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+                else
+                    return D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+            }
+
+            D3D12_TEXTURE_ADDRESS_MODE D3D12RootLayout::AddressModeFromType(const Resource::Sampler::AddressMode mode)
+            {
+                using namespace Resource;
+
+                switch (mode)
+                {
+                case Sampler::AddressMode::BORDER:
+                    return D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+                case Sampler::AddressMode::CLAMP:
+                    return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+                case Sampler::AddressMode::MIRROR:
+                    return D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
+                case Sampler::AddressMode::MIRROR_ONCE:
+                    return D3D12_TEXTURE_ADDRESS_MODE_MIRROR_ONCE;
+                case Sampler::AddressMode::WRAP:
+                    return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+
+                default:
+                    return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+                }
+            }
+
             std::vector<D3D12_STATIC_SAMPLER_DESC> D3D12RootLayout::SamplerDescsFromHandle(const Resource::RootLayoutHandle& handle)
             {
                 using namespace Resource;
@@ -217,7 +342,52 @@ namespace Hatchit
                 for (auto sampler : _RootSamplers)
                 {
                     D3D12_STATIC_SAMPLER_DESC desc;
-                    
+                    desc.AddressU = AddressModeFromType(sampler.GetAddress().u);
+                    desc.AddressV = AddressModeFromType(sampler.GetAddress().v);
+                    desc.AddressW = AddressModeFromType(sampler.GetAddress().w);
+                    desc.MaxAnisotropy = sampler.GetMaxAnisotropy();
+                    desc.MaxLOD = sampler.GetMaxLOD();
+                    desc.MinLOD = sampler.GetMinLOD();
+                    desc.MipLODBias = sampler.GetMipLODBias();
+                    desc.Filter = FilterFromType(sampler.GetFilter());
+                    desc.BorderColor = BorderColorFromType(sampler.GetBorderColor());
+                    desc.ComparisonFunc = CompareOpFromType(sampler.GetCompareOp());
+                    desc.ShaderRegister = sampler.GetImmutable().shaderRegister;
+                    desc.RegisterSpace = sampler.GetImmutable().registerSpace;
+                    switch (sampler.GetImmutable().visibility)
+                    {
+                        case Sampler::ShaderVisibility::VERTEX:
+                        {
+                            desc.ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+                        } break;
+
+                        case Sampler::ShaderVisibility::TESS_CONTROL:
+                        {
+                            desc.ShaderVisibility = D3D12_SHADER_VISIBILITY_HULL;
+                        } break;
+
+                        case Sampler::ShaderVisibility::TESS_EVAL:
+                        {
+                            desc.ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
+                        } break;
+
+                        case Sampler::ShaderVisibility::GEOMETRY:
+                        {
+                            desc.ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
+                        } break;
+
+                        case Sampler::ShaderVisibility::FRAGMENT:
+                        {
+                            desc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+                        } break;
+
+                        case Sampler::ShaderVisibility::ALL:
+                        {
+                            desc.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+                        } break;
+                    }
+
+                    _descs.push_back(desc);
                 }
 
                 return _descs;
