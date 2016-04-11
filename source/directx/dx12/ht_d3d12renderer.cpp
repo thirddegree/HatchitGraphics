@@ -31,8 +31,6 @@ namespace Hatchit {
 
             D3D12Renderer::D3D12Renderer()
             {
-                m_pipelineState = nullptr;
-                m_pipeline = nullptr;
                 m_commandList = nullptr;
                 m_vBuffer = nullptr;
                 m_iBuffer = nullptr;
@@ -41,8 +39,6 @@ namespace Hatchit {
             D3D12Renderer::~D3D12Renderer()
             {
                 delete m_resources;
-                delete m_pipeline;
-                ReleaseCOM(m_pipelineState);
                 ReleaseCOM(m_commandList);
                 ReleaseCOM(m_constantBuffer);
                 ReleaseCOM(m_cbDescriptorHeap);
@@ -67,8 +63,8 @@ namespace Hatchit {
 
                 /*Create Pipeline State*/
              
-                m_pipeline = new D3D12Pipeline(m_resources->GetDevice(), m_resources->GetRootSignature());
-                m_pipeline->VInitialize(Resource::Pipeline::GetHandleFromFileName("TestPipeline.json"));
+                m_pipeline = D3D12Pipeline::GetHandle("TestPipeline.json",
+                    "TestPipeline.json", m_resources->GetDevice(), m_resources->GetRootSignature());
 
                 /*Create command list*/
                 hr = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_resources->GetCommandAllocator(), m_pipeline->GetPipeline(), IID_PPV_ARGS(&m_commandList));

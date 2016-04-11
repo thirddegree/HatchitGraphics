@@ -60,14 +60,12 @@ namespace Hatchit {
 
             private:
                 D3D12DeviceResources*       m_resources;
-                ID3D12RootSignature*        m_rootSignature;
-                ID3D12PipelineState*        m_pipelineState;
                 ID3D12GraphicsCommandList*  m_commandList;
                 ID3D12DescriptorHeap*       m_cbDescriptorHeap;
                 uint32_t                    m_cbDescriptorSize;
                 uint8_t*                    m_mappedConstantBuffer;
 
-                D3D12Pipeline*              m_pipeline;
+                D3D12PipelineHandle         m_pipeline;
      
                 Color                       m_clearColor;
 

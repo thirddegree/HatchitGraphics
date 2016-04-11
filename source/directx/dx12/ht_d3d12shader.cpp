@@ -49,7 +49,7 @@ namespace Hatchit {
                 }
                 memcpy(m_blob->GetBufferPointer(), resource->GetBytecode(), resource->GetBytecodeSize());
 
-
+                
                 return true;
             }
 
