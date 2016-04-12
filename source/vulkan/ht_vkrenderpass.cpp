@@ -178,10 +178,10 @@ namespace Hatchit {
                     pipeline->VUpdate();
 
                     VkPipeline vkPipeline = pipeline->GetVKPipeline();
-                    VkPipelineLayout vkPipelineLayout = pipeline->GetVKPipelineLayout();
+                    VkPipelineLayout vkPipelineLayout = renderer->GetVKRootLayoutHandle()->VKGetPipelineLayout();
 
                     vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetVKPipeline());
-                    pipeline->SendPushConstants(m_commandBuffer);
+                    pipeline->SendPushConstants(m_commandBuffer, vkPipelineLayout);
 
                     std::vector<Renderable> renderables = iterator->second;
 
@@ -192,10 +192,10 @@ namespace Hatchit {
                         VKMaterialHandle material = renderables[i].material.DynamicCastHandle<VKMaterial>();
                         VKMesh*     mesh = static_cast<VKMesh*>(renderables[i].mesh);
                     
-                        VkDescriptorSet* descriptorSet = material->GetVKDescriptorSet();
+                        std::vector<VkDescriptorSet> descriptorSets = material->GetVKDescriptorSets();
                         
                         vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            vkPipelineLayout, 1, 1, descriptorSet, 0, nullptr);
+                            vkPipelineLayout, 0, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, nullptr);
                     
                         UniformBlock vertBlock = mesh->GetVertexBlock();
                         UniformBlock indexBlock = mesh->GetIndexBlock();

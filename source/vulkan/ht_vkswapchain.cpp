@@ -211,36 +211,15 @@ namespace Hatchit {
                 multisampleState.minSamples = 0;
                 multisampleState.samples = Pipeline::SAMPLE_1_BIT;
 
-                
-
-                //Prepare descriptor set layout
-
-                VkDescriptorSetLayoutBinding textureBinding = {};
-                textureBinding.binding = 0;
-                textureBinding.descriptorCount = 1;
-                textureBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                textureBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-                VkDescriptorSetLayoutCreateInfo descriptorLayoutInfo = {};
-                descriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-                descriptorLayoutInfo.bindingCount = 1;
-                descriptorLayoutInfo.pBindings = &textureBinding;
-
-                err = vkCreateDescriptorSetLayout(m_device, &descriptorLayoutInfo, nullptr, &m_descriptorSetLayout);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-                    HT_DEBUG_PRINTF("VKSwapchain::prepareResources: Failed to create descriptor set layout\n");
-                    return false;
-                }
-                
-                m_pipeline = VKPipeline::GetHandle("SwapchainPipeline.json", "SwapchainPipeline.json", m_descriptorSetLayout);
+                m_pipeline = VKPipeline::GetHandle("SwapchainPipeline.json", "SwapchainPipeline.json");
 
                 //Setup the descriptor sets
+                const std::vector<VkDescriptorSetLayout> descriptorSetLayouts = renderer->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts();
+
                 VkDescriptorSetAllocateInfo allocInfo = {};
                 allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
                 allocInfo.descriptorPool = renderer->GetVKDescriptorPool();
-                allocInfo.pSetLayouts = &m_descriptorSetLayout;
+                allocInfo.pSetLayouts = &descriptorSetLayouts[1];
                 allocInfo.descriptorSetCount = 1;
 
                 err = vkAllocateDescriptorSets(m_device, &allocInfo, &m_descriptorSet);
@@ -313,6 +292,8 @@ namespace Hatchit {
                 clearValues[0] = clearColor;
                 clearValues[1] = { 1.0f, 0 };
 
+                VkPipelineLayout pipelineLayout = VKRenderer::RendererInstance->GetVKRootLayoutHandle()->VKGetPipelineLayout();
+
                 for (uint32_t i = 0; i < m_swapchainBuffers.size(); i++) 
                 {
                     VkRenderPassBeginInfo renderPassBeginInfo = {};
@@ -354,8 +335,8 @@ namespace Hatchit {
                     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
                     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline->GetVKPipelineLayout(),
-                        0, 1, &m_descriptorSet, 0, nullptr);
+                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
+                        1, 1, &m_descriptorSet, 0, nullptr);
                     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline->GetVKPipeline());
                     
                     //Draw fullscreen Tri; geometry created in shader

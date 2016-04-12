@@ -45,7 +45,7 @@ namespace Hatchit {
                 VKPipeline(std::string ID);
                 ~VKPipeline();
 
-                bool Initialize(const std::string& fileName, VkDescriptorSetLayout layout);
+                bool Initialize(const std::string& fileName);
 
                 ///Have Vulkan update the descriptor sets in this pipeline
                 bool VUpdate()                                                  override;
@@ -64,10 +64,8 @@ namespace Hatchit {
                 bool VSetMatrix4(std::string name, Math::Matrix4 data)          override;
 
                 VkPipeline                          GetVKPipeline();
-                VkPipelineLayout                    GetVKPipelineLayout();
-                std::vector<VkDescriptorSetLayout>  GetVKDescriptorSetLayouts();
                 
-                void SendPushConstants(VkCommandBuffer commandBuffer);
+                void SendPushConstants(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout);
 
             protected:
                 std::map<Resource::Pipeline::ShaderSlot, VKShaderHandle> m_shaderHandles;
@@ -78,10 +76,6 @@ namespace Hatchit {
                 VkPipelineRasterizationStateCreateInfo m_rasterizationState;
                 VkPipelineMultisampleStateCreateInfo m_multisampleState;
                 std::vector<VkPipelineShaderStageCreateInfo> m_shaderStages;
-
-                bool useGivenLayout = false;
-                std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts; //0 is this pipeline set layout, 1 is the material set layout
-                VkPipelineLayout m_pipelineLayout;
 
                 VkPipelineCache m_pipelineCache;
                 VkPipeline      m_pipeline;
@@ -110,7 +104,6 @@ namespace Hatchit {
                 */
                 void loadShader(Hatchit::Resource::Pipeline::ShaderSlot shaderSlot, IShaderHandle shader);
 
-                bool prepareLayouts();
                 bool preparePipeline(const VKRenderPassHandle& passHandle);
             };
 

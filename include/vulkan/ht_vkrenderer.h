@@ -95,6 +95,8 @@ namespace Hatchit {
                 */
                 const VkDescriptorPool& GetVKDescriptorPool() const;
 
+                const VKRootLayoutHandle& GetVKRootLayoutHandle() const;
+
                 const VkCommandBuffer& GetSetupCommandBuffer() const;
 
                 const VkFormat& GetPreferredImageFormat() const;

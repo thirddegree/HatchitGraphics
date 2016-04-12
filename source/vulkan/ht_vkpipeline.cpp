@@ -27,23 +27,18 @@ namespace Hatchit {
 
             VKPipeline::VKPipeline(std::string ID) :
                 m_device(VKRenderer::RendererInstance->GetVKDevice()),
+
                 Core::RefCounted<VKPipeline>(std::move(ID))
             {
             }
 
             VKPipeline::~VKPipeline() 
             {
-                VKRenderer* renderer = VKRenderer::RendererInstance;
-
                 vkDestroyPipeline(m_device, m_pipeline, nullptr);
-                vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
                 vkDestroyPipelineCache(m_device, m_pipelineCache, nullptr);
-
-                for (size_t i = 0; i < m_descriptorSetLayouts.size(); i++)
-                    vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayouts[i], nullptr);
             }
 
-            bool VKPipeline::Initialize(const std::string& fileName, VkDescriptorSetLayout layout)
+            bool VKPipeline::Initialize(const std::string& fileName)
             {
                 Resource::PipelineHandle handle = Resource::Pipeline::GetHandleFromFileName(fileName);
                 if (!handle.IsValid())
@@ -72,15 +67,6 @@ namespace Hatchit {
                 //Get a handle to a compatible render pass
                 std::string renderPassPath = handle->GetRenderPassPath();
                 VKRenderPassHandle renderPass = VKRenderPass::GetHandle(renderPassPath, renderPassPath);
-
-                if (layout != VK_NULL_HANDLE)
-                {
-                    useGivenLayout = true;
-                    m_descriptorSetLayouts.push_back(layout);
-                }
-
-                if (!prepareLayouts())
-                    return false;
 
                 if (!preparePipeline(renderPass))
                     return false;
@@ -313,14 +299,12 @@ namespace Hatchit {
             }
 
             VkPipeline                          VKPipeline::GetVKPipeline() { return m_pipeline; }
-            VkPipelineLayout                    VKPipeline::GetVKPipelineLayout() { return m_pipelineLayout; }
-            std::vector<VkDescriptorSetLayout>  VKPipeline::GetVKDescriptorSetLayouts() { return m_descriptorSetLayouts; }
 
-            void VKPipeline::SendPushConstants(VkCommandBuffer commandBuffer)
+            void VKPipeline::SendPushConstants(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout)
             {
                 //Send a push for each type of data to send; vectors, matricies, ints etc.
                 uint32_t dataSize = static_cast<uint32_t>(m_matrixPushData.size() * sizeof(float));
-                vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, dataSize, m_matrixPushData.data());
+                vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, dataSize, m_matrixPushData.data());
             }
 
             /*
@@ -453,109 +437,6 @@ namespace Hatchit {
                 m_shaderStages.push_back(shaderStage);
             }
 
-            bool VKPipeline::prepareLayouts()
-            {
-                VkResult err;
-
-                if (!useGivenLayout)
-                {
-                    //TODO: Properly detect and setup layout bindings
-
-                    std::vector<VkDescriptorSetLayoutBinding> perPassBindings;
-                    std::vector<VkDescriptorSetLayoutBinding> perObjectBindings;
-
-                    //Per pass binding point
-                    VkDescriptorSetLayoutBinding perPassBinding = {};
-                    perPassBinding.binding = 0;
-                    perPassBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                    perPassBinding.descriptorCount = 1;
-                    perPassBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-                    perPassBinding.pImmutableSamplers = nullptr;
-
-                    perPassBindings.push_back(perPassBinding);
-
-                    //Per model binding points
-                    VkDescriptorSetLayoutBinding perObjectVSBinding = {};
-                    perObjectVSBinding.binding = 0;
-                    perObjectVSBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                    perObjectVSBinding.descriptorCount = 1;
-                    perObjectVSBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-                    perObjectVSBinding.pImmutableSamplers = nullptr;
-
-                    VkDescriptorSetLayoutBinding perObjectFSBinding = {};
-                    perObjectFSBinding.binding = 1;
-                    perObjectFSBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                    perObjectFSBinding.descriptorCount = 1;
-                    perObjectFSBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-                    perObjectFSBinding.pImmutableSamplers = nullptr;
-
-                    perObjectBindings.push_back(perObjectVSBinding);
-                    perObjectBindings.push_back(perObjectFSBinding);
-
-                    VkDescriptorSetLayoutCreateInfo perPassDescriptorLayoutInfo = {};
-                    perPassDescriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-                    perPassDescriptorLayoutInfo.pNext = NULL;
-                    perPassDescriptorLayoutInfo.bindingCount = static_cast<uint32_t>(perPassBindings.size());
-                    perPassDescriptorLayoutInfo.pBindings = perPassBindings.data();
-
-                    VkDescriptorSetLayoutCreateInfo perObjectDescriptorLayoutInfo = {};
-                    perObjectDescriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-                    perObjectDescriptorLayoutInfo.pNext = NULL;
-                    perObjectDescriptorLayoutInfo.bindingCount = static_cast<uint32_t>(perObjectBindings.size());
-                    perObjectDescriptorLayoutInfo.pBindings = perObjectBindings.data();
-
-                    m_descriptorSetLayouts.resize(2);
-
-                    err = vkCreateDescriptorSetLayout(m_device, &perPassDescriptorLayoutInfo, nullptr, &m_descriptorSetLayouts[0]);
-                    assert(!err);
-                    if (err != VK_SUCCESS)
-                    {
-                        HT_DEBUG_PRINTF("VKRenderer::preparePipeline(): Failed to create descriptor layout\n");
-                        return false;
-                    }
-
-                    err = vkCreateDescriptorSetLayout(m_device, &perObjectDescriptorLayoutInfo, nullptr, &m_descriptorSetLayouts[1]);
-                    assert(!err);
-                    if (err != VK_SUCCESS)
-                    {
-                        HT_DEBUG_PRINTF("VKRenderer::preparePipeline(): Failed to create descriptor layout\n");
-                        return false;
-                    }
-                }
-
-                uint32_t matSize = 16 * sizeof(float);
-
-                std::vector<VkPushConstantRange> pushConstantRanges;
-                pushConstantRanges.resize(2);
-
-                pushConstantRanges[0].offset = 0;
-                pushConstantRanges[0].size = matSize;
-                pushConstantRanges[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-                pushConstantRanges[1].offset = matSize;
-                pushConstantRanges[1].size = matSize;
-                pushConstantRanges[1].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-                //Pipeline layout 
-                VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-                pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-                pipelineLayoutInfo.pNext = nullptr;
-                pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(m_descriptorSetLayouts.size());
-                pipelineLayoutInfo.pSetLayouts = m_descriptorSetLayouts.data();
-                pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size());
-                pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data();
-
-                err = vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-                    HT_DEBUG_PRINTF("VKRenderer::preparePipeline(): Failed to create pipeline layout\n");
-                    return false;
-                }
-
-                return true;
-            }
-
             bool VKPipeline::preparePipeline(const VKRenderPassHandle& passHandle)
             {
                 VkResult err;
@@ -662,10 +543,14 @@ namespace Hatchit {
                 depthStencilState.front = depthStencilState.back;
                 depthStencilState.front.compareOp = VK_COMPARE_OP_NEVER;
 
+                //Get pipeline layout
+                VKRootLayoutHandle rootLayoutHandle = VKRenderer::RendererInstance->GetVKRootLayoutHandle();
+                VkPipelineLayout pipelineLayout = rootLayoutHandle->VKGetPipelineLayout();
+
                 //Finalize pipeline
                 VkGraphicsPipelineCreateInfo pipelineInfo = {};
                 pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-                pipelineInfo.layout = m_pipelineLayout;
+                pipelineInfo.layout = pipelineLayout;
                 pipelineInfo.renderPass = passHandle->GetVkRenderPass();
                 pipelineInfo.stageCount = static_cast<uint32_t>(m_shaderStages.size());
                 pipelineInfo.pVertexInputState = &vertexInputState;

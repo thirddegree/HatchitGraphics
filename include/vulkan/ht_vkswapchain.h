@@ -90,7 +90,6 @@ namespace Hatchit {
 
                 VkRenderPass            m_renderPass;
                 VKPipelineHandle        m_pipeline;
-                VkDescriptorSetLayout   m_descriptorSetLayout;
                 VkDescriptorSet         m_descriptorSet;
 
                 std::vector<VkCommandBuffer> m_postPresentCommands;

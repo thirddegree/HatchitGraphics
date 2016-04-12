@@ -59,7 +59,7 @@ namespace Hatchit {
 
                 bool VUpdate()                                              override;
 
-                VkDescriptorSet* GetVKDescriptorSet();
+                const std::vector<VkDescriptorSet>& GetVKDescriptorSets() const;
 
                 IPipelineHandle GetPipeline() override;
 
@@ -70,8 +70,8 @@ namespace Hatchit {
 
                 Resource::MaterialHandle m_materialResourceHandle;
 
-                VkDescriptorSetLayout m_materialLayout;
-                VkDescriptorSet m_materialSet;
+                std::vector<VkDescriptorSetLayout> m_materialLayouts;
+                std::vector<VkDescriptorSet> m_materialSets;
 
                 UniformBlock m_uniformVSBuffer;
                 //UniformBlock m_uniformFSBuffer;

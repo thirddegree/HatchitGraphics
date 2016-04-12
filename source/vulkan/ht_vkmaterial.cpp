@@ -37,7 +37,7 @@ namespace Hatchit {
                 m_materialResourceHandle = Hatchit::Resource::Material::GetHandleFromFileName(fileName);
 
                 //Gather resources and handles
-                m_pipeline = VKPipeline::GetHandle(m_materialResourceHandle->GetPipelinePath(), m_materialResourceHandle->GetPipelinePath(), nullptr);
+                m_pipeline = VKPipeline::GetHandle(m_materialResourceHandle->GetPipelinePath(), m_materialResourceHandle->GetPipelinePath());
                 m_shaderVariables = m_materialResourceHandle->GetShaderVariables();
 
                 std::vector<std::string> texturePaths = m_materialResourceHandle->GetTexturePaths();
@@ -52,7 +52,7 @@ namespace Hatchit {
 
                 VKPipelineHandle vkPipeline = m_pipeline.DynamicCastHandle<VKPipeline>();
 
-                m_materialLayout = vkPipeline->GetVKDescriptorSetLayouts()[1];
+                m_materialLayouts = renderer->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts();
 
                 //Prepare uniform buffers
                 //if(m_shaderVariables.size() > 0)
@@ -73,8 +73,11 @@ namespace Hatchit {
 
                 VkDescriptorPool descriptorPool = renderer->GetVKDescriptorPool();
 
-                //Free descriptors
-                vkFreeDescriptorSets(m_device, descriptorPool, 1, &m_materialSet);
+                //Free descriptor sets
+                uint32_t descriptorSetCount = static_cast<uint32_t>(m_materialSets.size());
+                VkDescriptorSet* descriptorSets = m_materialSets.data();
+
+                vkFreeDescriptorSets(m_device, descriptorPool, descriptorSetCount, descriptorSets);
 
                 //Destroy unifrom blocks
                 vkFreeMemory(m_device, m_uniformVSBuffer.memory, nullptr);
@@ -149,7 +152,7 @@ namespace Hatchit {
                 return true;
             }
 
-            VkDescriptorSet* VKMaterial::GetVKDescriptorSet() { return &m_materialSet; }
+            const std::vector<VkDescriptorSet>& VKMaterial::GetVKDescriptorSets() const { return m_materialSets; }
 
             bool VKMaterial::setupDescriptorSet(VkDescriptorPool descriptorPool)
             {
@@ -159,10 +162,11 @@ namespace Hatchit {
                 VkDescriptorSetAllocateInfo allocInfo = {};
                 allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
                 allocInfo.descriptorPool = descriptorPool;
-                allocInfo.pSetLayouts = &m_materialLayout;
-                allocInfo.descriptorSetCount = 1;
+                allocInfo.descriptorSetCount = static_cast<uint32_t>(m_materialLayouts.size());
+                allocInfo.pSetLayouts = m_materialLayouts.data();
 
-                err = vkAllocateDescriptorSets(m_device, &allocInfo, &m_materialSet);
+                m_materialSets.resize(m_materialLayouts.size());
+                err = vkAllocateDescriptorSets(m_device, &allocInfo, m_materialSets.data());
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -176,8 +180,8 @@ namespace Hatchit {
                 VkWriteDescriptorSet uniformVSWrite = {};
                 uniformVSWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                 uniformVSWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                uniformVSWrite.dstSet = m_materialSet;
-                uniformVSWrite.dstBinding = descCount++;
+                uniformVSWrite.dstSet = m_materialSets[0];
+                uniformVSWrite.dstBinding = 0;
                 uniformVSWrite.pBufferInfo = &m_uniformVSBuffer.descriptor;
                 uniformVSWrite.descriptorCount = 1;
 
@@ -207,8 +211,8 @@ namespace Hatchit {
                     VkWriteDescriptorSet samplerFSWrite = {};
                     samplerFSWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                     samplerFSWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                    samplerFSWrite.dstSet = m_materialSet;
-                    samplerFSWrite.dstBinding = descCount++;
+                    samplerFSWrite.dstSet = m_materialSets[1];
+                    samplerFSWrite.dstBinding = 0;
                     samplerFSWrite.pImageInfo = &textureDescriptor;
                     samplerFSWrite.descriptorCount = 1;
 

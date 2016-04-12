@@ -128,7 +128,7 @@ namespace Hatchit {
 
                 Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f));
 
-                IPipelineHandle pipeline = VKPipeline::GetHandle("DeferredPipeline.json", "DeferredPipeline.json", nullptr).StaticCastHandle<IPipeline>();
+                IPipelineHandle pipeline = VKPipeline::GetHandle("DeferredPipeline.json", "DeferredPipeline.json").StaticCastHandle<IPipeline>();
 
                 m_material = VKMaterial::GetHandle("DeferredMaterial.json", "DeferredMaterial.json").StaticCastHandle<IMaterial>();
 
@@ -359,6 +359,11 @@ namespace Hatchit {
             const VkDescriptorPool& VKRenderer::GetVKDescriptorPool() const
             {
                 return m_descriptorPool;
+            }
+
+            const VKRootLayoutHandle& VKRenderer::GetVKRootLayoutHandle() const
+            {
+                return m_rootLayout;
             }
 
             const VkCommandBuffer& VKRenderer::GetSetupCommandBuffer() const

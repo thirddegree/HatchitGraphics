@@ -103,10 +103,13 @@ namespace Hatchit
                                 case RootLayout::Range::Type::SHADER_RESOURCE:
                                     descType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
                                     break;
+                                case RootLayout::Range::Type::SAMPLER:
+                                    descType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                                    break;
                                 }
 
                                 VkDescriptorSetLayoutBinding descriptorSetLayoutBinding = {};
-                                descriptorSetLayoutBinding.binding = j;
+                                descriptorSetLayoutBinding.binding = r.baseRegister;
                                 descriptorSetLayoutBinding.descriptorCount = r.numDescriptors;
                                 descriptorSetLayoutBinding.descriptorType = descType;
                                 descriptorSetLayoutBinding.stageFlags = shaderStages;
