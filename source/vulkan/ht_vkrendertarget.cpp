@@ -178,6 +178,7 @@ namespace Hatchit {
 
                 m_texture.width = m_width;
                 m_texture.height = m_height;
+                m_texture.mipLevels = 1;
 
                 VkImageCreateInfo imageCreateInfo = {};
                 imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;

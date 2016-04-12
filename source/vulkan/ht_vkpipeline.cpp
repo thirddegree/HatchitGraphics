@@ -502,16 +502,21 @@ namespace Hatchit {
                 inputAssemblyState.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
                 inputAssemblyState.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
-                //Only one blend attachment state; not using blend right now
-                VkPipelineColorBlendAttachmentState blendAttachmentState[1] = {};
+                //Must have a blend attachment for each color attachment or esle the write mask will be 0x0
+                //In that case nothing will be written to the attachment
+                VkPipelineColorBlendAttachmentState blendAttachmentState[3] = {};
                 blendAttachmentState[0].colorWriteMask = 0xf;
                 blendAttachmentState[0].blendEnable = VK_FALSE;
+                blendAttachmentState[1].colorWriteMask = 0xf;
+                blendAttachmentState[1].blendEnable = VK_FALSE;
+                blendAttachmentState[2].colorWriteMask = 0xf;
+                blendAttachmentState[2].blendEnable = VK_FALSE;
 
                 //Color blends and masks
                 VkPipelineColorBlendStateCreateInfo colorBlendState = {};
                 colorBlendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
                 colorBlendState.pAttachments = blendAttachmentState;
-                colorBlendState.attachmentCount = 1;
+                colorBlendState.attachmentCount = 3;
 
                 //Viewport
                 VkPipelineViewportStateCreateInfo viewportState = {};

@@ -89,9 +89,9 @@ namespace Hatchit {
                     m_outputRenderTargets.push_back(outputTargetHandle);
                 }
 
-                if (!setupRenderPass())
-                    return false;
                 if (!setupAttachmentImages())
+                    return false;
+                if (!setupRenderPass())
                     return false;
                 if (!setupFramebuffer())
                     return false;
@@ -137,8 +137,9 @@ namespace Hatchit {
                 VkClearValue clearColor = renderer->GetClearColor();
 
                 std::vector<VkClearValue> clearValues;
-                for (size_t i = 0; i < m_outputRenderTargets.size(); i++)
-                    clearValues.push_back(clearColor);
+                clearValues.push_back(clearColor);
+                clearValues.push_back({1.0f, 0.0f, 0.0f, 1.0f});
+                clearValues.push_back({ 0.5f, 0.5f, 0.5f, 1.0f });
                 clearValues.push_back({1.0f, 0.0f});
 
                 VkRenderPassBeginInfo renderPassBeginInfo = {};
@@ -297,8 +298,8 @@ namespace Hatchit {
                 depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
                 depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
                 depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-                depthAttachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                depthAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                depthAttachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
                 depthAttachment.flags = 0;
 
                 attachmentDescriptions.push_back(depthAttachment);
@@ -494,7 +495,7 @@ namespace Hatchit {
                 }
 
                 renderer->SetImageLayout(setupCommand, m_depthImage.image, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
-                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
                 VkImageViewCreateInfo viewInfo = {};
                 viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;

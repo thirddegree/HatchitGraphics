@@ -107,9 +107,11 @@ namespace Hatchit {
 
                 VKRenderPassHandle renderPass = VKRenderPass::GetHandle("DeferredPass.json", "DeferredPass.json");
 
-                IRenderTargetHandle incomingTarget = VKRenderTarget::GetHandle("DeferredColor.json", "DeferredColor.json").StaticCastHandle<IRenderTarget>();
+                IRenderTargetHandle colorTarget = VKRenderTarget::GetHandle("DeferredColor.json", "DeferredColor.json").StaticCastHandle<IRenderTarget>();
+                IRenderTargetHandle positionTarget = VKRenderTarget::GetHandle("DeferredPosition.json", "DeferredPosition.json").StaticCastHandle<IRenderTarget>();
+                IRenderTargetHandle normalTarget = VKRenderTarget::GetHandle("DeferredNormal.json", "DeferredNormal.json").StaticCastHandle<IRenderTarget>();
 
-                m_swapchain->SetIncomingRenderTarget(incomingTarget);
+                m_swapchain->SetIncomingRenderTarget(normalTarget);
 
                 ModelHandle model = Model::GetHandleFromFileName("Raptor.obj");
                 //model.VInitFromFile(&meshFile);
