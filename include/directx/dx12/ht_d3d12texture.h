@@ -43,8 +43,6 @@ namespace Hatchit
 
                 ~D3D12Texture();
 
-                bool VDeferredInitialize(Core::Handle<const Resource::Texture> resource) override;
-
                 //void Upload(ID3D12GraphicsCommandList* commandList);
 
                 void SetSampler(ISamplerHandle sampler) override;

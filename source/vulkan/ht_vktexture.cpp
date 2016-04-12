@@ -35,17 +35,10 @@ namespace Hatchit {
 
             bool VKTexture::Initialize(const std::string& fileName)
             {
-                //m_resource = Resource::Texture::GetHandleFromFileName(fileName);
-                //return m_resource.IsValid();
-                ////if (!VBufferImage())
-                ////    HT_DEBUG_PRINTF("Error creating VKTexture in constructor");
-                return true;
-            }
-
-            bool VKTexture::VDeferredInitialize(Resource::TextureHandle resource)
-            {
-                m_resource = std::move(resource);
+                m_resource = Resource::Texture::GetHandleFromFileName(fileName);
                 return m_resource.IsValid();
+
+                return true;
             }
 
             VkSampler VKTexture::GetSampler()

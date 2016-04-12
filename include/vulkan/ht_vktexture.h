@@ -34,8 +34,6 @@ namespace Hatchit {
                 //Required function for RefCounted classes
                 bool Initialize(const std::string& fileName);
 
-                bool VDeferredInitialize(Resource::TextureHandle resource) override;
-
                 VkSampler GetSampler();
                 VkImageView GetView();
 

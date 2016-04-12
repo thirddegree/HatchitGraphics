@@ -120,10 +120,8 @@ namespace Hatchit {
 
                 //TODO: Once JSON file is found, insert name here
                 m_sampler = VKSampler::GetHandle("DeferredSampler.json", "DeferredSampler.json").StaticCastHandle<ISampler>();
-                m_sampler->VDeferredInitialize("DeferredSampler.json");
 
                 m_texture = VKTexture::GetHandle("raptor.png", "raptor.png").StaticCastHandle<ITexture>();
-                m_texture->VDeferredInitialize(Resource::Texture::GetHandleFromFileName("raptor.png"));
                 m_texture->SetSampler(m_sampler);
 
                 Math::Matrix4 view = Math::MMMatrixTranspose(Math::MMMatrixLookAt(Math::Vector3(0, 0, -5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0)));

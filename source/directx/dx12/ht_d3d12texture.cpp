@@ -39,11 +39,6 @@ namespace Hatchit
                 delete m_bitmap;
             }
 
-            bool D3D12Texture::VDeferredInitialize(Resource::TextureHandle resource)
-            {
-                return true;
-            }
-
             uint32_t D3D12Texture::GetHeight() const
             {
                 return 0;

@@ -38,8 +38,6 @@ namespace Hatchit {
         {
         public:
             virtual ~ITexture() { }
-
-            virtual bool VDeferredInitialize(Core::Handle<const Resource::Texture> resource) = 0;
         
             virtual void SetSampler(ISamplerHandle sampler) = 0;
 

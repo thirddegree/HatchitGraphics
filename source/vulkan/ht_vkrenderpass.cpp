@@ -137,9 +137,8 @@ namespace Hatchit {
                 VkClearValue clearColor = renderer->GetClearColor();
 
                 std::vector<VkClearValue> clearValues;
-                clearValues.push_back(clearColor);
-                clearValues.push_back({1.0f, 0.0f, 0.0f, 1.0f});
-                clearValues.push_back({ 0.5f, 0.5f, 0.5f, 1.0f });
+                for (size_t i = 0; i < m_outputRenderTargets.size(); i++)
+                    clearValues.push_back(clearColor);
                 clearValues.push_back({1.0f, 0.0f});
 
                 VkRenderPassBeginInfo renderPassBeginInfo = {};
