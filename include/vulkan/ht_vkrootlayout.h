@@ -38,6 +38,7 @@ namespace Hatchit
                 std::vector<VkPushConstantRange> VKGetPushConstantRanges() const;
 
             private:
+                VkDevice m_device;
 
                 VkPipelineLayout m_pipelineLayout;
                 std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;

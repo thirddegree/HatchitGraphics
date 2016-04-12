@@ -40,9 +40,24 @@ namespace Hatchit {
             {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
 
-                //Command buffer will be freed with command pool
-                //if(m_commandBuffer != VK_NULL_HANDLE)
-                //    vkFreeCommandBuffers(m_device, m_commandPool, 1, &m_commandBuffer);
+
+                //Destroy framebuffer images
+                for (size_t i = 0; i < m_colorImages.size(); i++)
+                {
+                    Image image = m_colorImages[i];
+
+                    vkDestroyImageView(m_device, image.view, nullptr);
+                    vkDestroyImage(m_device, image.image, nullptr);
+                    vkFreeMemory(m_device, image.memory, nullptr);
+                }
+
+                //Destroy depth image
+                vkDestroyImageView(m_device, m_depthImage.view, nullptr);
+                vkDestroyImage(m_device, m_depthImage.image, nullptr);
+                vkFreeMemory(m_device, m_depthImage.memory, nullptr);
+                
+                //Destroy framebuffer
+                vkDestroyFramebuffer(m_device, m_framebuffer, nullptr);
 
                 //Destroy the render pass
                 vkDestroyRenderPass(m_device, m_renderPass, nullptr);

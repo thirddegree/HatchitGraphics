@@ -186,6 +186,8 @@ namespace Hatchit {
 
                 m_renderPasses.clear();
 
+                m_rootLayout.Release();
+
                 m_material.Release();
                 m_texture.Release();
                 m_renderTarget.Release();

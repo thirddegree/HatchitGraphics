@@ -23,15 +23,34 @@ namespace Hatchit
             VKRootLayout::VKRootLayout(std::string ID) :
                 Core::RefCounted<VKRootLayout>(std::move(ID))
             {
+                m_device = VK_NULL_HANDLE;
+
                 m_pipelineLayout = VK_NULL_HANDLE;
-                
             }
 
-            VKRootLayout::~VKRootLayout() {}
+            VKRootLayout::~VKRootLayout() 
+            {
+                if (m_device != VK_NULL_HANDLE)
+                {
+
+                    //Destroy descriptor set layouts
+                    for (size_t i = 0; i < m_descriptorSetLayouts.size(); i++)
+                        vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayouts[i], nullptr);
+
+                    //Destroy pipeline layout
+                    vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
+                }
+                else 
+                {
+                    HT_DEBUG_PRINTF("VKRootLayout::~VKRootLayout: Tried to destroy Vulkan objects but VkDevice was a NULL HANDLE\n");
+                }
+            }
 
             bool VKRootLayout::Initialize(const std::string& fileName, const VkDevice& device) 
             {
                 using namespace Resource;
+
+                m_device = device; //Save device for destruction later
 
                 RootLayoutHandle handle = RootLayout::GetHandleFromFileName(fileName);
 
