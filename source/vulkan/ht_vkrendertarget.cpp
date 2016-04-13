@@ -119,6 +119,9 @@ namespace Hatchit {
                 renderer->SetImageLayout(buffer, image.image, VK_IMAGE_ASPECT_COLOR_BIT,
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
+                renderer->SetImageLayout(buffer, m_texture.image.image, VK_IMAGE_ASPECT_COLOR_BIT,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+
                 VkImageBlit blit;
 
                 blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -145,6 +148,9 @@ namespace Hatchit {
                     m_texture.image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
 
                 //Transform textures back
+                renderer->SetImageLayout(buffer, m_texture.image.image, VK_IMAGE_ASPECT_COLOR_BIT,
+                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
                 renderer->SetImageLayout(buffer, image.image, VK_IMAGE_ASPECT_COLOR_BIT,
                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
@@ -234,7 +240,7 @@ namespace Hatchit {
                     return false;
                 }
 
-                m_texture.layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                m_texture.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
                 renderer->SetImageLayout(setupCommandBuffer, m_texture.image.image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, m_texture.layout);
 

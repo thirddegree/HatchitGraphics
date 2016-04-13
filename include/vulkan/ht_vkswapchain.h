@@ -73,13 +73,15 @@ namespace Hatchit {
                 bool VKPrePresentBarrier(const VkQueue& queue);
                 VkResult VKPresent(const VkQueue& queue, const VkSemaphore& renderSemaphore);
 
+                void VKSetIncomingRenderPass(VKRenderPassHandle renderPass);
+
             private:
                 VkInstance&         m_instance;
                 VkPhysicalDevice&   m_gpu;
                 VkDevice&           m_device;
                 VkCommandPool&      m_commandPool;
 
-                VkSurfaceKHR    m_surface;
+                VkSurfaceKHR                            m_surface;
                 VkPhysicalDeviceProperties              m_gpuProps;
                 std::vector<VkQueueFamilyProperties>    m_queueProps;
                 uint32_t                                m_graphicsQueueNodeIndex;
@@ -101,7 +103,7 @@ namespace Hatchit {
                 DepthBuffer                  m_depthBuffer;
 
                 UniformBlock    m_vertexBuffer;
-
+                std::vector<Texture> m_inputTextures;
 
                 bool prepareSurface(const RendererParams& rendererParams);
 

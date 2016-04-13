@@ -111,7 +111,7 @@ namespace Hatchit {
                 IRenderTargetHandle positionTarget = VKRenderTarget::GetHandle("DeferredPosition.json", "DeferredPosition.json").StaticCastHandle<IRenderTarget>();
                 IRenderTargetHandle normalTarget = VKRenderTarget::GetHandle("DeferredNormal.json", "DeferredNormal.json").StaticCastHandle<IRenderTarget>();
 
-                m_swapchain->SetIncomingRenderTarget(normalTarget);
+                m_swapchain->VKSetIncomingRenderPass(renderPass);
 
                 ModelHandle model = Model::GetHandleFromFileName("Raptor.obj");
                 //model.VInitFromFile(&meshFile);
@@ -126,7 +126,7 @@ namespace Hatchit {
 
                 Math::Matrix4 view = Math::MMMatrixTranspose(Math::MMMatrixLookAt(Math::Vector3(0, 0, -5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0)));
 
-                Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f));
+                Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 100.0f));
 
                 IPipelineHandle pipeline = VKPipeline::GetHandle("DeferredPipeline.json", "DeferredPipeline.json").StaticCastHandle<IPipeline>();
 
@@ -299,7 +299,7 @@ namespace Hatchit {
                 //Example code for rotation
                 Math::Matrix4 scale = Math::MMMatrixScale(Math::Vector3(1.0f, 1.0f, 1.0f));
                 Math::Matrix4 rot = Math::MMMatrixRotationXYZ(Math::Vector3(0, m_angle += dt, 0));
-                Math::Matrix4 trans = Math::MMMatrixTranslation(Math::Vector3(0, 0, 3));
+                Math::Matrix4 trans = Math::MMMatrixTranslation(Math::Vector3(0, 0, 3.0f));
                 Math::Matrix4 mat = trans * scale * rot;
 
                 m_material->VSetMatrix4("object.model", MMMatrixTranspose(mat));

@@ -51,8 +51,11 @@ namespace Hatchit {
                 VkDescriptorPool descriptorPool = renderer->GetVKDescriptorPool();
 
                 VKPipelineHandle vkPipeline = m_pipeline.DynamicCastHandle<VKPipeline>();
-
-                m_materialLayouts = renderer->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts();
+                
+                //Only take the first two descriptor sets
+                std::vector<VkDescriptorSetLayout> layouts = renderer->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts();
+                for (uint32_t i = 0; i < 2; i++)
+                    m_materialLayouts.push_back(layouts[i]);
 
                 //Prepare uniform buffers
                 //if(m_shaderVariables.size() > 0)

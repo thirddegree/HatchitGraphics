@@ -48,8 +48,10 @@ namespace Hatchit {
 
                 bool VBuildCommandList() override;
 
-                const VkRenderPass& GetVkRenderPass();
-                VkCommandBuffer GetVkCommandBuffer();
+                const VkRenderPass& GetVkRenderPass() const;
+                const VkCommandBuffer& GetVkCommandBuffer() const;
+
+                const std::vector<IRenderTargetHandle>& GetOutputRenderTargets() const;
 
             private:
                 bool setupRenderPass();

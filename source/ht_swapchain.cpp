@@ -21,7 +21,5 @@ namespace Hatchit {
         uint32_t ISwapchain::GetWidth() { return m_width; }
         uint32_t ISwapchain::GetHeight() { return m_height; }
 
-        void ISwapchain::SetIncomingRenderTarget(IRenderTargetHandle inputTexture) { m_inputTexture = inputTexture; }
-
     }
 }

@@ -46,7 +46,7 @@ namespace Hatchit {
             VKSwapchain::~VKSwapchain()
             {
                 destroyPipeline();
-               
+
                 destroyDepth();
 
                 destroySwapchainBuffers();
@@ -69,15 +69,15 @@ namespace Hatchit {
             {
                 return m_surface;
             }
-            const uint32_t& VKSwapchain::VKGetGraphicsQueueIndex() 
+            const uint32_t& VKSwapchain::VKGetGraphicsQueueIndex()
             {
                 return m_graphicsQueueNodeIndex;
             }
-            const VkFormat& VKSwapchain::VKGetPreferredColorFormat() 
+            const VkFormat& VKSwapchain::VKGetPreferredColorFormat()
             {
                 return m_preferredColorFormat;
             }
-            const VkFormat& VKSwapchain::VKGetPreferredDepthFormat() 
+            const VkFormat& VKSwapchain::VKGetPreferredDepthFormat()
             {
                 return m_preferredDepthFormat;
             }
@@ -88,14 +88,14 @@ namespace Hatchit {
 
                 bool recreate = false;
                 //Clean out old data
-                if(m_swapchain != VK_NULL_HANDLE)
+                if (m_swapchain != VK_NULL_HANDLE)
                 {
                     destroyDepth();
-                
+
                     destroySwapchainBuffers();
-                
+
                     destroyFramebuffers();
-                
+
                     m_swapchainBuffers.clear();
 
                     recreate = true;
@@ -180,7 +180,7 @@ namespace Hatchit {
                 */
                 if (!prepareSwapchainDepth(renderer, m_preferredDepthFormat, swapchainExtent))
                     return false;
-                
+
                 /*
                     Prepare internal render pass
                 */
@@ -219,7 +219,7 @@ namespace Hatchit {
                 VkDescriptorSetAllocateInfo allocInfo = {};
                 allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
                 allocInfo.descriptorPool = renderer->GetVKDescriptorPool();
-                allocInfo.pSetLayouts = &descriptorSetLayouts[1];
+                allocInfo.pSetLayouts = &descriptorSetLayouts[2];
                 allocInfo.descriptorSetCount = 1;
 
                 err = vkAllocateDescriptorSets(m_device, &allocInfo, &m_descriptorSet);
@@ -230,9 +230,10 @@ namespace Hatchit {
                     return false;
                 }
 
-                if (m_inputTexture.IsValid())
+                std::vector<VkWriteDescriptorSet> descriptorWrites;
+                for (size_t i = 0; i < m_inputTextures.size(); i++)
                 {
-                    Texture inputTexture = m_inputTexture.DynamicCastHandle<VKRenderTarget>()->GetVKTexture();
+                    Texture inputTexture = m_inputTextures[i];
 
                     // Image descriptor for the color map texture
                     VkDescriptorImageInfo texDescriptor = {};
@@ -244,12 +245,14 @@ namespace Hatchit {
                     uniformSampler2DWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                     uniformSampler2DWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                     uniformSampler2DWrite.dstSet = m_descriptorSet;
-                    uniformSampler2DWrite.dstBinding = 0;
+                    uniformSampler2DWrite.dstBinding = static_cast<uint32_t>(i);
                     uniformSampler2DWrite.pImageInfo = &texDescriptor;
                     uniformSampler2DWrite.descriptorCount = 1;
 
-                    vkUpdateDescriptorSets(m_device, 1, &uniformSampler2DWrite, 0, nullptr);
+                    descriptorWrites.push_back(uniformSampler2DWrite);
                 }
+
+                vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 
                 //Buffer 3 blank points
                 float blank[9] = { 0,0,0,0,0,0,0,0,0 };
@@ -294,7 +297,7 @@ namespace Hatchit {
 
                 VkPipelineLayout pipelineLayout = VKRenderer::RendererInstance->GetVKRootLayoutHandle()->VKGetPipelineLayout();
 
-                for (uint32_t i = 0; i < m_swapchainBuffers.size(); i++) 
+                for (uint32_t i = 0; i < m_swapchainBuffers.size(); i++)
                 {
                     VkRenderPassBeginInfo renderPassBeginInfo = {};
                     renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -336,14 +339,14 @@ namespace Hatchit {
                     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
                     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-                        1, 1, &m_descriptorSet, 0, nullptr);
+                        2, 1, &m_descriptorSet, 0, nullptr);
                     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline->GetVKPipeline());
-                    
+
                     //Draw fullscreen Tri; geometry created in shader
                     VkDeviceSize offsets = { 0 };
                     vkCmdBindVertexBuffers(commandBuffer, 0, 1, &m_vertexBuffer.buffer, &offsets);
                     vkCmdDraw(commandBuffer, 3, 1, 0, 0);
-                    
+
                     vkCmdEndRenderPass(commandBuffer);
 
                     err = vkEndCommandBuffer(commandBuffer);
@@ -354,11 +357,9 @@ namespace Hatchit {
                         return false;
                     }
 
-
-
                     //Setup barrier commands
-                    
-                    
+
+
                     VkCommandBufferBeginInfo cmdBufInfo = {};
                     cmdBufInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
                     cmdBufInfo.pInheritanceInfo = nullptr;
@@ -428,11 +429,11 @@ namespace Hatchit {
                 return fpAcquireNextImageKHR(device, m_swapchain, UINT64_MAX, presentSemaphore, VK_NULL_HANDLE, &m_currentBuffer);
             }
 
-            bool VKSwapchain::VKPostPresentBarrier(const VkQueue& queue) 
+            bool VKSwapchain::VKPostPresentBarrier(const VkQueue& queue)
             {
                 return submitBarrier(queue, m_postPresentCommands[m_currentBuffer]);
             }
-            bool VKSwapchain::VKPrePresentBarrier(const VkQueue& queue) 
+            bool VKSwapchain::VKPrePresentBarrier(const VkQueue& queue)
             {
                 return submitBarrier(queue, m_prePresentCommands[m_currentBuffer]);
             }
@@ -453,6 +454,16 @@ namespace Hatchit {
                 }
 
                 return fpQueuePresentKHR(queue, &present);
+            }
+
+            void VKSwapchain::VKSetIncomingRenderPass(VKRenderPassHandle renderPass)
+            {
+                std::vector<IRenderTargetHandle> incomingRenderTargets = renderPass->GetOutputRenderTargets();
+                for (size_t i = 0; i < incomingRenderTargets.size(); i++)
+                {
+                    VKRenderTargetHandle vkRenderTarget = incomingRenderTargets[i].DynamicCastHandle<VKRenderTarget>();
+                    m_inputTextures.push_back(vkRenderTarget->GetVKTexture());
+                }
             }
 
             /*

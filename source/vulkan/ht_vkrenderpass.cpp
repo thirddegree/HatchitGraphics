@@ -248,9 +248,11 @@ namespace Hatchit {
                 return true;
             }
 
-            VkCommandBuffer VKRenderPass::GetVkCommandBuffer() { return m_commandBuffer; }
+            const VkRenderPass& VKRenderPass::GetVkRenderPass() const { return m_renderPass; }
 
-            const VkRenderPass& VKRenderPass::GetVkRenderPass() { return m_renderPass; }
+            const VkCommandBuffer& VKRenderPass::GetVkCommandBuffer() const { return m_commandBuffer; }
+
+            const std::vector<IRenderTargetHandle>& VKRenderPass::GetOutputRenderTargets() const { return m_outputRenderTargets; }
 
             /*
                 Private methods
