@@ -125,29 +125,7 @@ namespace Hatchit {
                 {
                     return false;
                 }
-                //CD3DX12_HEAP_PROPERTIES uploadHeapProperties(D3D12_HEAP_TYPE_UPLOAD);
-                //CD3DX12_RESOURCE_DESC constantBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(2 * c_alignedConstantBufferSize);
-                //hr = device->CreateCommittedResource(
-                //    &uploadHeapProperties,
-                //    D3D12_HEAP_FLAG_NONE,
-                //    &constantBufferDesc,
-                //    D3D12_RESOURCE_STATE_GENERIC_READ,
-                //    nullptr,
-                //    IID_PPV_ARGS(&m_constantBuffer));
-                ////Create constant buffer views to access the upload buffer
-                //D3D12_GPU_VIRTUAL_ADDRESS constantBufferGPUAddress = m_constantBuffer->GetGPUVirtualAddress();
-                //CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle(m_cbDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-                //m_cbDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-                //
-               
-                //D3D12_CONSTANT_BUFFER_VIEW_DESC desc;
-                //desc.BufferLocation = constantBufferGPUAddress;
-                //desc.SizeInBytes = c_alignedConstantBufferSize;
-                //device->CreateConstantBufferView(&desc, cpuHandle);
-
-                ///*Map the constant buffer*/
-               
-
+            
                 m_cBuffer = new D3D12ConstantBuffer;
                 m_cBuffer->Initialize(device, m_cbDescriptorHeap, sizeof(ConstantBuffer));
 
