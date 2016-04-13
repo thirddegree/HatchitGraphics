@@ -230,7 +230,9 @@ namespace Hatchit {
                     return false;
                 }
 
+                std::vector<VkDescriptorImageInfo> textureDescriptors;
                 std::vector<VkWriteDescriptorSet> descriptorWrites;
+
                 for (size_t i = 0; i < m_inputTextures.size(); i++)
                 {
                     Texture inputTexture = m_inputTextures[i];
@@ -239,14 +241,19 @@ namespace Hatchit {
                     VkDescriptorImageInfo texDescriptor = {};
                     texDescriptor.sampler = inputTexture.sampler;
                     texDescriptor.imageView = inputTexture.image.view;
-                    texDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+                    texDescriptor.imageLayout = inputTexture.layout;
 
+                    textureDescriptors.push_back(texDescriptor);
+                }
+
+                for (size_t i = 0; i < m_inputTextures.size(); i++)
+                {
                     VkWriteDescriptorSet uniformSampler2DWrite = {};
                     uniformSampler2DWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                     uniformSampler2DWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                     uniformSampler2DWrite.dstSet = m_descriptorSet;
                     uniformSampler2DWrite.dstBinding = static_cast<uint32_t>(i);
-                    uniformSampler2DWrite.pImageInfo = &texDescriptor;
+                    uniformSampler2DWrite.pImageInfo = &textureDescriptors[i];
                     uniformSampler2DWrite.descriptorCount = 1;
 
                     descriptorWrites.push_back(uniformSampler2DWrite);
@@ -459,7 +466,7 @@ namespace Hatchit {
             void VKSwapchain::VKSetIncomingRenderPass(VKRenderPassHandle renderPass)
             {
                 std::vector<IRenderTargetHandle> incomingRenderTargets = renderPass->GetOutputRenderTargets();
-                for (size_t i = 0; i < incomingRenderTargets.size(); i++)
+                for (size_t i = 0; i < 3; i++)
                 {
                     VKRenderTargetHandle vkRenderTarget = incomingRenderTargets[i].DynamicCastHandle<VKRenderTarget>();
                     m_inputTextures.push_back(vkRenderTarget->GetVKTexture());
