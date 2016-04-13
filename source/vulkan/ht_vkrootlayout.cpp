@@ -120,9 +120,6 @@ namespace Hatchit
                                     descType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                                     break;
                                 case RootLayout::Range::Type::SHADER_RESOURCE:
-                                    descType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-                                    break;
-                                case RootLayout::Range::Type::SAMPLER:
                                     descType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                                     break;
                                 }
