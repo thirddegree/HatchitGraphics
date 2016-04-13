@@ -31,14 +31,21 @@ namespace Hatchit {
 
                 ~D3D12ConstantBuffer();
 
-                bool Initialize(ID3D12Device* device);
+                bool Initialize(ID3D12Device* device,
+                    ID3D12DescriptorHeap* heap,
+                    uint64_t size);
 
-            private:
-                BYTE*                               m_data;
+                void Map(uint32_t subresource, uint64_t size);
+                void Fill(void** data, size_t size, size_t cbSize, uint32_t currentFrame);
+                void Unmap(uint32_t subresource);
 
+                const D3D12_GPU_VIRTUAL_ADDRESS& GetGPUAddress();
+
+            public:
+                UINT8*                              m_mappedData;
                 D3D12_CONSTANT_BUFFER_VIEW_DESC     m_view;
+                D3D12_GPU_VIRTUAL_ADDRESS           m_gpuAddress;
                 ID3D12Resource*                     m_buffer;
-                ID3D12DescriptorHeap*               m_heap;
             };
         }
     }

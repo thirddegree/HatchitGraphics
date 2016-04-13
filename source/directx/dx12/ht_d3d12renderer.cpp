@@ -39,8 +39,8 @@ namespace Hatchit {
             D3D12Renderer::~D3D12Renderer()
             {
                 delete m_resources;
+                delete m_cBuffer;
                 ReleaseCOM(m_commandList);
-                ReleaseCOM(m_constantBuffer);
                 ReleaseCOM(m_cbDescriptorHeap);
                 
                 delete m_vBuffer;
@@ -125,29 +125,33 @@ namespace Hatchit {
                 {
                     return false;
                 }
-                CD3DX12_HEAP_PROPERTIES uploadHeapProperties(D3D12_HEAP_TYPE_UPLOAD);
-                CD3DX12_RESOURCE_DESC constantBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(2 * c_alignedConstantBufferSize);
-                hr = device->CreateCommittedResource(
-                    &uploadHeapProperties,
-                    D3D12_HEAP_FLAG_NONE,
-                    &constantBufferDesc,
-                    D3D12_RESOURCE_STATE_GENERIC_READ,
-                    nullptr,
-                    IID_PPV_ARGS(&m_constantBuffer));
-                //Create constant buffer views to access the upload buffer
-                D3D12_GPU_VIRTUAL_ADDRESS constantBufferGPUAddress = m_constantBuffer->GetGPUVirtualAddress();
-                CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle(m_cbDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-                m_cbDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-                
+                //CD3DX12_HEAP_PROPERTIES uploadHeapProperties(D3D12_HEAP_TYPE_UPLOAD);
+                //CD3DX12_RESOURCE_DESC constantBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(2 * c_alignedConstantBufferSize);
+                //hr = device->CreateCommittedResource(
+                //    &uploadHeapProperties,
+                //    D3D12_HEAP_FLAG_NONE,
+                //    &constantBufferDesc,
+                //    D3D12_RESOURCE_STATE_GENERIC_READ,
+                //    nullptr,
+                //    IID_PPV_ARGS(&m_constantBuffer));
+                ////Create constant buffer views to access the upload buffer
+                //D3D12_GPU_VIRTUAL_ADDRESS constantBufferGPUAddress = m_constantBuffer->GetGPUVirtualAddress();
+                //CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle(m_cbDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+                //m_cbDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                //
                
-                D3D12_CONSTANT_BUFFER_VIEW_DESC desc;
-                desc.BufferLocation = constantBufferGPUAddress;
-                desc.SizeInBytes = c_alignedConstantBufferSize;
-                device->CreateConstantBufferView(&desc, cpuHandle);
+                //D3D12_CONSTANT_BUFFER_VIEW_DESC desc;
+                //desc.BufferLocation = constantBufferGPUAddress;
+                //desc.SizeInBytes = c_alignedConstantBufferSize;
+                //device->CreateConstantBufferView(&desc, cpuHandle);
 
-                /*Map the constant buffer*/
-                hr = m_constantBuffer->Map(0, nullptr, reinterpret_cast<void**>(&m_mappedConstantBuffer));
-                ZeroMemory(m_mappedConstantBuffer, 2 * c_alignedConstantBufferSize);
+                ///*Map the constant buffer*/
+               
+
+                m_cBuffer = new D3D12ConstantBuffer;
+                m_cBuffer->Initialize(device, m_cbDescriptorHeap, sizeof(ConstantBuffer));
+
+                m_cBuffer->Map(0, sizeof(ConstantBuffer));
 
                 hr = m_commandList->Close();
                 ID3D12CommandList* ppCommandLists[] = { m_commandList };
@@ -203,10 +207,9 @@ namespace Hatchit {
 				Math::Matrix4 trans = Math::MMMatrixTranslation(Math::Vector3(0, -1, 0));
                 Math::Matrix4 mat = trans * scale * rot; // rot * (scale * trans);
 				m_constantBufferData.world = mat;
-               
-                // Update the constant buffer resource.
-                UINT8* destination = m_mappedConstantBuffer + (m_resources->GetCurrentFrameIndex() * c_alignedConstantBufferSize);
-                memcpy(destination, &m_constantBufferData, sizeof(m_constantBufferData));
+
+                m_cBuffer->Fill(reinterpret_cast<void**>(&m_constantBufferData), sizeof(m_constantBufferData), sizeof(ConstantBuffer),
+                    m_resources->GetCurrentFrameIndex());
 
                 m_resources->GetCommandAllocator()->Reset();
                 m_commandList->Reset(m_resources->GetCommandAllocator(), m_pipeline->GetPipeline());

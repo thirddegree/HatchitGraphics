@@ -21,6 +21,7 @@
 #include <ht_d3d12indexbuffer.h>
 #include <ht_d3d12pipeline.h>
 #include <ht_d3d12deviceresources.h>
+#include <ht_d3d12constantbuffer.h>
 #include <ht_math.h>
 #include <DirectXMath.h>
 namespace Hatchit {
@@ -29,7 +30,7 @@ namespace Hatchit {
 
         namespace DX {
 
-            struct ConstantBuffer
+            struct _MM_ALIGN16 ConstantBuffer
             {
                 Math::Matrix4 world;
                 Math::Matrix4 view;
@@ -72,14 +73,13 @@ namespace Hatchit {
                 //Demo only
                 float                       m_aspectRatio;
                 ID3D12Resource*             m_constantBuffer;
+                D3D12ConstantBuffer*        m_cBuffer;
 
                 D3D12VertexBuffer*          m_vBuffer;
                 D3D12IndexBuffer*           m_iBuffer;
                 size_t                      m_numIndices;
 
                 ConstantBuffer              m_constantBufferData;
-                static const UINT c_alignedConstantBufferSize = (sizeof(ConstantBuffer) + 255) & ~255;
-
             };
         }
     }
