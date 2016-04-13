@@ -40,8 +40,8 @@ namespace Hatchit {
             {
                 delete m_resources;
                 delete m_cBuffer;
+
                 ReleaseCOM(m_commandList);
-                ReleaseCOM(m_cbDescriptorHeap);
                 
                 delete m_vBuffer;
                 delete m_iBuffer;
@@ -64,7 +64,7 @@ namespace Hatchit {
                 /*Create Pipeline State*/
              
                 m_pipeline = D3D12Pipeline::GetHandle("TestPipeline.json",
-                    "TestPipeline.json", m_resources->GetDevice(), m_resources->GetRootSignature());
+                    "TestPipeline.json", m_resources->GetDevice(), m_resources->GetRootLayout()->GetRootSignature());
 
                 /*Create command list*/
                 hr = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_resources->GetCommandAllocator(), m_pipeline->GetPipeline(), IID_PPV_ARGS(&m_commandList));
@@ -113,21 +113,8 @@ namespace Hatchit {
                 m_iBuffer->Initialize(device);
                 m_iBuffer->UpdateSubData(m_commandList, 0, static_cast<uint32_t>(m_numIndices), &indexList[0]);
 
-                
-                /*Create a descriptor heap for the constant buffers*/
-                D3D12_DESCRIPTOR_HEAP_DESC heapDesc;
-                heapDesc.NumDescriptors = 1;
-                heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-                heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-                heapDesc.NodeMask = 0;
-                hr = device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_cbDescriptorHeap));
-                if (FAILED(hr))
-                {
-                    return false;
-                }
-            
                 m_cBuffer = new D3D12ConstantBuffer;
-                m_cBuffer->Initialize(device, m_cbDescriptorHeap, sizeof(ConstantBuffer));
+                m_cBuffer->Initialize(device, m_resources->GetRootLayout()->GetHeap(D3D12RootLayout::HeapType::CBV_SRV_UAV), sizeof(ConstantBuffer));
 
                 m_cBuffer->Map(0, sizeof(ConstantBuffer));
 
@@ -192,13 +179,13 @@ namespace Hatchit {
                 m_resources->GetCommandAllocator()->Reset();
                 m_commandList->Reset(m_resources->GetCommandAllocator(), m_pipeline->GetPipeline());
 
-                m_commandList->SetGraphicsRootSignature(m_resources->GetRootSignature());
+                m_commandList->SetGraphicsRootSignature(m_resources->GetRootLayout()->GetRootSignature());
 				
-                ID3D12DescriptorHeap* ppHeaps[] = { m_cbDescriptorHeap };
+                ID3D12DescriptorHeap* ppHeaps[] = { m_resources->GetRootLayout()->GetHeap(D3D12RootLayout::HeapType::CBV_SRV_UAV) };
                 m_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
                 // Bind the current frame's constant buffer to the pipeline.
-                CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(m_cbDescriptorHeap->GetGPUDescriptorHandleForHeapStart(), m_resources->GetCurrentFrameIndex(), 0);
+                CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(m_resources->GetRootLayout()->GetHeap(D3D12RootLayout::HeapType::CBV_SRV_UAV)->GetGPUDescriptorHandleForHeapStart(), m_resources->GetCurrentFrameIndex(), 0);
                 m_commandList->SetGraphicsRootDescriptorTable(0, gpuHandle);
                 
                 D3D12_VIEWPORT viewport = m_resources->GetScreenViewport();

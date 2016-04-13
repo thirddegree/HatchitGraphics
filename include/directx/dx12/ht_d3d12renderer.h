@@ -62,9 +62,8 @@ namespace Hatchit {
             private:
                 D3D12DeviceResources*       m_resources;
                 ID3D12GraphicsCommandList*  m_commandList;
-                ID3D12DescriptorHeap*       m_cbDescriptorHeap;
+                //ID3D12DescriptorHeap*       m_cbDescriptorHeap;
                 uint32_t                    m_cbDescriptorSize;
-                uint8_t*                    m_mappedConstantBuffer;
 
                 D3D12PipelineHandle         m_pipeline;
      
@@ -72,7 +71,6 @@ namespace Hatchit {
 
                 //Demo only
                 float                       m_aspectRatio;
-                ID3D12Resource*             m_constantBuffer;
                 D3D12ConstantBuffer*        m_cBuffer;
 
                 D3D12VertexBuffer*          m_vBuffer;

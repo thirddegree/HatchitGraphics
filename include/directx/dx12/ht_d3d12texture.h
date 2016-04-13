@@ -18,32 +18,24 @@
 #include <ht_directx.h>
 #include <ht_texture.h>
 #include <ht_image.h>
+#include <ht_refcounted.h>
 
 namespace Hatchit
 {
-    namespace Core
-    {
-        template<typename VarType>
-        class Handle;
-    }
-
-    namespace Resource
-    {
-        class Texture;
-    }
-
     namespace Graphics
     {
         namespace DX
         {
-            class HT_API D3D12Texture : public ITexture
+            class HT_API D3D12Texture : public Core::RefCounted<D3D12Texture>, public ITexture
             {
             public:
-                D3D12Texture(ID3D12Device* device);
+                D3D12Texture(std::string ID);
 
                 ~D3D12Texture();
 
                 //void Upload(ID3D12GraphicsCommandList* commandList);
+
+                bool Initialize(const std::string& fileName, ID3D12Device* device, ID3D12DescriptorHeap* heap);
 
                 void SetSampler(ISamplerHandle sampler) override;
 
@@ -52,11 +44,11 @@ namespace Hatchit
 
             private:
                 D3D12_RESOURCE_DESC         m_desc;
-                ID3D12Device*               m_device;
                 ID3D12Resource*             m_texture;
                 ID3D12Resource*             m_uploadHeap;
-                ID3D12DescriptorHeap*       m_srvHeap;
                 Resource::Image*            m_bitmap;
+                uint32_t                    m_width;
+                uint32_t                    m_height;
 
                 // Inherited via ITexture
                 virtual bool VBufferImage() override;
