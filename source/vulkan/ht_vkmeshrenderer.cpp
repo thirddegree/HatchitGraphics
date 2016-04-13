@@ -26,27 +26,27 @@ namespace Hatchit {
 
             VKMeshRenderer::~VKMeshRenderer()
             {
+            }
 
+            void VKMeshRenderer::VSetMesh(IMesh* mesh)
+            {
+                m_mesh = static_cast<VKMesh*>(mesh);
+            }
+
+            void VKMeshRenderer::VSetMaterial(IMaterialHandle material)
+            {
+                m_material = material;
+                m_pipeline = material->GetPipeline();
             }
 
             void VKMeshRenderer::VSetRenderPass(IRenderPass* renderPass)
             {
-                m_markedRenderPass = (VKRenderPass*)renderPass;
-            }
-
-            void VKMeshRenderer::VBuffer()
-            {
-
+                m_renderPass = static_cast<VKRenderPass*>(renderPass);
             }
 
             void VKMeshRenderer::VRender()
             {
-
-            }
-
-            void VKMeshRenderer::VFree()
-            {
-
+                m_renderPass->VScheduleRenderRequest(m_pipeline, m_material, m_mesh);
             }
         }
     }

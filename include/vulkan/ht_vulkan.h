@@ -72,7 +72,6 @@ namespace Hatchit {
                 fpAcquireNextImageKHR;
             extern PFN_vkQueuePresentKHR
                 fpQueuePresentKHR;
-
         }
     }
 }

@@ -33,23 +33,27 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            class HT_API VKShader : public IShader
+            class HT_API VKShader : public Core::RefCounted<VKShader>, public IShader
             {
                 friend class IMaterial;
-
+                friend class VKRenderer;
+                friend class VKSwapchain;
             public:
-                VKShader();
+                VKShader(std::string ID);
+                VKShader(VKShader&&) = default;
                 ~VKShader();
 
-                bool VInitFromFile(Core::File* file)    override;
-
-                void VOnLoaded() override;
+                //Required function for RefCounted classes
+                bool Initialize(const std::string& fileName);
 
                 VkShaderModule GetShaderModule();
 
             private:
+                const VkDevice& m_device;
                 VkShaderModule m_shader;
             };
+
+            using VKShaderHandle = Core::Handle<VKShader>;
         }
     }
 }

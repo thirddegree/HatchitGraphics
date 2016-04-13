@@ -18,6 +18,8 @@
 #include <ht_platform.h>
 #include <ht_pipeline.h>
 #include <ht_directx.h>
+#include <ht_d3d12shader.h>
+#include <ht_refcounted.h>
 
 namespace Hatchit {
 
@@ -25,21 +27,42 @@ namespace Hatchit {
 
         namespace DX
         {
-            class HT_API D3D12Pipeline : public IPipeline
+            class HT_API D3D12Pipeline : public Core::RefCounted<D3D12Pipeline>, public IPipeline
             {
             public:
-                D3D12Pipeline();
+                D3D12Pipeline(std::string ID);
 
-                // Inherited via IPipeline
-                virtual void VSetRasterState(const RasterizerState & rasterState) override;
-                virtual void VSetMultisampleState(const MultisampleState & multiState) override;
-                virtual void VLoadShader(ShaderSlot shaderSlot, IShader * shader) override;
-                virtual bool VPrepare() override;
+                ~D3D12Pipeline();
+
+                ID3D12PipelineState* GetPipeline();
+
+                bool Initialize(const std::string& fileName, ID3D12Device* device, ID3D12RootSignature* root);
+
+                virtual bool VInitialize(const Resource::PipelineHandle handle);
+                virtual bool VUpdate() override;
+
+                virtual bool VAddShaderVariables(std::map<std::string, Resource::ShaderVariable*> shaderVariables) override;
+
+                virtual bool VSetInt(std::string name, int data) override;
+                virtual bool VSetDouble(std::string name, double data) override;
+                virtual bool VSetFloat(std::string name, float data) override;
+                virtual bool VSetFloat2(std::string name, Math::Vector2 data) override;
+                virtual bool VSetFloat3(std::string name, Math::Vector3 data) override;
+                virtual bool VSetFloat4(std::string name, Math::Vector4 data) override;
+                virtual bool VSetMatrix4(std::string name, Math::Matrix4 data) override;
 
             private:
                 D3D12_GRAPHICS_PIPELINE_STATE_DESC m_description;
-                D3D12_RASTERIZER_DESC              m_rasterDesc;
+                ID3D12PipelineState*               m_pipelineState;
+                D3D12ShaderHandle                  m_shaders[Resource::Pipeline::MAX_SHADERS];
+
+
+                D3D12_RASTERIZER_DESC   RasterDescFromHandle(const Resource::PipelineHandle& handle);
+                D3D12_SHADER_BYTECODE   ShaderBytecodeFromHandle(Resource::Pipeline::ShaderSlot slot, const Resource::PipelineHandle& handle);
+                D3D12_INPUT_LAYOUT_DESC InputLayoutDescFromHandle(const Resource::PipelineHandle& handle);
+                DXGI_FORMAT             InputFormatFromElement(const Resource::Pipeline::InputElement& element);
             };
+            using D3D12PipelineHandle = Core::Handle<D3D12Pipeline>;
         }
     }
 }

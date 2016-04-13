@@ -26,6 +26,7 @@
 
 #include <ht_platform.h>
 #include <ht_math.h>
+#include <ht_rendertarget_resource.h>
 
 namespace Hatchit {
 
@@ -38,21 +39,20 @@ namespace Hatchit {
         public:
             virtual ~IRenderTarget() { };
 
+            /* Initialize a render target from a JSON resource
+            * \param resourceRenderTarget A handle to the JSON RenderTarget resource
+            * \return True on success, false on failure
+            */
+            //virtual bool VInitFromResource(Resource::RenderTargetHandle resourceRenderTarget) = 0;
+
             ///Prepare the render target with a graphics language
             virtual bool VPrepare() = 0;
-
-            ///Override to bind the render target for reading with a graphics language
-            virtual void VReadBind() = 0;
-            ///Override to bind the render target to be written to with a graphics language
-            virtual void VWriteBind() = 0;
-
-            void SetRenderPass(IRenderPass* renderPass);
 
         protected:
             uint32_t m_width;
             uint32_t m_height;
-
-            IRenderPass* m_renderPass;
         };
+
+        using IRenderTargetHandle = Core::Handle<IRenderTarget>;
     }
 }

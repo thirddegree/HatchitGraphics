@@ -17,9 +17,12 @@
 #include <ht_vkshader.h>
 #include <ht_vkpipeline.h>
 #include <ht_vkmaterial.h>
+#include <ht_vksampler.h>
+#include <ht_vktexture.h>
 #include <ht_vkmeshrenderer.h>
 #include <ht_vkrendertarget.h>
 #include <ht_debug.h>
+#include <ht_scheduler.h>
 
 #include <cassert>
 
@@ -38,11 +41,24 @@ namespace Hatchit {
 
         namespace Vulkan {
 
+            using namespace Hatchit::Resource;
+
             VKRenderer* VKRenderer::RendererInstance = nullptr;
 
             VKRenderer::VKRenderer()
             {
                 m_setupCommandBuffer = 0;
+
+                m_swapchain = nullptr;
+
+                m_instance = VK_NULL_HANDLE;
+
+                m_device = VK_NULL_HANDLE;
+                m_commandPool = VK_NULL_HANDLE;
+                m_descriptorPool = VK_NULL_HANDLE;
+
+                m_renderSemaphore = VK_NULL_HANDLE;
+                m_presentSemaphore = VK_NULL_HANDLE;
             }
 
             VKRenderer::~VKRenderer()
@@ -51,32 +67,93 @@ namespace Hatchit {
 
             bool VKRenderer::VInitialize(const RendererParams & params)
             {
+                //Store params for later
+                m_rendererParams = params;
+
                 m_clearColor.color.float32[0] = params.clearColor.r;
                 m_clearColor.color.float32[1] = params.clearColor.g;
                 m_clearColor.color.float32[2] = params.clearColor.b;
                 m_clearColor.color.float32[3] = params.clearColor.a;
 
+                if (RendererInstance == nullptr)
+                    RendererInstance = this;
+
                 /*
                 * Initialize Core Vulkan Systems: Driver layers & extensions 
                 */
-                if (!initVulkan(params))
+                if (!initVulkan())
                     return false;
-                            
+
                 /*
                 * Initialize Vulkan swapchain
                 */
-                if (!initVulkanSwapchain(params))
+                if (!initVulkanSwapchain())
                     return false;
 
-                //We should be able to use the device and instance wherever we want at this point
-                if (RendererInstance == nullptr)
-                    RendererInstance = this;
+                if (!setupCommandPool())
+                    return false;
+
+                if (!setupDescriptorPool())
+                    return false;
 
                 /*
                 * Prepare Vulkan command buffers and memory systems for drawing
                 */
                 if (!prepareVulkan())
                     return false;
+
+                //TODO: remove this test code
+                m_rootLayout = VKRootLayout::GetHandle("TestRootDescriptor.json", "TestRootDescriptor.json", m_device);
+
+                VKRenderPassHandle renderPass = VKRenderPass::GetHandle("DeferredPass.json", "DeferredPass.json");
+
+                IRenderTargetHandle colorTarget = VKRenderTarget::GetHandle("DeferredColor.json", "DeferredColor.json").StaticCastHandle<IRenderTarget>();
+                IRenderTargetHandle positionTarget = VKRenderTarget::GetHandle("DeferredPosition.json", "DeferredPosition.json").StaticCastHandle<IRenderTarget>();
+                IRenderTargetHandle normalTarget = VKRenderTarget::GetHandle("DeferredNormal.json", "DeferredNormal.json").StaticCastHandle<IRenderTarget>();
+
+                m_swapchain->VKSetIncomingRenderPass(renderPass);
+
+                ModelHandle model = Model::GetHandleFromFileName("Raptor.obj");
+                //model.VInitFromFile(&meshFile);
+
+                CreateSetupCommandBuffer();
+
+                //TODO: Once JSON file is found, insert name here
+                m_sampler = VKSampler::GetHandle("DeferredSampler.json", "DeferredSampler.json").StaticCastHandle<ISampler>();
+
+                m_texture = VKTexture::GetHandle("raptor.png", "raptor.png").StaticCastHandle<ITexture>();
+                m_texture->SetSampler(m_sampler);
+
+                Math::Matrix4 view = Math::MMMatrixTranspose(Math::MMMatrixLookAt(Math::Vector3(0, 0, -5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0)));
+
+                Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 100.0f));
+
+                IPipelineHandle pipeline = VKPipeline::GetHandle("DeferredPipeline.json", "DeferredPipeline.json").StaticCastHandle<IPipeline>();
+
+                m_material = VKMaterial::GetHandle("DeferredMaterial.json", "DeferredMaterial.json").StaticCastHandle<IMaterial>();
+
+                std::vector<Mesh*> meshes = model->GetMeshes();
+                IMesh* mesh = new VKMesh();
+                mesh->VBuffer(meshes[0]);
+
+                renderPass->VScheduleRenderRequest(pipeline, m_material, mesh);
+
+                Renderable renderable;
+                renderable.material = m_material;
+                renderable.mesh = mesh;
+                m_pipelineList[pipeline].push_back(renderable);
+
+                m_renderPasses.push_back(renderPass.StaticCastHandle<IRenderPass>());
+
+                pipeline->VUpdate();
+                m_material->VUpdate();
+
+                renderPass->VSetView(view);
+                renderPass->VSetProj(proj);
+
+                m_swapchain->VKPrepareResources();
+
+                FlushSetupCommandBuffer();
 
                 return true;
             }
@@ -85,27 +162,17 @@ namespace Hatchit {
             {
                 m_queueProps.clear();
 
-                delete m_swapchain;
-                //vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
-
-                delete m_renderTarget;
+                if (m_swapchain != nullptr)
+                    delete m_swapchain;
                 
-                std::map<IPipeline*, std::vector<Renderable>>::iterator it;
+                std::map<IPipelineHandle, std::vector<Renderable>>::iterator it;
                 for (it = m_pipelineList.begin(); it != m_pipelineList.end(); it++)
                 {
-                    delete it->first;
-
                     std::vector<Renderable> renderables = it->second;
 
                     for (uint32_t i = 0; i < renderables.size(); i++)
                     {
                         Renderable r = renderables[i];
-
-                        if (r.material != nullptr)
-                        {
-                            delete r.material;
-                            r.material = nullptr;
-                        }
 
                         if (r.mesh != nullptr)
                         {
@@ -117,20 +184,38 @@ namespace Hatchit {
                 }
                 m_pipelineList.clear();
 
-
-                for (uint32_t i = 0; i < m_renderPasses.size(); i++)
-                    delete m_renderPasses[i];
-                
                 m_renderPasses.clear();
 
-                vkDestroyCommandPool(m_device, m_commandPool, nullptr);
-                vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
+                m_rootLayout.Release();
 
-                vkDestroyDevice(m_device, nullptr);
+                m_material.Release();
+                m_texture.Release();
+                m_renderTarget.Release();
+                m_sampler.Release();
 
-                m_destroyDebugReportCallback(m_instance, msg_callback, nullptr);
 
-                vkDestroyInstance(m_instance, nullptr);
+                if (m_device != VK_NULL_HANDLE)
+                {
+                    if (m_presentSemaphore != VK_NULL_HANDLE)
+                        vkDestroySemaphore(m_device, m_presentSemaphore, nullptr);
+                    if (m_renderSemaphore != VK_NULL_HANDLE)
+                        vkDestroySemaphore(m_device, m_renderSemaphore, nullptr);
+
+                    if (m_commandPool != VK_NULL_HANDLE)
+                        vkDestroyCommandPool(m_device, m_commandPool, nullptr);
+                    if (m_descriptorPool != VK_NULL_HANDLE)
+                        vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
+
+                    vkDestroyDevice(m_device, nullptr);
+                }
+
+                if (m_instance != VK_NULL_HANDLE)
+                {
+                    if(msg_callback != VK_NULL_HANDLE)
+                        m_destroyDebugReportCallback(m_instance, msg_callback, nullptr);
+
+                    vkDestroyInstance(m_instance, nullptr);
+                }
             }
 
             void VKRenderer::VResizeBuffers(uint32_t width, uint32_t height)
@@ -138,7 +223,23 @@ namespace Hatchit {
                 //Recreate the swapchain
                 m_width = width;
                 m_height = height;
+
+                VkResult err;
+
+                err = vkQueueWaitIdle(m_queue);
+                assert(!err);
+
+                err = vkDeviceWaitIdle(m_device);
+                assert(!err);
+                
+                //re-prepare the swapchain
                 prepareVulkan();
+
+                err = vkQueueWaitIdle(m_queue);
+                assert(!err);
+
+                err = vkDeviceWaitIdle(m_device);
+                assert(!err);
             }
 
             void VKRenderer::VSetClearColor(const Color & color)
@@ -150,15 +251,7 @@ namespace Hatchit {
             {
                 VkResult err;
                 
-                VkSemaphoreCreateInfo presentCompleteSemaphoreInfo = {};
-                presentCompleteSemaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-                presentCompleteSemaphoreInfo.pNext = nullptr;
-                presentCompleteSemaphoreInfo.flags = 0;
-
                 VkFence nullFence = VK_NULL_HANDLE;
-
-                err = vkCreateSemaphore(m_device, &presentCompleteSemaphoreInfo, nullptr, &m_presentSemaphore);
-                assert(!err);
 
                 //Get the next image to draw on
                 //TODO: Actually use fences
@@ -167,7 +260,6 @@ namespace Hatchit {
                 {
                     //Resize!
                     VResizeBuffers(m_width, m_height); //TODO: find a better way to resize
-                    vkDestroySemaphore(m_device, m_presentSemaphore, nullptr);
                     return;
                 }
                 else if (err == VK_SUBOPTIMAL_KHR) 
@@ -185,49 +277,51 @@ namespace Hatchit {
             {
                 //TODO: Determine which physical device and thread are best to render with
 
+                m_swapchain->BuildSwapchainCommands(m_clearColor);
+
+                bool success = m_swapchain->VKPostPresentBarrier(m_queue);
+                assert(success);
+
                 //Get list of command buffers
                 std::vector<VkCommandBuffer> commandBuffers;
 
                 for (size_t i = 0; i < m_renderPasses.size(); i++)
                 {
-                    VKRenderPass* renderPass = static_cast<VKRenderPass*>(m_renderPasses[i]);
+                    VKRenderPassHandle renderPass = m_renderPasses[i].DynamicCastHandle<VKRenderPass>();
 
+                    renderPass->VBuildCommandList();
                     commandBuffers.push_back(renderPass->GetVkCommandBuffer());
                 }
 
                 //Make sure we run the swapchain command
-                commandBuffers.push_back(m_swapchain->GetCurrentCommand());
+                commandBuffers.push_back(m_swapchain->VKGetCurrentCommand());
 
                 //Example code for rotation
+                Math::Matrix4 scale = Math::MMMatrixScale(Math::Vector3(1.0f, 1.0f, 1.0f));
                 Math::Matrix4 rot = Math::MMMatrixRotationXYZ(Math::Vector3(0, m_angle += dt, 0));
-                Math::Matrix4 mat = Math::MMMatrixTranspose(rot * Math::MMMatrixTranslation(Math::Vector3(0, 0, 0)));
+                Math::Matrix4 trans = Math::MMMatrixTranslation(Math::Vector3(0, 0, 3.0f));
+                Math::Matrix4 mat = trans * scale * rot;
 
-                m_material->VSetMatrix4("object.model", mat);
+                m_material->VSetMatrix4("object.model", MMMatrixTranspose(mat));
                 m_material->VUpdate();
 
                 VkResult err;
 
-                VkPipelineStageFlags pipelineStageFlags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-                VkSubmitInfo submitInfo = {};
-                submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-                submitInfo.pNext = nullptr;
-                submitInfo.waitSemaphoreCount = 1;
-                submitInfo.pWaitSemaphores = &m_presentSemaphore;
-                submitInfo.pWaitDstStageMask = &pipelineStageFlags;
-                submitInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
-                submitInfo.pCommandBuffers = commandBuffers.data();
-                submitInfo.signalSemaphoreCount = 0;
-                submitInfo.pSignalSemaphores = nullptr;
+                m_submitInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
+                m_submitInfo.pCommandBuffers = commandBuffers.data();
 
-                err = vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE);
+                err = vkQueueSubmit(m_queue, 1, &m_submitInfo, VK_NULL_HANDLE);
                 assert(!err);
+
+                success = m_swapchain->VKPrePresentBarrier(m_queue);
+                assert(success);
             }
 
             void VKRenderer::VPresent()
             {
                 VkResult err;
 
-                err = m_swapchain->VKPresent(m_queue);
+                err = m_swapchain->VKPresent(m_queue, m_renderSemaphore);
                 if (err == VK_ERROR_OUT_OF_DATE_KHR)
                     VResizeBuffers(m_width, m_height);
                 else if (err == VK_SUBOPTIMAL_KHR)
@@ -240,7 +334,8 @@ namespace Hatchit {
                 err = vkQueueWaitIdle(m_queue);
                 assert(!err);
 
-                vkDestroySemaphore(m_device, m_presentSemaphore, nullptr);
+                //Reset command buffer memory back to this command pool
+                //vkResetCommandPool(m_device, m_commandPool, 0);
             }
 
             VkPhysicalDevice VKRenderer::GetVKPhysicalDevice() 
@@ -248,53 +343,74 @@ namespace Hatchit {
                 return m_gpu;
             }
 
-            VkDevice VKRenderer::GetVKDevice() 
+            const VkDevice& VKRenderer::GetVKDevice() const
             {
                 return m_device;
             }
 
-            VkInstance VKRenderer::GetVKInstance() 
+            const VkInstance& VKRenderer::GetVKInstance() const
             {
                 return m_instance;
             }
 
-            VkCommandPool VKRenderer::GetVKCommandPool()
+            const VkCommandPool& VKRenderer::GetVKCommandPool() const
             {
                 return m_commandPool;
             }
 
-            VkDescriptorPool VKRenderer::GetVKDescriptorPool() 
+            const VkDescriptorPool& VKRenderer::GetVKDescriptorPool() const
             {
                 return m_descriptorPool;
             }
 
-            VkCommandBuffer VKRenderer::GetSetupCommandBuffer() 
+            const VKRootLayoutHandle& VKRenderer::GetVKRootLayoutHandle() const
+            {
+                return m_rootLayout;
+            }
+
+            const VkCommandBuffer& VKRenderer::GetSetupCommandBuffer() const
             {
                 return m_setupCommandBuffer;
             }
 
-            VkFormat VKRenderer::GetPreferredImageFormat() 
+            const VkFormat& VKRenderer::GetPreferredImageFormat() const
             {
-                return m_preferredImageFormat;
+                return m_swapchain->VKGetPreferredColorFormat();
             }
-            VkFormat VKRenderer::GetPreferredDepthFormat() 
+            const VkFormat& VKRenderer::GetPreferredDepthFormat() const
             {
-                return VK_FORMAT_D16_UNORM;
+                return m_swapchain->VKGetPreferredDepthFormat();
             }
 
-            bool VKRenderer::initVulkan(const RendererParams& params) 
+            const RendererParams& VKRenderer::GetRendererParams() const
+            {
+                return m_rendererParams;
+            }
+
+            const VkClearValue& VKRenderer::GetClearColor() const
+            {
+                return m_clearColor; 
+            }
+
+            bool VKRenderer::initVulkan() 
             {
                 VkResult err;
+                bool success = true;
                 /*
                 * Check Vulkan instance layers
                 */
-                if (!checkInstanceLayers())
+                success = checkInstanceLayers();
+                assert(success);
+                if (!success)
                     return false;
+
 
                 /*
                 * Check Vulkan instance extensions
                 */
-                if (!checkInstanceExtensions())
+                success = checkInstanceExtensions();
+                assert(success);
+                if (!success)
                     return false;
 
                 /*
@@ -303,11 +419,11 @@ namespace Hatchit {
 
                 m_appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
                 m_appInfo.pNext = nullptr;
-                m_appInfo.pApplicationName = params.applicationName.c_str();
+                m_appInfo.pApplicationName = m_rendererParams.applicationName.c_str();
                 m_appInfo.applicationVersion = 0;
                 m_appInfo.pEngineName = "Hatchit";
                 m_appInfo.engineVersion = 0;
-                m_appInfo.apiVersion = VK_API_VERSION;
+                m_appInfo.apiVersion = VK_MAKE_VERSION(1,0,8);
 
                 /*
                 * Setup Vulkan instance create info
@@ -315,6 +431,7 @@ namespace Hatchit {
                 VkInstanceCreateInfo instanceInfo;
                 instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
                 instanceInfo.pNext = nullptr;
+                instanceInfo.flags = 0;
                 instanceInfo.pApplicationInfo = &m_appInfo;
                 instanceInfo.enabledLayerCount = static_cast<uint32_t>(m_enabledLayerNames.size());
                 instanceInfo.ppEnabledLayerNames = &m_enabledLayerNames[0];
@@ -332,12 +449,10 @@ namespace Hatchit {
 
                 case VK_ERROR_INCOMPATIBLE_DRIVER:
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("Cannot find a compatible Vulkan installable client driver"
+                    HT_DEBUG_PRINTF("Cannot find a compatible Vulkan installable client driver"
                         "(ICD).\n\nPlease look at the Getting Started guide for "
                         "additional information.\n"
                         "vkCreateInstance Failure\n");
-#endif
                 } return false;
 
                 case VK_ERROR_EXTENSION_NOT_PRESENT:
@@ -378,12 +493,6 @@ namespace Hatchit {
 #endif
 
                 /*
-                * Device should be valid at this point, get device properties
-                */
-                if (!setupDeviceQueues())
-                    return false;
-
-                /*
                 * Query the device for advanced feature support
                 */
                 if (!setupProcAddresses())
@@ -392,58 +501,11 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKRenderer::initVulkanSwapchain(const RendererParams& params)
+            bool VKRenderer::initVulkanSwapchain()
             {
-                VkResult err;
+                m_swapchain = new VKSwapchain(m_instance, m_gpu, m_device, m_commandPool);
 
-                //Hook into the window
-#ifdef _WIN32
-                //Get HINSTANCE from HWND
-                HWND window = (HWND)params.window;
-                HINSTANCE instance;
-                instance = (HINSTANCE)GetWindowLongPtr(window, GWLP_HINSTANCE);
-
-                VkWin32SurfaceCreateInfoKHR creationInfo;
-                creationInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-                creationInfo.pNext = nullptr;
-                creationInfo.flags = 0; //Unused in Vulkan 1.0.3;
-                creationInfo.hinstance = instance;
-                creationInfo.hwnd = window;
-
-                err = vkCreateWin32SurfaceKHR(m_instance, &creationInfo, nullptr, &m_surface);
-
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("Error creating VkSurface for Win32 window");
-#endif
-                    return false;
-                }
-#endif
-
-#ifdef HT_SYS_LINUX
-                VkXcbSurfaceCreateInfoKHR creationInfo;
-                creationInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
-                creationInfo.pNext = nullptr;
-                creationInfo.flags = 0;
-                creationInfo.connection = (xcb_connection_t*)params.display;
-                creationInfo.window = *(uint32_t*)params.window;
-
-                err = vkCreateXcbSurfaceKHR(m_instance, &creationInfo, nullptr, &m_surface);
-
-                if(err != VK_SUCCESS)
-                {
-                    Core::DebugPrintF("Error creating VkSurface for Xcb window");
-        
-                    return false;
-                }
-#endif
-
-                /*
-                * Setup the device queues
-                */
-                if (!setupQueues())
-                    return false;
+                const VkSurfaceKHR& surface = m_swapchain->VKGetSurface();
 
                 /*
                 * Create the device object that is in charge of allocating memory and making draw calls
@@ -452,18 +514,34 @@ namespace Hatchit {
                     return false;                
 
                 //Get Device queue
-                vkGetDeviceQueue(m_device, m_graphicsQueueNodeIndex, 0, &m_queue);
+                vkGetDeviceQueue(m_device, m_swapchain->VKGetGraphicsQueueIndex(), 0, &m_queue);
 
-                /*
-                * Get the supported texture format and color space
-                */
-                if (!getSupportedFormats())
-                    return false;
+                VkResult err;
 
                 //Get memory information
                 vkGetPhysicalDeviceMemoryProperties(m_gpu, &m_memoryProps);
 
-                m_swapchain = new VKSwapchain(m_instance, m_gpu, m_device, m_commandPool);
+                //Setup semaphores and submission info
+                VkSemaphoreCreateInfo semaphoreCreateInfo = {};
+                semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+                semaphoreCreateInfo.pNext = nullptr;
+                semaphoreCreateInfo.flags = 0;
+
+                err = vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_presentSemaphore);
+                assert(!err);
+
+                err = vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_renderSemaphore);
+                assert(!err);
+
+                VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+
+                m_submitInfo = {};
+                m_submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+                m_submitInfo.pWaitDstStageMask = &stageFlags;
+                m_submitInfo.waitSemaphoreCount = 1;
+                m_submitInfo.pWaitSemaphores = &m_presentSemaphore;
+                m_submitInfo.signalSemaphoreCount = 1;
+                m_submitInfo.pSignalSemaphores = &m_renderSemaphore;
 
                 return true;
             }
@@ -474,10 +552,7 @@ namespace Hatchit {
                 VkResult err;
 
                 /**
-                * Vulkan:
-                *
                 * Check the following requested Vulkan layers against available layers
-                *
                 */
                 VkBool32 validationFound = 0;
                 uint32_t instanceLayerCount = 0;
@@ -485,9 +560,9 @@ namespace Hatchit {
                 assert(!err);
 
                 m_enabledLayerNames = {
-                    "VK_LAYER_LUNARG_threading",      "VK_LAYER_LUNARG_mem_tracker",
-                    "VK_LAYER_LUNARG_object_tracker", "VK_LAYER_LUNARG_draw_state",
-                    "VK_LAYER_LUNARG_param_checker",  "VK_LAYER_LUNARG_swapchain",
+                    "VK_LAYER_GOOGLE_threading",      "VK_LAYER_LUNARG_core_validation",
+                    "VK_LAYER_LUNARG_object_tracker", "VK_LAYER_LUNARG_parameter_validation",
+                    "VK_LAYER_LUNARG_standard_validation",  "VK_LAYER_LUNARG_swapchain",
                     "VK_LAYER_LUNARG_device_limits",  "VK_LAYER_LUNARG_image",
                     "VK_LAYER_GOOGLE_unique_objects",
                 };
@@ -507,9 +582,7 @@ namespace Hatchit {
                     return true;
                 }
 
-#ifdef _DEBUG
-                Core::DebugPrintF("VKRenderer::checkInstanceLayers(), instanceLayerCount is zero. \n");
-#endif
+                HT_DEBUG_PRINTF("VKRenderer::checkInstanceLayers(), instanceLayerCount is zero. \n");
                 return false;
             }
 
@@ -567,9 +640,8 @@ namespace Hatchit {
                     return true;
                 }
 
-#ifdef _DEBUG
-                Core::DebugPrintF("VKRenderer::checkInstanceExtensions(), instanceExtensionCount is zero. \n");
-#endif
+                HT_DEBUG_PRINTF("VKRenderer::checkInstanceExtensions(), instanceExtensionCount is zero. \n");
+
                 return false;
             }
 
@@ -581,9 +653,7 @@ namespace Hatchit {
                 err = vkEnumeratePhysicalDevices(m_instance, &gpuCount, nullptr);
                 if (gpuCount <= 0 || err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("No compatible devices were found.\n");
-#endif
+                    HT_DEBUG_PRINTF("No compatible devices were found.\n");
                     return false;
                 }
 
@@ -591,9 +661,7 @@ namespace Hatchit {
                 err = vkEnumeratePhysicalDevices(m_instance, &gpuCount, physicalDevices);
                 if (err)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("Vulkan encountered error enumerating physical devices.\n");
-#endif
+                    HT_DEBUG_PRINTF("Vulkan encountered error enumerating physical devices.\n");
                     delete[] physicalDevices;
                     return false;
                 }
@@ -614,9 +682,7 @@ namespace Hatchit {
 
                 if (deviceLayerCount == 0)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::checkValidationLayers(): No layers were found on the device.\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::checkValidationLayers(): No layers were found on the device.\n");
                     return false;
                 }
 
@@ -629,9 +695,7 @@ namespace Hatchit {
 
                 if (!validated)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VkRenderer::checkValidationLayers(): Could not validate enabled layers against device layers.\n");
-#endif
+                    HT_DEBUG_PRINTF("VkRenderer::checkValidationLayers(): Could not validate enabled layers against device layers.\n");
                     return false;
                 }
 
@@ -654,9 +718,7 @@ namespace Hatchit {
                     }
                     if (!found)
                     {
-#ifdef _DEBUG
-                        Core::DebugPrintF("VKRenderer::checkLayers(), Cannot find layer: %s\n", layerNames[i]);
-#endif
+                        HT_DEBUG_PRINTF("VKRenderer::checkLayers(), Cannot find layer: %s\n", layerNames[i]);
                         validated = false;
                     }
 
@@ -680,9 +742,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKMesh::createBuffer(): Failed to create buffer\n");
-#endif
+                    HT_DEBUG_PRINTF("VKMesh::createBuffer(): Failed to create buffer\n");
                     return false;
                 }
 
@@ -700,9 +760,7 @@ namespace Hatchit {
                 assert(okay);
                 if (!okay)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKMesh::createBuffer(): Failed to get memory type\n");
-#endif
+                    HT_DEBUG_PRINTF("VKMesh::createBuffer(): Failed to get memory type\n");
                     return false;
                 }
 
@@ -713,9 +771,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKMesh::createBuffer(): Failed to allocate memory\n");
-#endif
+                    HT_DEBUG_PRINTF("VKMesh::createBuffer(): Failed to allocate memory\n");
                     return false;
                 }
 
@@ -726,9 +782,7 @@ namespace Hatchit {
                     assert(!err);
                     if (err != VK_SUCCESS)
                     {
-#ifdef _DEBUG
-                        Core::DebugPrintF("VKMesh::createBuffer(): Failed to map memory\n");
-#endif
+                        HT_DEBUG_PRINTF("VKMesh::createBuffer(): Failed to map memory\n");
                         return false;
                     }
 
@@ -743,13 +797,13 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKMesh::VBuffer(): Failed to bind memory\n");
-#endif
+                    HT_DEBUG_PRINTF("VKMesh::VBuffer(): Failed to bind memory\n");
                     return false;
                 }
 
                 uniformBlock->descriptor.buffer = uniformBlock->buffer;
+                uniformBlock->descriptor.offset = 0;
+                uniformBlock->descriptor.range = dataSize;
 
                 return true;
             }
@@ -767,9 +821,7 @@ namespace Hatchit {
 
                 if (deviceExtensionCount == 0)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::checkDeviceExtensions(): Device reported no available extensions\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::checkDeviceExtensions(): Device reported no available extensions\n");
                     return false;
                 }
 
@@ -792,14 +844,12 @@ namespace Hatchit {
 
                 if (!swapchainExtFound)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("vkEnumerateDeviceExtensionProperties failed to find "
+                    HT_DEBUG_PRINTF("vkEnumerateDeviceExtensionProperties failed to find "
                         "the " VK_KHR_SWAPCHAIN_EXTENSION_NAME
                         " extension.\n\nDo you have a compatible "
                         "Vulkan installable client driver (ICD) installed?\nPlease "
                         "look at the Getting Started guide for additional "
                         "information.\n");
-#endif
                     return false;
                 }
 
@@ -818,24 +868,18 @@ namespace Hatchit {
 
                 if (!m_createDebugReportCallback)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("GetProcAddr: Unable to find vkCreateDebugReportCallbackEXT\n");
-#endif
+                    HT_DEBUG_PRINTF("GetProcAddr: Unable to find vkCreateDebugReportCallbackEXT\n");
                     return false;
                 }
                 if (!m_destroyDebugReportCallback) {
-#ifdef _DEBUG
-                    Core::DebugPrintF("GetProcAddr: Unable to find vkDestroyDebugReportCallbackEXT\n");
-#endif
+                    HT_DEBUG_PRINTF("GetProcAddr: Unable to find vkDestroyDebugReportCallbackEXT\n");
                     return false;
                 }
 
                 m_debugReportMessage =
                     (PFN_vkDebugReportMessageEXT)vkGetInstanceProcAddr(m_instance, "vkDebugReportMessageEXT");
                 if (!m_debugReportMessage) {
-#ifdef _DEBUG
-                    Core::DebugPrintF("GetProcAddr: Unable to find vkDebugReportMessageEXT\n");
-#endif
+                    HT_DEBUG_PRINTF("GetProcAddr: Unable to find vkDebugReportMessageEXT\n");
                     return false;
                 }
 
@@ -855,53 +899,10 @@ namespace Hatchit {
                 case VK_SUCCESS:
                     break;
                 case VK_ERROR_OUT_OF_HOST_MEMORY:
-#ifdef _DEBUG
-                    Core::DebugPrintF("ERROR: Out of host memory!\n");
-#endif
+                    HT_DEBUG_PRINTF("ERROR: Out of host memory!\n");
                     return false;
                 default:
-#ifdef _DEBUG
-                    Core::DebugPrintF("ERROR: An unknown error occured!\n");
-#endif
-                    return false;
-                }
-
-                return true;
-            }
-
-            bool VKRenderer::setupDeviceQueues()
-            {
-                vkGetPhysicalDeviceProperties(m_gpu, &m_gpuProps);
-
-                //Call with NULL data to get count
-                uint32_t queueCount;
-                vkGetPhysicalDeviceQueueFamilyProperties(m_gpu, &queueCount, NULL);
-                assert(queueCount >= 1);
-
-                if (queueCount == 0)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::setupDeviceQueues: No queues were found on the device\n");
-#endif
-                    return false;
-                }
-
-                m_queueProps = std::vector<VkQueueFamilyProperties>(queueCount);
-                vkGetPhysicalDeviceQueueFamilyProperties(m_gpu, &queueCount, &m_queueProps[0]);
-
-                // Find a queue that supports gfx
-                uint32_t gfxQueueIdx = 0;
-                for (gfxQueueIdx = 0; gfxQueueIdx < queueCount; gfxQueueIdx++) {
-                    if (m_queueProps[gfxQueueIdx].queueFlags & VK_QUEUE_GRAPHICS_BIT)
-                        break;
-                }
-                assert(gfxQueueIdx < queueCount);
-
-                if (gfxQueueIdx >= queueCount)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::setupDeviceQueues: No graphics queue was found on the device\n");
-#endif
+                    HT_DEBUG_PRINTF("ERROR: An unknown error occured!\n");
                     return false;
                 }
 
@@ -920,9 +921,7 @@ namespace Hatchit {
                     vkGetInstanceProcAddr(m_instance, "vkGetPhysicalDeviceSurfaceSupportKHR");
                 if (fpGetPhysicalDeviceSurfaceSupportKHR == nullptr)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::setupProcAddresses: vkGetPhysicalDeviceSurfaceSupportKHR not found.\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::setupProcAddresses: vkGetPhysicalDeviceSurfaceSupportKHR not found.\n");
                     return false;
                 }
 
@@ -930,9 +929,7 @@ namespace Hatchit {
                     vkGetInstanceProcAddr(m_instance, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
                 if (fpGetPhysicalDeviceSurfaceCapabilitiesKHR == nullptr)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::setupProcAddresses: vkGetPhysicalDeviceSurfaceCapabilitiesKHR not found.\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::setupProcAddresses: vkGetPhysicalDeviceSurfaceCapabilitiesKHR not found.\n");
                     return false;
                 }
 
@@ -940,9 +937,7 @@ namespace Hatchit {
                     vkGetInstanceProcAddr(m_instance, "vkGetPhysicalDeviceSurfaceFormatsKHR");
                 if (fpGetPhysicalDeviceSurfaceFormatsKHR == nullptr)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::setupProcAddresses: vkGetPhysicalDeviceSurfaceFormatsKHR not found.\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::setupProcAddresses: vkGetPhysicalDeviceSurfaceFormatsKHR not found.\n");
                     return false;
                 }
 
@@ -950,64 +945,9 @@ namespace Hatchit {
                     vkGetInstanceProcAddr(m_instance, "vkGetPhysicalDeviceSurfacePresentModesKHR");
                 if (fpGetPhysicalDeviceSurfacePresentModesKHR == nullptr)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::setupProcAddresses: vkGetPhysicalDeviceSurfacePresentModesKHR not found.\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::setupProcAddresses: vkGetPhysicalDeviceSurfacePresentModesKHR not found.\n");
                     return false;
                 }
-
-                return true;
-            }
-
-            bool VKRenderer::setupQueues() 
-            {
-                uint32_t i; //we reuse this for all the loops
-
-                //Find which queue we can use to present
-                VkBool32* supportsPresent = new VkBool32[m_queueProps.size()];
-                for (i = 0; i < m_queueProps.size(); i++)
-                    fpGetPhysicalDeviceSurfaceSupportKHR(m_gpu, i, m_surface, &supportsPresent[i]);
-
-                //Search for a queue that can both do graphics and presentation
-                uint32_t graphicsQueueNodeIndex = UINT32_MAX;
-                uint32_t presentQueueNodeIndex = UINT32_MAX;
-
-                for (i = 0; i < m_queueProps.size(); i++) {
-                    if ((m_queueProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0) {
-                        if (graphicsQueueNodeIndex == UINT32_MAX)
-                            graphicsQueueNodeIndex = i;
-
-                        if (supportsPresent[i] == VK_TRUE) {
-                            graphicsQueueNodeIndex = i;
-                            presentQueueNodeIndex = i;
-                            break;
-                        }
-                    }
-                }
-                if (presentQueueNodeIndex == UINT32_MAX) {
-                    // If didn't find a queue that supports both graphics and present, then
-                    // find a separate present queue.
-                    for (uint32_t i = 0; i < m_queueProps.size(); ++i) {
-                        if (supportsPresent[i] == VK_TRUE) {
-                            presentQueueNodeIndex = i;
-                            break;
-                        }
-                    }
-                }
-
-                delete[] supportsPresent;
-
-                // Generate error if could not find both a graphics and a present queue
-                if (graphicsQueueNodeIndex == UINT32_MAX ||
-                    presentQueueNodeIndex == UINT32_MAX) {
-#ifdef _DEBUG
-                    Core::DebugPrintF("Unable to find a graphics and a present queue.\n");
-#endif
-                    return false;
-                }
-
-                //Save the index of the queue we want to use
-                m_graphicsQueueNodeIndex = graphicsQueueNodeIndex;
 
                 return true;
             }
@@ -1021,7 +961,7 @@ namespace Hatchit {
                 VkDeviceQueueCreateInfo queue;
                 queue.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
                 queue.pNext = nullptr;
-                queue.queueFamilyIndex = m_graphicsQueueNodeIndex;
+                queue.queueFamilyIndex = m_swapchain->VKGetGraphicsQueueIndex();
                 queue.queueCount = 1;
                 queue.pQueuePriorities = queuePriorities;
 
@@ -1039,9 +979,7 @@ namespace Hatchit {
                 err = vkCreateDevice(m_gpu, &device, nullptr, &m_device);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("Failed to create device. \n");
-#endif
+                    HT_DEBUG_PRINTF("Failed to create device. \n");
                     return false;
                 }
 
@@ -1058,46 +996,6 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKRenderer::getSupportedFormats() 
-            {
-                VkResult err;
-
-                //Get list of supported VkFormats
-                uint32_t formatCount;
-                err = fpGetPhysicalDeviceSurfaceFormatsKHR(m_gpu, m_surface, &formatCount, nullptr);
-
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VkRenderer::getSupportedFormats(): Error getting number of formats from device.\n");
-#endif
-                    return false;
-                }
-
-                //Get format list
-                VkSurfaceFormatKHR* surfaceFormats = new VkSurfaceFormatKHR[formatCount];
-                err = fpGetPhysicalDeviceSurfaceFormatsKHR(m_gpu, m_surface, &formatCount, surfaceFormats);
-                if (err != VK_SUCCESS || formatCount <= 0)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VkRenderer::getSupportedFormats(): Error getting VkSurfaceFormats from device.\n");
-#endif
-                    return false;
-                }
-
-                // If the format list includes just one entry of VK_FORMAT_UNDEFINED,
-                // the surface has no preferred format.  Otherwise, at least one
-                // supported format will be returned.
-                if (formatCount == 1 && surfaceFormats[0].format == VK_FORMAT_UNDEFINED)
-                    m_preferredImageFormat = VK_FORMAT_B8G8R8A8_UNORM;
-                else
-                    m_preferredImageFormat = surfaceFormats[0].format;
-
-                m_colorSpace = surfaceFormats[0].colorSpace;
-
-                return true;
-            }
-
             bool VKRenderer::setupCommandPool() 
             {
                 VkResult err;
@@ -1106,16 +1004,14 @@ namespace Hatchit {
                 VkCommandPoolCreateInfo commandPoolInfo;
                 commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
                 commandPoolInfo.pNext = nullptr;
-                commandPoolInfo.queueFamilyIndex = m_graphicsQueueNodeIndex;
-                commandPoolInfo.flags = 0;
+                commandPoolInfo.queueFamilyIndex = m_swapchain->VKGetGraphicsQueueIndex();
+                commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
                 err = vkCreateCommandPool(m_device, &commandPoolInfo, nullptr, &m_commandPool);
 
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::setupCommandPool: Error creating command pool.\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::setupCommandPool: Error creating command pool.\n");
                     return false;
                 }
 
@@ -1151,9 +1047,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::setupDescriptorPool: Failed to create descriptor pool\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::setupDescriptorPool: Failed to create descriptor pool\n");
                     return false;
                 }
 
@@ -1163,105 +1057,13 @@ namespace Hatchit {
             //TODO: Move this functionality to other subclasses
             bool VKRenderer::prepareVulkan()
             {
-                if (!setupCommandPool())
-                    return false;
-
-                if (!setupDescriptorPool())
-                    return false;
-
                 CreateSetupCommandBuffer();
 
-                m_swapchain->VKPrepare(m_surface, m_colorSpace);
+                m_swapchain->VKPrepare();
 
                 m_width = m_swapchain->GetWidth();
                 m_height = m_swapchain->GetHeight();
 
-                FlushSetupCommandBuffer();
-
-                //TODO: remove this test code
-                VKRenderPass* renderPass = new VKRenderPass();
-                renderPass->SetWidth(m_width);
-                renderPass->SetHeight(m_height);
-                renderPass->VSetClearColor(Color(m_clearColor.color.float32[0], m_clearColor.color.float32[1], m_clearColor.color.float32[2], m_clearColor.color.float32[3]));
-
-                m_renderTarget = new VKRenderTarget(m_width, m_height);
-                m_renderTarget->SetRenderPass(renderPass);
-
-                renderPass->VPrepare();
-                m_renderTarget->VPrepare();
-
-                renderPass->SetRenderTarget(m_renderTarget);
-
-                m_swapchain->SetIncomingRenderTarget(m_renderTarget);
-
-                Core::File meshFile;
-                meshFile.Open(Core::os_exec_dir() + "monkey.obj", Core::FileMode::ReadBinary);
-
-                Core::File vsFile;
-                vsFile.Open(Core::os_exec_dir() + "monkey_VS.spv", Core::FileMode::ReadBinary);
-
-                Core::File fsFile;
-                fsFile.Open(Core::os_exec_dir() + "monkey_FS.spv", Core::FileMode::ReadBinary);
-
-                Resource::Model model;
-                model.VInitFromFile(&meshFile);
-
-                VKShader vsShader;
-                vsShader.VInitFromFile(&vsFile);
-
-                VKShader fsShader;
-                fsShader.VInitFromFile(&fsFile);
-
-                RasterizerState rasterState = {};
-                rasterState.cullMode = CullMode::NONE;
-                rasterState.polygonMode = PolygonMode::SOLID;
-
-                MultisampleState multisampleState = {};
-                multisampleState.minSamples = 0;
-                multisampleState.samples = SAMPLE_1_BIT;
-
-                Math::Matrix4 view = Math::MMMatrixTranspose(Math::MMMatrixLookAt(Math::Vector3(0, 0, -5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0)));
-
-                Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.5f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f));
-
-                IPipeline* pipeline = new VKPipeline(renderPass->GetVkRenderPass());
-                pipeline->VLoadShader(ShaderSlot::VERTEX, &vsShader);
-                pipeline->VLoadShader(ShaderSlot::FRAGMENT, &fsShader);
-                pipeline->VSetRasterState(rasterState);
-                pipeline->VSetMultisampleState(multisampleState);
-                pipeline->VPrepare();
-
-                m_material = new VKMaterial();
-
-                m_material->VSetMatrix4("object.model", Math::Matrix4());
-                m_material->VPrepare(pipeline);
-
-                std::vector<Resource::Mesh*> meshes = model.GetMeshes();
-                IMesh* mesh = new VKMesh();
-                mesh->VBuffer(meshes[0]);
-
-                renderPass->ScheduleRenderRequest(pipeline, m_material, mesh);
-                 
-                Renderable renderable;
-                renderable.material = m_material;
-                renderable.mesh = mesh;
-                m_pipelineList[pipeline].push_back(renderable);
-
-                m_renderPasses.push_back(renderPass);
-
-                renderPass->VBuildCommandList();
-
-                renderPass->SetView(view);
-                renderPass->SetProj(proj);
-                renderPass->VUpdate();
-
-                pipeline->VUpdate();
-                m_material->VUpdate();
-
-                CreateSetupCommandBuffer();
-
-                m_swapchain->BuildSwapchain(m_clearColor);
-                
                 FlushSetupCommandBuffer();
 
                 return true;
@@ -1290,9 +1092,7 @@ namespace Hatchit {
                     err = vkAllocateCommandBuffers(m_device, &command, &m_setupCommandBuffer);
                     if (err != VK_SUCCESS)
                     {
-#ifdef _DEBUG
-                        Core::DebugPrintF("VKRenderer::CreateSetupCommandBuffer(): Failed to allocate command buffer.\n");
-#endif
+                        HT_DEBUG_PRINTF("VKRenderer::CreateSetupCommandBuffer(): Failed to allocate command buffer.\n");
                     }
                 }
 
@@ -1312,7 +1112,6 @@ namespace Hatchit {
                 err = vkEndCommandBuffer(m_setupCommandBuffer);
                 assert(!err);
 
-                const VkCommandBuffer commands[] = { m_setupCommandBuffer };
                 VkFence nullFence = VK_NULL_HANDLE;
 
                 VkSubmitInfo submitInfo = {};
@@ -1322,7 +1121,7 @@ namespace Hatchit {
                 submitInfo.pWaitSemaphores = nullptr;
                 submitInfo.pWaitDstStageMask = nullptr;
                 submitInfo.commandBufferCount = 1;
-                submitInfo.pCommandBuffers = commands;
+                submitInfo.pCommandBuffers = &m_setupCommandBuffer;
                 submitInfo.signalSemaphoreCount = 0;
                 submitInfo.pSignalSemaphores = nullptr;
 
@@ -1332,7 +1131,7 @@ namespace Hatchit {
                 err = vkQueueWaitIdle(m_queue);
                 assert(!err);
 
-                vkFreeCommandBuffers(m_device, m_commandPool, 1, commands);
+                vkFreeCommandBuffers(m_device, m_commandPool, 1, &m_setupCommandBuffer);
                 m_setupCommandBuffer = VK_NULL_HANDLE;
             }
 
@@ -1349,6 +1148,7 @@ namespace Hatchit {
                 imageMemoryBarrier.image = image;
                 imageMemoryBarrier.subresourceRange.aspectMask = aspectMask;
                 imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
+                imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
                 imageMemoryBarrier.subresourceRange.layerCount = 1;
                 imageMemoryBarrier.subresourceRange.levelCount = 1;
                 imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -1374,6 +1174,11 @@ namespace Hatchit {
                 if (oldImageLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
                 {
                     imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                }
+
+                if (oldImageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+                {
+                    imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
                 }
 
                 // Old layout is shader read (sampler, input attachment)
@@ -1423,6 +1228,10 @@ namespace Hatchit {
                     imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
                 }
 
+                if (newImageLayout == VK_IMAGE_LAYOUT_PREINITIALIZED)
+                {
+                    imageMemoryBarrier.dstAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+                }
 
                 // Put barrier on top
                 VkPipelineStageFlags srcStageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
@@ -1438,9 +1247,7 @@ namespace Hatchit {
             {
                 if (RendererInstance == nullptr)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::MemoryTypeFromProperties(): Tried to call static before the renderer instance was set.\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::MemoryTypeFromProperties(): Tried to call static before the renderer instance was set.\n");
                     return false;
                 }
 
@@ -1470,9 +1277,7 @@ namespace Hatchit {
             {
                 if (msgFlags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("ERROR: [%s] Code %d : %s\n", pLayerPrefix, msgCode,pMsg);
-#endif
+                    HT_DEBUG_PRINTF("ERROR: [%s] Code %d : %s\n", pLayerPrefix, msgCode,pMsg);
                 }
                 else if (msgFlags & VK_DEBUG_REPORT_WARNING_BIT_EXT)
                 {
@@ -1484,9 +1289,7 @@ namespace Hatchit {
                         return false;
                     }
 
-#ifdef _DEBUG
-                    Core::DebugPrintF("WARNING: [%s] Code %d : %s\n", pLayerPrefix, msgCode, pMsg);
-#endif
+                    HT_DEBUG_PRINTF("WARNING: [%s] Code %d : %s\n", pLayerPrefix, msgCode, pMsg);
                 }
                 else {
                     return false;

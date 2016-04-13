@@ -14,17 +14,32 @@
 
 #include <ht_renderpass.h>
 
-namespace Hatchit {
+namespace Hatchit
+{
+    namespace Graphics
+    {
+        bool RenderPassBase::VInitFromResource(const Resource::RenderPassHandle& handle)
+        {
+            //Initialize from file here
+            return true;
+        }
 
-    namespace Graphics {
+        void RenderPassBase::VSetView(Math::Matrix4 view)
+        {
+            m_view = std::move(view);
+        }
+        void RenderPassBase::VSetProj(Math::Matrix4 proj)
+        {
+            m_proj = std::move(proj);
+        }
 
-        void IRenderPass::ScheduleRenderRequest(IPipeline* pipeline, IMaterial* material, IMesh* mesh)
+        void RenderPassBase::VScheduleRenderRequest(IPipelineHandle pipeline, IMaterialHandle material, IMesh* mesh)
         {
             RenderRequest renderRequest = {};
 
-            renderRequest.pipeline  = pipeline;
-            renderRequest.material  = material;
-            renderRequest.mesh      = mesh;
+            renderRequest.pipeline = pipeline;
+            renderRequest.material = material;
+            renderRequest.mesh = mesh;
 
             m_view = Math::Matrix4();
             m_proj = Math::Matrix4();
@@ -32,34 +47,32 @@ namespace Hatchit {
             m_renderRequests.push_back(renderRequest);
         }
 
-        void IRenderPass::SetRenderTarget(IRenderTarget* renderTarget)
+        void RenderPassBase::BuildRenderRequestHeirarchy()
         {
-            m_renderTarget = renderTarget;
-        }
+            uint32_t i;
 
-        void IRenderPass::SetWidth(uint32_t width) { m_width = width; }
-        void IRenderPass::SetHeight(uint32_t height) { m_height = height; }
-
-        void IRenderPass::SetView(Math::Matrix4 view) 
-        {
-            m_view = view; 
-        }
-        void IRenderPass::SetProj(Math::Matrix4 proj) 
-        { 
-            m_proj = proj; 
-        }
-
-        void IRenderPass::BuildRenderRequestHeirarchy() 
-        {
-            for (uint32_t i = 0; i < m_renderRequests.size(); i++)
+            //Clear past pipeline requests
+            for (i = 0; i < m_renderRequests.size(); i++)
             {
                 RenderRequest renderRequest = m_renderRequests[i];
 
-                IPipeline* pipeline = renderRequest.pipeline;
-                IMaterial* material = renderRequest.material;
+                IPipelineHandle pipeline = renderRequest.pipeline;
+
+                m_pipelineList[pipeline].clear();
+            }
+
+            //Build new requests
+            for (i = 0; i < m_renderRequests.size(); i++)
+            {
+                RenderRequest renderRequest = m_renderRequests[i];
+
+                IPipelineHandle pipeline = renderRequest.pipeline;
+                IMaterialHandle material = renderRequest.material;
                 IMesh* mesh = renderRequest.mesh;
 
-                m_pipelineList[pipeline].push_back({material, mesh});
+                m_pipelineList[pipeline].clear();
+
+                m_pipelineList[pipeline].push_back({ material, mesh });
             }
         }
     }

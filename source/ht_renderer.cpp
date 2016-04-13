@@ -18,7 +18,9 @@ namespace Hatchit {
 
     namespace Graphics {
 
-        void IRenderer::AddRenderPass(IRenderPass* renderPass) 
+        IRenderer*  IRenderer::Instance = nullptr;
+        
+        void IRenderer::AddRenderPass(IRenderPassHandle renderPass) 
         {
             m_renderPasses.push_back(renderPass);
         }
@@ -28,8 +30,18 @@ namespace Hatchit {
             m_renderPasses.erase(m_renderPasses.begin() + index);
         }
 
-        uint32_t IRenderer::GetWidth() { return m_width; }
-        uint32_t IRenderer::GetHeight() { return m_height; }
+        uint32_t IRenderer::GetWidth() const { return m_width; }
+        uint32_t IRenderer::GetHeight() const { return m_height; }
 
+
+        void IRenderer::RegisterCamera(Camera camera, uint32_t flags)
+        {
+            uint32_t i = flags;
+            for (int j = 0; i != 0; j++)
+            {
+                m_renderPassCameras[j].push_back(camera);
+                i <<= 1;
+            }
+        }
     }
 }

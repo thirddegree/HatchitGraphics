@@ -33,32 +33,46 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            class HT_API VKRenderPass : public IRenderPass
+            class HT_API VKRenderPass : public Core::RefCounted<VKRenderPass>, public RenderPassBase
             {
             public:
-                VKRenderPass();
+                VKRenderPass(std::string ID);
                 ~VKRenderPass();
 
-                //Prepare the internal VkRenderPass
-                bool VPrepare()   override;
+                //Required function for RefCounted classes
+                bool Initialize(const std::string& fileName);
 
                 //Will this be sent the Objects that it needs to render?
                 ///Render the scene
-                void VUpdate()  override;
+                void VUpdate() override;
 
                 bool VBuildCommandList() override;
 
-                void VSetClearColor(Color clearColor);
+                const VkRenderPass& GetVkRenderPass() const;
+                const VkCommandBuffer& GetVkCommandBuffer() const;
 
-                const VkRenderPass* GetVkRenderPass();
-                VkCommandBuffer GetVkCommandBuffer();
+                const std::vector<IRenderTargetHandle>& GetOutputRenderTargets() const;
 
             private:
+                bool setupRenderPass();
+                bool setupAttachmentImages();
+                bool setupFramebuffer();
+
+                bool allocateCommandBuffer();
+
+                const VkDevice& m_device;
+                const VkCommandPool& m_commandPool;
+
                 VkRenderPass m_renderPass;
                 VkCommandBuffer m_commandBuffer;
 
-                VkClearValue m_clearColor;
+                std::vector<Image> m_colorImages;
+                Image m_depthImage;
+
+                VkFramebuffer m_framebuffer;
             };
+
+            using VKRenderPassHandle = Core::Handle<VKRenderPass>;
         }
     }
 }

@@ -57,14 +57,23 @@ namespace Hatchit {
                 VKSwapchain(VkInstance& instance, VkPhysicalDevice& gpu, VkDevice& device, VkCommandPool& commandPool);
                 ~VKSwapchain();
                 
-                bool VKPrepare(VkSurfaceKHR surface, VkColorSpaceKHR colorSpace);
+                const VkCommandBuffer&  VKGetCurrentCommand();
+                const VkSurfaceKHR&     VKGetSurface();
+                const uint32_t&         VKGetGraphicsQueueIndex();
+                const VkFormat&         VKGetPreferredColorFormat();
+                const VkFormat&         VKGetPreferredDepthFormat();
 
-                bool BuildSwapchain(VkClearValue clearColor);
+                bool VKPrepare();
+                bool VKPrepareResources();
+
+                bool BuildSwapchainCommands(VkClearValue clearColor);
 
                 VkResult VKGetNextImage(VkSemaphore presentSemaphore);
-                VkResult VKPresent(VkQueue queue);
+                bool VKPostPresentBarrier(const VkQueue& queue);
+                bool VKPrePresentBarrier(const VkQueue& queue);
+                VkResult VKPresent(const VkQueue& queue, const VkSemaphore& renderSemaphore);
 
-                VkCommandBuffer GetCurrentCommand();
+                void VKSetIncomingRenderPass(VKRenderPassHandle renderPass);
 
             private:
                 VkInstance&         m_instance;
@@ -72,10 +81,21 @@ namespace Hatchit {
                 VkDevice&           m_device;
                 VkCommandPool&      m_commandPool;
 
+                VkSurfaceKHR                            m_surface;
+                VkPhysicalDeviceProperties              m_gpuProps;
+                std::vector<VkQueueFamilyProperties>    m_queueProps;
+                uint32_t                                m_graphicsQueueNodeIndex;
+
+                VkFormat        m_preferredColorFormat;
+                VkFormat        m_preferredDepthFormat;
+                VkColorSpaceKHR m_colorSpace;
+
                 VkRenderPass            m_renderPass;
-                VKPipeline*             m_pipeline;
-                VkDescriptorSetLayout   m_descriptorSetLayout;
+                VKPipelineHandle        m_pipeline;
                 VkDescriptorSet         m_descriptorSet;
+
+                std::vector<VkCommandBuffer> m_postPresentCommands;
+                std::vector<VkCommandBuffer> m_prePresentCommands;
 
                 VkSwapchainKHR               m_swapchain;
                 std::vector<SwapchainBuffer> m_swapchainBuffers;
@@ -83,25 +103,43 @@ namespace Hatchit {
                 DepthBuffer                  m_depthBuffer;
 
                 UniformBlock    m_vertexBuffer;
+                std::vector<Texture> m_inputTextures;
+
+                bool prepareSurface(const RendererParams& rendererParams);
+
+                bool getQueueProperties();
+
+                bool findSutibleQueue();
+
+                bool getPreferredFormats();
 
                 //Prepare the swapchain base
-                bool prepareSwapchain(VKRenderer* renderer, VkSurfaceKHR surface, VkFormat preferredColorFormat, VkColorSpaceKHR colorSpace,
+                bool prepareSwapchain(VKRenderer* renderer, VkFormat preferredColorFormat, VkColorSpaceKHR colorSpace,
                     std::vector<VkPresentModeKHR> presentModes, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D surfaceExtents);
 
                 //Prepare the swapchain depth buffer
-                bool prepareSwapchainDepth(VKRenderer* renderer, VkExtent2D extent);
+                bool prepareSwapchainDepth(VKRenderer* renderer, const VkFormat& preferredDepthFormat, VkExtent2D extent);
 
                 //Prepare the internal render pass
-                bool prepareRenderPass(VkFormat preferredColorFormat);
+                bool prepareRenderPass();
 
                 //Prepare the framebuffers for the swapchain images
                 bool prepareFramebuffers(VkExtent2D extents);
 
-                //Setup pipeline, etc
-                bool prepareResources();
-
                 //Allocate the command buffers
                 bool allocateCommandBuffers();
+
+                bool submitBarrier(const VkQueue& queue, const VkCommandBuffer& command);
+
+                //Helpers for destruction / recreation
+                void destroySurface();
+                void destroyPipeline();
+                void destroyDepth();
+                void destroyFramebuffers();
+                void destroySwapchainBuffers();
+                void destroyRenderPass();
+                void destroySwapchain();
+                
             };
         }
     }

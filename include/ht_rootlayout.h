@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 ThirdDegree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -12,32 +12,23 @@
 **
 **/
 
-/**
-* \class IObjectRenderer
-* \ingroup HatchitGraphics
-*
-* \brief An interface for a class that will render something to the screen
-*
-* This class will be extended by another interface that will describe methods
-* for buffering and drawing a resource to the screen
-*/
-
 #pragma once
 
 #include <ht_platform.h>
+#include <ht_rootlayout_resource.h>
 
-namespace Hatchit {
-
-    namespace Graphics {
-
-        class HT_API IObjectRenderer
+namespace Hatchit
+{
+    namespace Graphics
+    {
+        class HT_API IRootLayout
         {
         public:
-            virtual ~IObjectRenderer() {};
+            virtual ~IRootLayout() { };
 
-            ///Override to render a resource with a graphics language
-            virtual void VRender() = 0;
-            
+            //virtual bool VDeferredInitialize(Resource::RootLayoutHandle resource) = 0;
+
+            //virtual bool VInitialize(const Resource::RootLayoutHandle handle) = 0;
         };
     }
 }

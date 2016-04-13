@@ -26,26 +26,34 @@
 
 #include <ht_platform.h>
 #include <ht_shader.h>
-#include <ht_resourceobject.h>
 #include <ht_shadervariable.h>
 #include <ht_math.h>
 #include <ht_debug.h>
+#include <ht_pipeline.h>
 
 #include <map>
 
 namespace Hatchit {
 
+    namespace Core
+    {
+        template<typename VarType>
+        class Handle;
+    }
+
+    namespace Resource
+    {
+        class Material;
+    }
+
     namespace Graphics {
 
         class IPipeline;
 
-        class HT_API IMaterial : Resource::ResourceObject
+        class HT_API IMaterial
         {
         public:
             virtual ~IMaterial() { };
-
-            virtual void VOnLoaded() = 0;
-            virtual bool VInitFromFile(Core::File* file) = 0;
 
             virtual bool VSetInt(std::string name, int data) = 0;
             virtual bool VSetFloat(std::string name, float data) = 0;
@@ -53,15 +61,14 @@ namespace Hatchit {
             virtual bool VSetFloat4(std::string name, Math::Vector4 data) = 0;
             virtual bool VSetMatrix4(std::string name, Math::Matrix4 data) = 0;
 
-            virtual bool VBindTexture(std::string name, ITexture* texture) = 0;
-            virtual bool VUnbindTexture(std::string name, ITexture* texture) = 0;
+            virtual bool VBindTexture(std::string name, ITextureHandle texture) = 0;
+            virtual bool VUnbindTexture(std::string name, ITextureHandle texture) = 0;
 
-            virtual bool VPrepare(IPipeline* pipeline) = 0;
             virtual bool VUpdate() = 0;
 
-        protected:
-            std::map<std::string, ShaderVariable*> m_shaderVariables;
-            std::map<std::string, ITexture*> m_textures;
+            virtual IPipelineHandle GetPipeline() = 0;
         };
+
+        using IMaterialHandle = Core::Handle<IMaterial>;
     }
 }

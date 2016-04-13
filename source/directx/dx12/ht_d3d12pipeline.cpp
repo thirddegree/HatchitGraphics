@@ -20,65 +20,227 @@ namespace Hatchit {
 
         namespace DX
         {
-            D3D12Pipeline::D3D12Pipeline()
+            D3D12Pipeline::D3D12Pipeline(std::string ID)
+                : Core::RefCounted<D3D12Pipeline>(std::move(ID))
             {
-
+                m_pipelineState = nullptr;
             }
 
-            void D3D12Pipeline::VSetRasterState(const RasterizerState & rasterState)
+            D3D12Pipeline::~D3D12Pipeline()
             {
+                ReleaseCOM(m_pipelineState);
+            }
+
+            ID3D12PipelineState* D3D12Pipeline::GetPipeline()
+            {
+                return m_pipelineState;
+            }
+
+            bool D3D12Pipeline::Initialize(const std::string & fileName, ID3D12Device * device, ID3D12RootSignature * root)
+            {
+                HRESULT hr = S_OK;
+
+                m_description = {};
+
+                Resource::PipelineHandle handle = Resource::Pipeline::GetHandleFromFileName(fileName);
+                if (!handle.IsValid())
+                    return false;
+
+                /*Build Input Layout*/
+                std::vector<D3D12_INPUT_ELEMENT_DESC> _elements;
+                const Resource::Pipeline::InputLayout& _layout = handle->GetInputLayout();
+                for (int i = 0; i < _layout.elements.size(); i++)
+                {
+                    D3D12_INPUT_ELEMENT_DESC elementDesc;
+                    elementDesc.SemanticName = _layout.elements[i].semanticName.c_str();
+                    elementDesc.SemanticIndex = _layout.elements[i].semanticIndex;
+                    elementDesc.InputSlot = _layout.elements[i].slot;
+                    elementDesc.Format = InputFormatFromElement(_layout.elements[i]);
+                    elementDesc.AlignedByteOffset = (i == 0) ? 0 : D3D12_APPEND_ALIGNED_ELEMENT;
+                    elementDesc.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+                    elementDesc.InstanceDataStepRate = 0;
+
+                    _elements.push_back(elementDesc);
+                }
+
+                D3D12_INPUT_LAYOUT_DESC inputLayoutDesc;
+                inputLayoutDesc.pInputElementDescs = &_elements[0];
+                inputLayoutDesc.NumElements = static_cast<uint32_t>(_elements.size());
+
+                /*Build Pipeline State Object*/
+                m_description.InputLayout = inputLayoutDesc;
+                m_description.pRootSignature = root;
+                m_description.VS = ShaderBytecodeFromHandle(Resource::Pipeline::VERTEX, handle);
+                m_description.GS = ShaderBytecodeFromHandle(Resource::Pipeline::GEOMETRY, handle);
+                m_description.HS = ShaderBytecodeFromHandle(Resource::Pipeline::TESS_CONTROL, handle);
+                m_description.DS = ShaderBytecodeFromHandle(Resource::Pipeline::TESS_EVAL, handle);
+                m_description.PS = ShaderBytecodeFromHandle(Resource::Pipeline::FRAGMENT, handle);
+                m_description.RasterizerState = RasterDescFromHandle(handle);
+                m_description.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+                m_description.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+                m_description.SampleMask = UINT_MAX;
+                m_description.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+                m_description.NumRenderTargets = 1;
+                m_description.RTVFormats[0] = DXGI_FORMAT_B8G8R8A8_UNORM;
+                m_description.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+                m_description.SampleDesc.Count = 1;
+
+                hr = device->CreateGraphicsPipelineState(&m_description, IID_PPV_ARGS(&m_pipelineState));
+                if (FAILED(hr))
+                {
+                    HT_DEBUG_PRINTF("Failed to create pipeline state object.\n");
+                    return false;
+                }
+
+                return true;
+            }
+
+            bool D3D12Pipeline::VInitialize(const Resource::PipelineHandle handle)
+            {
+                return false;
+            }
+
+            bool D3D12Pipeline::VUpdate()
+            {
+                return false;
+            }
+
+            bool D3D12Pipeline::VAddShaderVariables(std::map<std::string, Resource::ShaderVariable*> shaderVariables)
+            {
+                return false;
+            }
+
+            bool D3D12Pipeline::VSetInt(std::string name, int data)
+            {
+                return false;
+            }
+
+            bool D3D12Pipeline::VSetDouble(std::string name, double data)
+            {
+                return false;
+            }
+
+            bool D3D12Pipeline::VSetFloat(std::string name, float data)
+            {
+                return false;
+            }
+
+            bool D3D12Pipeline::VSetFloat2(std::string name, Math::Vector2 data)
+            {
+                return false;
+            }
+
+            bool D3D12Pipeline::VSetFloat3(std::string name, Math::Vector3 data)
+            {
+                return false;
+            }
+
+            bool D3D12Pipeline::VSetFloat4(std::string name, Math::Vector4 data)
+            {
+                return false;
+            }
+
+            bool D3D12Pipeline::VSetMatrix4(std::string name, Math::Matrix4 data)
+            {
+                return false;
+            }
+
+            D3D12_RASTERIZER_DESC D3D12Pipeline::RasterDescFromHandle(const Resource::PipelineHandle& handle)
+            {
+                D3D12_RASTERIZER_DESC desc;
+                Resource::Pipeline::RasterizerState rasterState = handle->GetRasterizationState();
+
                 //Handle cullmode
                 switch (rasterState.cullMode)
                 {
-                case CullMode::BACK:
-                    m_rasterDesc.CullMode = D3D12_CULL_MODE_BACK;
+                case Resource::Pipeline::CullMode::BACK:
+                    desc.CullMode = D3D12_CULL_MODE_BACK;
                     break;
-                case CullMode::FRONT:
-                    m_rasterDesc.CullMode = D3D12_CULL_MODE_FRONT;
+                case Resource::Pipeline::CullMode::FRONT:
+                    desc.CullMode = D3D12_CULL_MODE_FRONT;
                     break;
-                case CullMode::NONE:
-                    m_rasterDesc.CullMode = D3D12_CULL_MODE_NONE;
+                case Resource::Pipeline::CullMode::NONE:
+                    desc.CullMode = D3D12_CULL_MODE_NONE;
                     break;
                 }
 
                 //Handle polygon mode
                 switch (rasterState.polygonMode)
                 {
-                case PolygonMode::SOLID:
-                    m_rasterDesc.FillMode = D3D12_FILL_MODE_SOLID;
+                case Resource::Pipeline::PolygonMode::SOLID:
+                    desc.FillMode = D3D12_FILL_MODE_SOLID;
                     break;
-                case PolygonMode::LINE:
-                    m_rasterDesc.FillMode = D3D12_FILL_MODE_WIREFRAME;
+                case Resource::Pipeline::PolygonMode::LINE:
+                    desc.FillMode = D3D12_FILL_MODE_WIREFRAME;
                     break;
                 }
 
-                m_rasterDesc.DepthClipEnable = rasterState.depthClampEnable;
-                m_rasterDesc.FrontCounterClockwise = rasterState.frontCounterClockwise;
-                m_rasterDesc.DepthBias = 0;
-                m_rasterDesc.DepthBiasClamp = 0.0f;
-                m_rasterDesc.SlopeScaledDepthBias = 0.0f;
-                m_rasterDesc.MultisampleEnable = false;
-                m_rasterDesc.AntialiasedLineEnable = false;
-                m_rasterDesc.ForcedSampleCount = 0;
-                m_rasterDesc.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+                desc.DepthClipEnable = rasterState.depthClampEnable;
+                desc.FrontCounterClockwise = rasterState.frontCounterClockwise;
+                desc.DepthBias = 0;
+                desc.DepthBiasClamp = 0.0f;
+                desc.SlopeScaledDepthBias = 0.0f;
+                desc.MultisampleEnable = false;
+                desc.AntialiasedLineEnable = false;
+                desc.ForcedSampleCount = 0;
+                desc.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+
+                return desc;
             }
 
-            void D3D12Pipeline::VSetMultisampleState(const MultisampleState & multiState)
+            D3D12_SHADER_BYTECODE D3D12Pipeline::ShaderBytecodeFromHandle(Resource::Pipeline::ShaderSlot slot, const Resource::PipelineHandle & handle)
             {
+                std::map<Resource::Pipeline::ShaderSlot, std::string> paths = handle->GetCSOShaderPaths();
                 
+                D3D12ShaderHandle _handle = D3D12Shader::GetHandle(paths[slot], paths[slot]);
+                if(_handle.IsValid())
+                {
+                    m_shaders[slot] = _handle;
+
+                    return _handle->GetBytecode();
+                }
+                else
+                {
+                    return CD3DX12_SHADER_BYTECODE(nullptr, 0);
+                }
             }
 
-            void D3D12Pipeline::VLoadShader(ShaderSlot shaderSlot, IShader * shader)
+            D3D12_INPUT_LAYOUT_DESC D3D12Pipeline::InputLayoutDescFromHandle(const Resource::PipelineHandle& handle)
             {
-                
+                std::vector<D3D12_INPUT_ELEMENT_DESC> _elements;
+                const Resource::Pipeline::InputLayout& _layout = handle->GetInputLayout();
+                for (int i = 0; i < _layout.elements.size(); i++)
+                {
+                    Resource::Pipeline::InputElement element = _layout.elements[i];
+
+                    D3D12_INPUT_ELEMENT_DESC elementDesc;
+                    elementDesc.SemanticName = element.semanticName.c_str();
+                    elementDesc.SemanticIndex = element.semanticIndex;
+                    elementDesc.InputSlot = element.slot;
+                    elementDesc.Format = InputFormatFromElement(element);
+                    elementDesc.AlignedByteOffset = (i == 0) ? 0 : D3D12_APPEND_ALIGNED_ELEMENT;
+                    elementDesc.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+                    elementDesc.InstanceDataStepRate = 0;
+
+                    _elements.push_back(elementDesc);
+                }
+
+                D3D12_INPUT_LAYOUT_DESC desc;
+                desc.pInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[3];
+                return D3D12_INPUT_LAYOUT_DESC();
             }
 
-            bool D3D12Pipeline::VPrepare()
+            DXGI_FORMAT D3D12Pipeline::InputFormatFromElement(const Resource::Pipeline::InputElement& element)
             {
-                //Set rasterize state
-                m_description.RasterizerState = m_rasterDesc;
-
-                return false;
+                switch (element.format)
+                {
+                case Resource::Pipeline::InputElement::Format::R32G32B32_FLOAT:
+                    return DXGI_FORMAT_R32G32B32_FLOAT;
+                case Resource::Pipeline::InputElement::Format::R32G32B32A32_FLOAT:
+                    return DXGI_FORMAT_R32G32B32A32_FLOAT;
+                default:
+                    return DXGI_FORMAT_UNKNOWN;
+                }
             }
         }
     }

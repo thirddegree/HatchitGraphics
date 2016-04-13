@@ -12,13 +12,22 @@
 **
 **/
 
-#include <ht_rendertarget.h>
+/**
+* \class IMesh
+* \ingroup HatchitGraphics
+*
+* \brief An interface to a mesh that exists on the GPU
+*
+* You must pass this interface a Resource::Mesh which is a collection
+* of data that you want buffered onto the graphics card
+*/
+
+#include <ht_mesh.h>
 
 namespace Hatchit {
-
     namespace Graphics {
 
-        void IRenderTarget::SetRenderPass(IRenderPass* renderPass) { m_renderPass = renderPass; }
+        uint32_t IMesh::GetIndexCount() { return m_indexCount; }
 
     }
 }

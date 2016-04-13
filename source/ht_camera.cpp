@@ -22,33 +22,34 @@
 * of data that you want buffered onto the graphics card
 */
 
-#pragma once
-
-#include <ht_platform.h>
-#include <ht_model.h>
-#include <ht_mesh.h>
-
+#include <ht_camera.h>
+#include <ht_renderer.h>
 namespace Hatchit {
     namespace Graphics {
-
-        struct Vertex
+        Camera::Camera(Math::Matrix4 view, Math::Matrix4 projection)
         {
-            aiVector3D pos;
-            aiVector3D norm;
-            aiVector2D uv;
-        };
+            m_view = view;
+            m_projection = projection;
+        }
 
-        class HT_API IMesh 
+        uint32_t Camera::GetLayerFlags()
         {
-        public:
-            virtual ~IMesh() {};
+            return m_layerflags;
+        }
+        
+        void Camera::RegisterCamera()
+        {
+            IRenderer::Instance->RegisterCamera(*this, m_layerflags);
+        }
 
-            virtual bool VBuffer(Resource::Mesh* mesh) = 0;
+        void Camera::SetView(Math::Matrix4 view)
+        {
+            m_view = view;
+        }
 
-            uint32_t GetIndexCount();
-
-        protected:
-            uint32_t m_indexCount;
-        };
+        void Camera::SetProjection(Math::Matrix4 projection)
+        {
+            m_projection = projection;
+        }
     }
 }

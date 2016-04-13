@@ -14,20 +14,40 @@
 
 #pragma once
 
+#include <ht_debug.h>
 #include <ht_platform.h>
-#include <ht_resourceobject.h>
+#include <ht_sampler.h>
+#include <cassert>
 
 namespace Hatchit {
 
+    namespace Core
+    {
+        template<typename VarType>
+        class Handle;
+    }
+
+    namespace Resource
+    {
+        class Texture;
+    }
+
     namespace Graphics {
-        
-        class HT_API ITexture : public Resource::ResourceObject
+
+        class HT_API ITexture
         {
         public:
             virtual ~ITexture() { }
         
-            virtual size_t VGetWidth()  const = 0;
-            virtual size_t VGetHeight() const = 0;
+            virtual void SetSampler(ISamplerHandle sampler) = 0;
+
+            virtual uint32_t GetWidth()  const = 0;
+            virtual uint32_t GetHeight() const = 0;
+
+        protected:
+            virtual bool VBufferImage() = 0;
         };
+
+        using ITextureHandle = Core::Handle<ITexture>;
     }
 }

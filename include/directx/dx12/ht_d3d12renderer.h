@@ -19,7 +19,9 @@
 #include <ht_renderer.h>
 #include <ht_d3d12vertexbuffer.h>
 #include <ht_d3d12indexbuffer.h>
+#include <ht_d3d12pipeline.h>
 #include <ht_d3d12deviceresources.h>
+#include <ht_d3d12constantbuffer.h>
 #include <ht_math.h>
 #include <DirectXMath.h>
 namespace Hatchit {
@@ -28,7 +30,7 @@ namespace Hatchit {
 
         namespace DX {
 
-            struct ConstantBuffer
+            struct _MM_ALIGN16 ConstantBuffer
             {
                 Math::Matrix4 world;
                 Math::Matrix4 view;
@@ -59,34 +61,25 @@ namespace Hatchit {
 
             private:
                 D3D12DeviceResources*       m_resources;
-                ID3D12RootSignature*        m_rootSignature;
-                ID3D12PipelineState*        m_pipelineState;
                 ID3D12GraphicsCommandList*  m_commandList;
                 ID3D12DescriptorHeap*       m_cbDescriptorHeap;
                 uint32_t                    m_cbDescriptorSize;
                 uint8_t*                    m_mappedConstantBuffer;
+
+                D3D12PipelineHandle         m_pipeline;
      
                 Color                       m_clearColor;
 
                 //Demo only
                 float                       m_aspectRatio;
-                ID3D12Resource*             m_vertexBuffer;
-                ID3D12Resource*             m_indexBuffer;
                 ID3D12Resource*             m_constantBuffer;
-                ID3DBlob*                   m_vertexShader;
-                ID3DBlob*                   m_pixelShader;
-                D3D12_VERTEX_BUFFER_VIEW	m_vertexBufferView;
-                D3D12_INDEX_BUFFER_VIEW		m_indexBufferView;
+                D3D12ConstantBuffer*        m_cBuffer;
 
                 D3D12VertexBuffer*          m_vBuffer;
                 D3D12IndexBuffer*           m_iBuffer;
                 size_t                      m_numIndices;
 
-                bool LoadShaderFiles();
-
                 ConstantBuffer              m_constantBufferData;
-                static const UINT c_alignedConstantBufferSize = (sizeof(ConstantBuffer) + 255) & ~255;
-
             };
         }
     }

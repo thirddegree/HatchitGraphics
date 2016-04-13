@@ -12,36 +12,22 @@
 **
 **/
 
-/**
-* \class IShader
-* \ingroup HatchitGraphics
-*
-* \brief An interface for a class that will load a shader with a graphics language
-*
-* This will be extended by another class that will implement its methods to load
-* and compile a shader with a given graphics language
-*/
-
 #pragma once
 
-#include <ht_platform.h>
-#include <ht_resource.h>
-#include <ht_shader_resource.h>
-#include <ht_texture.h>
-#include <ht_string.h>
-#include <ht_math.h>
+#include <ht_sampler_resource.h>
 
 namespace Hatchit {
 
     namespace Graphics {
 
-        class HT_API IShader
+        class HT_API ISampler
         {
         public:
-            friend class IMaterial;
-            virtual ~IShader() {};
+            virtual ~ISampler() = default;
         };
 
-        using IShaderHandle = Core::Handle<IShader>;
+        using ISamplerHandle = Core::Handle<ISampler>;
+
     }
+
 }

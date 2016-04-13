@@ -27,10 +27,11 @@
 #include <ht_platform.h>
 #include <ht_rendertarget.h>
 #include <ht_pipeline.h>
-#include <ht_gmesh.h>
+#include <ht_mesh.h>
 #include <ht_material.h>
 #include <ht_math.h>
 #include <ht_color.h>
+#include <ht_renderpass_resource.h>
 
 namespace Hatchit {
 
@@ -38,14 +39,14 @@ namespace Hatchit {
 
         struct RenderRequest 
         {
-            IPipeline*  pipeline;
-            IMaterial*  material;
-            IMesh*      mesh;
+            IPipelineHandle  pipeline;
+            IMaterialHandle  material;
+            IMesh*           mesh;
         };
 
         struct Renderable 
         {
-            IMaterial*  material;
+            IMaterialHandle  material;
             IMesh*      mesh;
         };
 
@@ -54,7 +55,7 @@ namespace Hatchit {
         public:
             virtual ~IRenderPass() { };
 
-            virtual bool VPrepare() = 0;
+            //virtual bool VPrepare() = 0;
 
             //Will this be sent the Objects that it needs to render?
             ///Render the the given objects with the given pipeline to a texture
@@ -62,33 +63,43 @@ namespace Hatchit {
 
             virtual bool VBuildCommandList() =  0;
 
-            virtual void VSetClearColor(Color clearColor) = 0;
+            virtual void VSetView(Math::Matrix4 view) = 0;
+            virtual void VSetProj(Math::Matrix4 proj) = 0;
 
-            void SetWidth(uint32_t width);
-            void SetHeight(uint32_t height);
+            virtual void VScheduleRenderRequest(IPipelineHandle pipeline, IMaterialHandle material, IMesh* mesh) = 0;
+        };
 
-            void SetView(Math::Matrix4 view);
-            void SetProj(Math::Matrix4 proj);
+        class HT_API RenderPassBase : public IRenderPass
+        {
+        public:
+            virtual bool VInitFromResource(const Resource::RenderPassHandle& handle);
 
-            void ScheduleRenderRequest(IPipeline* pipeline, IMaterial* material, IMesh* mesh);
+            virtual void VSetView(Math::Matrix4 view);
+            virtual void VSetProj(Math::Matrix4 proj);
 
-            void SetRenderTarget(IRenderTarget* renderTarget);
-
+            virtual void VScheduleRenderRequest(IPipelineHandle pipeline, IMaterialHandle material, IMesh* mesh);
         protected:
             void BuildRenderRequestHeirarchy();
 
             //Input
             std::vector<RenderRequest> m_renderRequests;
-            std::map<IPipeline*, std::vector<Renderable>> m_pipelineList;
+            std::map<IPipelineHandle, std::vector<Renderable>> m_pipelineList;
 
+            std::vector<IRenderTargetHandle> m_inputRenderTargets;
+
+            //Output
+            std::vector<IRenderTargetHandle> m_outputRenderTargets;
+
+            //Internals
             uint32_t m_width;
             uint32_t m_height;
 
             Math::Matrix4 m_view;
             Math::Matrix4 m_proj;
 
-            //Output
-            IRenderTarget* m_renderTarget;
+            Resource::RenderPassHandle m_renderPassResourceHandle;
         };
+
+        using IRenderPassHandle = Core::Handle<IRenderPass>;
     }
 }

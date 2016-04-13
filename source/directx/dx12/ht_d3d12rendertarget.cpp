@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 ThirdDegree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -12,14 +12,25 @@
 **
 **/
 
-#include <ht_swapchain.h>
+#include <ht_d3d12rendertarget.h>
 
-namespace Hatchit {
+namespace Hatchit
+{
+    namespace Graphics
+    {
+        namespace DX
+        {
+            D3D12RenderTarget::D3D12RenderTarget()
+            {
 
-    namespace Graphics {
+            }
 
-        uint32_t ISwapchain::GetWidth() { return m_width; }
-        uint32_t ISwapchain::GetHeight() { return m_height; }
+            bool D3D12RenderTarget::Initialize(Resource::RenderTargetHandle handle, ID3D12Device* device)
+            {
+                
 
+                return true;
+            }
+        }
     }
 }
