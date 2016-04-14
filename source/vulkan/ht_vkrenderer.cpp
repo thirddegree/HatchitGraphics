@@ -19,7 +19,6 @@
 #include <ht_vkmaterial.h>
 #include <ht_vksampler.h>
 #include <ht_vktexture.h>
-#include <ht_vkmeshrenderer.h>
 #include <ht_vkrendertarget.h>
 #include <ht_debug.h>
 #include <ht_scheduler.h>
@@ -143,14 +142,14 @@ namespace Hatchit {
                 m_material = VKMaterial::GetHandle("DeferredMaterial.json", "DeferredMaterial.json").StaticCastHandle<IMaterial>();
 
                 std::vector<Mesh*> meshes = model->GetMeshes();
-                IMesh* mesh = new VKMesh();
-                mesh->VBuffer(meshes[0]);
+                IMeshHandle meshHandle = VKMesh::GetHandle("raptor", meshes[0]).StaticCastHandle<IMesh>();
+                
 
-                renderPass->VScheduleRenderRequest(pipeline, m_material, mesh);
+                renderPass->VScheduleRenderRequest(pipeline, m_material, meshHandle);
 
                 Renderable renderable;
                 renderable.material = m_material;
-                renderable.mesh = mesh;
+                renderable.mesh = meshHandle;
                 m_pipelineList[pipeline].push_back(renderable);
 
                 RegisterRenderPass(renderPass.StaticCastHandle<RenderPassBase>());
@@ -178,18 +177,6 @@ namespace Hatchit {
                 std::map<IPipelineHandle, std::vector<Renderable>>::iterator it;
                 for (it = m_pipelineList.begin(); it != m_pipelineList.end(); it++)
                 {
-                    std::vector<Renderable> renderables = it->second;
-
-                    for (uint32_t i = 0; i < renderables.size(); i++)
-                    {
-                        Renderable r = renderables[i];
-
-                        if (r.mesh != nullptr)
-                        {
-                            delete r.mesh;
-                            r.mesh = nullptr;
-                        }
-                    }
                     it->second.clear();
                 }
                 m_pipelineList.clear();

@@ -43,12 +43,12 @@ namespace Hatchit {
         public:
             virtual ~IMesh() {};
 
-            virtual bool VBuffer(Resource::Mesh* mesh) = 0;
-
             uint32_t GetIndexCount();
 
         protected:
             uint32_t m_indexCount;
         };
+
+        using IMeshHandle = Core::Handle<IMesh>;
     }
 }

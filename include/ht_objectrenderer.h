@@ -34,9 +34,6 @@ namespace Hatchit {
         {
         public:
             virtual ~IObjectRenderer() {};
-
-            ///Override to render a resource with a graphics language
-            virtual void VRender() = 0;
             
         };
     }

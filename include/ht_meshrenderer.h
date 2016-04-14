@@ -28,37 +28,43 @@
 #include <ht_objectrenderer.h>
 #include <ht_material.h>
 #include <ht_mesh.h>
+#include <ht_model.h>
 
 namespace Hatchit {
 
     namespace Graphics {
 
-        class HT_API IMeshRenderer : public IObjectRenderer
+        class HT_API MeshRenderer : public IObjectRenderer
         {
         public:
-            virtual ~IMeshRenderer() {};
-            
-            /* Set which mesh will be rendered
-            * \param mesh A pointer to the mesh you want to render
+            virtual ~MeshRenderer();
+
+
+            /* Set which render pass this will be a part of
+            * \param renderPass A pointer to the render pass that this will be a part of
             */
-            virtual void VSetMesh(IMesh* mesh) = 0;
+            virtual void SetRenderPass(IRenderPassHandle renderPass);
 
             /* Set which material you want to render with
             * \param material the material you want to render with
             * The material should also store the appropriate pipeline
             */
-            virtual void VSetMaterial(IMaterialHandle material) = 0;
+            virtual void SetMaterial(IMaterialHandle material);
 
-            /* Set which render pass this will be a part of
-            * \param renderPass A pointer to the render pass that this will be a part of
+            /* Set which mesh will be rendered
+            * \param mesh A pointer to the mesh you want to render
             */
-            virtual void VSetRenderPass(IRenderPass* renderPass) = 0;
+            virtual void SetMesh(IMeshHandle mesh);
 
-            ///Override to submit a render request with a graphics language
-            virtual void VRender() = 0;
+            //Override to submit a render request with a graphics language
+            virtual void Render();
 
-            //All resources should be reference counted and freed appropriately
-            //virtual void VFree() = 0;
+
+        protected:
+            IRenderPassHandle       m_renderPass;
+            IPipelineHandle         m_pipeline;
+            IMaterialHandle         m_material;
+            IMeshHandle             m_mesh;
         };
     }
 }

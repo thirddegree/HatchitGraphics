@@ -20,7 +20,10 @@ namespace Hatchit {
     namespace Graphics {
         namespace Vulkan {
         
-            VKMesh::VKMesh() {}
+            VKMesh::VKMesh(std::string ID) :
+                RefCounted<VKMesh>(std::move(ID))
+            {}
+
             VKMesh::~VKMesh() 
             {
                 //Get Device
@@ -33,7 +36,7 @@ namespace Hatchit {
                 vkFreeMemory(device, m_indexBlock.memory, nullptr);
             }
 
-            bool VKMesh::VBuffer(Resource::Mesh* mesh) 
+            bool VKMesh::Initialize(Resource::Mesh* mesh) 
             {
                 //Get Device
                 VKRenderer* renderer = VKRenderer::RendererInstance;

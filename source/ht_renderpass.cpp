@@ -34,7 +34,7 @@ namespace Hatchit
             m_proj = std::move(proj);
         }
 
-        void RenderPassBase::VScheduleRenderRequest(IPipelineHandle pipeline, IMaterialHandle material, IMesh* mesh)
+        void RenderPassBase::VScheduleRenderRequest(IPipelineHandle pipeline, IMaterialHandle material, IMeshHandle mesh)
         {
             RenderRequest renderRequest = {};
 
@@ -74,7 +74,7 @@ namespace Hatchit
 
                 IPipelineHandle pipeline = renderRequest.pipeline;
                 IMaterialHandle material = renderRequest.material;
-                IMesh* mesh = renderRequest.mesh;
+                IMeshHandle mesh = renderRequest.mesh;
 
                 m_pipelineList[pipeline].clear();
 

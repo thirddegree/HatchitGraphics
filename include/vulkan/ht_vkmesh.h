@@ -33,13 +33,13 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            class HT_API VKMesh : public IMesh
+            class HT_API VKMesh : public Core::RefCounted<VKMesh>, public IMesh
             {
             public:
-                VKMesh();
+                VKMesh(std::string ID);
                 ~VKMesh();
 
-                bool VBuffer(Hatchit::Resource::Mesh* mesh)  override;
+                bool Initialize(Hatchit::Resource::Mesh* mesh);
 
                 UniformBlock GetVertexBlock();
                 UniformBlock GetIndexBlock();
@@ -48,6 +48,8 @@ namespace Hatchit {
                 UniformBlock m_vertexBlock;
                 UniformBlock m_indexBlock;
             };
+
+            using VKMeshHandle = Core::Handle<VKMesh>;
 
         }
 

@@ -205,7 +205,7 @@ namespace Hatchit {
                     for (uint32_t i = 0; i < renderables.size(); i++)
                     {
                         VKMaterialHandle material = renderables[i].material.DynamicCastHandle<VKMaterial>();
-                        VKMesh*     mesh = static_cast<VKMesh*>(renderables[i].mesh);
+                        VKMeshHandle     mesh = renderables[i].mesh.DynamicCastHandle<VKMesh>();
                     
                         std::vector<VkDescriptorSet> descriptorSets = material->GetVKDescriptorSets();
                         
