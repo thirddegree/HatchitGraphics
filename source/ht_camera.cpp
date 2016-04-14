@@ -30,9 +30,10 @@ namespace Hatchit {
         {
             m_view = view;
             m_projection = projection;
+            m_layerflags = 0;
         }
 
-        uint32_t Camera::GetLayerFlags()
+        uint64_t Camera::GetLayerFlags()
         {
             return m_layerflags;
         }

@@ -78,6 +78,9 @@ namespace Hatchit {
             virtual void VSetProj(Math::Matrix4 proj);
 
             virtual void VScheduleRenderRequest(IPipelineHandle pipeline, IMaterialHandle material, IMesh* mesh);
+
+            uint64_t GetLayerFlags();
+
         protected:
             void BuildRenderRequestHeirarchy();
 
@@ -91,6 +94,8 @@ namespace Hatchit {
             std::vector<IRenderTargetHandle> m_outputRenderTargets;
 
             //Internals
+            uint64_t m_layerflags = 1;
+
             uint32_t m_width;
             uint32_t m_height;
 
@@ -101,5 +106,6 @@ namespace Hatchit {
         };
 
         using IRenderPassHandle = Core::Handle<IRenderPass>;
+        using RenderPassBaseHandle = Core::Handle<RenderPassBase>;
     }
 }

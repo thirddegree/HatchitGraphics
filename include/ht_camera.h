@@ -40,14 +40,14 @@ namespace Hatchit {
 
             void SetView(Math::Matrix4 view);
             void SetProjection(Math::Matrix4 projection);
-            uint32_t GetLayerFlags();
+            uint64_t GetLayerFlags();
 
             void RegisterCamera();
 
         private:
             Math::Matrix4 m_view;
             Math::Matrix4 m_projection;
-            uint32_t m_layerflags;
+            uint64_t m_layerflags;
         };
     }
 }

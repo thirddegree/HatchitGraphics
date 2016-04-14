@@ -143,7 +143,7 @@ namespace Hatchit {
                 renderable.mesh = mesh;
                 m_pipelineList[pipeline].push_back(renderable);
 
-                m_renderPasses.push_back(renderPass.StaticCastHandle<IRenderPass>());
+                RegisterRenderPass(renderPass.StaticCastHandle<RenderPassBase>());
 
                 pipeline->VUpdate();
                 m_material->VUpdate();
@@ -184,7 +184,10 @@ namespace Hatchit {
                 }
                 m_pipelineList.clear();
 
-                m_renderPasses.clear();
+                for (int i = 0; i < m_renderPassLayers.size(); i++)
+                {
+                    m_renderPassLayers[i].clear();
+                }
 
                 m_rootLayout.Release();
 
@@ -285,9 +288,9 @@ namespace Hatchit {
                 //Get list of command buffers
                 std::vector<VkCommandBuffer> commandBuffers;
 
-                for (size_t i = 0; i < m_renderPasses.size(); i++)
+                for (size_t i = 0; i < m_renderPassLayers[0].size(); i++)
                 {
-                    VKRenderPassHandle renderPass = m_renderPasses[i].DynamicCastHandle<VKRenderPass>();
+                    VKRenderPassHandle renderPass = m_renderPassLayers[0][i].DynamicCastHandle<VKRenderPass>();
 
                     renderPass->VBuildCommandList();
                     commandBuffers.push_back(renderPass->GetVkCommandBuffer());

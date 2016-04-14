@@ -13,6 +13,7 @@
 **/
 
 #include <ht_renderpass.h>
+#include <ht_renderer.h>
 
 namespace Hatchit
 {
@@ -45,6 +46,11 @@ namespace Hatchit
             m_proj = Math::Matrix4();
 
             m_renderRequests.push_back(renderRequest);
+        }
+
+        uint64_t RenderPassBase::GetLayerFlags()
+        {
+            return m_layerflags;
         }
 
         void RenderPassBase::BuildRenderRequestHeirarchy()
