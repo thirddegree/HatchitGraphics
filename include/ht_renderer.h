@@ -60,13 +60,14 @@ namespace Hatchit {
 
         struct RendererParams
         {
-            RendererType renderer;
-            void*        window;
-            uint32_t     viewportWidth;
-            uint32_t     viewportHeight;
-            void*        display;
-            Color        clearColor;
-            std::string  applicationName;
+            RendererType    renderer;
+            bool            validate;
+            void*           window;
+            uint32_t        viewportWidth;
+            uint32_t        viewportHeight;
+            void*           display;
+            Color           clearColor;
+            std::string     applicationName;
         };
 
         class HT_API IRenderer

@@ -64,11 +64,7 @@ namespace Hatchit {
                 m_renderSemaphore = VK_NULL_HANDLE;
                 m_presentSemaphore = VK_NULL_HANDLE;
 
-#if defined(_DEBUG) && !defined(NO_VALIDATION)
-                m_enableValidation = true;
-#else
                 m_enableValidation = false;
-#endif
             }
 
             VKRenderer::~VKRenderer()
@@ -79,6 +75,10 @@ namespace Hatchit {
             {
                 //Store params for later
                 m_rendererParams = params;
+
+#ifndef NO_VALIDATION
+                m_enableValidation = params.validate;
+#endif
 
                 m_clearColor.color.float32[0] = params.clearColor.r;
                 m_clearColor.color.float32[1] = params.clearColor.g;
