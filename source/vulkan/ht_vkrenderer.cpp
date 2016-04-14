@@ -35,6 +35,8 @@
 #include <xcb/xproto.h>
 #endif
 
+//#define NO_VALIDATION
+
 namespace Hatchit {
 
     namespace Graphics {
@@ -57,8 +59,16 @@ namespace Hatchit {
                 m_commandPool = VK_NULL_HANDLE;
                 m_descriptorPool = VK_NULL_HANDLE;
 
+                msg_callback = VK_NULL_HANDLE;
+
                 m_renderSemaphore = VK_NULL_HANDLE;
                 m_presentSemaphore = VK_NULL_HANDLE;
+
+#if defined(_DEBUG) && !defined(NO_VALIDATION)
+                m_enableValidation = true;
+#else
+                m_enableValidation = false;
+#endif
             }
 
             VKRenderer::~VKRenderer()
@@ -434,9 +444,9 @@ namespace Hatchit {
                 instanceInfo.flags = 0;
                 instanceInfo.pApplicationInfo = &m_appInfo;
                 instanceInfo.enabledLayerCount = static_cast<uint32_t>(m_enabledLayerNames.size());
-                instanceInfo.ppEnabledLayerNames = &m_enabledLayerNames[0];
+                instanceInfo.ppEnabledLayerNames = m_enabledLayerNames.data();
                 instanceInfo.enabledExtensionCount = static_cast<uint32_t>(m_enabledExtensionNames.size());
-                instanceInfo.ppEnabledExtensionNames = &m_enabledExtensionNames[0];
+                instanceInfo.ppEnabledExtensionNames = m_enabledExtensionNames.data();
 
                 /**
                 * Create Vulkan instance handle
@@ -549,6 +559,10 @@ namespace Hatchit {
 
             bool VKRenderer::checkInstanceLayers()
             {
+                //If we don't want to validate, just skip this
+                if (!m_enableValidation)
+                    return true;
+
                 VkResult err;
 
                 /**
@@ -627,9 +641,11 @@ namespace Hatchit {
                             m_enabledExtensionNames.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
                         }
 #endif
-
-                        if (!strcmp(VK_EXT_DEBUG_REPORT_EXTENSION_NAME, instanceExtensions[i].extensionName)) {
-                            m_enabledExtensionNames.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+                        if (m_enableValidation)
+                        {
+                            if (!strcmp(VK_EXT_DEBUG_REPORT_EXTENSION_NAME, instanceExtensions[i].extensionName)) {
+                                m_enabledExtensionNames.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+                            }
                         }
 
                         assert(m_enabledExtensionNames.size() < 64);
@@ -858,6 +874,10 @@ namespace Hatchit {
 
             bool VKRenderer::setupDebugCallbacks()
             {
+                //Skip this if we don't want to validate
+                if (!m_enableValidation)
+                    return true;
+
                 VkResult err;
 
                 //Get debug callback function pointers
@@ -971,9 +991,9 @@ namespace Hatchit {
                 device.queueCreateInfoCount = 1;
                 device.pQueueCreateInfos = &queue;
                 device.enabledLayerCount = static_cast<uint32_t>(m_enabledLayerNames.size());
-                device.ppEnabledLayerNames = &m_enabledLayerNames[0];
+                device.ppEnabledLayerNames = m_enabledLayerNames.data();
                 device.enabledExtensionCount = static_cast<uint32_t>(m_enabledExtensionNames.size());
-                device.ppEnabledExtensionNames = &m_enabledExtensionNames[0];
+                device.ppEnabledExtensionNames = m_enabledExtensionNames.data();
                 device.pEnabledFeatures = nullptr; //Request specific features here
 
                 err = vkCreateDevice(m_gpu, &device, nullptr, &m_device);
