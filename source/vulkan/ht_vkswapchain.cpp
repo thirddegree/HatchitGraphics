@@ -252,7 +252,7 @@ namespace Hatchit {
                     uniformSampler2DWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                     uniformSampler2DWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                     uniformSampler2DWrite.dstSet = m_descriptorSet;
-                    uniformSampler2DWrite.dstBinding = static_cast<uint32_t>(i) + 1;
+                    uniformSampler2DWrite.dstBinding = static_cast<uint32_t>(i);
                     uniformSampler2DWrite.pImageInfo = &textureDescriptors[i];
                     uniformSampler2DWrite.descriptorCount = 1;
 
