@@ -28,6 +28,13 @@ namespace Hatchit
             class HT_API D3D12RootLayout : public Core::RefCounted<D3D12RootLayout>, public IRootLayout
             {
             public:
+                enum class HeapType
+                {
+                    RTV,
+                    CBV_SRV_UAV,
+                    DSV
+                };
+
                 D3D12RootLayout(std::string ID);
 
                 ~D3D12RootLayout();
@@ -38,8 +45,16 @@ namespace Hatchit
 
                 ID3D12RootSignature* GetRootSignature();
 
+                ID3D12DescriptorHeap* GetHeap(HeapType type);
+
             private:
                 ID3D12RootSignature*  m_rootSignature;
+                ID3D12DescriptorHeap* m_CBV_SRV_UAV_Heap;
+                ID3D12DescriptorHeap* m_RTV_Heap;
+                ID3D12DescriptorHeap* m_DSV_Heap;
+
+                uint32_t              m_totalCBV_SRV_UAV_Descriptors;
+                uint32_t              m_totalRTV_Descriptors;
 
                 std::vector<D3D12_DESCRIPTOR_RANGE*> m_allocatedRanges;
 
@@ -52,6 +67,8 @@ namespace Hatchit
                 D3D12_STATIC_BORDER_COLOR                   BorderColorFromType(const Resource::Sampler::BorderColor color);
                 D3D12_FILTER                                FilterFromType(const Resource::Sampler::Filter& filter);
                 D3D12_TEXTURE_ADDRESS_MODE                  AddressModeFromType(const Resource::Sampler::AddressMode mode);
+            
+                bool BuildDescriptorHeaps(ID3D12Device* device);
             };
             using D3D12RootLayoutHandle = Core::Handle<D3D12RootLayout>;
         }

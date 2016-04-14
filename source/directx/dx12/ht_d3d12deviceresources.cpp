@@ -65,9 +65,9 @@ namespace Hatchit {
                 return m_device;
             }
 
-            ID3D12RootSignature * D3D12DeviceResources::GetRootSignature()
+            D3D12RootLayoutHandle D3D12DeviceResources::GetRootLayout()
             {
-                return m_rootLayout->GetRootSignature();
+                return m_rootLayout;
             }
 
             IDXGISwapChain3 * D3D12DeviceResources::GetSwapChain()

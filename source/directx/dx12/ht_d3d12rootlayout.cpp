@@ -25,11 +25,32 @@ namespace Hatchit
                 : Core::RefCounted<D3D12RootLayout>(std::move(ID))
             {
                 m_rootSignature = nullptr;
+                m_CBV_SRV_UAV_Heap = nullptr;
+                m_RTV_Heap = nullptr;
+                m_DSV_Heap = nullptr;
+
+                m_totalCBV_SRV_UAV_Descriptors = 0;
             }
 
             D3D12RootLayout::~D3D12RootLayout()
             {
                 ReleaseCOM(m_rootSignature);
+                ReleaseCOM(m_CBV_SRV_UAV_Heap);
+            }
+
+            ID3D12DescriptorHeap* D3D12RootLayout::GetHeap(HeapType type)
+            {
+                switch (type)
+                {
+                case HeapType::CBV_SRV_UAV:
+                    return m_CBV_SRV_UAV_Heap;
+                case HeapType::DSV:
+                    return m_DSV_Heap;
+                case HeapType::RTV:
+                    return m_RTV_Heap;
+                }
+                
+                return nullptr;
             }
 
             bool D3D12RootLayout::Initialize(const std::string& fileName, ID3D12Device* device)
@@ -105,6 +126,7 @@ namespace Hatchit
                                 case RootLayout::Range::Type::CONSTANT_BUFFER:
                                 {
                                     _range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+                                    m_totalCBV_SRV_UAV_Descriptors++;
                                 } break;
 
                                 case RootLayout::Range::Type::SAMPLER:
@@ -115,11 +137,13 @@ namespace Hatchit
                                 case RootLayout::Range::Type::SHADER_RESOURCE:
                                 {
                                     _range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+                                    m_totalCBV_SRV_UAV_Descriptors++;
                                 } break;
 
                                 case RootLayout::Range::Type::UNORDERED_ACCESS:
                                 {
                                     _range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+                                    m_totalCBV_SRV_UAV_Descriptors++;
                                 } break;
 
                                 default:
@@ -205,7 +229,6 @@ namespace Hatchit
                     ReleaseCOM(_error);
                     return false;
                 }
-                ReleaseCOM(_signature);
 
                 hr = device->CreateRootSignature(0, _signature->GetBufferPointer(), _signature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature));
                 if (FAILED(hr))
@@ -214,6 +237,8 @@ namespace Hatchit
                     ReleaseCOM(_signature);
                     return false;
                 }
+
+                BuildDescriptorHeaps(device);
 
                 HT_D3D12_DEBUGNAME(m_rootSignature, ("D3D12RootLayout [" + fileName + "]").c_str());
                 PostInitCleanup();
@@ -231,6 +256,27 @@ namespace Hatchit
                 /*Cleanup any allocated ranges*/
                 for (auto range : m_allocatedRanges)
                     delete[] range;
+            }
+
+            bool D3D12RootLayout::BuildDescriptorHeaps(ID3D12Device* device)
+            {
+                HRESULT hr = S_OK;
+
+                /*Create CBV_SRV_UAV Descriptor Heap*/
+                D3D12_DESCRIPTOR_HEAP_DESC heapDesc;
+                heapDesc.NumDescriptors = m_totalCBV_SRV_UAV_Descriptors;
+                heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+                heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+                heapDesc.NodeMask = 0;
+                hr = device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_CBV_SRV_UAV_Heap));
+                if (FAILED(hr))
+                {
+                    HT_DEBUG_PRINTF("Failed to create constant buffer descriptor heap.\n");
+                    return false;
+                }
+                HT_D3D12_DEBUGNAME(m_CBV_SRV_UAV_Heap, "D3D12RootLayout [CBV_SRV_UAV Heap]");
+
+                return true;
             }
             
             D3D12_ROOT_SIGNATURE_FLAGS D3D12RootLayout::RootSignatureFlagsFromHandle(const Resource::RootLayoutHandle& handle)
@@ -252,6 +298,8 @@ namespace Hatchit
 
                 return rootSignatureFlags;
             }
+
+        
 
             D3D12_COMPARISON_FUNC D3D12RootLayout::CompareOpFromType(const Resource::Sampler::CompareOperation op)
             {

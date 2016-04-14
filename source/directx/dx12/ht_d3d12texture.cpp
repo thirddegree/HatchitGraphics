@@ -23,9 +23,10 @@ namespace Hatchit
     {
         namespace DX
         {
-            D3D12Texture::D3D12Texture(ID3D12Device* device)
+            D3D12Texture::D3D12Texture(std::string ID)
+                : Core::RefCounted<D3D12Texture>(std::move(ID))
             {
-                m_device = device;
+                
                 m_bitmap = nullptr;
                 m_texture = nullptr;
                 m_uploadHeap = nullptr;
@@ -49,6 +50,63 @@ namespace Hatchit
                 return 0;
             }
 
+            bool D3D12Texture::Initialize(const std::string & fileName, ID3D12Device * device, ID3D12DescriptorHeap* heap)
+            {
+                using namespace Resource;
+
+                TextureHandle handle = Texture::GetHandleFromFileName(fileName);
+                if (!handle.IsValid())
+                    return false;
+
+
+                /*Descibe and create a Texture2D*/
+                m_desc = {};
+                m_desc.MipLevels = 1;
+                m_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+                m_desc.Width = m_bitmap->GetWidth();
+                m_desc.Height = m_bitmap->GetHeight();
+                m_desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+                m_desc.DepthOrArraySize = 1;
+                m_desc.SampleDesc.Count = 1;
+                m_desc.SampleDesc.Quality = 0;
+                m_desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+                
+                HRESULT hr = S_OK;
+                
+                hr = device->CreateCommittedResource(
+                    &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+                    D3D12_HEAP_FLAG_NONE,
+                    &m_desc,
+                    D3D12_RESOURCE_STATE_COPY_DEST,
+                    nullptr,
+                    IID_PPV_ARGS(&m_texture));
+                if (FAILED(hr))
+                {
+                    HT_DEBUG_PRINTF("ID3D12Texture::VInitFromFile, Failed to create texture.\n");
+                    return false;
+                }
+                
+                /*Create upload heap*/
+                const uint64_t uploadSize = GetRequiredIntermediateSize(m_texture, 0, 1);
+                hr = device->CreateCommittedResource(
+                    &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+                    D3D12_HEAP_FLAG_NONE,
+                    &CD3DX12_RESOURCE_DESC::Buffer(uploadSize),
+                    D3D12_RESOURCE_STATE_GENERIC_READ,
+                    nullptr,
+                    IID_PPV_ARGS(&m_uploadHeap));
+                if (FAILED(hr))
+                {
+                    HT_DEBUG_PRINTF("ID3D12Texture::VInitFromFile, Failed to create texture upload heap.\n");
+                    return false;
+                }
+                
+
+
+
+                return false;
+            }
+
             void D3D12Texture::SetSampler(ISamplerHandle sampler)
             {
 
@@ -58,66 +116,6 @@ namespace Hatchit
             {
                 return true;
             }
-
-//            bool D3D12Texture::VInitFromFile(Core::File* file)
-//            {
-//                m_bitmap = Resource::Image::Load(file, Resource::Image::Channels::AUTO);
-//                if (!m_bitmap)
-//                    return false;
-//
-//                /*Descibe and create a Texture2D*/
-//                m_desc = {};
-//                m_desc.MipLevels = 1;
-//                m_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-//                m_desc.Width = m_bitmap->GetWidth();
-//                m_desc.Height = m_bitmap->GetHeight();
-//                m_desc.Flags = D3D12_RESOURCE_FLAG_NONE;
-//                m_desc.DepthOrArraySize = 1;
-//                m_desc.SampleDesc.Count = 1;
-//                m_desc.SampleDesc.Quality = 0;
-//                m_desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-//
-//                HRESULT hr = S_OK;
-//
-//                hr = m_device->CreateCommittedResource(
-//                    &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-//                    D3D12_HEAP_FLAG_NONE,
-//                    &m_desc,
-//                    D3D12_RESOURCE_STATE_COPY_DEST,
-//                    nullptr,
-//                    IID_PPV_ARGS(&m_texture));
-//                if (FAILED(hr))
-//                {
-//#ifdef _DEBUG
-//                    Core::DebugPrintF("ID3D12Texture::VInitFromFile, Failed to create texture.\n");
-//#endif
-//                    return false;
-//                }
-//
-//                /*Create upload heap*/
-//                const uint64_t uploadSize = GetRequiredIntermediateSize(m_texture, 0, 1);
-//                hr = m_device->CreateCommittedResource(
-//                    &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-//                    D3D12_HEAP_FLAG_NONE,
-//                    &CD3DX12_RESOURCE_DESC::Buffer(uploadSize),
-//                    D3D12_RESOURCE_STATE_GENERIC_READ,
-//                    nullptr,
-//                    IID_PPV_ARGS(&m_uploadHeap));
-//                if (FAILED(hr))
-//                {
-//#ifdef _DEBUG
-//                    Core::DebugPrintF("ID3D12Texture::VInitFromFile, Failed to create texture upload heap.\n");
-//#endif
-//                    return false;
-//                }
-//
-//                return true;
-            
-
-            /*void D3D12Texture::VOnLoaded()
-            {
-
-            }*/
 
             //void D3D12Texture::Upload(ID3D12GraphicsCommandList* commandList)
             //{
