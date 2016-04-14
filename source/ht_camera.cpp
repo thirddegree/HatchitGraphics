@@ -43,6 +43,16 @@ namespace Hatchit {
             IRenderer::Instance->RegisterCamera(*this, m_layerflags);
         }
 
+        Math::Matrix4 Camera::GetView()
+        {
+            return m_view;
+        }
+
+        Math::Matrix4 Camera::GetProjection()
+        {
+            return m_projection;
+        }
+
         void Camera::SetView(Math::Matrix4 view)
         {
             m_view = view;

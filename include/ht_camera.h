@@ -38,6 +38,8 @@ namespace Hatchit {
             Camera(Math::Matrix4 view, Math::Matrix4 projection);
             ~Camera(void) = default;
 
+            Math::Matrix4 GetView();
+            Math::Matrix4 GetProjection();
             void SetView(Math::Matrix4 view);
             void SetProjection(Math::Matrix4 projection);
             uint64_t GetLayerFlags();
