@@ -13,13 +13,14 @@
 **/
 
 /**
-* \class IMaterial
+* \class Camera
 * \ingroup HatchitGraphics
 *
-* \brief An interface for a material to draw objects with
+* \brief A graphics-side camera object
 *
-* This class will be extended by a class that will implement its
-* methods with ones that will make calls to a graphics language
+* This is a fancy container for a view and a projection matrix
+* as well as a bitfield describing which render layers this
+* camera is a  part of.
 */
 
 #pragma once
@@ -38,11 +39,12 @@ namespace Hatchit {
             Camera(Math::Matrix4 view, Math::Matrix4 projection);
             ~Camera(void) = default;
 
-            Math::Matrix4 GetView();
-            Math::Matrix4 GetProjection();
+            const Math::Matrix4& GetView() const;
+            const Math::Matrix4& GetProjection() const;
+            uint64_t GetLayerFlags() const;
+
             void SetView(Math::Matrix4 view);
             void SetProjection(Math::Matrix4 projection);
-            uint64_t GetLayerFlags();
 
             void RegisterCamera();
 
