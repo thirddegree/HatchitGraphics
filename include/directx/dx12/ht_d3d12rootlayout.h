@@ -39,8 +39,6 @@ namespace Hatchit
 
                 ~D3D12RootLayout();
 
-                //bool VDeferredInitialize(Resource::RootLayoutHandle resource) override;
-
                 bool Initialize(const std::string& fileName, ID3D12Device* device);
 
                 ID3D12RootSignature* GetRootSignature();
