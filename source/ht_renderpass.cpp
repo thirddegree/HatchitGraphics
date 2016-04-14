@@ -34,16 +34,13 @@ namespace Hatchit
             m_proj = std::move(proj);
         }
 
-        void RenderPassBase::VScheduleRenderRequest(IPipelineHandle pipeline, IMaterialHandle material, IMeshHandle mesh)
+        void RenderPassBase::VScheduleRenderRequest(IMaterialHandle material, IMeshHandle mesh)
         {
             RenderRequest renderRequest = {};
 
-            renderRequest.pipeline = pipeline;
+            renderRequest.pipeline = material->GetPipeline();
             renderRequest.material = material;
             renderRequest.mesh = mesh;
-
-            m_view = Math::Matrix4();
-            m_proj = Math::Matrix4();
 
             m_renderRequests.push_back(renderRequest);
         }
@@ -76,10 +73,29 @@ namespace Hatchit
                 IMaterialHandle material = renderRequest.material;
                 IMeshHandle mesh = renderRequest.mesh;
 
-                m_pipelineList[pipeline].clear();
+                std::vector<RenderableInstances> instances = m_pipelineList[pipeline];
 
-                m_pipelineList[pipeline].push_back({ material, mesh });
+                //If the pipeline maps to an existing material and mesh, lets increment the count
+                bool found = false;
+                for (size_t i = 0; i < instances.size(); i++)
+                {
+                    Renderable renderable = instances[i].renderable;
+                    if (renderable.material == material && renderable.mesh == mesh)
+                    {
+                        instances[i].count++;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if(!found)
+                    instances.push_back({ material, mesh, 1 });
+
+                m_pipelineList[pipeline] = instances;
             }
+
+            //Done with render requests so we can clear them
+            m_renderRequests.clear();
         }
     }
 }

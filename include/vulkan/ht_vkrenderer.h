@@ -24,9 +24,6 @@
 #include <ht_string.h>
 #include <vector>
 
-//Totally remove this
-#include <fstream>
-
 namespace Hatchit {
 
     namespace Graphics {
@@ -121,8 +118,6 @@ namespace Hatchit {
                 std::vector<const char*>    m_enabledLayerNames;
                 std::vector<const char*>    m_enabledExtensionNames;
 
-                std::map<IPipelineHandle, std::vector<Renderable>> m_pipelineList;
-
                 RendererParams m_rendererParams; //We will need these later to re-create the swapchain if the window resizes
 
                 //Vuklan data structs
@@ -153,6 +148,9 @@ namespace Hatchit {
                 IMaterialHandle m_material;
                 ITextureHandle m_texture;
                 ISamplerHandle m_sampler;
+                IPipelineHandle m_pipeline;
+                IMeshHandle m_meshHandle;
+                VKRenderPassHandle m_renderPass;
 
                 float m_angle = 0;
 

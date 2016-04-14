@@ -41,7 +41,7 @@ namespace Hatchit {
 
         void MeshRenderer::Render()
         {
-            m_renderPass->VScheduleRenderRequest(m_pipeline, m_material, m_mesh);
+            m_renderPass->VScheduleRenderRequest(m_material, m_mesh);
         }
     }
 }

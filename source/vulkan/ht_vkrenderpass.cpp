@@ -33,6 +33,9 @@ namespace Hatchit {
                 m_width = 0;
                 m_height = 0;
 
+                m_view = Math::Matrix4();
+                m_proj = Math::Matrix4();
+
                 m_commandBuffer = VK_NULL_HANDLE;
             }
 
@@ -182,7 +185,7 @@ namespace Hatchit {
                 vkCmdSetViewport(m_commandBuffer, 0, 1, &viewport);
                 vkCmdSetScissor(m_commandBuffer, 0, 1, &scissor);
 
-                std::map<IPipelineHandle, std::vector<Renderable>>::iterator iterator;
+                std::map<IPipelineHandle, std::vector<RenderableInstances>>::iterator iterator;
 
                 for (iterator = m_pipelineList.begin(); iterator != m_pipelineList.end(); iterator++)
                 {
@@ -198,14 +201,17 @@ namespace Hatchit {
                     vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetVKPipeline());
                     pipeline->SendPushConstants(m_commandBuffer, vkPipelineLayout);
 
-                    std::vector<Renderable> renderables = iterator->second;
+                    std::vector<RenderableInstances> renderables = iterator->second;
 
                     VkDeviceSize offsets[] = { 0 };
 
                     for (uint32_t i = 0; i < renderables.size(); i++)
                     {
-                        VKMaterialHandle material = renderables[i].material.DynamicCastHandle<VKMaterial>();
-                        VKMeshHandle     mesh = renderables[i].mesh.DynamicCastHandle<VKMesh>();
+                        Renderable renderable = renderables[i].renderable;
+                        uint32_t count = renderables[i].count;
+
+                        VKMaterialHandle material = renderable.material.DynamicCastHandle<VKMaterial>();
+                        VKMeshHandle     mesh = renderable.mesh.DynamicCastHandle<VKMesh>();
                     
                         std::vector<VkDescriptorSet> descriptorSets = material->GetVKDescriptorSets();
                         
@@ -218,7 +224,7 @@ namespace Hatchit {
 
                         vkCmdBindVertexBuffers(m_commandBuffer, 0, 1, &vertBlock.buffer, offsets);
                         vkCmdBindIndexBuffer(m_commandBuffer, indexBlock.buffer, 0, VK_INDEX_TYPE_UINT32);
-                        vkCmdDrawIndexed(m_commandBuffer, indexCount, 1, 0, 0, 0);
+                        vkCmdDrawIndexed(m_commandBuffer, indexCount, count, 0, 0, 0);
                     }
                 }
 

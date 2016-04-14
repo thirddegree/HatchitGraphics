@@ -114,13 +114,13 @@ namespace Hatchit {
                 //TODO: remove this test code
                 m_rootLayout = VKRootLayout::GetHandle("TestRootDescriptor.json", "TestRootDescriptor.json", m_device);
 
-                VKRenderPassHandle renderPass = VKRenderPass::GetHandle("DeferredPass.json", "DeferredPass.json");
+                m_renderPass = VKRenderPass::GetHandle("DeferredPass.json", "DeferredPass.json");
 
                 IRenderTargetHandle colorTarget = VKRenderTarget::GetHandle("DeferredColor.json", "DeferredColor.json").StaticCastHandle<IRenderTarget>();
                 IRenderTargetHandle positionTarget = VKRenderTarget::GetHandle("DeferredPosition.json", "DeferredPosition.json").StaticCastHandle<IRenderTarget>();
                 IRenderTargetHandle normalTarget = VKRenderTarget::GetHandle("DeferredNormal.json", "DeferredNormal.json").StaticCastHandle<IRenderTarget>();
 
-                m_swapchain->VKSetIncomingRenderPass(renderPass);
+                m_swapchain->VKSetIncomingRenderPass(m_renderPass);
 
                 ModelHandle model = Model::GetHandleFromFileName("Raptor.obj");
                 //model.VInitFromFile(&meshFile);
@@ -133,32 +133,16 @@ namespace Hatchit {
                 m_texture = VKTexture::GetHandle("raptor.png", "raptor.png").StaticCastHandle<ITexture>();
                 m_texture->SetSampler(m_sampler);
 
-                Math::Matrix4 view = Math::MMMatrixTranspose(Math::MMMatrixLookAt(Math::Vector3(0, 0, -5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0)));
+                m_pipeline = VKPipeline::GetHandle("DeferredPipeline.json", "DeferredPipeline.json").StaticCastHandle<IPipeline>();
 
-                Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 100.0f));
-
-                IPipelineHandle pipeline = VKPipeline::GetHandle("DeferredPipeline.json", "DeferredPipeline.json").StaticCastHandle<IPipeline>();
+                m_pipeline->VUpdate();
 
                 m_material = VKMaterial::GetHandle("DeferredMaterial.json", "DeferredMaterial.json").StaticCastHandle<IMaterial>();
 
                 std::vector<Mesh*> meshes = model->GetMeshes();
-                IMeshHandle meshHandle = VKMesh::GetHandle("raptor", meshes[0]).StaticCastHandle<IMesh>();
-                
+                m_meshHandle = VKMesh::GetHandle("raptor", meshes[0]).StaticCastHandle<IMesh>();
 
-                renderPass->VScheduleRenderRequest(pipeline, m_material, meshHandle);
-
-                Renderable renderable;
-                renderable.material = m_material;
-                renderable.mesh = meshHandle;
-                m_pipelineList[pipeline].push_back(renderable);
-
-                RegisterRenderPass(renderPass.StaticCastHandle<RenderPassBase>());
-
-                pipeline->VUpdate();
-                m_material->VUpdate();
-
-                renderPass->VSetView(view);
-                renderPass->VSetProj(proj);
+                RegisterRenderPass(m_renderPass.StaticCastHandle<RenderPassBase>());
 
                 m_swapchain->VKPrepareResources();
 
@@ -173,13 +157,6 @@ namespace Hatchit {
 
                 if (m_swapchain != nullptr)
                     delete m_swapchain;
-                
-                std::map<IPipelineHandle, std::vector<Renderable>>::iterator it;
-                for (it = m_pipelineList.begin(); it != m_pipelineList.end(); it++)
-                {
-                    it->second.clear();
-                }
-                m_pipelineList.clear();
 
                 for (int i = 0; i < m_renderPassLayers.size(); i++)
                 {
@@ -275,6 +252,26 @@ namespace Hatchit {
 
             void VKRenderer::VRender(float dt) 
             {
+                //TODO: Remove this
+                Math::Matrix4 view = Math::MMMatrixTranspose(Math::MMMatrixLookAt(Math::Vector3(0, 0, -5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0)));
+                Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 100.0f));
+
+                m_renderPass->VSetView(view);
+                m_renderPass->VSetProj(proj);
+
+                //Example code for rotation
+                Math::Matrix4 scale = Math::MMMatrixScale(Math::Vector3(1.0f, 1.0f, 1.0f));
+                Math::Matrix4 rot = Math::MMMatrixRotationXYZ(Math::Vector3(0, m_angle += dt, 0));
+                Math::Matrix4 trans = Math::MMMatrixTranslation(Math::Vector3(0, 0, 3.0f));
+                Math::Matrix4 mat = trans * scale * rot;
+
+                m_material->VSetMatrix4("object.model", MMMatrixTranspose(mat));
+                m_material->VUpdate();
+
+                m_renderPass->VScheduleRenderRequest(m_material, m_meshHandle);
+                m_renderPass->VScheduleRenderRequest(m_material, m_meshHandle);
+                m_renderPass->VScheduleRenderRequest(m_material, m_meshHandle);
+
                 //TODO: Determine which physical device and thread are best to render with
 
                 m_swapchain->BuildSwapchainCommands(m_clearColor);
@@ -295,15 +292,6 @@ namespace Hatchit {
 
                 //Make sure we run the swapchain command
                 commandBuffers.push_back(m_swapchain->VKGetCurrentCommand());
-
-                //Example code for rotation
-                Math::Matrix4 scale = Math::MMMatrixScale(Math::Vector3(1.0f, 1.0f, 1.0f));
-                Math::Matrix4 rot = Math::MMMatrixRotationXYZ(Math::Vector3(0, m_angle += dt, 0));
-                Math::Matrix4 trans = Math::MMMatrixTranslation(Math::Vector3(0, 0, 3.0f));
-                Math::Matrix4 mat = trans * scale * rot;
-
-                m_material->VSetMatrix4("object.model", MMMatrixTranspose(mat));
-                m_material->VUpdate();
 
                 VkResult err;
 
