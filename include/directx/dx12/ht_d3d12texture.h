@@ -30,7 +30,7 @@ namespace Hatchit
         {
             class D3D12DeviceResources;
 
-            class HT_API D3D12Texture : public Core::RefCounted<D3D12Texture>, public ITexture
+            class HT_API D3D12Texture : public Core::RefCounted<D3D12Texture>, public Texture
             {
             public:
                 D3D12Texture(std::string ID);
@@ -43,9 +43,6 @@ namespace Hatchit
 
                 void SetSampler(ISamplerHandle sampler) override;
 
-                uint32_t GetWidth() const override;
-                uint32_t GetHeight() const override;
-
             private:
                 D3D12_RESOURCE_DESC         m_desc;
                 Microsoft::WRL::ComPtr<ID3D12Resource>             m_texture;
@@ -53,10 +50,6 @@ namespace Hatchit
                 Resource::TextureHandle     m_handle;
                 uint32_t                    m_width;
                 uint32_t                    m_height;
-
-                // Inherited via ITexture
-                virtual bool VBufferImage() override;
-
 
                 static HRESULT CreateD3DResourceFromHandle(const Resource::TextureHandle& handle);
             };

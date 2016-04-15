@@ -54,8 +54,8 @@ namespace Hatchit {
                 bool VSetFloat4(std::string name, Math::Vector4 data)       override;
                 bool VSetMatrix4(std::string name, Math::Matrix4 data)      override;
 
-                bool VBindTexture(std::string name, ITextureHandle texture)      override;
-                bool VUnbindTexture(std::string name, ITextureHandle texture)    override;
+                bool VBindTexture(std::string name, TextureHandle texture)      override;
+                bool VUnbindTexture(std::string name, TextureHandle texture)    override;
 
                 bool VUpdate()                                              override;
 
@@ -73,12 +73,12 @@ namespace Hatchit {
                 std::vector<VkDescriptorSetLayout> m_materialLayouts;
                 std::vector<VkDescriptorSet> m_materialSets;
 
-                UniformBlock m_uniformVSBuffer;
+                UniformBlock_vk m_uniformVSBuffer;
                 //UniformBlock m_uniformFSBuffer;
-                std::vector<UniformBlock> m_fragmentTextures;
+                std::vector<UniformBlock_vk> m_fragmentTextures;
 
                 VKPipelineHandle m_pipeline;
-                std::map<std::string, ITextureHandle> m_textures;
+                std::map<std::string, TextureHandle> m_textures;
                 std::map<std::string, Hatchit::Resource::ShaderVariable*> m_shaderVariables;
             };
 

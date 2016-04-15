@@ -35,8 +35,28 @@ namespace Hatchit {
 
             bool VKTexture::Initialize(const std::string& fileName)
             {
-                m_resource = Resource::Texture::GetHandleFromFileName(fileName);
-                return m_resource.IsValid();
+                Resource::TextureHandle resource = Resource::Texture::GetHandleFromFileName(fileName);
+                if (!resource.IsValid())
+                    return false;
+
+                m_data = resource->GetData();
+
+                m_width = resource->GetWidth();
+                m_height = resource->GetHeight();
+                m_channelCount = resource->GetChannels();
+                m_mipLevels = resource->GetMIPLevels();
+
+                return true;
+            }
+
+            bool VKTexture::Initialize(const BYTE* data, size_t width, size_t height, uint32_t channelCount, uint32_t mipLevels)
+            {
+                m_data = data;
+
+                m_width = width;
+                m_height = height;
+                m_channelCount = channelCount;
+                m_mipLevels = mipLevels;
 
                 return true;
             }
@@ -51,27 +71,17 @@ namespace Hatchit {
             {
                 VKSamplerHandle vkSamplerHandle = samplerHandle.DynamicCastHandle<VKSampler>();
                 m_sampler = std::move(vkSamplerHandle);
-                VBufferImage();
+                VKBufferImage();
             }
 
-            uint32_t VKTexture::GetWidth() const
-            {
-                return m_resource->GetWidth();
-            }
-
-            uint32_t VKTexture::GetHeight() const
-            {
-                return m_resource->GetHeight();
-            }
-
-            bool VKTexture::VBufferImage()
+            bool VKTexture::VKBufferImage()
             {
                 VkResult err;
 
                 VKRenderer* renderer = VKRenderer::RendererInstance;
 
                 VkFormat format;
-                if (m_resource->GetChannels() == 4)
+                if (m_channelCount == 4)
                 {
                     format = m_sampler->GetVkColorSpace();
                 }
@@ -87,8 +97,8 @@ namespace Hatchit {
                 imageCreateInfo.pNext = nullptr;
                 imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
                 imageCreateInfo.format = format;
-                imageCreateInfo.extent = { m_resource->GetWidth(), m_resource->GetHeight(), 1 };
-                imageCreateInfo.mipLevels = m_resource->GetMIPLevels();
+                imageCreateInfo.extent = { static_cast<uint32_t>(m_width), static_cast<uint32_t>(m_height), 1 };
+                imageCreateInfo.mipLevels = m_mipLevels;
                 imageCreateInfo.arrayLayers = 1;
                 imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
                 imageCreateInfo.tiling = VK_IMAGE_TILING_LINEAR;
@@ -162,7 +172,7 @@ namespace Hatchit {
                 }
 
                 //Copy image data
-                memcpy(pData, m_resource->GetData(), m_resource->GetWidth() * m_resource->GetHeight() * m_resource->GetChannels());
+                memcpy(pData, m_data, m_width * m_height * m_channelCount);
 
                 vkUnmapMemory(m_device, m_deviceMemory);
 
@@ -185,7 +195,7 @@ namespace Hatchit {
                 viewInfo.subresourceRange.baseMipLevel = 0;
                 viewInfo.subresourceRange.baseArrayLayer = 0;
                 viewInfo.subresourceRange.layerCount = 1;
-                viewInfo.subresourceRange.levelCount = m_resource->GetMIPLevels();
+                viewInfo.subresourceRange.levelCount = m_mipLevels;
                 viewInfo.image = m_image;
                 err = vkCreateImageView(m_device, &viewInfo, nullptr, &m_view);
                 assert(!err);

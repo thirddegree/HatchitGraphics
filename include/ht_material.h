@@ -61,8 +61,8 @@ namespace Hatchit {
             virtual bool VSetFloat4(std::string name, Math::Vector4 data) = 0;
             virtual bool VSetMatrix4(std::string name, Math::Matrix4 data) = 0;
 
-            virtual bool VBindTexture(std::string name, ITextureHandle texture) = 0;
-            virtual bool VUnbindTexture(std::string name, ITextureHandle texture) = 0;
+            virtual bool VBindTexture(std::string name, TextureHandle texture) = 0;
+            virtual bool VUnbindTexture(std::string name, TextureHandle texture) = 0;
 
             virtual bool VUpdate() = 0;
 

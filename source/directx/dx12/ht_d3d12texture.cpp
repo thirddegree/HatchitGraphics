@@ -40,15 +40,6 @@ namespace Hatchit
                 
             }
 
-            uint32_t D3D12Texture::GetHeight() const
-            {
-                return 0;
-            }
-
-            uint32_t D3D12Texture::GetWidth() const
-            {
-                return 0;
-            }
 
             bool D3D12Texture::Initialize(const std::string & fileName, D3D12DeviceResources* resources, ID3D12GraphicsCommandList* commandList)
             {
@@ -67,11 +58,6 @@ namespace Hatchit
             void D3D12Texture::SetSampler(ISamplerHandle sampler)
             {
 
-            }
-
-            bool D3D12Texture::VBufferImage()
-            {
-                return true;
             }
 
             void D3D12Texture::Upload(D3D12DeviceResources* resources, ID3D12GraphicsCommandList* commandList)

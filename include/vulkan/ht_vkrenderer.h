@@ -24,9 +24,6 @@
 #include <ht_string.h>
 #include <vector>
 
-//Totally remove this
-#include <fstream>
-
 namespace Hatchit {
 
     namespace Graphics {
@@ -114,14 +111,12 @@ namespace Hatchit {
                 static bool SetImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageAspectFlags aspectMask,
                     VkImageLayout oldImageLayout, VkImageLayout newImageLayout);
                 static bool MemoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, uint32_t* typeIndex);
-                static bool CreateBuffer(VkDevice device, VkBufferUsageFlagBits usage, size_t dataSize, void* data, UniformBlock* uniformBlock);
+                static bool CreateBuffer(VkDevice device, VkBufferUsageFlagBits usage, size_t dataSize, void* data, UniformBlock_vk* uniformBlock);
 
             private:
                 bool m_enableValidation;
                 std::vector<const char*>    m_enabledLayerNames;
                 std::vector<const char*>    m_enabledExtensionNames;
-
-                std::map<IPipelineHandle, std::vector<Renderable>> m_pipelineList;
 
                 RendererParams m_rendererParams; //We will need these later to re-create the swapchain if the window resizes
 
@@ -151,8 +146,11 @@ namespace Hatchit {
                 VKRootLayoutHandle m_rootLayout;
                 IRenderTargetHandle m_renderTarget;
                 IMaterialHandle m_material;
-                ITextureHandle m_texture;
+                TextureHandle m_texture;
                 ISamplerHandle m_sampler;
+                IPipelineHandle m_pipeline;
+                IMeshHandle m_meshHandle;
+                VKRenderPassHandle m_renderPass;
 
                 float m_angle = 0;
 

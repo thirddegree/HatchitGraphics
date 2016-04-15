@@ -119,6 +119,9 @@ namespace Hatchit
                                 case RootLayout::Range::Type::CONSTANT_BUFFER:
                                     descType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                                     break;
+                                case RootLayout::Range::Type::UNORDERED_ACCESS:
+                                    descType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+                                    break;
                                 case RootLayout::Range::Type::SHADER_RESOURCE:
                                     descType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                                     break;
@@ -158,38 +161,15 @@ namespace Hatchit
                             pushConstantRange.offset = currentPushContentOffset;
                             
                             //Size is based off reported constant type and must be a multiple of 4
-                            uint32_t size;
+                            size_t size;
                             ShaderVariable::Type type = p.data.constant.type;
 
-                            switch(type)
-                            {
-                            case ShaderVariable::Type::INT:
-                                size = sizeof(uint32_t);
-                                break;
-                            case ShaderVariable::Type::DOUBLE:
-                                size = sizeof(double);
-                                break;
-                            case ShaderVariable::Type::FLOAT:
-                                size = sizeof(float);
-                                break;
-                            case ShaderVariable::Type::FLOAT2:
-                                size = sizeof(float) * 2;
-                                break;
-                            case ShaderVariable::Type::FLOAT3:
-                                size = sizeof(float) * 3;
-                                break;
-                            case ShaderVariable::Type::FLOAT4:
-                                size = sizeof(float) * 4;
-                                break;
-                            case ShaderVariable::Type::MAT4:
-                                size = sizeof(float) * 16;
-                                break;
-                            }
+                            size = ShaderVariable::SizeFromType(type);
                             
                             //Size is also based off of the value count
                             size *= p.data.constant.valueCount;
-                            pushConstantRange.size = size;
-                            currentPushContentOffset += size; //Increment offset for the next possible push constant
+                            pushConstantRange.size = static_cast<uint32_t>(size);
+                            currentPushContentOffset += static_cast<uint32_t>(size); //Increment offset for the next possible push constant
 
                             m_pushConstantRanges.push_back(pushConstantRange);
                         }

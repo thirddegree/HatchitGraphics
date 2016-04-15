@@ -32,6 +32,7 @@
 #include <ht_math.h>
 #include <ht_color.h>
 #include <ht_renderpass_resource.h>
+#include <ht_shadervariable.h>
 
 namespace Hatchit {
 
@@ -50,6 +51,12 @@ namespace Hatchit {
             IMeshHandle      mesh;
         };
 
+        struct RenderableInstances 
+        {
+            Renderable  renderable;
+            uint32_t    count;
+        };
+
         class HT_API IRenderPass
         {
         public:
@@ -66,7 +73,7 @@ namespace Hatchit {
             virtual void VSetView(Math::Matrix4 view) = 0;
             virtual void VSetProj(Math::Matrix4 proj) = 0;
 
-            virtual void VScheduleRenderRequest(IPipelineHandle pipeline, IMaterialHandle material, IMeshHandle mesh) = 0;
+            virtual void VScheduleRenderRequest(IMaterialHandle material, IMeshHandle mesh, std::vector<Resource::ShaderVariable*> instanceVariables) = 0;
         };
 
         class HT_API RenderPassBase : public IRenderPass
@@ -77,7 +84,7 @@ namespace Hatchit {
             virtual void VSetView(Math::Matrix4 view);
             virtual void VSetProj(Math::Matrix4 proj);
 
-            virtual void VScheduleRenderRequest(IPipelineHandle pipeline, IMaterialHandle material, IMeshHandle mesh);
+            virtual void VScheduleRenderRequest(IMaterialHandle material, IMeshHandle mesh, std::vector<Resource::ShaderVariable*> instanceVariables);
 
             uint64_t GetLayerFlags();
 
@@ -86,7 +93,10 @@ namespace Hatchit {
 
             //Input
             std::vector<RenderRequest> m_renderRequests;
-            std::map<IPipelineHandle, std::vector<Renderable>> m_pipelineList;
+            std::map<IPipelineHandle, std::vector<RenderableInstances>> m_pipelineList;
+            BYTE* m_instanceData;
+            size_t m_instanceDataSize;
+            size_t m_currentInstanceDataOffset;
 
             std::vector<IRenderTargetHandle> m_inputRenderTargets;
 

@@ -13,19 +13,20 @@
 **/
 
 /**
-* \class IRenderTarget
+* \class VKRenderPass
 * \ingroup HatchitGraphics
 *
-* \brief An interface for a class that will render the whole scene from a perspective with a graphics language
+* \brief A Render Pass implemented with Vulkan
 *
-* Used to render a whole scene to an IRenderTexture with a graphics language
-* so that it can be used later to complete the final frame.
+* This render pass uses Vulkan to create a command buffer fit for submission to the renderer.
+* It can be a part of a RenderLayer and takes in Render Submissions made up of Materials and Meshes.
 */
 
 #pragma once
 
 #include <ht_renderpass.h>
 #include <ht_vulkan.h>
+#include <ht_vktexture.h>
 
 namespace Hatchit {
 
@@ -60,16 +61,23 @@ namespace Hatchit {
 
                 bool allocateCommandBuffer();
 
+                bool buildInstanceTextureSets();
+
                 const VkDevice& m_device;
                 const VkCommandPool& m_commandPool;
 
                 VkRenderPass m_renderPass;
                 VkCommandBuffer m_commandBuffer;
 
-                std::vector<Image> m_colorImages;
-                Image m_depthImage;
+                //For instance data
+                std::vector<VKTexture> m_instanceTextures;
+                std::vector<VkDescriptorSet> m_instanceDescriptorSets;
+
+                std::vector<Image_vk> m_colorImages;
+                Image_vk m_depthImage;
 
                 VkFramebuffer m_framebuffer;
+
             };
 
             using VKRenderPassHandle = Core::Handle<VKRenderPass>;

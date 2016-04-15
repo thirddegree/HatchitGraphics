@@ -111,7 +111,7 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKRenderTarget::Blit(VkCommandBuffer buffer, const Image& image)
+            bool VKRenderTarget::Blit(VkCommandBuffer buffer, const Image_vk& image)
             {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
 
@@ -158,7 +158,7 @@ namespace Hatchit {
             }
 
             const VkFormat& VKRenderTarget::GetVKColorFormat() const { return m_colorFormat; }
-            const Texture& VKRenderTarget::GetVKTexture() const { return m_texture; }
+            const Texture_vk& VKRenderTarget::GetVKTexture() const { return m_texture; }
 
             const uint32_t& VKRenderTarget::GetWidth() const { return m_width; }
             const uint32_t& VKRenderTarget::GetHeight() const { return m_height; }

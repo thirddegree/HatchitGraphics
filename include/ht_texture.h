@@ -21,33 +21,28 @@
 
 namespace Hatchit {
 
-    namespace Core
-    {
-        template<typename VarType>
-        class Handle;
-    }
-
-    namespace Resource
-    {
-        class Texture;
-    }
-
     namespace Graphics {
 
-        class HT_API ITexture
+        class HT_API Texture
         {
         public:
-            virtual ~ITexture() { }
+            virtual ~Texture() { }
         
             virtual void SetSampler(ISamplerHandle sampler) = 0;
 
-            virtual uint32_t GetWidth()  const = 0;
-            virtual uint32_t GetHeight() const = 0;
+            virtual size_t GetWidth()  const;
+            virtual size_t GetHeight() const;
 
         protected:
-            virtual bool VBufferImage() = 0;
+            size_t m_width;
+            size_t m_height;
+            uint32_t m_bitsPerPixel;
+            uint32_t m_channelCount;
+            uint32_t m_mipLevels;
+
+            const BYTE* m_data;
         };
 
-        using ITextureHandle = Core::Handle<ITexture>;
+        using TextureHandle = Core::Handle<Texture>;
     }
 }
