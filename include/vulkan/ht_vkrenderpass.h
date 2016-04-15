@@ -65,12 +65,13 @@ namespace Hatchit {
 
                 const VkDevice& m_device;
                 const VkCommandPool& m_commandPool;
+                const VkDescriptorPool& m_descriptorPool;
 
                 VkRenderPass m_renderPass;
                 VkCommandBuffer m_commandBuffer;
 
                 //For instance data
-                std::vector<VKTexture> m_instanceTextures;
+                TexelBlock_vk m_texelBuffer;
                 std::vector<VkDescriptorSet> m_instanceDescriptorSets;
 
                 std::vector<Image_vk> m_colorImages;

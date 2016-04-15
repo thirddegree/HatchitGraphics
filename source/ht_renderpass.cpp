@@ -48,8 +48,12 @@ namespace Hatchit
 
             //Determine how much we need to append to the array
             size_t newSize = m_instanceDataSize;
+            m_instanceChunkSize = 0;
             for (size_t i = 0; i < instanceVariables.size(); i++)
-                newSize += Resource::ShaderVariable::SizeFromType(instanceVariables[i]->GetType());
+            {
+                m_instanceChunkSize += Resource::ShaderVariable::SizeFromType(instanceVariables[i]->GetType());
+                newSize += m_instanceChunkSize;
+            }
                 
             //Make an array of the new size and replace the existing one
             BYTE* newArray = new BYTE[newSize];
@@ -126,12 +130,6 @@ namespace Hatchit
             //Done with render requests so we can clear them
             m_renderRequests.clear();
 
-            //Build instance data descriptor set
-
-            //Delete instance data
-            delete[] m_instanceData;
-            m_instanceData = nullptr;
-            m_instanceDataSize = 0;
         }
     }
 }

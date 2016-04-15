@@ -37,6 +37,13 @@ namespace Hatchit {
                 VkDescriptorBufferInfo  descriptor;
             };
 
+            struct TexelBlock_vk
+            {
+                VkBuffer                buffer;
+                VkDeviceMemory          memory;
+                VkBufferView            view;
+            };
+
             struct Image_vk
             {
                 VkImage         image;
@@ -52,6 +59,11 @@ namespace Hatchit {
                 uint32_t width, height;
                 uint32_t mipLevels;
             };
+
+            bool CreateUniformBuffer(const VkDevice& device, size_t dataSize, void* data, UniformBlock_vk* uniformBlock);
+            bool CreateTexelBuffer(const VkDevice& device, size_t dataSize, void* data, TexelBlock_vk* texelBlock);
+
+            void DeleteTexelBuffer(const VkDevice& device, TexelBlock_vk& texelBlock);
 
             extern PFN_vkGetPhysicalDeviceSurfaceSupportKHR
                 fpGetPhysicalDeviceSurfaceSupportKHR;
