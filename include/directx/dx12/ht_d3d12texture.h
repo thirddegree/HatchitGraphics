@@ -37,11 +37,9 @@ namespace Hatchit
 
                 ~D3D12Texture();
 
-                void Upload(D3D12DeviceResources* resources, ID3D12GraphicsCommandList* commandList);
+                void Upload(D3D12DeviceResources* resources);
 
-                bool Initialize(const std::string& fileName, D3D12DeviceResources* resources, ID3D12GraphicsCommandList* commandList);
-
-                void SetSampler(ISamplerHandle sampler) override;
+                bool Initialize(const std::string& fileName, D3D12DeviceResources* resources);
 
             private:
                 D3D12_RESOURCE_DESC         m_desc;

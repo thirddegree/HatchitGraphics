@@ -131,7 +131,6 @@ namespace Hatchit {
                 m_sampler = VKSampler::GetHandle("DeferredSampler.json", "DeferredSampler.json").StaticCastHandle<ISampler>();
 
                 m_texture = VKTexture::GetHandle("raptor.png", "raptor.png").StaticCastHandle<Texture>();
-                m_texture->SetSampler(m_sampler);
 
                 m_pipeline = VKPipeline::GetHandle("DeferredPipeline.json", "DeferredPipeline.json").StaticCastHandle<IPipeline>();
 

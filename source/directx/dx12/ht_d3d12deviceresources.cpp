@@ -29,13 +29,15 @@ namespace Hatchit {
                 m_renderTargetViewHeap = nullptr;
                 m_commandAllocator = nullptr;
                 m_commandQueue = nullptr;
+                m_commandList = nullptr;
                
                 m_fence = nullptr;
               
                 for (int i = 0; i < NUM_RENDER_TARGETS; i++)
                     m_renderTargets[i] = nullptr;
 
-                m_currentFrame = 1;
+                m_currentBackBuffer = 0;
+                m_currentFence = 0;
             }
 
             D3D12DeviceResources::~D3D12DeviceResources()
@@ -46,11 +48,11 @@ namespace Hatchit {
                 ReleaseCOM(m_depthStencilHeap);
                 ReleaseCOM(m_commandQueue);
                 ReleaseCOM(m_commandAllocator);
+                ReleaseCOM(m_commandList);
                 ReleaseCOM(m_fence);
                 for (int i = 0; i < NUM_RENDER_TARGETS; i++)
                     ReleaseCOM(m_renderTargets[i]);
                 ReleaseCOM(m_depthStencil);
-                CloseHandle(m_fenceEvent);
             }
 
             bool D3D12DeviceResources::Initialize(HWND hwnd, uint32_t width, uint32_t height)
@@ -77,7 +79,7 @@ namespace Hatchit {
 
             ID3D12Resource * D3D12DeviceResources::GetRenderTarget()
             {
-                return m_renderTargets[m_currentFrame];
+                return m_renderTargets[m_currentBackBuffer];
             }
 
             ID3D12Resource * D3D12DeviceResources::GetDepthStencil()
@@ -95,6 +97,11 @@ namespace Hatchit {
                 return m_commandQueue;
             }
 
+            ID3D12GraphicsCommandList * D3D12DeviceResources::GetCommandList()
+            {
+                return m_commandList;
+            }
+
             D3D12_VIEWPORT D3D12DeviceResources::GetScreenViewport()
             {
                 return m_viewport;
@@ -102,7 +109,7 @@ namespace Hatchit {
 
             CD3DX12_CPU_DESCRIPTOR_HANDLE D3D12DeviceResources::GetRenderTargetView()
             {
-                return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_renderTargetViewHeap->GetCPUDescriptorHandleForHeapStart(), m_currentFrame, m_renderTargetViewHeapSize);
+                return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_renderTargetViewHeap->GetCPUDescriptorHandleForHeapStart(), m_currentBackBuffer, m_renderTargetViewHeapSize);
             }
 
             CD3DX12_CPU_DESCRIPTOR_HANDLE D3D12DeviceResources::GetDepthStencilView()
@@ -112,7 +119,7 @@ namespace Hatchit {
 
             uint32_t D3D12DeviceResources::GetCurrentFrameIndex()
             {
-                return m_currentFrame;
+                return m_currentBackBuffer;
             }
 
 			void D3D12DeviceResources::DestroyDeviceResources()
@@ -122,8 +129,8 @@ namespace Hatchit {
 				for (int i = 0; i < NUM_RENDER_TARGETS; i++)
 				{
 					ReleaseCOM(m_renderTargets[i]);
-					m_fenceValues[i] = m_fenceValues[m_currentFrame];
 				}
+                m_currentFence = 0;
 				ReleaseCOM(m_depthStencil);
 			}
 
@@ -236,7 +243,7 @@ namespace Hatchit {
                     return false;
                 }
                 ReleaseCOM(swapChain);
-                m_currentFrame = m_swapChain->GetCurrentBackBufferIndex();
+                m_currentBackBuffer = m_swapChain->GetCurrentBackBufferIndex();
 
 				if (!CreateBuffers(width, height))
 					return false;
@@ -256,11 +263,15 @@ namespace Hatchit {
                 ReleaseCOM(hardwareAdapter);
                 ReleaseCOM(factory);
 
-                // Create synchronization objects.
-                m_device->CreateFence(m_fenceValues[m_currentFrame], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence));
-                m_fenceValues[m_currentFrame]++;
+                /*Create a command list*/
+                hr = m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocator,
+                    nullptr, IID_PPV_ARGS(&m_commandList));
+                if (FAILED(hr))
+                    return false;
+                m_commandList->Close();
 
-                m_fenceEvent = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
+                // Create synchronization objects.
+                m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence));
 
                 m_viewport.Width = static_cast<float>(width);
                 m_viewport.Height = static_cast<float>(height);
@@ -348,6 +359,8 @@ namespace Hatchit {
 
 				m_device->CreateDepthStencilView(m_depthStencil, &depthStencilViewDesc, m_depthStencilHeap->GetCPUDescriptorHandleForHeapStart());
 
+        
+
 				return true;
 			}
 			
@@ -356,16 +369,23 @@ namespace Hatchit {
 				m_viewport.Width = static_cast<float>(width);
 				m_viewport.Height = static_cast<float>(height);
 
-				WaitForGPU();
+                FlushCommandQueue();
+
+                m_commandList->Reset(m_commandAllocator, nullptr);
 				
 				DestroyDeviceResources();
 
 				m_swapChain->ResizeBuffers(2, width, height, m_swapChainDesc.BufferDesc.Format, 0);
 				m_swapChain->GetDesc(&m_swapChainDesc);
 
-				m_currentFrame = m_swapChain->GetCurrentBackBufferIndex();
+				m_currentBackBuffer = m_swapChain->GetCurrentBackBufferIndex();
 
 				this->CreateBuffers(width, height);
+
+                //Close and execute the command list
+                ExecuteCommandList();
+
+                FlushCommandQueue();
 			}
 
             void D3D12DeviceResources::Present()
@@ -373,18 +393,11 @@ namespace Hatchit {
                 // The first argument instructs DXGI to block until VSync, putting the application
                 // to sleep until the next VSync. This ensures we don't waste any cycles rendering
                 // frames that will never be displayed to the screen.
-                HRESULT hr = m_swapChain->Present(1, 0);
+                HRESULT hr = m_swapChain->Present(0, 0);
 
-                // If the device was removed either by a disconnection or a driver upgrade, we 
-                // must recreate all device resources.
-                if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
-                {
-                    m_deviceRemoved = true;
-                }
-                else
-                {
-                    MoveToNextFrame();
-                }
+                m_currentBackBuffer = (m_currentBackBuffer + 1) % NUM_BUFFER_FRAMES;
+
+                FlushCommandQueue();
             }
 
 
@@ -459,60 +472,37 @@ namespace Hatchit {
                 ReleaseCOM(currentFactory);
             }
 
-            void D3D12DeviceResources::WaitForGPU()
+            void D3D12DeviceResources::FlushCommandQueue()
             {
-                // Advance the fence value to mark commands up to this fence point.
-                m_fenceValues[m_currentFrame]++;
+                //Advance fence value to mark commands made up to this point
+                m_currentFence++;
 
-                // Add an instruction to the command queue to set a new fence point.  Because we 
-                // are on the GPU timeline, the new fence point won't be set until the GPU finishes
-                // processing all the commands prior to this Signal().
-                ThrowIfFailed(m_commandQueue->Signal(m_fence, m_fenceValues[m_currentFrame]));
+                HRESULT hr = S_OK;
 
-                // Wait until the GPU has completed commands up to this fence point.
-                if (m_fence->GetCompletedValue() < m_fenceValues[m_currentFrame])
+                /*
+                * Add an instruction to the command queue to set a fence point. Since we are on the GPU
+                * timeline, the new fence point wont be set until the GPU finished processing all commands
+                * prior to this call to Signal()
+                */
+                hr = m_commandQueue->Signal(m_fence, m_currentFence);
+
+                //Wait until GPU has completed events to this fence point
+                if (m_fence->GetCompletedValue() < m_currentFence)
                 {
                     HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
 
-                    // Fire event when GPU hits current fence.  
-                    ThrowIfFailed(m_fence->SetEventOnCompletion(m_fenceValues[m_currentFrame], eventHandle));
+                    //Fire event when GPU hits current fence
+                    hr = m_fence->SetEventOnCompletion(m_currentFence, eventHandle);
 
-                    // Wait until the GPU hits current fence event is fired.
                     WaitForSingleObject(eventHandle, INFINITE);
                     CloseHandle(eventHandle);
                 }
-
-
-
-                //// Schedule a Signal command in the queue.
-                //m_commandQueue->Signal(m_fence, m_fenceValues[m_currentFrame]);
-
-                //// Wait until the fence has been crossed.
-                //m_fence->SetEventOnCompletion(m_fenceValues[m_currentFrame], m_fenceEvent);
-                //WaitForSingleObjectEx(m_fenceEvent, INFINITE, FALSE);
-
-                //// Increment the fence value for the current frame.
-                //m_fenceValues[m_currentFrame]++;
             }
-
-            void D3D12DeviceResources::MoveToNextFrame()
+            void D3D12DeviceResources::ExecuteCommandList()
             {
-                // Schedule a Signal command in the queue.
-                const UINT64 currentFenceValue = m_fenceValues[m_currentFrame];
-                m_commandQueue->Signal(m_fence, currentFenceValue);
-
-                // Advance the frame index.
-                m_currentFrame = (m_currentFrame + 1) % NUM_BUFFER_FRAMES;
-
-                // Check to see if the next frame is ready to start.
-                if (m_fence->GetCompletedValue() < m_fenceValues[m_currentFrame])
-                {
-                    m_fence->SetEventOnCompletion(m_fenceValues[m_currentFrame], m_fenceEvent);
-                    WaitForSingleObjectEx(m_fenceEvent, INFINITE, FALSE);
-                }
-
-                // Set the fence value for the next frame.
-                m_fenceValues[m_currentFrame] = currentFenceValue + 1;
+                m_commandList->Close();
+                ID3D12CommandList* cmdsLists[] = { m_commandList };
+                m_commandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
             }
         }
     }

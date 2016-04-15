@@ -41,12 +41,12 @@ namespace Hatchit
             }
 
 
-            bool D3D12Texture::Initialize(const std::string & fileName, D3D12DeviceResources* resources, ID3D12GraphicsCommandList* commandList)
+            bool D3D12Texture::Initialize(const std::string & fileName, D3D12DeviceResources* resources)
             {
                 using namespace Resource;
 
                 HRESULT hr = DirectX::CreateDDSTextureFromFile12(resources->GetDevice(),
-                    commandList, L"raptor.dds",
+                    resources->GetCommandList(), L"raptor.dds",
                     m_texture,
                     m_uploadHeap);
                 if (FAILED(hr))
@@ -55,22 +55,19 @@ namespace Hatchit
                 return true;
             }
 
-            void D3D12Texture::SetSampler(ISamplerHandle sampler)
-            {
-
-            }
-
-            void D3D12Texture::Upload(D3D12DeviceResources* resources, ID3D12GraphicsCommandList* commandList)
+            void D3D12Texture::Upload(D3D12DeviceResources* resources)
             {
 
                 // Describe and create a SRV for the texture.
+                CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle(resources->GetRootLayout()->GetHeap(D3D12RootLayout::HeapType::CBV_SRV_UAV)->GetCPUDescriptorHandleForHeapStart());
+                cpuHandle.Offset(1, resources->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
                 D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
                 srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-                srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+                srvDesc.Format = m_texture->GetDesc().Format;
                 srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
                 srvDesc.Texture2D.MipLevels = 1;
                 resources->GetDevice()->CreateShaderResourceView(m_texture.Get(),
-                    &srvDesc, resources->GetRootLayout()->GetHeap(D3D12RootLayout::HeapType::CBV_SRV_UAV)->GetCPUDescriptorHandleForHeapStart());
+                    &srvDesc, cpuHandle);
             }
 
 

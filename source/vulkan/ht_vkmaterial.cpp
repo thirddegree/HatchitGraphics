@@ -207,7 +207,7 @@ namespace Hatchit {
 
                     //Create Texture description
                     VkDescriptorImageInfo textureDescriptor = {};
-                    textureDescriptor.sampler = texture->GetSampler();
+                    textureDescriptor.sampler = VKSampler::GetHandle("DeferredSampler.json", "DeferredSampler.json")->GetVkSampler(); //VERY TEMPORARY
                     textureDescriptor.imageView = texture->GetView();
                     textureDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 

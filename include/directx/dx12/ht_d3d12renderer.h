@@ -62,8 +62,7 @@ namespace Hatchit {
 
             private:
                 D3D12DeviceResources*       m_resources;
-                ID3D12GraphicsCommandList*  m_commandList;
-                //ID3D12DescriptorHeap*       m_cbDescriptorHeap;
+
                 uint32_t                    m_cbDescriptorSize;
 
                 D3D12PipelineHandle         m_pipeline;
@@ -79,8 +78,16 @@ namespace Hatchit {
                 D3D12VertexBuffer*          m_vBuffer;
                 D3D12IndexBuffer*           m_iBuffer;
                 size_t                      m_numIndices;
-
                 ConstantBuffer              m_constantBufferData;
+
+                /*Sanity Check*/
+                ID3D12RootSignature* mRootSignature = nullptr;
+
+                ID3D12DescriptorHeap* mSrvDescriptorHeap = nullptr;
+
+                void BuildRootSignature();
+                void BuildMeshData();
+                std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
             };
         }
     }

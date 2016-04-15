@@ -37,10 +37,7 @@ namespace Hatchit {
                 //For building a texture *not* from a file
                 bool Initialize(const BYTE* data, size_t width, size_t height, uint32_t channelCount, uint32_t mipLevels);
 
-                VkSampler GetSampler();
                 VkImageView GetView();
-
-                void SetSampler(ISamplerHandle sampler) override;
 
             private:
                 bool VKBufferImage();
@@ -52,8 +49,6 @@ namespace Hatchit {
                 VkImageLayout m_imageLayout;
 
                 VkDeviceMemory m_deviceMemory;
-
-                VKSamplerHandle m_sampler;
             };
 
             using VKTextureHandle = Core::Handle<VKTexture>;
