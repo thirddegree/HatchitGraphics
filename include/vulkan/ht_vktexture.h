@@ -32,7 +32,7 @@ namespace Hatchit {
                 virtual ~VKTexture();
 
                 //Required function for RefCounted classes
-                bool Initialize(const std::string& fileName) override;
+                bool Initialize(const std::string& fileName);
 
                 //For building a texture *not* from a file
                 bool Initialize(const BYTE* data, size_t width, size_t height, uint32_t channelCount, uint32_t mipLevels);

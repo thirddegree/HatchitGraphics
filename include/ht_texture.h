@@ -28,7 +28,7 @@ namespace Hatchit {
         public:
             virtual ~Texture() = default;
         
-            virtual bool Initialize(const std::string& fileName) = 0;
+            bool Initialize(const std::string& fileName);
 
             virtual size_t GetWidth()  const;
             virtual size_t GetHeight() const;
