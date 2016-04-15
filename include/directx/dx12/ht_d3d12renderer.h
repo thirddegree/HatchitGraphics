@@ -20,6 +20,7 @@
 #include <ht_d3d12vertexbuffer.h>
 #include <ht_d3d12indexbuffer.h>
 #include <ht_d3d12pipeline.h>
+#include <ht_d3d12texture.h>
 #include <ht_d3d12deviceresources.h>
 #include <ht_d3d12constantbuffer.h>
 #include <ht_math.h>
@@ -66,6 +67,8 @@ namespace Hatchit {
                 uint32_t                    m_cbDescriptorSize;
 
                 D3D12PipelineHandle         m_pipeline;
+
+                D3D12TextureHandle          m_texture;
      
                 Color                       m_clearColor;
 

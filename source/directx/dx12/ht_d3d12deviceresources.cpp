@@ -311,7 +311,6 @@ namespace Hatchit {
 						HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to get render target buffer for resource creation.\n");
 						return false;
 					}
-
 					m_device->CreateRenderTargetView(m_renderTargets[i], nullptr, rtvHandle);
 
 					rtvHandle.ptr += 1 * m_renderTargetViewHeapSize;
@@ -462,15 +461,38 @@ namespace Hatchit {
 
             void D3D12DeviceResources::WaitForGPU()
             {
-                // Schedule a Signal command in the queue.
-                m_commandQueue->Signal(m_fence, m_fenceValues[m_currentFrame]);
-
-                // Wait until the fence has been crossed.
-                m_fence->SetEventOnCompletion(m_fenceValues[m_currentFrame], m_fenceEvent);
-                WaitForSingleObjectEx(m_fenceEvent, INFINITE, FALSE);
-
-                // Increment the fence value for the current frame.
+                // Advance the fence value to mark commands up to this fence point.
                 m_fenceValues[m_currentFrame]++;
+
+                // Add an instruction to the command queue to set a new fence point.  Because we 
+                // are on the GPU timeline, the new fence point won't be set until the GPU finishes
+                // processing all the commands prior to this Signal().
+                ThrowIfFailed(m_commandQueue->Signal(m_fence, m_fenceValues[m_currentFrame]));
+
+                // Wait until the GPU has completed commands up to this fence point.
+                if (m_fence->GetCompletedValue() < m_fenceValues[m_currentFrame])
+                {
+                    HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+
+                    // Fire event when GPU hits current fence.  
+                    ThrowIfFailed(m_fence->SetEventOnCompletion(m_fenceValues[m_currentFrame], eventHandle));
+
+                    // Wait until the GPU hits current fence event is fired.
+                    WaitForSingleObject(eventHandle, INFINITE);
+                    CloseHandle(eventHandle);
+                }
+
+
+
+                //// Schedule a Signal command in the queue.
+                //m_commandQueue->Signal(m_fence, m_fenceValues[m_currentFrame]);
+
+                //// Wait until the fence has been crossed.
+                //m_fence->SetEventOnCompletion(m_fenceValues[m_currentFrame], m_fenceEvent);
+                //WaitForSingleObjectEx(m_fenceEvent, INFINITE, FALSE);
+
+                //// Increment the fence value for the current frame.
+                //m_fenceValues[m_currentFrame]++;
             }
 
             void D3D12DeviceResources::MoveToNextFrame()

@@ -71,7 +71,7 @@ namespace Hatchit {
                 if (FAILED(hr))
                     return false;
 
-				Resource::ModelHandle m = Resource::Model::GetHandleFromFileName("raptor.obj");
+                Resource::ModelHandle m = Resource::Model::GetHandleFromFileName("raptor.obj");
 
                 auto verts = m->GetMeshes()[0]->getVertices();
                 auto normals = m->GetMeshes()[0]->getNormals();
@@ -118,6 +118,9 @@ namespace Hatchit {
 
                 m_cBuffer->Map(0, sizeof(ConstantBuffer));
 
+                m_texture = D3D12Texture::GetHandle("raptor.png", "raptor.png", m_resources, m_commandList);
+                m_texture->Upload(m_resources, m_commandList);
+
                 hr = m_commandList->Close();
                 ID3D12CommandList* ppCommandLists[] = { m_commandList };
                 m_resources->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
@@ -150,10 +153,10 @@ namespace Hatchit {
 
             void D3D12Renderer::VResizeBuffers(uint32_t width, uint32_t height)
             {
-				m_width = width;
-				m_height = height;
+                m_width = width;
+                m_height = height;
 
-				m_resources->Resize(width, height);
+                m_resources->Resize(width, height);
             }
 
             void D3D12Renderer::VRender(float dt)
@@ -161,17 +164,17 @@ namespace Hatchit {
                 using namespace DirectX;
 
                 static float angle = 0.0f;
-				angle += dt;
+                angle += dt;
                 m_constantBufferData.proj = Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f);
                 m_constantBufferData.view = Math::MMMatrixLookAt(Math::Vector3(0.0f, 0.0f, -5.0f),
                     Math::Vector3(0.0f, 0.0f, 1.0f),
                     Math::Vector3(0.0f, 1.0f, 0.0f));
 
-				Math::Matrix4 scale = Math::MMMatrixScale(Math::Vector3(1.0f, 1.0f, 1.0f));
-				Math::Matrix4 rot = Math::MMMatrixRotationXYZ(Math::Vector3(0, angle, 0));
-				Math::Matrix4 trans = Math::MMMatrixTranslation(Math::Vector3(0, -1, 0));
+                Math::Matrix4 scale = Math::MMMatrixScale(Math::Vector3(1.0f, 1.0f, 1.0f));
+                Math::Matrix4 rot = Math::MMMatrixRotationXYZ(Math::Vector3(0, angle, 0));
+                Math::Matrix4 trans = Math::MMMatrixTranslation(Math::Vector3(0, -1, 0));
                 Math::Matrix4 mat = trans * scale * rot; // rot * (scale * trans);
-				m_constantBufferData.world = mat;
+                m_constantBufferData.world = mat;
 
                 m_cBuffer->Fill(reinterpret_cast<void**>(&m_constantBufferData), sizeof(m_constantBufferData), sizeof(ConstantBuffer),
                     m_resources->GetCurrentFrameIndex());
@@ -180,7 +183,7 @@ namespace Hatchit {
                 m_commandList->Reset(m_resources->GetCommandAllocator(), m_pipeline->GetPipeline());
 
                 m_commandList->SetGraphicsRootSignature(m_resources->GetRootLayout()->GetRootSignature());
-				
+                
                 ID3D12DescriptorHeap* ppHeaps[] = { m_resources->GetRootLayout()->GetHeap(D3D12RootLayout::HeapType::CBV_SRV_UAV) };
                 m_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 

@@ -17,8 +17,10 @@
 #include <ht_platform.h>
 #include <ht_directx.h>
 #include <ht_texture.h>
+#include <ht_texture_resource.h>
 #include <ht_image.h>
 #include <ht_refcounted.h>
+#include <wrl/client.h>
 
 namespace Hatchit
 {
@@ -26,6 +28,8 @@ namespace Hatchit
     {
         namespace DX
         {
+            class D3D12DeviceResources;
+
             class HT_API D3D12Texture : public Core::RefCounted<D3D12Texture>, public ITexture
             {
             public:
@@ -33,9 +37,9 @@ namespace Hatchit
 
                 ~D3D12Texture();
 
-                //void Upload(ID3D12GraphicsCommandList* commandList);
+                void Upload(D3D12DeviceResources* resources, ID3D12GraphicsCommandList* commandList);
 
-                bool Initialize(const std::string& fileName, ID3D12Device* device, ID3D12DescriptorHeap* heap);
+                bool Initialize(const std::string& fileName, D3D12DeviceResources* resources, ID3D12GraphicsCommandList* commandList);
 
                 void SetSampler(ISamplerHandle sampler) override;
 
@@ -44,15 +48,20 @@ namespace Hatchit
 
             private:
                 D3D12_RESOURCE_DESC         m_desc;
-                ID3D12Resource*             m_texture;
-                ID3D12Resource*             m_uploadHeap;
-                Resource::Image*            m_bitmap;
+                Microsoft::WRL::ComPtr<ID3D12Resource>             m_texture;
+                Microsoft::WRL::ComPtr<ID3D12Resource>             m_uploadHeap;
+                Resource::TextureHandle     m_handle;
                 uint32_t                    m_width;
                 uint32_t                    m_height;
 
                 // Inherited via ITexture
                 virtual bool VBufferImage() override;
+
+
+                static HRESULT CreateD3DResourceFromHandle(const Resource::TextureHandle& handle);
             };
+
+            using D3D12TextureHandle = Core::Handle<D3D12Texture>;
         }
     }
 }
