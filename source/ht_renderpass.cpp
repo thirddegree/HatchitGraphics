@@ -34,7 +34,7 @@ namespace Hatchit
             m_proj = std::move(proj);
         }
 
-        void RenderPassBase::VScheduleRenderRequest(IMaterialHandle material, IMeshHandle mesh)
+        void RenderPassBase::VScheduleRenderRequest(IMaterialHandle material, IMeshHandle mesh, std::vector<Resource::ShaderVariable*> instanceVariables)
         {
             RenderRequest renderRequest = {};
 
@@ -43,6 +43,35 @@ namespace Hatchit
             renderRequest.mesh = mesh;
 
             m_renderRequests.push_back(renderRequest);
+
+            //Append instance variables to the array of bytes
+
+            //Determine how much we need to append to the array
+            size_t newSize = m_instanceDataSize;
+            for (size_t i = 0; i < instanceVariables.size(); i++)
+                newSize += Resource::ShaderVariable::SizeFromType(instanceVariables[i]->GetType());
+                
+            //Make an array of the new size and replace the existing one
+            BYTE* newArray = new BYTE[newSize];
+            
+            if (m_instanceData != nullptr)
+            {
+                memcpy(newArray, m_instanceData, m_instanceDataSize);
+                delete[] m_instanceData;
+            }
+
+            m_instanceData = newArray;
+
+            //Copy data to new array
+            m_currentInstanceDataOffset = m_instanceDataSize;
+            for (size_t i = 0; i < instanceVariables.size(); i++)
+            {
+                size_t size = Resource::ShaderVariable::SizeFromType(instanceVariables[i]->GetType());
+                memcpy(m_instanceData + m_currentInstanceDataOffset, instanceVariables[i]->GetData(), size);
+                m_currentInstanceDataOffset += size;
+            }
+
+            m_instanceDataSize = m_currentInstanceDataOffset;
         }
 
         uint64_t RenderPassBase::GetLayerFlags()
@@ -96,6 +125,13 @@ namespace Hatchit
 
             //Done with render requests so we can clear them
             m_renderRequests.clear();
+
+            //Build instance data descriptor set
+
+            //Delete instance data
+            delete[] m_instanceData;
+            m_instanceData = nullptr;
+            m_instanceDataSize = 0;
         }
     }
 }

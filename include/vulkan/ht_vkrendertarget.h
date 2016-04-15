@@ -47,10 +47,10 @@ namespace Hatchit {
                 ///Prepare the render target with Vulkan
                 bool VPrepare() override;
 
-                bool Blit(VkCommandBuffer commandBuffer, const Image& image);
+                bool Blit(VkCommandBuffer commandBuffer, const Image_vk& image);
 
                 const VkFormat&         GetVKColorFormat() const;
-                const Texture&          GetVKTexture() const;
+                const Texture_vk&          GetVKTexture() const;
 
                 const uint32_t& GetWidth() const;
                 const uint32_t& GetHeight() const;
@@ -59,7 +59,7 @@ namespace Hatchit {
                 const VkDevice& m_device;
 
                 VkFormat m_colorFormat;
-                Texture m_texture;
+                Texture_vk m_texture;
 
                 bool setupTargetTexture(VKRenderer* renderer);
             };

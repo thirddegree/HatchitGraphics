@@ -111,7 +111,7 @@ namespace Hatchit {
                 static bool SetImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageAspectFlags aspectMask,
                     VkImageLayout oldImageLayout, VkImageLayout newImageLayout);
                 static bool MemoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, uint32_t* typeIndex);
-                static bool CreateBuffer(VkDevice device, VkBufferUsageFlagBits usage, size_t dataSize, void* data, UniformBlock* uniformBlock);
+                static bool CreateBuffer(VkDevice device, VkBufferUsageFlagBits usage, size_t dataSize, void* data, UniformBlock_vk* uniformBlock);
 
             private:
                 bool m_enableValidation;
@@ -146,7 +146,7 @@ namespace Hatchit {
                 VKRootLayoutHandle m_rootLayout;
                 IRenderTargetHandle m_renderTarget;
                 IMaterialHandle m_material;
-                ITextureHandle m_texture;
+                TextureHandle m_texture;
                 ISamplerHandle m_sampler;
                 IPipelineHandle m_pipeline;
                 IMeshHandle m_meshHandle;

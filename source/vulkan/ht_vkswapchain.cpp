@@ -235,7 +235,7 @@ namespace Hatchit {
 
                 for (size_t i = 0; i < m_inputTextures.size(); i++)
                 {
-                    Texture inputTexture = m_inputTextures[i];
+                    Texture_vk inputTexture = m_inputTextures[i];
 
                     // Image descriptor for the color map texture
                     VkDescriptorImageInfo texDescriptor = {};

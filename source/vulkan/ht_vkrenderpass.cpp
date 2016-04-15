@@ -36,6 +36,10 @@ namespace Hatchit {
                 m_view = Math::Matrix4();
                 m_proj = Math::Matrix4();
 
+                m_instanceData = nullptr;
+                m_instanceDataSize = 0;
+                m_currentInstanceDataOffset = 0;
+
                 m_commandBuffer = VK_NULL_HANDLE;
             }
 
@@ -47,7 +51,7 @@ namespace Hatchit {
                 //Destroy framebuffer images
                 for (size_t i = 0; i < m_colorImages.size(); i++)
                 {
-                    Image image = m_colorImages[i];
+                    Image_vk image = m_colorImages[i];
 
                     vkDestroyImageView(m_device, image.view, nullptr);
                     vkDestroyImage(m_device, image.image, nullptr);
@@ -115,6 +119,10 @@ namespace Hatchit {
 
                 //Setup the order of the commands we will issue in the command list
                 BuildRenderRequestHeirarchy();
+
+                //Build textures of instance data
+                if (!buildInstanceTextureSets())
+                    return false;
 
                 VkResult err;
 
@@ -218,8 +226,8 @@ namespace Hatchit {
                         vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                             vkPipelineLayout, 0, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, nullptr);
                     
-                        UniformBlock vertBlock = mesh->GetVertexBlock();
-                        UniformBlock indexBlock = mesh->GetIndexBlock();
+                        UniformBlock_vk vertBlock = mesh->GetVertexBlock();
+                        UniformBlock_vk indexBlock = mesh->GetIndexBlock();
                         uint32_t indexCount = mesh->GetIndexCount();
 
                         vkCmdBindVertexBuffers(m_commandBuffer, 0, 1, &vertBlock.buffer, offsets);
@@ -373,7 +381,7 @@ namespace Hatchit {
                     VkFormat colorFormat = vkRenderTarget->GetVKColorFormat();
 
                     //Attachment image that we will push back into a vector
-                    Image colorImage;
+                    Image_vk colorImage;
 
                     uint32_t width = vkRenderTarget->GetWidth();
                     uint32_t height = vkRenderTarget->GetHeight();
@@ -582,6 +590,18 @@ namespace Hatchit {
                     HT_DEBUG_PRINTF("VKRenderer::prepareDescriptorLayout(): Failed to allocate command buffer\n");
                     return false;
                 }
+
+                return true;
+            }
+
+            bool VKRenderPass::buildInstanceTextureSets()
+            {
+
+
+                //TODO: De-hardcode this
+                VkDescriptorSetLayout instanceSetLayout = VKRenderer::RendererInstance->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts()[3];
+
+
 
                 return true;
             }

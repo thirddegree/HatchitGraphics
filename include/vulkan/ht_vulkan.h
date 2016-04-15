@@ -30,25 +30,25 @@ namespace Hatchit {
     namespace Graphics {
         namespace Vulkan {
 
-            struct UniformBlock
+            struct UniformBlock_vk
             {
                 VkBuffer                buffer;
                 VkDeviceMemory          memory;
                 VkDescriptorBufferInfo  descriptor;
             };
 
-            struct Image 
+            struct Image_vk
             {
                 VkImage         image;
                 VkImageView     view;
                 VkDeviceMemory  memory;
             };
 
-            struct Texture 
+            struct Texture_vk
             {
                 VkSampler sampler;
                 VkImageLayout layout;
-                Image image;
+                Image_vk image;
                 uint32_t width, height;
                 uint32_t mipLevels;
             };

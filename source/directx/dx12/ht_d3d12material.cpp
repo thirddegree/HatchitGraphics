@@ -55,12 +55,12 @@ namespace Hatchit {
                 return false;
             }
 
-            bool D3D12Material::VBindTexture(std::string name, ITextureHandle texture)
+            bool D3D12Material::VBindTexture(std::string name, TextureHandle texture)
             {
                 return false;
             }
 
-            bool D3D12Material::VUnbindTexture(std::string name, ITextureHandle texture)
+            bool D3D12Material::VUnbindTexture(std::string name, TextureHandle texture)
             {
                 return false;
             }

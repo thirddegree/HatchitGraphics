@@ -92,8 +92,8 @@ namespace Hatchit {
 
             }
 
-            UniformBlock VKMesh::GetVertexBlock() { return m_vertexBlock; }
-            UniformBlock VKMesh::GetIndexBlock() { return m_indexBlock; }
+            UniformBlock_vk VKMesh::GetVertexBlock() { return m_vertexBlock; }
+            UniformBlock_vk VKMesh::GetIndexBlock() { return m_indexBlock; }
 
         }
     }

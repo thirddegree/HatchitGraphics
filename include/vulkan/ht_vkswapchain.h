@@ -102,8 +102,8 @@ namespace Hatchit {
                 std::vector<VkFramebuffer>   m_framebuffers;
                 DepthBuffer                  m_depthBuffer;
 
-                UniformBlock    m_vertexBuffer;
-                std::vector<Texture> m_inputTextures;
+                UniformBlock_vk    m_vertexBuffer;
+                std::vector<Texture_vk> m_inputTextures;
 
                 bool prepareSurface(const RendererParams& rendererParams);
 

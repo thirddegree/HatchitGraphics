@@ -130,7 +130,7 @@ namespace Hatchit {
                 //TODO: Once JSON file is found, insert name here
                 m_sampler = VKSampler::GetHandle("DeferredSampler.json", "DeferredSampler.json").StaticCastHandle<ISampler>();
 
-                m_texture = VKTexture::GetHandle("raptor.png", "raptor.png").StaticCastHandle<ITexture>();
+                m_texture = VKTexture::GetHandle("raptor.png", "raptor.png").StaticCastHandle<Texture>();
                 m_texture->SetSampler(m_sampler);
 
                 m_pipeline = VKPipeline::GetHandle("DeferredPipeline.json", "DeferredPipeline.json").StaticCastHandle<IPipeline>();
@@ -262,15 +262,30 @@ namespace Hatchit {
                 //Example code for rotation
                 Math::Matrix4 scale = Math::MMMatrixScale(Math::Vector3(1.0f, 1.0f, 1.0f));
                 Math::Matrix4 rot = Math::MMMatrixRotationXYZ(Math::Vector3(0, m_angle += dt, 0));
-                Math::Matrix4 trans = Math::MMMatrixTranslation(Math::Vector3(0, 0, 3.0f));
-                Math::Matrix4 mat = trans * scale * rot;
 
-                m_material->VSetMatrix4("object.model", MMMatrixTranspose(mat));
+                Math::Matrix4 trans1 = Math::MMMatrixTranslation(Math::Vector3(-3.0f, 0, 3.0f));
+                Math::Matrix4 trans2 = Math::MMMatrixTranslation(Math::Vector3(0, 0, 3.0f));
+                Math::Matrix4 trans3 = Math::MMMatrixTranslation(Math::Vector3(3.0f, 0, 3.0f));
+
+                Math::Matrix4 mat1 = trans1 * scale * rot;
+                Math::Matrix4 mat2 = trans2 * scale * rot;
+                Math::Matrix4 mat3 = trans3 * scale * rot;
+
+                std::vector<Resource::ShaderVariable*> instanceVars1;
+                instanceVars1.push_back(new Resource::Matrix4Variable(mat1));
+
+                std::vector<Resource::ShaderVariable*> instanceVars2;
+                instanceVars2.push_back(new Resource::Matrix4Variable(mat2));
+
+                std::vector<Resource::ShaderVariable*> instanceVars3;
+                instanceVars3.push_back(new Resource::Matrix4Variable(mat3));
+
+                m_material->VSetMatrix4("object.model", MMMatrixTranspose(mat1));
                 m_material->VUpdate();
 
-                m_renderPass->VScheduleRenderRequest(m_material, m_meshHandle);
-                m_renderPass->VScheduleRenderRequest(m_material, m_meshHandle);
-                m_renderPass->VScheduleRenderRequest(m_material, m_meshHandle);
+                m_renderPass->VScheduleRenderRequest(m_material, m_meshHandle, instanceVars1);
+                m_renderPass->VScheduleRenderRequest(m_material, m_meshHandle, instanceVars2);
+                m_renderPass->VScheduleRenderRequest(m_material, m_meshHandle, instanceVars3);
 
                 //TODO: Determine which physical device and thread are best to render with
 
@@ -303,6 +318,14 @@ namespace Hatchit {
 
                 success = m_swapchain->VKPrePresentBarrier(m_queue);
                 assert(success);
+
+                //TODO: remove
+                for (size_t i = 0; i < instanceVars1.size(); i++)
+                {
+                    delete instanceVars1[i];
+                    delete instanceVars2[i];
+                    delete instanceVars3[i];
+                }
             }
 
             void VKRenderer::VPresent()
@@ -721,7 +744,7 @@ namespace Hatchit {
                 return validated;
             }
 
-            bool VKRenderer::CreateBuffer(VkDevice device, VkBufferUsageFlagBits usage, size_t dataSize, void* data, UniformBlock* uniformBlock)
+            bool VKRenderer::CreateBuffer(VkDevice device, VkBufferUsageFlagBits usage, size_t dataSize, void* data, UniformBlock_vk* uniformBlock)
             {
                 VkResult err;
 

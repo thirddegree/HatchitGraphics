@@ -25,7 +25,7 @@ namespace Hatchit {
     
         namespace Vulkan {
 
-            class HT_API VKTexture : public Core::RefCounted<VKTexture>, public ITexture
+            class HT_API VKTexture : public Core::RefCounted<VKTexture>, public Texture
             {
             public:
                 VKTexture(std::string ID);
@@ -34,16 +34,16 @@ namespace Hatchit {
                 //Required function for RefCounted classes
                 bool Initialize(const std::string& fileName);
 
+                //For building a texture *not* from a file
+                bool Initialize(const BYTE* data, size_t width, size_t height, uint32_t channelCount, uint32_t mipLevels);
+
                 VkSampler GetSampler();
                 VkImageView GetView();
 
-                virtual void SetSampler(ISamplerHandle sampler) override;
-
-                virtual uint32_t GetWidth() const override;
-                virtual uint32_t GetHeight() const override;
+                void SetSampler(ISamplerHandle sampler) override;
 
             private:
-                bool VBufferImage() override;
+                bool VKBufferImage();
 
                 VkDevice m_device;
 
@@ -52,8 +52,6 @@ namespace Hatchit {
                 VkImageLayout m_imageLayout;
 
                 VkDeviceMemory m_deviceMemory;
-
-                Resource::TextureHandle m_resource;
 
                 VKSamplerHandle m_sampler;
             };

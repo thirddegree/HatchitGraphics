@@ -41,12 +41,12 @@ namespace Hatchit {
 
                 bool Initialize(Hatchit::Resource::Mesh* mesh);
 
-                UniformBlock GetVertexBlock();
-                UniformBlock GetIndexBlock();
+                UniformBlock_vk GetVertexBlock();
+                UniformBlock_vk GetIndexBlock();
 
             private:
-                UniformBlock m_vertexBlock;
-                UniformBlock m_indexBlock;
+                UniformBlock_vk m_vertexBlock;
+                UniformBlock_vk m_indexBlock;
             };
 
             using VKMeshHandle = Core::Handle<VKMesh>;

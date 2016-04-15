@@ -44,7 +44,7 @@ namespace Hatchit {
                 for (size_t i = 0; i < texturePaths.size(); i++)
                 {
                     VKTextureHandle textureHandle = VKTexture::GetHandle(texturePaths[i], texturePaths[i]);
-                    m_textures[texturePaths[i]] = textureHandle.StaticCastHandle<ITexture>();
+                    m_textures[texturePaths[i]] = textureHandle.StaticCastHandle<Texture>();
                 }
 
                 VKRenderer* renderer = VKRenderer::RendererInstance;
@@ -114,12 +114,12 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKMaterial::VBindTexture(std::string name, ITextureHandle texture) 
+            bool VKMaterial::VBindTexture(std::string name, TextureHandle texture) 
             {
                 m_textures[name] = texture;
                 return true;
             }
-            bool VKMaterial::VUnbindTexture(std::string name, ITextureHandle texture)
+            bool VKMaterial::VUnbindTexture(std::string name, TextureHandle texture)
             {
                 m_textures.erase(name);
                 return true;
@@ -200,7 +200,7 @@ namespace Hatchit {
                 //descSetWrites.push_back(uniformFSWrite);
 
                 //Setup writes for textures
-                std::map<std::string, ITextureHandle>::iterator it;
+                std::map<std::string, TextureHandle>::iterator it;
                 for (it = m_textures.begin(); it != m_textures.end(); it++)
                 {
                     VKTextureHandle texture = it->second.DynamicCastHandle<VKTexture>();

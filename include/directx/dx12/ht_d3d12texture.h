@@ -26,7 +26,7 @@ namespace Hatchit
     {
         namespace DX
         {
-            class HT_API D3D12Texture : public Core::RefCounted<D3D12Texture>, public ITexture
+            class HT_API D3D12Texture : public Core::RefCounted<D3D12Texture>, public Texture
             {
             public:
                 D3D12Texture(std::string ID);
@@ -39,19 +39,11 @@ namespace Hatchit
 
                 void SetSampler(ISamplerHandle sampler) override;
 
-                uint32_t GetWidth() const override;
-                uint32_t GetHeight() const override;
-
             private:
                 D3D12_RESOURCE_DESC         m_desc;
                 ID3D12Resource*             m_texture;
                 ID3D12Resource*             m_uploadHeap;
                 Resource::Image*            m_bitmap;
-                uint32_t                    m_width;
-                uint32_t                    m_height;
-
-                // Inherited via ITexture
-                virtual bool VBufferImage() override;
             };
         }
     }

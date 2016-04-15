@@ -50,8 +50,8 @@ namespace Hatchit {
                 virtual bool VSetFloat3(std::string name, Math::Vector3 data) override;
                 virtual bool VSetFloat4(std::string name, Math::Vector4 data) override;
                 virtual bool VSetMatrix4(std::string name, Math::Matrix4 data) override;
-                virtual bool VBindTexture(std::string name, ITextureHandle texture) override;
-                virtual bool VUnbindTexture(std::string name, ITextureHandle texture) override;
+                virtual bool VBindTexture(std::string name, TextureHandle texture) override;
+                virtual bool VUnbindTexture(std::string name, TextureHandle texture) override;
                 virtual bool VUpdate() override;
             };
         }

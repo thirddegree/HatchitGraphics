@@ -40,21 +40,11 @@ namespace Hatchit
                 delete m_bitmap;
             }
 
-            uint32_t D3D12Texture::GetHeight() const
-            {
-                return 0;
-            }
-
-            uint32_t D3D12Texture::GetWidth() const
-            {
-                return 0;
-            }
-
             bool D3D12Texture::Initialize(const std::string & fileName, ID3D12Device * device, ID3D12DescriptorHeap* heap)
             {
                 using namespace Resource;
 
-                TextureHandle handle = Texture::GetHandleFromFileName(fileName);
+                Resource::TextureHandle handle = Resource::Texture::GetHandleFromFileName(fileName);
                 if (!handle.IsValid())
                     return false;
 
@@ -110,11 +100,6 @@ namespace Hatchit
             void D3D12Texture::SetSampler(ISamplerHandle sampler)
             {
 
-            }
-
-            bool D3D12Texture::VBufferImage()
-            {
-                return true;
             }
 
             //void D3D12Texture::Upload(ID3D12GraphicsCommandList* commandList)
