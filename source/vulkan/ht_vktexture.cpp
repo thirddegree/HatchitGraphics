@@ -46,7 +46,7 @@ namespace Hatchit {
                 m_channelCount = resource->GetChannels();
                 m_mipLevels = resource->GetMIPLevels();
 
-                return true;
+                return VKBufferImage();
             }
 
             bool VKTexture::Initialize(const BYTE* data, size_t width, size_t height, uint32_t channelCount, uint32_t mipLevels)
@@ -58,21 +58,11 @@ namespace Hatchit {
                 m_channelCount = channelCount;
                 m_mipLevels = mipLevels;
 
-                return true;
+                return VKBufferImage();
             }
 
-            VkSampler VKTexture::GetSampler()
-            { 
-                return m_sampler->GetVkSampler();
-            }
             VkImageView VKTexture::GetView() { return m_view; }
 
-            void VKTexture::SetSampler(ISamplerHandle samplerHandle)
-            {
-                VKSamplerHandle vkSamplerHandle = samplerHandle.DynamicCastHandle<VKSampler>();
-                m_sampler = std::move(vkSamplerHandle);
-                VKBufferImage();
-            }
 
             bool VKTexture::VKBufferImage()
             {
@@ -81,13 +71,17 @@ namespace Hatchit {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
 
                 VkFormat format;
-                if (m_channelCount == 4)
+                if (m_channelCount == 4 || m_channelCount == 3)
                 {
-                    format = m_sampler->GetVkColorSpace();
+                    format = VK_FORMAT_R8G8B8A8_UNORM;
+                }
+                else if (m_channelCount == 1)
+                {
+                    format = VK_FORMAT_R32_SFLOAT;
                 }
                 else
                 {
-                    HT_DEBUG_PRINTF("VKTexture::VBufferImage() Error; cannot process RGB textures; they must be RGBA");
+                    HT_DEBUG_PRINTF("VKTexture::VBufferImage() Error; could not determine format for texture");
                     return false;
                 }
 

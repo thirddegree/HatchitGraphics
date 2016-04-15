@@ -26,9 +26,9 @@ namespace Hatchit {
         class HT_API Texture
         {
         public:
-            virtual ~Texture() { }
+            virtual ~Texture() = default;
         
-            virtual void SetSampler(ISamplerHandle sampler) = 0;
+            virtual bool Initialize(const std::string& fileName) = 0;
 
             virtual size_t GetWidth()  const;
             virtual size_t GetHeight() const;

@@ -37,8 +37,6 @@ namespace Hatchit
 
                 bool Initialize(const std::string& fileName, ID3D12Device* device, ID3D12DescriptorHeap* heap);
 
-                void SetSampler(ISamplerHandle sampler) override;
-
             private:
                 D3D12_RESOURCE_DESC         m_desc;
                 ID3D12Resource*             m_texture;

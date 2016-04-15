@@ -97,11 +97,6 @@ namespace Hatchit
                 return false;
             }
 
-            void D3D12Texture::SetSampler(ISamplerHandle sampler)
-            {
-
-            }
-
             //void D3D12Texture::Upload(ID3D12GraphicsCommandList* commandList)
             //{
             //    //D3D12_SUBRESOURCE_DATA data = {};
