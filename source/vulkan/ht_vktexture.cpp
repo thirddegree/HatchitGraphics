@@ -81,8 +81,11 @@ namespace Hatchit {
                 }
                 else
                 {
-                    HT_DEBUG_PRINTF("VKTexture::VBufferImage() Error; could not determine format for texture");
-                    return false;
+                    HT_DEBUG_PRINTF("VKTexture::VKBufferImage(): Warning: could not determine texture format from channel count; using preferred image format");
+                    format = VKRenderer::RendererInstance->GetPreferredImageFormat();
+
+                    //HT_DEBUG_PRINTF("VKTexture::VKBufferImage() Error; could not determine format for texture");
+                    //return false;
                 }
 
                 //Create Image assuming linear tiling!
@@ -113,6 +116,8 @@ namespace Hatchit {
                     HT_DEBUG_PRINTF("VKTexture::VBufferImage(): Failed to create image\n");
                     return false;
                 }
+
+                renderer->CreateSetupCommandBuffer();
 
                 //Set the image to be GENERAL before binding so it can map properly
                 renderer->SetImageLayout(renderer->GetSetupCommandBuffer(), m_image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);

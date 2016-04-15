@@ -266,9 +266,9 @@ namespace Hatchit {
                 Math::Matrix4 trans2 = Math::MMMatrixTranslation(Math::Vector3(0, 0, 3.0f));
                 Math::Matrix4 trans3 = Math::MMMatrixTranslation(Math::Vector3(3.0f, 0, 3.0f));
 
-                Math::Matrix4 mat1 = trans1 * scale * rot;
-                Math::Matrix4 mat2 = trans2 * scale * rot;
-                Math::Matrix4 mat3 = trans3 * scale * rot;
+                Math::Matrix4 mat1 = MMMatrixTranspose(trans1 * scale * rot);
+                Math::Matrix4 mat2 = MMMatrixTranspose(trans2 * scale * rot);
+                Math::Matrix4 mat3 = MMMatrixTranspose(trans3 * scale * rot);
 
                 std::vector<Resource::ShaderVariable*> instanceVars1;
                 instanceVars1.push_back(new Resource::Matrix4Variable(mat1));
@@ -279,7 +279,7 @@ namespace Hatchit {
                 std::vector<Resource::ShaderVariable*> instanceVars3;
                 instanceVars3.push_back(new Resource::Matrix4Variable(mat3));
 
-                m_material->VSetMatrix4("object.model", MMMatrixTranspose(mat1));
+                m_material->VSetMatrix4("object.model", mat1);
                 m_material->VUpdate();
 
                 m_renderPass->VScheduleRenderRequest(m_material, m_meshHandle, instanceVars1);
@@ -1049,18 +1049,23 @@ namespace Hatchit {
                 uniformSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                 uniformSize.descriptorCount = 4;
 
+                VkDescriptorPoolSize texelSize = {};
+                texelSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+                texelSize.descriptorCount = 4;
+
                 VkDescriptorPoolSize samplerSize = {};
                 samplerSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                 samplerSize.descriptorCount = 4;
 
                 poolSizes.push_back(uniformSize);
+                poolSizes.push_back(texelSize);
                 poolSizes.push_back(samplerSize);
 
                 VkDescriptorPoolCreateInfo poolCreateInfo = {};
                 poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
                 poolCreateInfo.pPoolSizes = poolSizes.data();
                 poolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-                poolCreateInfo.maxSets = 8;
+                poolCreateInfo.maxSets = 12;
                 poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
                 err = vkCreateDescriptorPool(m_device, &poolCreateInfo, nullptr, &m_descriptorPool);
