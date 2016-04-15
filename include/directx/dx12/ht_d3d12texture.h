@@ -37,7 +37,7 @@ namespace Hatchit
 
                 ~D3D12Texture();
 
-                void Upload(D3D12DeviceResources* resources);
+                void Upload(D3D12DeviceResources* resources, uint32_t descriptorOffset);
 
                 bool Initialize(const std::string& fileName, D3D12DeviceResources* resources);
 

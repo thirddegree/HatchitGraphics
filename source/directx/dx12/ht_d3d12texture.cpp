@@ -55,12 +55,11 @@ namespace Hatchit
                 return true;
             }
 
-            void D3D12Texture::Upload(D3D12DeviceResources* resources)
+            void D3D12Texture::Upload(D3D12DeviceResources* resources, uint32_t descriptorOffset)
             {
-
                 // Describe and create a SRV for the texture.
                 CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle(resources->GetRootLayout()->GetHeap(D3D12RootLayout::HeapType::CBV_SRV_UAV)->GetCPUDescriptorHandleForHeapStart());
-                cpuHandle.Offset(1, resources->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+                cpuHandle.Offset(descriptorOffset, resources->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
                 D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
                 srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
                 srvDesc.Format = m_texture->GetDesc().Format;

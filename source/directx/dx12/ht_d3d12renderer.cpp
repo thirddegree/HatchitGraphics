@@ -63,7 +63,7 @@ namespace Hatchit {
                 commandList->Reset(m_resources->GetCommandAllocator(), nullptr);
 
                 m_texture = D3D12Texture::GetHandle("raptor.png", "raptor.png", m_resources);
-                m_texture->Upload(m_resources);
+                m_texture->Upload(m_resources, 1);
 
 
                 /*Create Pipeline State*/
