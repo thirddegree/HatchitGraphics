@@ -20,6 +20,7 @@
 #include <ht_d3d12vertexbuffer.h>
 #include <ht_d3d12indexbuffer.h>
 #include <ht_d3d12pipeline.h>
+#include <ht_d3d12texture.h>
 #include <ht_d3d12deviceresources.h>
 #include <ht_d3d12constantbuffer.h>
 #include <ht_math.h>
@@ -61,12 +62,9 @@ namespace Hatchit {
 
             private:
                 D3D12DeviceResources*       m_resources;
-                ID3D12GraphicsCommandList*  m_commandList;
-                //ID3D12DescriptorHeap*       m_cbDescriptorHeap;
                 uint32_t                    m_cbDescriptorSize;
-
                 D3D12PipelineHandle         m_pipeline;
-     
+                D3D12TextureHandle          m_texture;
                 Color                       m_clearColor;
 
                 //Demo only
@@ -76,8 +74,9 @@ namespace Hatchit {
                 D3D12VertexBuffer*          m_vBuffer;
                 D3D12IndexBuffer*           m_iBuffer;
                 size_t                      m_numIndices;
-
                 ConstantBuffer              m_constantBufferData;
+
+                void BuildMeshData();
             };
         }
     }

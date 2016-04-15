@@ -13,6 +13,7 @@
 **/
 
 #include <ht_d3d12rendertarget.h>
+#include <ht_d3d12deviceresources.h>
 
 namespace Hatchit
 {
@@ -20,16 +21,61 @@ namespace Hatchit
     {
         namespace DX
         {
-            D3D12RenderTarget::D3D12RenderTarget()
+            D3D12RenderTarget::D3D12RenderTarget(std::string ID)
+                : Core::RefCounted<D3D12RenderTarget>(std::move(ID))
             {
 
             }
 
-            bool D3D12RenderTarget::Initialize(Resource::RenderTargetHandle handle, ID3D12Device* device)
+            bool D3D12RenderTarget::Initialize(const std::string& fileName, D3D12DeviceResources* device)
             {
+                using namespace Resource;
+
+                RenderTargetHandle handle = RenderTarget::GetHandleFromFileName(fileName);
+                if (!handle.IsValid())
+                {
+                    return false;
+                }
+
+                std::string format = handle->GetFormat();
+                
+                /*Create Render Target*/
+
+                HRESULT hr = S_OK;
+
+                m_desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
                 
 
                 return true;
+            }
+            bool D3D12RenderTarget::VPrepare()
+            {
+                return false;
+            }
+            DXGI_FORMAT D3D12RenderTarget::TargetFormatFromString(std::string s)
+            {
+                if (s == "BGRA")
+                {
+                    return DXGI_FORMAT_B8G8R8A8_UNORM;
+                }
+                else if (s == "RGBA")
+                {
+                    return DXGI_FORMAT_R8G8B8A8_UNORM;
+                }
+                else if (s == "BGR")
+                {
+                    return DXGI_FORMAT_B8G8R8A8_UNORM;
+                }
+                else if (s == "RGB")
+                {
+                    return DXGI_FORMAT_R8G8B8A8_UNORM;
+                }
+                else if (s == "R")
+                {
+                    return DXGI_FORMAT_R32_FLOAT;
+                }
+
+                return DXGI_FORMAT_UNKNOWN;
             }
         }
     }

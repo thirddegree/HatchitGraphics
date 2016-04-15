@@ -33,32 +33,32 @@ namespace Hatchit {
                 ~D3D12DeviceResources();
 
                 void Present();
-                void WaitForGPU();
-                void MoveToNextFrame();
+                void FlushCommandQueue();
+                void ExecuteCommandList();
                 void ValidateDevice();
                 bool Initialize(HWND hwnd, uint32_t width, uint32_t height);
 				void Resize(uint32_t width, uint32_t height);
 				
             
-                ID3D12Device*           GetDevice();
-                D3D12RootLayoutHandle   GetRootLayout();
-                IDXGISwapChain3*        GetSwapChain();
-                ID3D12Resource*         GetRenderTarget();
-                ID3D12Resource*         GetDepthStencil();
-                ID3D12CommandAllocator* GetCommandAllocator();
-                ID3D12CommandQueue*     GetCommandQueue();
-                D3D12_VIEWPORT          GetScreenViewport();
-                uint32_t                GetCurrentFrameIndex();
+                ID3D12Device*               GetDevice();
+                D3D12RootLayoutHandle       GetRootLayout();
+                IDXGISwapChain3*            GetSwapChain();
+                ID3D12Resource*             GetRenderTarget();
+                ID3D12Resource*             GetDepthStencil();
+                ID3D12CommandAllocator*     GetCommandAllocator();
+                ID3D12CommandQueue*         GetCommandQueue();
+                ID3D12GraphicsCommandList*  GetCommandList();
+                D3D12_VIEWPORT              GetScreenViewport();
+                uint32_t                    GetCurrentFrameIndex();
 
                 CD3DX12_CPU_DESCRIPTOR_HANDLE GetRenderTargetView();
                 CD3DX12_CPU_DESCRIPTOR_HANDLE GetDepthStencilView();
             private:
 				HWND						m_hwnd;
                 bool                        m_deviceRemoved;
-                uint32_t                    m_currentFrame;
-                HANDLE                      m_fenceEvent;
+                uint32_t                    m_currentBackBuffer;
                 ID3D12Fence*                m_fence;
-                uint64_t                    m_fenceValues[NUM_BUFFER_FRAMES];
+                uint64_t                    m_currentFence;
 
                 D3D12_VIEWPORT              m_viewport;
                 D3D12_RECT                  m_scissorRect;
@@ -68,6 +68,7 @@ namespace Hatchit {
 				DXGI_SWAP_CHAIN_DESC		m_swapChainDesc;
                 ID3D12CommandQueue*         m_commandQueue;
                 ID3D12CommandAllocator*     m_commandAllocator;
+                ID3D12GraphicsCommandList*  m_commandList;
                 ID3D12Resource*             m_renderTargets[NUM_RENDER_TARGETS];
                 ID3D12Resource*             m_depthStencil;
                 ID3D12DescriptorHeap*       m_renderTargetViewHeap;

@@ -238,6 +238,8 @@ namespace Hatchit {
                     return DXGI_FORMAT_R32G32B32_FLOAT;
                 case Resource::Pipeline::InputElement::Format::R32G32B32A32_FLOAT:
                     return DXGI_FORMAT_R32G32B32A32_FLOAT;
+                case Resource::Pipeline::InputElement::Format::R32G32_FLOAT:
+                    return DXGI_FORMAT_R32G32_FLOAT;
                 default:
                     return DXGI_FORMAT_UNKNOWN;
                 }
