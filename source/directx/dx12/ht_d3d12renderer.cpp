@@ -82,7 +82,7 @@ namespace Hatchit {
 
             void D3D12Renderer::VDeInitialize()
             {
-
+                
             }
 
             void D3D12Renderer::VSetClearColor(const Color& color)
@@ -128,7 +128,6 @@ namespace Hatchit {
                 m_cBuffer->Fill(reinterpret_cast<void**>(&m_constantBufferData), sizeof(m_constantBufferData), sizeof(ConstantBuffer),
                     m_resources->GetCurrentFrameIndex());
 
-                m_resources->GetCommandAllocator()->Reset();
                 m_resources->GetCommandList()->Reset(m_resources->GetCommandAllocator(), m_pipeline->GetPipeline());
 
                 m_resources->GetCommandList()->SetGraphicsRootSignature(m_resources->GetRootLayout()->GetRootSignature());

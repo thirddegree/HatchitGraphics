@@ -14,6 +14,9 @@
 
 #include <ht_renderer.h>
 
+#include <ht_vkrenderer.h>
+#include <ht_d3d12renderer.h>
+
 namespace Hatchit {
 
     namespace Graphics {
@@ -48,6 +51,17 @@ namespace Hatchit {
                 }
                 flags >>= 1;
             }
+        }
+        IRenderer * IRenderer::FromType(RendererType type)
+        {
+            switch (type)
+            {
+            case RendererType::VULKAN:
+                return new Vulkan::VKRenderer;
+            case RendererType::DIRECTX12:
+                return new DX::D3D12Renderer;
+            }
+            return nullptr;
         }
     }
 }
