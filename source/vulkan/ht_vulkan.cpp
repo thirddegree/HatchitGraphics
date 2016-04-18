@@ -191,6 +191,12 @@ namespace Hatchit {
                 return true;
             }
 
+            void DeleteUniformBuffer(const VkDevice& device, UniformBlock_vk& uniformBlock)
+            {
+                vkDestroyBuffer(device, uniformBlock.buffer, nullptr);
+                vkFreeMemory(device, uniformBlock.memory, nullptr);
+            }
+
             void DeleteTexelBuffer(const VkDevice& device, TexelBlock_vk& texelBlock)
             {
                 vkDestroyBufferView(device, texelBlock.view, nullptr);

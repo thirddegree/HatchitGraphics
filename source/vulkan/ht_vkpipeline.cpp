@@ -33,8 +33,8 @@ namespace Hatchit {
 
             VKPipeline::~VKPipeline() 
             {
-                vkDestroyPipeline(m_device, m_pipeline, nullptr);
                 vkDestroyPipelineCache(m_device, m_pipelineCache, nullptr);
+                vkDestroyPipeline(m_device, m_pipeline, nullptr);
             }
 
             bool VKPipeline::Initialize(const std::string& fileName)
@@ -459,40 +459,83 @@ namespace Hatchit {
                 
 
                 //Vertex info state
-                VkVertexInputBindingDescription vertexBindingDescriptions[1] = {};
+                std::vector<VkVertexInputBindingDescription> vertexBindingDescriptions;
 
-                vertexBindingDescriptions[0] = {};
-                vertexBindingDescriptions[0].binding = 0;
-                vertexBindingDescriptions[0].stride = sizeof(Vertex);
-                vertexBindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+                VkVertexInputBindingDescription vertexInput = {};
+                vertexInput.binding = 0;
+                vertexInput.stride = sizeof(Vertex);
+                vertexInput.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-                VkVertexInputAttributeDescription vertexAttributeDescriptions[3] = {};
+                VkVertexInputBindingDescription instanceInput = {};
+                instanceInput.binding = 1;
+                instanceInput.stride = sizeof(float) * 16;
+                instanceInput.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
-                vertexAttributeDescriptions[0] = {};
-                vertexAttributeDescriptions[0].binding = 0;
-                vertexAttributeDescriptions[0].location = 0;
-                vertexAttributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-                vertexAttributeDescriptions[0].offset = 0;
+                vertexBindingDescriptions.push_back(vertexInput);
+                vertexBindingDescriptions.push_back(instanceInput);
 
-                vertexAttributeDescriptions[1] = {};
-                vertexAttributeDescriptions[1].binding = 0;
-                vertexAttributeDescriptions[1].location = 1;
-                vertexAttributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-                vertexAttributeDescriptions[1].offset = sizeof(float) * 3;
+                std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions;
 
-                vertexAttributeDescriptions[2] = {};
-                vertexAttributeDescriptions[2].binding = 0;
-                vertexAttributeDescriptions[2].location = 2;
-                vertexAttributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-                vertexAttributeDescriptions[2].offset = sizeof(float) * 6;
+                VkVertexInputAttributeDescription positionDescription = {};
+                positionDescription.binding = 0;
+                positionDescription.location = 0;
+                positionDescription.format = VK_FORMAT_R32G32B32_SFLOAT;
+                positionDescription.offset = 0;
+
+                VkVertexInputAttributeDescription normalDescription = {};
+                normalDescription.binding = 0;
+                normalDescription.location = 1;
+                normalDescription.format = VK_FORMAT_R32G32B32_SFLOAT;
+                normalDescription.offset = sizeof(float) * 3;
+
+                VkVertexInputAttributeDescription uvDescription = {};
+                uvDescription.binding = 0;
+                uvDescription.location = 2;
+                uvDescription.format = VK_FORMAT_R32G32_SFLOAT;
+                uvDescription.offset = sizeof(float) * 6;
+
+                VkVertexInputAttributeDescription modelMatrixRow1Description;
+                modelMatrixRow1Description.binding = 1;
+                modelMatrixRow1Description.location = 3;
+                modelMatrixRow1Description.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+                modelMatrixRow1Description.offset = 0;
+
+                VkVertexInputAttributeDescription modelMatrixRow2Description;
+                modelMatrixRow2Description.binding = 1;
+                modelMatrixRow2Description.location = 4;
+                modelMatrixRow2Description.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+                modelMatrixRow2Description.offset = sizeof(float) * 4;
+
+                VkVertexInputAttributeDescription modelMatrixRow3Description;
+                modelMatrixRow3Description.binding = 1;
+                modelMatrixRow3Description.location = 5;
+                modelMatrixRow3Description.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+                modelMatrixRow3Description.offset = sizeof(float) * 8;
+
+                VkVertexInputAttributeDescription modelMatrixRow4Description;
+                modelMatrixRow4Description.binding = 1;
+                modelMatrixRow4Description.location = 6;
+                modelMatrixRow4Description.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+                modelMatrixRow4Description.offset = sizeof(float) * 12;
+
+                vertexAttributeDescriptions.push_back(positionDescription);
+                vertexAttributeDescriptions.push_back(normalDescription);
+                vertexAttributeDescriptions.push_back(uvDescription);
+
+                vertexAttributeDescriptions.push_back(modelMatrixRow1Description);
+                vertexAttributeDescriptions.push_back(modelMatrixRow2Description);
+                vertexAttributeDescriptions.push_back(modelMatrixRow3Description);
+                vertexAttributeDescriptions.push_back(modelMatrixRow4Description);
 
                 VkPipelineVertexInputStateCreateInfo vertexInputState = {};
                 vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
                 vertexInputState.pNext = nullptr;
-                vertexInputState.vertexBindingDescriptionCount = 1;
-                vertexInputState.vertexAttributeDescriptionCount = 3;
-                vertexInputState.pVertexBindingDescriptions = vertexBindingDescriptions;
-                vertexInputState.pVertexAttributeDescriptions = vertexAttributeDescriptions;
+                vertexInputState.vertexBindingDescriptionCount = static_cast<uint32_t>(vertexBindingDescriptions.size());
+                vertexInputState.pVertexBindingDescriptions = vertexBindingDescriptions.data();
+                vertexInputState.vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributeDescriptions.size());
+                vertexInputState.pVertexAttributeDescriptions = vertexAttributeDescriptions.data();
+
+                
 
                 //Topology
                 VkPipelineInputAssemblyStateCreateInfo inputAssemblyState = {};

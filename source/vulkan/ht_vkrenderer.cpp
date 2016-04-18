@@ -166,9 +166,10 @@ namespace Hatchit {
 
                 m_material.Release();
                 m_texture.Release();
-                m_renderTarget.Release();
                 m_sampler.Release();
-
+                m_pipeline.Release();
+                m_meshHandle.Release();
+                m_renderPass.Release();
 
                 if (m_device != VK_NULL_HANDLE)
                 {
