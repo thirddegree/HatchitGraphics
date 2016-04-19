@@ -41,10 +41,14 @@ namespace Hatchit {
             {
                 m_width = 0;
                 m_height = 0;
+                m_clearColor = nullptr;
             }
 
             VKRenderTarget::~VKRenderTarget()
             {
+                if (m_clearColor != nullptr)
+                    delete m_clearColor;
+
                 vkFreeMemory(m_device, m_texture.image.memory, nullptr);
                 vkDestroyImage(m_device, m_texture.image.image, nullptr);
                 vkDestroyImageView(m_device, m_texture.image.view, nullptr);
@@ -60,6 +64,15 @@ namespace Hatchit {
                 m_height = handle->GetHeight();
 
                 std::string formatString = handle->GetFormat();
+
+                //Get clear color
+                std::vector<float> clearColor = handle->GetClearColor();
+                if (clearColor.size() > 0)
+                {
+                    m_clearColor = new VkClearValue;
+
+                    m_clearColor->color = {clearColor[0], clearColor[1], clearColor[2], clearColor[3]};
+                }
 
                 //Determine format bit from resource's string
                 if (formatString == "BGRA")
@@ -162,6 +175,7 @@ namespace Hatchit {
 
             const uint32_t& VKRenderTarget::GetWidth() const { return m_width; }
             const uint32_t& VKRenderTarget::GetHeight() const { return m_height; }
+            const VkClearValue* VKRenderTarget::GetClearColor() const { return m_clearColor; }
             
             bool VKRenderTarget::setupTargetTexture(VKRenderer* renderer) 
             {

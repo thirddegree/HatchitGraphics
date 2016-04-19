@@ -161,7 +161,16 @@ namespace Hatchit {
 
                 std::vector<VkClearValue> clearValues;
                 for (size_t i = 0; i < m_outputRenderTargets.size(); i++)
-                    clearValues.push_back(clearColor);
+                {
+                    VKRenderTargetHandle vkTarget= m_outputRenderTargets[i].DynamicCastHandle<VKRenderTarget>();
+
+                    const VkClearValue* targetClearColor = vkTarget->GetClearColor();
+                    //If a clear color is provided by the render target, lets use that
+                    if (targetClearColor == nullptr)
+                        clearValues.push_back(clearColor);
+                    else
+                        clearValues.push_back(*targetClearColor);
+                }
                 clearValues.push_back({1.0f, 0.0f});
 
                 VkRenderPassBeginInfo renderPassBeginInfo = {};
