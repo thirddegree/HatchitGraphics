@@ -38,7 +38,7 @@ namespace Hatchit {
             class HT_API VKRenderTarget : public Core::RefCounted<VKRenderTarget>, public IRenderTarget
             {
             public:
-                VKRenderTarget(std::string ID);
+                VKRenderTarget(Core::Guid ID);
                 ~VKRenderTarget();
 
                 //Required function from RefCounted classes

@@ -31,7 +31,7 @@ namespace Hatchit
             class HT_API D3D12RenderTarget : public Core::RefCounted<D3D12RenderTarget>, public IRenderTarget
             {
             public:
-                D3D12RenderTarget(std::string ID);
+                D3D12RenderTarget(Core::Guid ID);
 
                 bool Initialize(const std::string& fileName, D3D12DeviceResources* device);
 

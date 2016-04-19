@@ -26,7 +26,7 @@ namespace Hatchit
     {
         namespace DX
         {
-            D3D12Texture::D3D12Texture(std::string ID)
+            D3D12Texture::D3D12Texture(Core::Guid ID)
                 : Core::RefCounted<D3D12Texture>(std::move(ID))
             {
                 

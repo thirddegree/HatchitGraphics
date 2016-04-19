@@ -20,7 +20,7 @@ namespace Hatchit {
     namespace Graphics {
         namespace Vulkan {
         
-            VKMesh::VKMesh(std::string ID) :
+            VKMesh::VKMesh(Core::Guid ID) :
                 RefCounted<VKMesh>(std::move(ID))
             {}
 

@@ -21,7 +21,7 @@ namespace Hatchit
     {
         namespace DX
         {
-            D3D12RootLayout::D3D12RootLayout(std::string ID)
+            D3D12RootLayout::D3D12RootLayout(Core::Guid ID)
                 : Core::RefCounted<D3D12RootLayout>(std::move(ID))
             {
                 m_rootSignature = nullptr;

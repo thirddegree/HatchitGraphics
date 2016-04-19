@@ -20,7 +20,7 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            VKRootLayout::VKRootLayout(std::string ID) :
+            VKRootLayout::VKRootLayout(Core::Guid ID) :
                 Core::RefCounted<VKRootLayout>(std::move(ID))
             {
                 m_device = VK_NULL_HANDLE;

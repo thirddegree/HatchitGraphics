@@ -39,7 +39,7 @@ namespace Hatchit {
                 friend class VKRenderer;
                 friend class VKSwapchain;
             public:
-                VKShader(std::string ID);
+                VKShader(Core::Guid ID);
                 VKShader(VKShader&&) = default;
                 ~VKShader();
 

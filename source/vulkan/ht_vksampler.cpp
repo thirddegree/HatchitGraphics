@@ -25,7 +25,7 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKSampler::VKSampler(std::string ID) :
+            VKSampler::VKSampler(Core::Guid ID) :
                 RefCounted<VKSampler>(std::move(ID)),
                 m_device(VKRenderer::RendererInstance->GetVKDevice())
             {}

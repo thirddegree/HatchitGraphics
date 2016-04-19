@@ -36,7 +36,7 @@ namespace Hatchit {
             class HT_API VKMesh : public Core::RefCounted<VKMesh>, public IMesh
             {
             public:
-                VKMesh(std::string ID);
+                VKMesh(Core::Guid ID);
                 ~VKMesh();
 
                 bool Initialize(Hatchit::Resource::Mesh* mesh);
