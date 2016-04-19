@@ -46,6 +46,9 @@ namespace Hatchit {
                     HT_DEBUG_PRINTF("VKPipeline::VInitialize() ERROR: Handle was invalid");
                 }
 
+                setVertexLayout(handle->GetVertexLayout());
+                setInstanceLayout(handle->GetInstanceLayout());
+
                 setRasterState(handle->GetRasterizationState());
                 setMultisampleState(handle->GetMultisampleState());
 
@@ -308,6 +311,17 @@ namespace Hatchit {
                 Private Methods
             */
 
+
+            void VKPipeline::setVertexLayout(const std::vector<Resource::Pipeline::Attribute> vertexLayout) 
+            {
+                addAttributesToLayout(vertexLayout, m_vertexLayout, m_vertexLayoutStride);
+            }
+
+            void VKPipeline::setInstanceLayout(const std::vector<Resource::Pipeline::Attribute> instanceLayout) 
+            {
+                addAttributesToLayout(instanceLayout, m_vertexLayout, m_instanceLayoutStride);
+            }
+
             void VKPipeline::setRasterState(const Pipeline::RasterizerState& rasterState)
             {
                 VkPolygonMode polyMode;
@@ -463,77 +477,24 @@ namespace Hatchit {
 
                 VkVertexInputBindingDescription vertexInput = {};
                 vertexInput.binding = 0;
-                vertexInput.stride = sizeof(Vertex);
+                vertexInput.stride = m_vertexLayoutStride;
                 vertexInput.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
                 VkVertexInputBindingDescription instanceInput = {};
                 instanceInput.binding = 1;
-                instanceInput.stride = sizeof(float) * 16;
+                instanceInput.stride = m_instanceLayoutStride;
                 instanceInput.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
                 vertexBindingDescriptions.push_back(vertexInput);
                 vertexBindingDescriptions.push_back(instanceInput);
-
-                std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions;
-
-                VkVertexInputAttributeDescription positionDescription = {};
-                positionDescription.binding = 0;
-                positionDescription.location = 0;
-                positionDescription.format = VK_FORMAT_R32G32B32_SFLOAT;
-                positionDescription.offset = 0;
-
-                VkVertexInputAttributeDescription normalDescription = {};
-                normalDescription.binding = 0;
-                normalDescription.location = 1;
-                normalDescription.format = VK_FORMAT_R32G32B32_SFLOAT;
-                normalDescription.offset = sizeof(float) * 3;
-
-                VkVertexInputAttributeDescription uvDescription = {};
-                uvDescription.binding = 0;
-                uvDescription.location = 2;
-                uvDescription.format = VK_FORMAT_R32G32_SFLOAT;
-                uvDescription.offset = sizeof(float) * 6;
-
-                VkVertexInputAttributeDescription modelMatrixRow1Description;
-                modelMatrixRow1Description.binding = 1;
-                modelMatrixRow1Description.location = 3;
-                modelMatrixRow1Description.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-                modelMatrixRow1Description.offset = 0;
-
-                VkVertexInputAttributeDescription modelMatrixRow2Description;
-                modelMatrixRow2Description.binding = 1;
-                modelMatrixRow2Description.location = 4;
-                modelMatrixRow2Description.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-                modelMatrixRow2Description.offset = sizeof(float) * 4;
-
-                VkVertexInputAttributeDescription modelMatrixRow3Description;
-                modelMatrixRow3Description.binding = 1;
-                modelMatrixRow3Description.location = 5;
-                modelMatrixRow3Description.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-                modelMatrixRow3Description.offset = sizeof(float) * 8;
-
-                VkVertexInputAttributeDescription modelMatrixRow4Description;
-                modelMatrixRow4Description.binding = 1;
-                modelMatrixRow4Description.location = 6;
-                modelMatrixRow4Description.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-                modelMatrixRow4Description.offset = sizeof(float) * 12;
-
-                vertexAttributeDescriptions.push_back(positionDescription);
-                vertexAttributeDescriptions.push_back(normalDescription);
-                vertexAttributeDescriptions.push_back(uvDescription);
-
-                vertexAttributeDescriptions.push_back(modelMatrixRow1Description);
-                vertexAttributeDescriptions.push_back(modelMatrixRow2Description);
-                vertexAttributeDescriptions.push_back(modelMatrixRow3Description);
-                vertexAttributeDescriptions.push_back(modelMatrixRow4Description);
 
                 VkPipelineVertexInputStateCreateInfo vertexInputState = {};
                 vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
                 vertexInputState.pNext = nullptr;
                 vertexInputState.vertexBindingDescriptionCount = static_cast<uint32_t>(vertexBindingDescriptions.size());
                 vertexInputState.pVertexBindingDescriptions = vertexBindingDescriptions.data();
-                vertexInputState.vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributeDescriptions.size());
-                vertexInputState.pVertexAttributeDescriptions = vertexAttributeDescriptions.data();
+                vertexInputState.vertexAttributeDescriptionCount = static_cast<uint32_t>(m_vertexLayout.size());
+                vertexInputState.pVertexAttributeDescriptions = m_vertexLayout.data();
 
                 
 
@@ -630,6 +591,64 @@ namespace Hatchit {
                 return true;
             }
 
+            VkFormat VKPipeline::formatFromType(const Resource::ShaderVariable::Type& type) const
+            {
+                using namespace Resource;
+
+                switch(type)
+                {
+                case ShaderVariable::FLOAT2:
+                    return VK_FORMAT_R32G32_SFLOAT;
+                case ShaderVariable::FLOAT3:
+                    return VK_FORMAT_R32G32B32_SFLOAT;
+                case ShaderVariable::FLOAT4:
+                    return VK_FORMAT_R32G32B32A32_SFLOAT;
+                case ShaderVariable::MAT4:
+                    return VK_FORMAT_R32G32B32A32_SFLOAT;
+                }
+
+                HT_ERROR_PRINTF("VKPipeline::formatFromType(): Unhandled type passed");
+                return VK_FORMAT_UNDEFINED;
+            }
+
+            void VKPipeline::addAttributesToLayout(const std::vector<Resource::Pipeline::Attribute>& attributes, std::vector<VkVertexInputAttributeDescription>& vkAttributes, uint32_t& outStride)
+            {
+                size_t offset = 0;
+
+                for (size_t i = 0; i < attributes.size(); i++)
+                {
+                    Resource::Pipeline::Attribute attribute = attributes[i];
+
+                    Resource::ShaderVariable::Type type = attribute.type;
+
+                    uint32_t iterations = 1;
+
+                    //We have to have a different attribute for each row of the matrix
+                    if (type == ShaderVariable::MAT4)
+                        iterations = 4;
+
+                    //Get size of this attribute from its type
+                    size_t size = Resource::ShaderVariable::SizeFromType(attribute.type);
+
+                    //Get the matching VKFormat for this type
+                    VkFormat format = formatFromType(type);
+
+                    for (uint32_t j = 0; j < iterations; j++)
+                    {
+                        VkVertexInputAttributeDescription vkAttribute = {};
+                        vkAttribute.binding = attribute.slot;
+                        vkAttribute.location = attribute.semanticIndex + j;
+                        vkAttribute.offset = static_cast<uint32_t>(offset);
+                        vkAttribute.format = format;
+
+                        vkAttributes.push_back(vkAttribute);
+
+                        offset += size / iterations;
+                    }
+                }
+
+                outStride = static_cast<uint32_t>(offset);
+            }
         }
     }
 }

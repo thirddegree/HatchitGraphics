@@ -74,6 +74,11 @@ namespace Hatchit {
                 const VkDevice& m_device;
                 VKRenderPassHandle m_renderPass;
 
+                std::vector<VkVertexInputAttributeDescription> m_vertexLayout;
+
+                uint32_t m_vertexLayoutStride;
+                uint32_t m_instanceLayoutStride;
+
                 VkPipelineRasterizationStateCreateInfo m_rasterizationState;
                 VkPipelineMultisampleStateCreateInfo m_multisampleState;
                 std::vector<VkPipelineShaderStageCreateInfo> m_shaderStages;
@@ -89,6 +94,16 @@ namespace Hatchit {
                 std::vector<float>  m_matrixPushData;
 
             private:
+                /* Set the vertex layout
+                * \param vertexLayout A vector of all of the vertex attributes in this layout
+                */
+                void setVertexLayout(const std::vector<Resource::Pipeline::Attribute> vertexLayout);
+
+                /* Set the instance layout
+                * \param instanceLayout A vector of all of the instance attributes in this layout
+                */
+                void setInstanceLayout(const std::vector<Resource::Pipeline::Attribute> instanceLayout);
+
                 /* Set the rasterization state for this pipeline
                 * \param rasterState A struct containing rasterization options
                 */
@@ -106,6 +121,10 @@ namespace Hatchit {
                 void loadShader(Hatchit::Resource::Pipeline::ShaderSlot shaderSlot, IShaderHandle shader);
 
                 bool preparePipeline();
+
+                VkFormat formatFromType(const Resource::ShaderVariable::Type& type) const;
+
+                void addAttributesToLayout(const std::vector<Resource::Pipeline::Attribute>& attributes, std::vector<VkVertexInputAttributeDescription>& vkAttributes, uint32_t& outStride);
             };
 
             using VKPipelineHandle = Core::Handle<VKPipeline>;
