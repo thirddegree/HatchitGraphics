@@ -114,6 +114,8 @@ namespace Hatchit {
 
                 static float angle = 0.0f;
                 angle += dt;
+                if (angle > 360.0f)
+                    angle = 0.0f;
                 m_constantBufferData.proj = Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f);
                 m_constantBufferData.view = Math::MMMatrixLookAt(Math::Vector3(0.0f, 0.0f, -5.0f),
                     Math::Vector3(0.0f, 0.0f, 1.0f),
@@ -128,6 +130,7 @@ namespace Hatchit {
                 m_cBuffer->Fill(reinterpret_cast<void**>(&m_constantBufferData), sizeof(m_constantBufferData), sizeof(ConstantBuffer),
                     m_resources->GetCurrentFrameIndex());
 
+                m_resources->GetCommandAllocator()->Reset();
                 m_resources->GetCommandList()->Reset(m_resources->GetCommandAllocator(), m_pipeline->GetPipeline());
 
                 m_resources->GetCommandList()->SetGraphicsRootSignature(m_resources->GetRootLayout()->GetRootSignature());
