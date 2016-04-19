@@ -60,7 +60,7 @@ namespace Hatchit {
                 D3D12_RASTERIZER_DESC   RasterDescFromHandle(const Resource::PipelineHandle& handle);
                 D3D12_SHADER_BYTECODE   ShaderBytecodeFromHandle(Resource::Pipeline::ShaderSlot slot, const Resource::PipelineHandle& handle);
                 D3D12_INPUT_LAYOUT_DESC InputLayoutDescFromHandle(const Resource::PipelineHandle& handle);
-                DXGI_FORMAT             InputFormatFromElement(const Resource::Pipeline::InputElement& element);
+                DXGI_FORMAT             InputFormatFromElement(const Resource::ShaderVariable::Type& element);
             };
             using D3D12PipelineHandle = Core::Handle<D3D12Pipeline>;
         }

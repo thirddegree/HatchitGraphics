@@ -166,9 +166,10 @@ namespace Hatchit {
 
                 m_material.Release();
                 m_texture.Release();
-                m_renderTarget.Release();
                 m_sampler.Release();
-
+                m_pipeline.Release();
+                m_meshHandle.Release();
+                m_renderPass.Release();
 
                 if (m_device != VK_NULL_HANDLE)
                 {
@@ -252,39 +253,44 @@ namespace Hatchit {
             void VKRenderer::VRender(float dt) 
             {
                 //TODO: Remove this
-                Math::Matrix4 view = Math::MMMatrixTranspose(Math::MMMatrixLookAt(Math::Vector3(0, 0, -5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0)));
+                Math::Matrix4 view = Math::MMMatrixTranspose(Math::MMMatrixLookAt(Math::Vector3(0, 10, -25), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0)));
                 Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 100.0f));
 
                 m_renderPass->VSetView(view);
                 m_renderPass->VSetProj(proj);
 
-                //Example code for rotation
                 Math::Matrix4 scale = Math::MMMatrixScale(Math::Vector3(1.0f, 1.0f, 1.0f));
                 Math::Matrix4 rot = Math::MMMatrixRotationXYZ(Math::Vector3(0, m_angle += dt, 0));
 
-                Math::Matrix4 trans1 = Math::MMMatrixTranslation(Math::Vector3(-3.0f, 0, 3.0f));
-                Math::Matrix4 trans2 = Math::MMMatrixTranslation(Math::Vector3(0, 0, 3.0f));
-                Math::Matrix4 trans3 = Math::MMMatrixTranslation(Math::Vector3(3.0f, 0, 3.0f));
+                //Make a shit ton of Raptors
+                size_t xCount = 10;
+                size_t zCount = 10;
 
-                Math::Matrix4 mat1 = MMMatrixTranspose(trans1 * scale * rot);
-                Math::Matrix4 mat2 = MMMatrixTranspose(trans2 * scale * rot);
-                Math::Matrix4 mat3 = MMMatrixTranspose(trans3 * scale * rot);
+                float startingX = (xCount * 0.5f) * -3.0f;
+                float startingZ = (zCount * 0.5f) * -3.0f;
 
-                std::vector<Resource::ShaderVariable*> instanceVars1;
-                instanceVars1.push_back(new Resource::Matrix4Variable(mat1));
+                //so we can clean up
+                std::vector<std::vector<Resource::ShaderVariable*>> allInstanceVars;
 
-                std::vector<Resource::ShaderVariable*> instanceVars2;
-                instanceVars2.push_back(new Resource::Matrix4Variable(mat2));
+                for (size_t x = 0; x < xCount; x++)
+                {
+                    for (size_t z = 0; z < zCount; z++)
+                    {
+                        float xPos = startingX + (x * 3.0f);
+                        float zPos = startingZ + (z * 3.0f);
 
-                std::vector<Resource::ShaderVariable*> instanceVars3;
-                instanceVars3.push_back(new Resource::Matrix4Variable(mat3));
+                        Math::Matrix4 translation = Math::MMMatrixTranslation(Math::Vector3(xPos, 0, zPos));
 
-                m_material->VSetMatrix4("object.model", mat1);
-                m_material->VUpdate();
+                        Math::Matrix4 modelMatrix = MMMatrixTranspose(translation * scale * rot);
 
-                m_renderPass->VScheduleRenderRequest(m_material, m_meshHandle, instanceVars1);
-                m_renderPass->VScheduleRenderRequest(m_material, m_meshHandle, instanceVars2);
-                m_renderPass->VScheduleRenderRequest(m_material, m_meshHandle, instanceVars3);
+                        std::vector<Resource::ShaderVariable*> instanceVars;
+                        instanceVars.push_back(new Resource::Matrix4Variable(modelMatrix));
+
+                        allInstanceVars.push_back(instanceVars);
+
+                        m_renderPass->VScheduleRenderRequest(m_material, m_meshHandle, instanceVars);
+                    }
+                }
 
                 //TODO: Determine which physical device and thread are best to render with
 
@@ -319,11 +325,11 @@ namespace Hatchit {
                 assert(success);
 
                 //TODO: remove
-                for (size_t i = 0; i < instanceVars1.size(); i++)
+                for (size_t i = 0; i < allInstanceVars.size(); i++)
                 {
-                    delete instanceVars1[i];
-                    delete instanceVars2[i];
-                    delete instanceVars3[i];
+                    std::vector<ShaderVariable*> instanceVars = allInstanceVars[i];
+                    for (size_t j = 0; j < instanceVars.size(); j++)
+                        delete instanceVars[j];
                 }
             }
 

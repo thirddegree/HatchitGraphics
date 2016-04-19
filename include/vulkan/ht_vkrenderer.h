@@ -144,7 +144,6 @@ namespace Hatchit {
 
                 //Resources we want loaded elsewhere
                 VKRootLayoutHandle m_rootLayout;
-                IRenderTargetHandle m_renderTarget;
                 IMaterialHandle m_material;
                 TextureHandle m_texture;
                 ISamplerHandle m_sampler;

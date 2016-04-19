@@ -33,8 +33,8 @@ namespace Hatchit {
 
             VKPipeline::~VKPipeline() 
             {
-                vkDestroyPipeline(m_device, m_pipeline, nullptr);
                 vkDestroyPipelineCache(m_device, m_pipelineCache, nullptr);
+                vkDestroyPipeline(m_device, m_pipeline, nullptr);
             }
 
             bool VKPipeline::Initialize(const std::string& fileName)
@@ -45,6 +45,9 @@ namespace Hatchit {
                     return false;
                     HT_DEBUG_PRINTF("VKPipeline::VInitialize() ERROR: Handle was invalid");
                 }
+
+                setVertexLayout(handle->GetVertexLayout());
+                setInstanceLayout(handle->GetInstanceLayout());
 
                 setRasterState(handle->GetRasterizationState());
                 setMultisampleState(handle->GetMultisampleState());
@@ -308,6 +311,17 @@ namespace Hatchit {
                 Private Methods
             */
 
+
+            void VKPipeline::setVertexLayout(const std::vector<Resource::Pipeline::Attribute> vertexLayout) 
+            {
+                addAttributesToLayout(vertexLayout, m_vertexLayout, m_vertexLayoutStride);
+            }
+
+            void VKPipeline::setInstanceLayout(const std::vector<Resource::Pipeline::Attribute> instanceLayout) 
+            {
+                addAttributesToLayout(instanceLayout, m_vertexLayout, m_instanceLayoutStride);
+            }
+
             void VKPipeline::setRasterState(const Pipeline::RasterizerState& rasterState)
             {
                 VkPolygonMode polyMode;
@@ -459,40 +473,30 @@ namespace Hatchit {
                 
 
                 //Vertex info state
-                VkVertexInputBindingDescription vertexBindingDescriptions[1] = {};
+                std::vector<VkVertexInputBindingDescription> vertexBindingDescriptions;
 
-                vertexBindingDescriptions[0] = {};
-                vertexBindingDescriptions[0].binding = 0;
-                vertexBindingDescriptions[0].stride = sizeof(Vertex);
-                vertexBindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+                VkVertexInputBindingDescription vertexInput = {};
+                vertexInput.binding = 0;
+                vertexInput.stride = m_vertexLayoutStride;
+                vertexInput.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-                VkVertexInputAttributeDescription vertexAttributeDescriptions[3] = {};
+                VkVertexInputBindingDescription instanceInput = {};
+                instanceInput.binding = 1;
+                instanceInput.stride = m_instanceLayoutStride;
+                instanceInput.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
-                vertexAttributeDescriptions[0] = {};
-                vertexAttributeDescriptions[0].binding = 0;
-                vertexAttributeDescriptions[0].location = 0;
-                vertexAttributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-                vertexAttributeDescriptions[0].offset = 0;
-
-                vertexAttributeDescriptions[1] = {};
-                vertexAttributeDescriptions[1].binding = 0;
-                vertexAttributeDescriptions[1].location = 1;
-                vertexAttributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-                vertexAttributeDescriptions[1].offset = sizeof(float) * 3;
-
-                vertexAttributeDescriptions[2] = {};
-                vertexAttributeDescriptions[2].binding = 0;
-                vertexAttributeDescriptions[2].location = 2;
-                vertexAttributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-                vertexAttributeDescriptions[2].offset = sizeof(float) * 6;
+                vertexBindingDescriptions.push_back(vertexInput);
+                vertexBindingDescriptions.push_back(instanceInput);
 
                 VkPipelineVertexInputStateCreateInfo vertexInputState = {};
                 vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
                 vertexInputState.pNext = nullptr;
-                vertexInputState.vertexBindingDescriptionCount = 1;
-                vertexInputState.vertexAttributeDescriptionCount = 3;
-                vertexInputState.pVertexBindingDescriptions = vertexBindingDescriptions;
-                vertexInputState.pVertexAttributeDescriptions = vertexAttributeDescriptions;
+                vertexInputState.vertexBindingDescriptionCount = static_cast<uint32_t>(vertexBindingDescriptions.size());
+                vertexInputState.pVertexBindingDescriptions = vertexBindingDescriptions.data();
+                vertexInputState.vertexAttributeDescriptionCount = static_cast<uint32_t>(m_vertexLayout.size());
+                vertexInputState.pVertexAttributeDescriptions = m_vertexLayout.data();
+
+                
 
                 //Topology
                 VkPipelineInputAssemblyStateCreateInfo inputAssemblyState = {};
@@ -587,6 +591,64 @@ namespace Hatchit {
                 return true;
             }
 
+            VkFormat VKPipeline::formatFromType(const Resource::ShaderVariable::Type& type) const
+            {
+                using namespace Resource;
+
+                switch(type)
+                {
+                case ShaderVariable::FLOAT2:
+                    return VK_FORMAT_R32G32_SFLOAT;
+                case ShaderVariable::FLOAT3:
+                    return VK_FORMAT_R32G32B32_SFLOAT;
+                case ShaderVariable::FLOAT4:
+                    return VK_FORMAT_R32G32B32A32_SFLOAT;
+                case ShaderVariable::MAT4:
+                    return VK_FORMAT_R32G32B32A32_SFLOAT;
+                }
+
+                HT_ERROR_PRINTF("VKPipeline::formatFromType(): Unhandled type passed");
+                return VK_FORMAT_UNDEFINED;
+            }
+
+            void VKPipeline::addAttributesToLayout(const std::vector<Resource::Pipeline::Attribute>& attributes, std::vector<VkVertexInputAttributeDescription>& vkAttributes, uint32_t& outStride)
+            {
+                size_t offset = 0;
+
+                for (size_t i = 0; i < attributes.size(); i++)
+                {
+                    Resource::Pipeline::Attribute attribute = attributes[i];
+
+                    Resource::ShaderVariable::Type type = attribute.type;
+
+                    uint32_t iterations = 1;
+
+                    //We have to have a different attribute for each row of the matrix
+                    if (type == ShaderVariable::MAT4)
+                        iterations = 4;
+
+                    //Get size of this attribute from its type
+                    size_t size = Resource::ShaderVariable::SizeFromType(attribute.type);
+
+                    //Get the matching VKFormat for this type
+                    VkFormat format = formatFromType(type);
+
+                    for (uint32_t j = 0; j < iterations; j++)
+                    {
+                        VkVertexInputAttributeDescription vkAttribute = {};
+                        vkAttribute.binding = attribute.slot;
+                        vkAttribute.location = attribute.semanticIndex + j;
+                        vkAttribute.offset = static_cast<uint32_t>(offset);
+                        vkAttribute.format = format;
+
+                        vkAttributes.push_back(vkAttribute);
+
+                        offset += size / iterations;
+                    }
+                }
+
+                outStride = static_cast<uint32_t>(offset);
+            }
         }
     }
 }

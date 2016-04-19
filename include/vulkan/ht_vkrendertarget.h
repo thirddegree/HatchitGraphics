@@ -49,14 +49,17 @@ namespace Hatchit {
 
                 bool Blit(VkCommandBuffer commandBuffer, const Image_vk& image);
 
-                const VkFormat&         GetVKColorFormat() const;
-                const Texture_vk&          GetVKTexture() const;
+                const VkFormat&     GetVKColorFormat() const;
+                const Texture_vk&   GetVKTexture() const;
 
                 const uint32_t& GetWidth() const;
                 const uint32_t& GetHeight() const;
+                const VkClearValue* GetClearColor() const;
 
             protected:
                 const VkDevice& m_device;
+
+                VkClearValue* m_clearColor;
 
                 VkFormat m_colorFormat;
                 Texture_vk m_texture;

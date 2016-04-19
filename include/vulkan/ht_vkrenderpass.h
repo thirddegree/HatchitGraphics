@@ -61,8 +61,6 @@ namespace Hatchit {
 
                 bool allocateCommandBuffer();
 
-                bool buildInstanceTextureSets();
-
                 const VkDevice& m_device;
                 const VkCommandPool& m_commandPool;
                 const VkDescriptorPool& m_descriptorPool;
@@ -71,8 +69,7 @@ namespace Hatchit {
                 VkCommandBuffer m_commandBuffer;
 
                 //For instance data
-                TexelBlock_vk m_texelBuffer;
-                std::vector<VkDescriptorSet> m_instanceDescriptorSets;
+                UniformBlock_vk m_instanceBlock;
 
                 std::vector<Image_vk> m_colorImages;
                 Image_vk m_depthImage;

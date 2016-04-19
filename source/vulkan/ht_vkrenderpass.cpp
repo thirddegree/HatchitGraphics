@@ -42,9 +42,8 @@ namespace Hatchit {
                 m_currentInstanceDataOffset = 0;
                 m_instanceChunkSize = 0;
 
-                m_texelBuffer.buffer = VK_NULL_HANDLE;
-                m_texelBuffer.view = VK_NULL_HANDLE;
-                m_texelBuffer.memory = VK_NULL_HANDLE;
+                m_instanceBlock.buffer = VK_NULL_HANDLE;
+                m_instanceBlock.memory = VK_NULL_HANDLE;
 
                 m_commandBuffer = VK_NULL_HANDLE;
             }
@@ -70,11 +69,8 @@ namespace Hatchit {
                 vkFreeMemory(m_device, m_depthImage.memory, nullptr);
                 
                 //Free instance texel buffers
-                if(m_texelBuffer.buffer != VK_NULL_HANDLE)
-                    DeleteTexelBuffer(m_device, m_texelBuffer);
-
-                //Destroy instance descriptor sets
-                vkFreeDescriptorSets(m_device, m_descriptorPool, static_cast<uint32_t>(m_instanceDescriptorSets.size()), m_instanceDescriptorSets.data());
+                if(m_instanceBlock.buffer != VK_NULL_HANDLE)
+                    DeleteUniformBuffer(m_device, m_instanceBlock);
 
                 //Destroy framebuffer
                 vkDestroyFramebuffer(m_device, m_framebuffer, nullptr);
@@ -130,12 +126,15 @@ namespace Hatchit {
                 if (!allocateCommandBuffer())
                     return false;
 
+                if (m_instanceBlock.buffer != VK_NULL_HANDLE)
+                    DeleteUniformBuffer(m_device, m_instanceBlock);
+
+                //Create block of data for instance variables
+                if (!CreateUniformBuffer(m_device, m_instanceDataSize, m_instanceData, &m_instanceBlock))
+                    return false;
+
                 //Setup the order of the commands we will issue in the command list
                 BuildRenderRequestHeirarchy();
-
-                //Build textures of instance data
-                if (!buildInstanceTextureSets())
-                    return false;
 
                 VkResult err;
 
@@ -162,7 +161,16 @@ namespace Hatchit {
 
                 std::vector<VkClearValue> clearValues;
                 for (size_t i = 0; i < m_outputRenderTargets.size(); i++)
-                    clearValues.push_back(clearColor);
+                {
+                    VKRenderTargetHandle vkTarget= m_outputRenderTargets[i].DynamicCastHandle<VKRenderTarget>();
+
+                    const VkClearValue* targetClearColor = vkTarget->GetClearColor();
+                    //If a clear color is provided by the render target, lets use that
+                    if (targetClearColor == nullptr)
+                        clearValues.push_back(clearColor);
+                    else
+                        clearValues.push_back(*targetClearColor);
+                }
                 clearValues.push_back({1.0f, 0.0f});
 
                 VkRenderPassBeginInfo renderPassBeginInfo = {};
@@ -240,9 +248,8 @@ namespace Hatchit {
                         vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                             vkPipelineLayout, 0, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, nullptr);
                     
-                        //Bind instance texel buffer
-                        vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, 
-                            vkPipelineLayout, 3, 1, &m_instanceDescriptorSets[i], 0, nullptr);
+                        //Bind instance buffer
+                        vkCmdBindVertexBuffers(m_commandBuffer, 1, 1, &m_instanceBlock.buffer, offsets);
 
                         UniformBlock_vk vertBlock = mesh->GetVertexBlock();
                         UniformBlock_vk indexBlock = mesh->GetIndexBlock();
@@ -250,6 +257,7 @@ namespace Hatchit {
 
                         vkCmdBindVertexBuffers(m_commandBuffer, 0, 1, &vertBlock.buffer, offsets);
                         vkCmdBindIndexBuffer(m_commandBuffer, indexBlock.buffer, 0, VK_INDEX_TYPE_UINT32);
+                        
                         vkCmdDrawIndexed(m_commandBuffer, indexCount, count, 0, 0, 0);
                     }
                 }
@@ -613,44 +621,6 @@ namespace Hatchit {
                     HT_DEBUG_PRINTF("VKRenderer::prepareDescriptorLayout(): Failed to allocate command buffer\n");
                     return false;
                 }
-
-                return true;
-            }
-
-            bool VKRenderPass::buildInstanceTextureSets()
-            {
-                CreateTexelBuffer(m_device, m_instanceDataSize, m_instanceData, &m_texelBuffer);
-
-                //TODO: De-hardcode this
-                VkDescriptorSetLayout instanceSetLayout = VKRenderer::RendererInstance->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts()[3];
-
-                if (m_instanceDescriptorSets.size() == 0)
-                {
-                    VkDescriptorSetAllocateInfo allocateInfo = {};
-                    allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-                    allocateInfo.pNext = 0;
-                    allocateInfo.descriptorPool = m_descriptorPool;
-                    allocateInfo.descriptorSetCount = 1;
-                    allocateInfo.pSetLayouts = &instanceSetLayout;
-
-                    m_instanceDescriptorSets.resize(1);
-                    vkAllocateDescriptorSets(m_device, &allocateInfo, m_instanceDescriptorSets.data());
-                }
-
-                std::vector<VkWriteDescriptorSet> descSetWrites = {};
-                uint32_t binding = 0;
-
-                VkWriteDescriptorSet texelFSWrite = {};
-                texelFSWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                texelFSWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
-                texelFSWrite.dstSet = m_instanceDescriptorSets[0];
-                texelFSWrite.dstBinding = binding;
-                texelFSWrite.descriptorCount = 1;
-                texelFSWrite.pTexelBufferView = &m_texelBuffer.view;
-
-                descSetWrites.push_back(texelFSWrite);
-                
-                vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(descSetWrites.size()), descSetWrites.data(), 0, nullptr);
 
                 return true;
             }

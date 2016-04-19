@@ -352,6 +352,7 @@ namespace Hatchit {
                     //Draw fullscreen Tri; geometry created in shader
                     VkDeviceSize offsets = { 0 };
                     vkCmdBindVertexBuffers(commandBuffer, 0, 1, &m_vertexBuffer.buffer, &offsets);
+                    vkCmdBindVertexBuffers(commandBuffer, 1, 1, &m_vertexBuffer.buffer, &offsets);
                     vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
                     vkCmdEndRenderPass(commandBuffer);
@@ -1147,6 +1148,8 @@ namespace Hatchit {
                 vkDestroyBuffer(m_device, m_vertexBuffer.buffer, nullptr);
 
                 vkFreeDescriptorSets(m_device, renderer->GetVKDescriptorPool(), 1, &m_descriptorSet);
+
+                m_pipeline.Release();
             }
             void VKSwapchain::destroyDepth()
             {

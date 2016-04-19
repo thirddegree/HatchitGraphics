@@ -48,14 +48,14 @@ namespace Hatchit {
 
                 /*Build Input Layout*/
                 std::vector<D3D12_INPUT_ELEMENT_DESC> _elements;
-                const Resource::Pipeline::InputLayout& _layout = handle->GetInputLayout();
-                for (int i = 0; i < _layout.elements.size(); i++)
+                const std::vector<Resource::Pipeline::Attribute>& _vertexAttributes = handle->GetVertexLayout();
+                for (int i = 0; i < _vertexAttributes.size(); i++)
                 {
                     D3D12_INPUT_ELEMENT_DESC elementDesc;
-                    elementDesc.SemanticName = _layout.elements[i].semanticName.c_str();
-                    elementDesc.SemanticIndex = _layout.elements[i].semanticIndex;
-                    elementDesc.InputSlot = _layout.elements[i].slot;
-                    elementDesc.Format = InputFormatFromElement(_layout.elements[i]);
+                    elementDesc.SemanticName = _vertexAttributes[i].semanticName.c_str();
+                    elementDesc.SemanticIndex = _vertexAttributes[i].semanticIndex;
+                    elementDesc.InputSlot = _vertexAttributes[i].slot;
+                    elementDesc.Format = InputFormatFromElement(_vertexAttributes[i].type);
                     elementDesc.AlignedByteOffset = (i == 0) ? 0 : D3D12_APPEND_ALIGNED_ELEMENT;
                     elementDesc.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
                     elementDesc.InstanceDataStepRate = 0;
@@ -208,16 +208,16 @@ namespace Hatchit {
             D3D12_INPUT_LAYOUT_DESC D3D12Pipeline::InputLayoutDescFromHandle(const Resource::PipelineHandle& handle)
             {
                 std::vector<D3D12_INPUT_ELEMENT_DESC> _elements;
-                const Resource::Pipeline::InputLayout& _layout = handle->GetInputLayout();
-                for (int i = 0; i < _layout.elements.size(); i++)
+                const std::vector<Resource::Pipeline::Attribute>& _vertexAttributes = handle->GetVertexLayout();
+                for (int i = 0; i < _vertexAttributes.size(); i++)
                 {
-                    Resource::Pipeline::InputElement element = _layout.elements[i];
+                    Resource::Pipeline::Attribute element = _vertexAttributes[i];
 
                     D3D12_INPUT_ELEMENT_DESC elementDesc;
                     elementDesc.SemanticName = element.semanticName.c_str();
                     elementDesc.SemanticIndex = element.semanticIndex;
                     elementDesc.InputSlot = element.slot;
-                    elementDesc.Format = InputFormatFromElement(element);
+                    elementDesc.Format = InputFormatFromElement(element.type);
                     elementDesc.AlignedByteOffset = (i == 0) ? 0 : D3D12_APPEND_ALIGNED_ELEMENT;
                     elementDesc.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
                     elementDesc.InstanceDataStepRate = 0;
@@ -230,16 +230,16 @@ namespace Hatchit {
                 return D3D12_INPUT_LAYOUT_DESC();
             }
 
-            DXGI_FORMAT D3D12Pipeline::InputFormatFromElement(const Resource::Pipeline::InputElement& element)
+            DXGI_FORMAT D3D12Pipeline::InputFormatFromElement(const Resource::ShaderVariable::Type& element)
             {
-                switch (element.format)
+                switch (element)
                 {
-                case Resource::Pipeline::InputElement::Format::R32G32B32_FLOAT:
-                    return DXGI_FORMAT_R32G32B32_FLOAT;
-                case Resource::Pipeline::InputElement::Format::R32G32B32A32_FLOAT:
-                    return DXGI_FORMAT_R32G32B32A32_FLOAT;
-                case Resource::Pipeline::InputElement::Format::R32G32_FLOAT:
+                case Resource::ShaderVariable::Type::FLOAT2:
                     return DXGI_FORMAT_R32G32_FLOAT;
+                case Resource::ShaderVariable::Type::FLOAT3:
+                    return DXGI_FORMAT_R32G32B32_FLOAT;
+                case Resource::ShaderVariable::Type::FLOAT4:
+                    return DXGI_FORMAT_R32G32B32A32_FLOAT;
                 default:
                     return DXGI_FORMAT_UNKNOWN;
                 }
