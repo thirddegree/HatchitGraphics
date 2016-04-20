@@ -65,6 +65,7 @@ namespace Hatchit {
 
                     vertexBuffer.push_back(vertex);
                 }
+
                 size_t vertexBufferSize = vertexBuffer.size() * sizeof(Vertex);
 
                 //Generate Index buffer 

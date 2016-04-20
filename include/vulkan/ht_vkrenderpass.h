@@ -27,6 +27,7 @@
 #include <ht_renderpass.h>
 #include <ht_vulkan.h>
 #include <ht_vktexture.h>
+#include <ht_vkrendertarget.h>
 
 namespace Hatchit {
 
@@ -55,11 +56,17 @@ namespace Hatchit {
                 const std::vector<IRenderTargetHandle>& GetOutputRenderTargets() const;
 
             private:
+                //Input
+                uint32_t m_firstInputTargetSetIndex;
+                std::vector<VkDescriptorSet> m_inputTargetDescriptorSets;
+
                 bool setupRenderPass();
                 bool setupAttachmentImages();
                 bool setupFramebuffer();
 
                 bool allocateCommandBuffer();
+                //Mapping set index to maps of binding indicies and render targets
+                bool setupDescriptorSets(std::map < uint32_t, std::map < uint32_t, VKRenderTargetHandle >> inputTargets);
 
                 const VkDevice& m_device;
                 const VkCommandPool& m_commandPool;

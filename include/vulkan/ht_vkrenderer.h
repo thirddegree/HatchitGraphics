@@ -151,6 +151,11 @@ namespace Hatchit {
                 IMeshHandle m_meshHandle;
                 VKRenderPassHandle m_renderPass;
 
+                VKRenderPassHandle m_lightingPass;
+                IPipelineHandle m_pointLightingPipeline;
+                IMaterialHandle m_pointLightMaterial;
+                IMeshHandle m_pointLightMeshHandle;
+
                 float m_angle = 0;
 
                 //Vulkan Callbacks

@@ -219,7 +219,7 @@ namespace Hatchit {
                 VkDescriptorSetAllocateInfo allocInfo = {};
                 allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
                 allocInfo.descriptorPool = renderer->GetVKDescriptorPool();
-                allocInfo.pSetLayouts = &descriptorSetLayouts[2];
+                allocInfo.pSetLayouts = &descriptorSetLayouts[1];
                 allocInfo.descriptorSetCount = 1;
 
                 err = vkAllocateDescriptorSets(m_device, &allocInfo, &m_descriptorSet);
@@ -346,7 +346,7 @@ namespace Hatchit {
                     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
                     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-                        2, 1, &m_descriptorSet, 0, nullptr);
+                        1, 1, &m_descriptorSet, 0, nullptr);
                     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline->GetVKPipeline());
 
                     //Draw fullscreen Tri; geometry created in shader
@@ -467,7 +467,7 @@ namespace Hatchit {
             void VKSwapchain::VKSetIncomingRenderPass(VKRenderPassHandle renderPass)
             {
                 std::vector<IRenderTargetHandle> incomingRenderTargets = renderPass->GetOutputRenderTargets();
-                for (size_t i = 0; i < 3; i++)
+                for (size_t i = 0; i < incomingRenderTargets.size(); i++)
                 {
                     VKRenderTargetHandle vkRenderTarget = incomingRenderTargets[i].DynamicCastHandle<VKRenderTarget>();
                     m_inputTextures.push_back(vkRenderTarget->GetVKTexture());
