@@ -99,8 +99,6 @@ namespace Hatchit {
             size_t m_currentInstanceDataOffset;
             size_t m_instanceChunkSize;
 
-            std::vector<IRenderTargetHandle> m_inputRenderTargets;
-
             //Output
             std::vector<IRenderTargetHandle> m_outputRenderTargets;
 

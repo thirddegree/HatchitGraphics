@@ -298,13 +298,16 @@ namespace Hatchit {
                 return true;
             }
 
-            VkPipeline                          VKPipeline::GetVKPipeline() { return m_pipeline; }
+            VkPipeline VKPipeline::GetVKPipeline() { return m_pipeline; }
 
             void VKPipeline::SendPushConstants(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout)
             {
                 //Send a push for each type of data to send; vectors, matricies, ints etc.
-                uint32_t dataSize = static_cast<uint32_t>(m_matrixPushData.size() * sizeof(float));
-                vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, dataSize, m_matrixPushData.data());
+                uint32_t matrixDataSize = static_cast<uint32_t>(m_matrixPushData.size() * sizeof(float));
+                vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, matrixDataSize, m_matrixPushData.data());
+
+                uint32_t intDataSize = static_cast<uint32_t>(m_intPushData.size() * sizeof(uint32_t));
+                vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, matrixDataSize, intDataSize, m_intPushData.data());
             }
 
             /*
@@ -597,6 +600,8 @@ namespace Hatchit {
 
                 switch(type)
                 {
+                case ShaderVariable::FLOAT:
+                    return VK_FORMAT_R32_SFLOAT;
                 case ShaderVariable::FLOAT2:
                     return VK_FORMAT_R32G32_SFLOAT;
                 case ShaderVariable::FLOAT3:

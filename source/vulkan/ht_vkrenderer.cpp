@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -115,33 +115,34 @@ namespace Hatchit {
                 m_rootLayout = VKRootLayout::GetHandle("TestRootDescriptor.json", "TestRootDescriptor.json", m_device);
 
                 m_renderPass = VKRenderPass::GetHandle("DeferredPass.json", "DeferredPass.json");
+                m_lightingPass = VKRenderPass::GetHandle("LightingPass.json", "LightingPass.json");
 
-                IRenderTargetHandle colorTarget = VKRenderTarget::GetHandle("DeferredColor.json", "DeferredColor.json").StaticCastHandle<IRenderTarget>();
-                IRenderTargetHandle positionTarget = VKRenderTarget::GetHandle("DeferredPosition.json", "DeferredPosition.json").StaticCastHandle<IRenderTarget>();
-                IRenderTargetHandle normalTarget = VKRenderTarget::GetHandle("DeferredNormal.json", "DeferredNormal.json").StaticCastHandle<IRenderTarget>();
-
-                m_swapchain->VKSetIncomingRenderPass(m_renderPass);
+                m_swapchain->VKSetIncomingRenderPass(m_lightingPass);
 
                 ModelHandle model = Model::GetHandleFromFileName("Raptor.obj");
-                //model.VInitFromFile(&meshFile);
+                ModelHandle lightModel = Model::GetHandleFromFileName("IcoSphere.dae");
 
                 CreateSetupCommandBuffer();
 
-                //TODO: Once JSON file is found, insert name here
                 m_sampler = VKSampler::GetHandle("DeferredSampler.json", "DeferredSampler.json").StaticCastHandle<ISampler>();
 
                 m_texture = VKTexture::GetHandle("raptor.png", "raptor.png").StaticCastHandle<Texture>();
 
                 m_pipeline = VKPipeline::GetHandle("DeferredPipeline.json", "DeferredPipeline.json").StaticCastHandle<IPipeline>();
-
                 m_pipeline->VUpdate();
+
+                m_pointLightingPipeline = VKPipeline::GetHandle("PointLightingPipeline.json", "PointLightingPipeline.json").StaticCastHandle<IPipeline>();
 
                 m_material = VKMaterial::GetHandle("DeferredMaterial.json", "DeferredMaterial.json").StaticCastHandle<IMaterial>();
 
-                std::vector<Mesh*> meshes = model->GetMeshes();
-                m_meshHandle = VKMesh::GetHandle("raptor", meshes[0]).StaticCastHandle<IMesh>();
+                m_pointLightMaterial = VKMaterial::GetHandle("PointLightMaterial.json", "PointLightMaterial.json").StaticCastHandle<IMaterial>();
+
+                m_meshHandle = VKMesh::GetHandle("raptor", model->GetMeshes()[0]).StaticCastHandle<IMesh>();
+
+                m_pointLightMeshHandle = VKMesh::GetHandle("pointLight", lightModel->GetMeshes()[0]).StaticCastHandle<IMesh>();
 
                 RegisterRenderPass(m_renderPass.StaticCastHandle<RenderPassBase>());
+                RegisterRenderPass(m_lightingPass.StaticCastHandle<RenderPassBase>());
 
                 m_swapchain->VKPrepareResources();
 
@@ -170,6 +171,11 @@ namespace Hatchit {
                 m_pipeline.Release();
                 m_meshHandle.Release();
                 m_renderPass.Release();
+
+                m_lightingPass.Release();
+                m_pointLightingPipeline.Release();
+                m_pointLightMaterial.Release();
+                m_pointLightMeshHandle.Release();
 
                 if (m_device != VK_NULL_HANDLE)
                 {
@@ -206,16 +212,10 @@ namespace Hatchit {
                 err = vkQueueWaitIdle(m_queue);
                 assert(!err);
 
-                err = vkDeviceWaitIdle(m_device);
-                assert(!err);
-                
                 //re-prepare the swapchain
                 prepareVulkan();
 
                 err = vkQueueWaitIdle(m_queue);
-                assert(!err);
-
-                err = vkDeviceWaitIdle(m_device);
                 assert(!err);
             }
 
@@ -253,11 +253,14 @@ namespace Hatchit {
             void VKRenderer::VRender(float dt) 
             {
                 //TODO: Remove this
-                Math::Matrix4 view = Math::MMMatrixTranspose(Math::MMMatrixLookAt(Math::Vector3(0, 10, -25), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0)));
-                Math::Matrix4 proj = Math::MMMatrixTranspose(Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 100.0f));
+                Math::Matrix4 view = Math::MMMatrixLookAt(Math::Vector3(5, 15, 5), Math::Vector3(0, 0, 0), Math::Vector3(0, 1, 0));
+                Math::Matrix4 proj = Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 100.0f);
 
                 m_renderPass->VSetView(view);
                 m_renderPass->VSetProj(proj);
+
+                m_lightingPass->VSetView(view);
+                m_lightingPass->VSetProj(proj);
 
                 Math::Matrix4 scale = Math::MMMatrixScale(Math::Vector3(1.0f, 1.0f, 1.0f));
                 Math::Matrix4 rot = Math::MMMatrixRotationXYZ(Math::Vector3(0, m_angle += dt, 0));
@@ -291,6 +294,19 @@ namespace Hatchit {
                         m_renderPass->VScheduleRenderRequest(m_material, m_meshHandle, instanceVars);
                     }
                 }
+
+                std::vector<Resource::ShaderVariable*> lightInstanceVars;
+                Math::Matrix4 lightMat = Math::MMMatrixTranspose(Math::MMMatrixTranslation(Math::Vector3(0, 5, 0)));
+                Math::Vector4 lightColor = Math::Vector4(0.7f, .2f, .2f, 1);
+                float lightRadius = 15.0f;
+                Math::Vector3 lightAttenuation = Math::Vector3(0, 1, 0);
+
+                lightInstanceVars.push_back(new Resource::Matrix4Variable(lightMat));
+                lightInstanceVars.push_back(new Resource::Float4Variable(lightColor));
+                lightInstanceVars.push_back(new Resource::FloatVariable(lightRadius));
+                lightInstanceVars.push_back(new Resource::Float3Variable(lightAttenuation));
+
+                m_lightingPass->VScheduleRenderRequest(m_pointLightMaterial, m_pointLightMeshHandle, lightInstanceVars);
 
                 //TODO: Determine which physical device and thread are best to render with
 
@@ -331,6 +347,8 @@ namespace Hatchit {
                     for (size_t j = 0; j < instanceVars.size(); j++)
                         delete instanceVars[j];
                 }
+                for (size_t i = 0; i < lightInstanceVars.size(); i++)
+                    delete lightInstanceVars[i];
             }
 
             void VKRenderer::VPresent()
@@ -1061,7 +1079,7 @@ namespace Hatchit {
 
                 VkDescriptorPoolSize samplerSize = {};
                 samplerSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                samplerSize.descriptorCount = 4;
+                samplerSize.descriptorCount = 8;
 
                 poolSizes.push_back(uniformSize);
                 poolSizes.push_back(texelSize);
@@ -1308,7 +1326,7 @@ namespace Hatchit {
             {
                 if (msgFlags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
                 {
-                    HT_DEBUG_PRINTF("ERROR: [%s] Code %d : %s\n", pLayerPrefix, msgCode,pMsg);
+                    HT_ERROR_PRINTF("ERROR: [%s] Code %d : %s\n", pLayerPrefix, msgCode,pMsg);
                 }
                 else if (msgFlags & VK_DEBUG_REPORT_WARNING_BIT_EXT)
                 {
@@ -1320,7 +1338,7 @@ namespace Hatchit {
                         return false;
                     }
 
-                    HT_DEBUG_PRINTF("WARNING: [%s] Code %d : %s\n", pLayerPrefix, msgCode, pMsg);
+                    HT_WARNING_PRINTF("WARNING: [%s] Code %d : %s\n", pLayerPrefix, msgCode, pMsg);
                 }
                 else {
                     return false;

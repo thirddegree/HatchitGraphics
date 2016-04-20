@@ -52,6 +52,8 @@ namespace Hatchit {
             {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
 
+                //Free input descriptor sets
+                vkFreeDescriptorSets(m_device, m_descriptorPool, static_cast<uint32_t>(m_inputTargetDescriptorSets.size()), m_inputTargetDescriptorSets.data());
 
                 //Destroy framebuffer images
                 for (size_t i = 0; i < m_colorImages.size(); i++)
@@ -90,13 +92,21 @@ namespace Hatchit {
                     return false;
                 }
                 
-                std::vector<std::string> inputPaths = m_renderPassResourceHandle->GetInputPaths();
+                std::vector<Resource::RenderPass::InputTarget> inputTargets = m_renderPassResourceHandle->GetInputTargets();
                 std::vector<std::string> outputPaths = m_renderPassResourceHandle->GetOutputPaths();
 
-                for (size_t i = 0; i < inputPaths.size(); i++)
+                //Create a structure to map set index to maps of binding indicies and render target handles
+                std::map<uint32_t, std::map<uint32_t, VKRenderTargetHandle>> mappedInputTargets;
+
+                for (size_t i = 0; i < inputTargets.size(); i++)
                 {
-                    IRenderTargetHandle inputTargetHandle = VKRenderTarget::GetHandle(inputPaths[i], inputPaths[i]).StaticCastHandle<IRenderTarget>();
-                    m_inputRenderTargets.push_back(inputTargetHandle);
+                    std::string targetPath = inputTargets[i].path;
+                    uint32_t targetSetIndex = inputTargets[i].set;
+                    uint32_t targetBindingIndex = inputTargets[i].binding;
+
+                    VKRenderTargetHandle inputTargetHandle = VKRenderTarget::GetHandle(targetPath, targetPath);
+
+                    mappedInputTargets[targetSetIndex][targetBindingIndex] = inputTargetHandle;
                 }
 
                 for (size_t i = 0; i < outputPaths.size(); i++)
@@ -110,6 +120,8 @@ namespace Hatchit {
                 if (!setupRenderPass())
                     return false;
                 if (!setupFramebuffer())
+                    return false;
+                if (!setupDescriptorSets(mappedInputTargets))
                     return false;
 
                 return true;
@@ -220,15 +232,29 @@ namespace Hatchit {
                 {
                     VKPipelineHandle pipeline = iterator->first.DynamicCastHandle<VKPipeline>();
 
-                    pipeline->VSetMatrix4("pass.proj", m_proj);
-                    pipeline->VSetMatrix4("pass.view", m_view);
+                    //Calculate inverse view proj
+                    Math::Matrix4 invViewProj = Math::MMMatrixTranspose(Math::MMMatrixInverse(m_view));
+
+                    m_view = Math::MMMatrixTranspose(m_view);
+                    m_proj = Math::MMMatrixTranspose(m_proj);
+
+                    pipeline->VSetMatrix4("pass.0proj", m_proj);
+                    pipeline->VSetMatrix4("pass.1view", m_view);
+                    pipeline->VSetMatrix4("pass.2invViewProj", invViewProj);
+                    pipeline->VSetInt("pass.3width", m_width);
+                    pipeline->VSetInt("pass.4height", m_height);
                     pipeline->VUpdate();
 
                     VkPipeline vkPipeline = pipeline->GetVKPipeline();
                     VkPipelineLayout vkPipelineLayout = renderer->GetVKRootLayoutHandle()->VKGetPipelineLayout();
 
-                    vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetVKPipeline());
+                    vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline);
                     pipeline->SendPushConstants(m_commandBuffer, vkPipelineLayout);
+
+                    //Bind input textures
+                    if(m_inputTargetDescriptorSets.size() > 0)
+                        vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, m_firstInputTargetSetIndex,
+                            static_cast<uint32_t>(m_inputTargetDescriptorSets.size()), m_inputTargetDescriptorSets.data(), 0, nullptr);
 
                     std::vector<RenderableInstances> renderables = iterator->second;
 
@@ -621,6 +647,97 @@ namespace Hatchit {
                     HT_DEBUG_PRINTF("VKRenderer::prepareDescriptorLayout(): Failed to allocate command buffer\n");
                     return false;
                 }
+
+                return true;
+            }
+
+            bool VKRenderPass::setupDescriptorSets(std::map<uint32_t, std::map<uint32_t, VKRenderTargetHandle>> inputTargets)
+            {
+                if (inputTargets.size() <= 0)
+                    return true;
+
+                VkResult err;
+
+                //Get the root layout so that we can determine which set layouts we'll need
+                std::vector<VkDescriptorSetLayout> allDescriptorSetLayouts = VKRenderer::RendererInstance->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts();
+
+                //Collect every descriptor set layout that will show up
+                bool recordedFirstSetIndex = false;
+
+                std::vector<VkDescriptorSetLayout> usedDescriptorSetLayouts;
+                for (auto it = inputTargets.begin(); it != inputTargets.end(); it++)
+                {
+                    uint32_t setIndex = it->first;
+                    usedDescriptorSetLayouts.push_back(allDescriptorSetLayouts[setIndex]);
+
+                    if (!recordedFirstSetIndex)
+                    {
+                        m_firstInputTargetSetIndex = setIndex;
+                        recordedFirstSetIndex = true;
+                    }
+                }
+
+                //Allocate space for every descriptor set at once; each entry in the top level map (inputTargets) is a set
+                VkDescriptorSetAllocateInfo allocInfo = {};
+                allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+                allocInfo.descriptorPool = m_descriptorPool;
+                allocInfo.descriptorSetCount = static_cast<uint32_t>(inputTargets.size());
+                allocInfo.pSetLayouts = usedDescriptorSetLayouts.data();
+
+                m_inputTargetDescriptorSets.resize(inputTargets.size());
+                err = vkAllocateDescriptorSets(m_device, &allocInfo, m_inputTargetDescriptorSets.data());
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+                    HT_ERROR_PRINTF("VKRenderPass::setupDescriptorSets(): Failed to allocate descriptor set\n");
+                    return false;
+                }
+
+                //Setup descriptor set writes
+                std::vector<VkWriteDescriptorSet> descSetWrites;
+                //Store texture descriptors first so that they can stay on the stack long enough
+                std::vector<VkDescriptorImageInfo> targetDescriptors;
+
+                uint32_t index = 0;
+                for (auto it = inputTargets.begin(); it != inputTargets.end(); it++)
+                {
+                    uint32_t setIndex = it->first;
+
+                    std::map<uint32_t, VKRenderTargetHandle> targetBindings = it->second;
+
+                    
+                    for (auto it = targetBindings.begin(); it != targetBindings.end(); it++)
+                    {
+                        VKRenderTargetHandle targetHandle = it->second;
+                        Texture_vk texture = targetHandle->GetVKTexture();
+
+                        //Create Texture description
+                        VkDescriptorImageInfo targetDescriptor = {};
+                        targetDescriptor.sampler = texture.sampler;
+                        targetDescriptor.imageView = texture.image.view;
+                        targetDescriptor.imageLayout = texture.layout;
+
+                        targetDescriptors.push_back(targetDescriptor);
+                    }
+
+                    uint32_t targetIndex = 0;
+                    for (auto it = targetBindings.begin(); it != targetBindings.end(); it++)
+                    {
+                        VkWriteDescriptorSet inputTextureWrite = {};
+                        inputTextureWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                        inputTextureWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                        inputTextureWrite.dstSet = m_inputTargetDescriptorSets[index];
+                        inputTextureWrite.dstBinding = it->first;
+                        inputTextureWrite.pImageInfo = &targetDescriptors[targetIndex];
+                        inputTextureWrite.descriptorCount = 1;
+
+                        descSetWrites.push_back(inputTextureWrite);
+                        targetIndex++;
+                    }
+                    index++;
+                }
+
+                vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(descSetWrites.size()), descSetWrites.data(), 0, nullptr);
 
                 return true;
             }

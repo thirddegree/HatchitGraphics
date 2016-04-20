@@ -159,6 +159,7 @@ namespace Hatchit {
 
             bool VKMaterial::setupDescriptorSet(VkDescriptorPool descriptorPool)
             {
+
                 VkResult err;
 
                 //Setup the descriptor sets
