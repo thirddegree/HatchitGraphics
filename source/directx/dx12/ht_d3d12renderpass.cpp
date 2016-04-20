@@ -22,7 +22,7 @@ namespace Hatchit
     {
         namespace DX
         {
-            D3D12RenderPass::D3D12RenderPass(std::string ID)
+            D3D12RenderPass::D3D12RenderPass(Core::Guid ID)
                 : Core::RefCounted<D3D12RenderPass>(std::move(ID))
             {
 

@@ -28,7 +28,7 @@ namespace Hatchit {
 
             using namespace Resource;
 
-            VKMaterial::VKMaterial(std::string ID) :
+            VKMaterial::VKMaterial(Core::Guid ID) :
                 m_device(VKRenderer::RendererInstance->GetVKDevice()),
                 Core::RefCounted<VKMaterial>(std::move(ID)) {}
 

@@ -35,7 +35,7 @@ namespace Hatchit
                     DSV
                 };
 
-                D3D12RootLayout(std::string ID);
+                D3D12RootLayout(Core::Guid ID);
 
                 ~D3D12RootLayout();
 

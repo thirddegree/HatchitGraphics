@@ -25,7 +25,7 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKRenderPass::VKRenderPass(std::string ID) :
+            VKRenderPass::VKRenderPass(Core::Guid ID) :
                 m_device(VKRenderer::RendererInstance->GetVKDevice()),
                 m_commandPool(VKRenderer::RendererInstance->GetVKCommandPool()),
                 m_descriptorPool(VKRenderer::RendererInstance->GetVKDescriptorPool()),

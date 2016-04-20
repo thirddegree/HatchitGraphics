@@ -42,7 +42,7 @@ namespace Hatchit {
             class HT_API VKPipeline : public Core::RefCounted<VKPipeline>, public IPipeline
             {
             public:
-                VKPipeline(std::string ID);
+                VKPipeline(Core::Guid ID);
                 ~VKPipeline();
 
                 bool Initialize(const std::string& fileName);

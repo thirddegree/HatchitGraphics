@@ -25,7 +25,7 @@ namespace Hatchit {
 
             using namespace Resource;
 
-            VKPipeline::VKPipeline(std::string ID) :
+            VKPipeline::VKPipeline(Core::Guid ID) :
                 m_device(VKRenderer::RendererInstance->GetVKDevice()),
                 Core::RefCounted<VKPipeline>(std::move(ID))
             {

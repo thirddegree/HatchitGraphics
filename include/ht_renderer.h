@@ -110,6 +110,8 @@ namespace Hatchit {
             void RegisterRenderPass(RenderPassBaseHandle pass);
             void RegisterCamera(Camera camera, uint64_t flags);
 
+            static IRenderer* FromType(RendererType type);
+
         protected:
 
             //A collection of renderpass layers. Each layer may contain multiple render passes.

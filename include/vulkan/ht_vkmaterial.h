@@ -42,7 +42,7 @@ namespace Hatchit {
             class HT_API VKMaterial : public Core::RefCounted<VKMaterial>, public IMaterial
             {
             public:
-                VKMaterial(std::string ID);
+                VKMaterial(Core::Guid ID);
                 ~VKMaterial();
 
                 //Required function for RefCounted class

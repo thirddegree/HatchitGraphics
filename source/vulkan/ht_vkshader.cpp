@@ -23,7 +23,7 @@ namespace Hatchit {
 
             using namespace Resource;
 
-            VKShader::VKShader(std::string ID) :
+            VKShader::VKShader(Core::Guid ID) :
                 m_device(VKRenderer::RendererInstance->GetVKDevice()),
                 Core::RefCounted<VKShader>(std::move(ID)),
                 m_shader(VK_NULL_HANDLE)

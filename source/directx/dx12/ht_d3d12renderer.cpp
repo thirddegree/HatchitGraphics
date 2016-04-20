@@ -82,7 +82,7 @@ namespace Hatchit {
 
             void D3D12Renderer::VDeInitialize()
             {
-
+                
             }
 
             void D3D12Renderer::VSetClearColor(const Color& color)
@@ -114,6 +114,8 @@ namespace Hatchit {
 
                 static float angle = 0.0f;
                 angle += dt;
+                if (angle > 360.0f)
+                    angle = 0.0f;
                 m_constantBufferData.proj = Math::MMMatrixPerspProj(3.14f * 0.25f, static_cast<float>(m_width), static_cast<float>(m_height), 0.1f, 1000.0f);
                 m_constantBufferData.view = Math::MMMatrixLookAt(Math::Vector3(0.0f, 0.0f, -5.0f),
                     Math::Vector3(0.0f, 0.0f, 1.0f),
