@@ -14,8 +14,13 @@
 
 #include <ht_renderer.h>
 
+#ifdef VK_SUPPORT
 #include <ht_vkrenderer.h>
+#endif
+
+#ifdef DX12_SUPPORT
 #include <ht_d3d12renderer.h>
+#endif
 
 namespace Hatchit {
 
@@ -56,10 +61,23 @@ namespace Hatchit {
         {
             switch (type)
             {
-            case RendererType::VULKAN:
-                return new Vulkan::VKRenderer;
-            case RendererType::DIRECTX12:
-                return new DX::D3D12Renderer;
+                case RendererType::VULKAN:
+                {
+#ifdef VK_SUPPORT
+                    return new Vulkan::VKRenderer;
+#else
+                    return nullptr;
+#endif
+                } break;
+                
+                case RendererType::DIRECTX12:
+                {
+#ifdef DX12_SUPPORT
+                    return new DX::D3D12Renderer;
+#else
+                    return nullptr;
+#endif
+                } break;
             }
             return nullptr;
         }
