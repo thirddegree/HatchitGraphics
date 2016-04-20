@@ -29,7 +29,7 @@ namespace Hatchit {
             class HT_API D3D12Shader : public Core::RefCounted<D3D12Shader>, public IShader
             {
             public:
-                D3D12Shader(std::string ID);
+                D3D12Shader(Core::Guid ID);
                 D3D12Shader(D3D12Shader&&) = default;
                 ~D3D12Shader();
 

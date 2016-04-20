@@ -28,7 +28,7 @@ namespace Hatchit
             class HT_API D3D12RenderPass : public Core::RefCounted<D3D12RenderPass>, public RenderPassBase
             {
             public:
-                D3D12RenderPass(std::string ID);
+                D3D12RenderPass(Core::Guid ID);
 
                 bool Initialize(const std::string& fileName);
 

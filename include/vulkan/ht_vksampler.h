@@ -27,7 +27,7 @@ namespace Hatchit {
             class HT_API VKSampler : public Core::RefCounted<VKSampler>, public ISampler
             {
             public:
-                VKSampler(std::string ID);
+                VKSampler(Core::Guid ID);
                 ~VKSampler();
 
                 //Required function of RefCounted classes

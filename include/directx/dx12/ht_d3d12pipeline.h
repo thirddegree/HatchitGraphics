@@ -30,7 +30,7 @@ namespace Hatchit {
             class HT_API D3D12Pipeline : public Core::RefCounted<D3D12Pipeline>, public IPipeline
             {
             public:
-                D3D12Pipeline(std::string ID);
+                D3D12Pipeline(Core::Guid ID);
 
                 ~D3D12Pipeline();
 

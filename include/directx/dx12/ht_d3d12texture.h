@@ -33,7 +33,7 @@ namespace Hatchit
             class HT_API D3D12Texture : public Core::RefCounted<D3D12Texture>, public Texture
             {
             public:
-                D3D12Texture(std::string ID);
+                D3D12Texture(Core::Guid ID);
 
                 ~D3D12Texture();
 

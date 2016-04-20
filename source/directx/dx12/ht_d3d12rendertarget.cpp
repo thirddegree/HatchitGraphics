@@ -21,7 +21,7 @@ namespace Hatchit
     {
         namespace DX
         {
-            D3D12RenderTarget::D3D12RenderTarget(std::string ID)
+            D3D12RenderTarget::D3D12RenderTarget(Core::Guid ID)
                 : Core::RefCounted<D3D12RenderTarget>(std::move(ID))
             {
 
