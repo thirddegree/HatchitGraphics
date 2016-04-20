@@ -39,7 +39,7 @@ namespace Hatchit
                     return false;
                 }
 
-                auto inputPaths = handle->GetInputPaths();
+                auto inputPaths = handle->GetInputTargets();
                 auto outputPaths = handle->GetOutputPaths();
 
                 for (auto path : inputPaths)
