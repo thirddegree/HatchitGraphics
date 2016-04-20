@@ -60,6 +60,12 @@ namespace Hatchit {
             {
                 Resource::RenderTargetHandle handle = RenderTarget::GetHandleFromFileName(fileName);
 
+                if (!handle.IsValid())
+                {
+                    HT_ERROR_PRINTF("VKRenderTarget::Initialize: Handle was null!");
+                    return false;
+                }
+
                 m_width = handle->GetWidth();
                 m_height = handle->GetHeight();
 

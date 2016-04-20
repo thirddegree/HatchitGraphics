@@ -29,6 +29,8 @@ namespace Hatchit {
                 m_device(VKRenderer::RendererInstance->GetVKDevice()),
                 Core::RefCounted<VKPipeline>(std::move(ID))
             {
+                m_hasVertexAttribs = false;
+                m_hasIndexAttribs = false;
             }
 
             VKPipeline::~VKPipeline() 
@@ -317,12 +319,20 @@ namespace Hatchit {
 
             void VKPipeline::setVertexLayout(const std::vector<Resource::Pipeline::Attribute> vertexLayout) 
             {
-                addAttributesToLayout(vertexLayout, m_vertexLayout, m_vertexLayoutStride);
+                if (vertexLayout.size() > 0)
+                {
+                    m_hasVertexAttribs = true;
+                    addAttributesToLayout(vertexLayout, m_vertexLayout, m_vertexLayoutStride);
+                }
             }
 
             void VKPipeline::setInstanceLayout(const std::vector<Resource::Pipeline::Attribute> instanceLayout) 
             {
-                addAttributesToLayout(instanceLayout, m_vertexLayout, m_instanceLayoutStride);
+                if (instanceLayout.size() > 0)
+                {
+                    m_hasIndexAttribs = true;
+                    addAttributesToLayout(instanceLayout, m_vertexLayout, m_instanceLayoutStride);
+                }
             }
 
             void VKPipeline::setRasterState(const Pipeline::RasterizerState& rasterState)
@@ -478,18 +488,27 @@ namespace Hatchit {
                 //Vertex info state
                 std::vector<VkVertexInputBindingDescription> vertexBindingDescriptions;
 
-                VkVertexInputBindingDescription vertexInput = {};
-                vertexInput.binding = 0;
-                vertexInput.stride = m_vertexLayoutStride;
-                vertexInput.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+                uint32_t binding = 0;
 
-                VkVertexInputBindingDescription instanceInput = {};
-                instanceInput.binding = 1;
-                instanceInput.stride = m_instanceLayoutStride;
-                instanceInput.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+                if (m_hasVertexAttribs)
+                {
+                    VkVertexInputBindingDescription vertexInput = {};
+                    vertexInput.binding = binding++;
+                    vertexInput.stride = m_vertexLayoutStride;
+                    vertexInput.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-                vertexBindingDescriptions.push_back(vertexInput);
-                vertexBindingDescriptions.push_back(instanceInput);
+                    vertexBindingDescriptions.push_back(vertexInput);
+                }
+
+                if (m_hasIndexAttribs)
+                {
+                    VkVertexInputBindingDescription instanceInput = {};
+                    instanceInput.binding = binding++;
+                    instanceInput.stride = m_instanceLayoutStride;
+                    instanceInput.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+                    vertexBindingDescriptions.push_back(instanceInput);
+                }
 
                 VkPipelineVertexInputStateCreateInfo vertexInputState = {};
                 vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

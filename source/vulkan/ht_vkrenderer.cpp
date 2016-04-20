@@ -114,14 +114,14 @@ namespace Hatchit {
                 //TODO: remove this test code
                 m_rootLayout = VKRootLayout::GetHandle("TestRootDescriptor.json", "TestRootDescriptor.json", m_device);
 
-                m_renderPass = VKRenderPass::GetHandle("DeferredPass.json", "DeferredPass.json");
-                m_lightingPass = VKRenderPass::GetHandle("LightingPass.json", "LightingPass.json");
-
-                m_swapchain->VKSetIncomingRenderPass(m_lightingPass);
-
                 ModelHandle model = Model::GetHandleFromFileName("Raptor.obj");
                 ModelHandle lightModel = Model::GetHandleFromFileName("IcoSphere.dae");
+                ModelHandle fullscreenTri = Model::GetHandleFromFileName("Tri.obj");
 
+                m_renderPass = VKRenderPass::GetHandle("DeferredPass.json", "DeferredPass.json");
+                m_lightingPass = VKRenderPass::GetHandle("LightingPass.json", "LightingPass.json");
+                m_compositionPass = VKRenderPass::GetHandle("CompositionPass.json", "CompositionPass.json");
+                
                 CreateSetupCommandBuffer();
 
                 m_sampler = VKSampler::GetHandle("DeferredSampler.json", "DeferredSampler.json").StaticCastHandle<ISampler>();
@@ -130,19 +130,22 @@ namespace Hatchit {
 
                 m_pipeline = VKPipeline::GetHandle("DeferredPipeline.json", "DeferredPipeline.json").StaticCastHandle<IPipeline>();
                 m_pipeline->VUpdate();
-
                 m_pointLightingPipeline = VKPipeline::GetHandle("PointLightingPipeline.json", "PointLightingPipeline.json").StaticCastHandle<IPipeline>();
+                m_compositionPipeline = VKPipeline::GetHandle("CompositionPipeline.json", "CompositionPipeline.json").StaticCastHandle<IPipeline>();
 
                 m_material = VKMaterial::GetHandle("DeferredMaterial.json", "DeferredMaterial.json").StaticCastHandle<IMaterial>();
-
                 m_pointLightMaterial = VKMaterial::GetHandle("PointLightMaterial.json", "PointLightMaterial.json").StaticCastHandle<IMaterial>();
+                m_compositionMaterial = VKMaterial::GetHandle("CompositionMaterial.json", "CompositionMaterial.json").StaticCastHandle<IMaterial>();
 
                 m_meshHandle = VKMesh::GetHandle("raptor", model->GetMeshes()[0]).StaticCastHandle<IMesh>();
-
                 m_pointLightMeshHandle = VKMesh::GetHandle("pointLight", lightModel->GetMeshes()[0]).StaticCastHandle<IMesh>();
+                m_compositionMeshHandle = VKMesh::GetHandle("pointLight", fullscreenTri->GetMeshes()[0]).StaticCastHandle<IMesh>();
 
                 RegisterRenderPass(m_renderPass.StaticCastHandle<RenderPassBase>());
                 RegisterRenderPass(m_lightingPass.StaticCastHandle<RenderPassBase>());
+                RegisterRenderPass(m_compositionPass.StaticCastHandle<RenderPassBase>());
+
+                m_swapchain->VKSetIncomingRenderPass(m_compositionPass);
 
                 m_swapchain->VKPrepareResources();
 
@@ -176,6 +179,11 @@ namespace Hatchit {
                 m_pointLightingPipeline.Release();
                 m_pointLightMaterial.Release();
                 m_pointLightMeshHandle.Release();
+
+                m_compositionPass.Release();
+                m_compositionPipeline.Release();
+                m_compositionMaterial.Release();
+                m_compositionMeshHandle.Release();
 
                 if (m_device != VK_NULL_HANDLE)
                 {
@@ -307,6 +315,8 @@ namespace Hatchit {
                 lightInstanceVars.push_back(new Resource::Float3Variable(lightAttenuation));
 
                 m_lightingPass->VScheduleRenderRequest(m_pointLightMaterial, m_pointLightMeshHandle, lightInstanceVars);
+
+                m_compositionPass->VScheduleRenderRequest(m_compositionMaterial, m_compositionMeshHandle, std::vector<Resource::ShaderVariable*>());
 
                 //TODO: Determine which physical device and thread are best to render with
 
@@ -1073,23 +1083,18 @@ namespace Hatchit {
                 uniformSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                 uniformSize.descriptorCount = 4;
 
-                VkDescriptorPoolSize texelSize = {};
-                texelSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
-                texelSize.descriptorCount = 4;
-
                 VkDescriptorPoolSize samplerSize = {};
                 samplerSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                samplerSize.descriptorCount = 8;
+                samplerSize.descriptorCount = 10;
 
                 poolSizes.push_back(uniformSize);
-                poolSizes.push_back(texelSize);
                 poolSizes.push_back(samplerSize);
 
                 VkDescriptorPoolCreateInfo poolCreateInfo = {};
                 poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
                 poolCreateInfo.pPoolSizes = poolSizes.data();
                 poolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-                poolCreateInfo.maxSets = 12;
+                poolCreateInfo.maxSets = 16;
                 poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
                 err = vkCreateDescriptorPool(m_device, &poolCreateInfo, nullptr, &m_descriptorPool);

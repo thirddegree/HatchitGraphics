@@ -142,8 +142,11 @@ namespace Hatchit {
                     DeleteUniformBuffer(m_device, m_instanceBlock);
 
                 //Create block of data for instance variables
-                if (!CreateUniformBuffer(m_device, m_instanceDataSize, m_instanceData, &m_instanceBlock))
-                    return false;
+                if (m_instanceDataSize > 0)
+                {
+                    if (!CreateUniformBuffer(m_device, m_instanceDataSize, m_instanceData, &m_instanceBlock))
+                        return false;
+                }
 
                 //Setup the order of the commands we will issue in the command list
                 BuildRenderRequestHeirarchy();
@@ -275,7 +278,8 @@ namespace Hatchit {
                             vkPipelineLayout, 0, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, nullptr);
                     
                         //Bind instance buffer
-                        vkCmdBindVertexBuffers(m_commandBuffer, 1, 1, &m_instanceBlock.buffer, offsets);
+                        if(m_instanceDataSize > 0)
+                            vkCmdBindVertexBuffers(m_commandBuffer, 1, 1, &m_instanceBlock.buffer, offsets);
 
                         UniformBlock_vk vertBlock = mesh->GetVertexBlock();
                         UniformBlock_vk indexBlock = mesh->GetIndexBlock();

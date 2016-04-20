@@ -94,6 +94,9 @@ namespace Hatchit {
                 std::vector<float>  m_matrixPushData;
 
             private:
+                bool m_hasVertexAttribs;
+                bool m_hasIndexAttribs;
+
                 /* Set the vertex layout
                 * \param vertexLayout A vector of all of the vertex attributes in this layout
                 */
