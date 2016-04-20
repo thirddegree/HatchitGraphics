@@ -27,7 +27,7 @@ namespace Hatchit
             class HT_API VKRootLayout : public Core::RefCounted<VKRootLayout>, public IRootLayout
             {
             public:
-                VKRootLayout(std::string ID);
+                VKRootLayout(Core::Guid ID);
 
                 ~VKRootLayout();
 

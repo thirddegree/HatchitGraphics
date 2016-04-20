@@ -21,7 +21,7 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKTexture::VKTexture(std::string ID) :
+            VKTexture::VKTexture(Core::Guid ID) :
                 m_device(VKRenderer::RendererInstance->GetVKDevice()),
                 Core::RefCounted<VKTexture>(std::move(ID)) 
             {}

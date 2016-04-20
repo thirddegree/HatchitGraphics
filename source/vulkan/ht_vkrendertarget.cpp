@@ -35,7 +35,7 @@ namespace Hatchit {
 
             using namespace Resource;
 
-            VKRenderTarget::VKRenderTarget(std::string ID) :
+            VKRenderTarget::VKRenderTarget(Core::Guid ID) :
                 m_device(VKRenderer::RendererInstance->GetVKDevice()),
                 Core::RefCounted<VKRenderTarget>(std::move(ID))
             {

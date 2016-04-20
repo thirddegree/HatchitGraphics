@@ -28,7 +28,7 @@ namespace Hatchit {
             class HT_API VKTexture : public Core::RefCounted<VKTexture>, public Texture
             {
             public:
-                VKTexture(std::string ID);
+                VKTexture(Core::Guid ID);
                 virtual ~VKTexture();
 
                 //Required function for RefCounted classes
