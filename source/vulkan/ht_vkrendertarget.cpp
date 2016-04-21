@@ -80,6 +80,10 @@ namespace Hatchit {
                     m_clearColor->color = {clearColor[0], clearColor[1], clearColor[2], clearColor[3]};
                 }
 
+                //Save blend ops
+                m_colorBlendOp = handle->GetColorBlendOp();
+                m_alphaBlendOp = handle->GetAlphaBlendOp();
+
                 //Determine format bit from resource's string
                 if (formatString == "BGRA")
                 {

@@ -39,20 +39,30 @@ namespace Hatchit {
         public:
             virtual ~IRenderTarget() { };
 
-            /* Initialize a render target from a JSON resource
-            * \param resourceRenderTarget A handle to the JSON RenderTarget resource
-            * \return True on success, false on failure
-            */
-            //virtual bool VInitFromResource(Resource::RenderTargetHandle resourceRenderTarget) = 0;
-
             ///Prepare the render target with a graphics language
             virtual bool VPrepare() = 0;
+
+            virtual Resource::RenderTarget::BlendOp GetColorBlendOp() const = 0;
+            virtual Resource::RenderTarget::BlendOp GetAlphaBlendOp() const = 0;
+        };
+
+        class HT_API RenderTargetBase : public IRenderTarget
+        {
+        public:
+            virtual ~RenderTargetBase() { };
+
+            Resource::RenderTarget::BlendOp GetColorBlendOp() const override;
+            Resource::RenderTarget::BlendOp GetAlphaBlendOp() const override;
 
         protected:
             uint32_t m_width;
             uint32_t m_height;
+
+            Resource::RenderTarget::BlendOp m_colorBlendOp;
+            Resource::RenderTarget::BlendOp m_alphaBlendOp;
         };
 
         using IRenderTargetHandle = Core::Handle<IRenderTarget>;
+        using RenderTargetBaseHandle = Core::Handle<RenderTargetBase>;
     }
 }

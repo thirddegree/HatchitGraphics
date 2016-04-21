@@ -51,6 +51,7 @@ namespace Hatchit {
                 setVertexLayout(handle->GetVertexLayout());
                 setInstanceLayout(handle->GetInstanceLayout());
 
+                setDepthStencilState(handle->GetDepthStencilState());
                 setRasterState(handle->GetRasterizationState());
                 setMultisampleState(handle->GetMultisampleState());
 
@@ -335,6 +336,24 @@ namespace Hatchit {
                 }
             }
 
+            void VKPipeline::setDepthStencilState(const Pipeline::DepthStencilState& depthStencilState)
+            {
+                //Depth and stencil states
+                m_depthStencilState = {};
+                m_depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+                m_depthStencilState.pNext = nullptr;
+                m_depthStencilState.depthTestEnable = depthStencilState.testDepth;
+                m_depthStencilState.depthWriteEnable = depthStencilState.writeDepth;
+                m_depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+                m_depthStencilState.depthBoundsTestEnable = VK_FALSE;
+                m_depthStencilState.back.failOp = VK_STENCIL_OP_KEEP;
+                m_depthStencilState.back.passOp = VK_STENCIL_OP_KEEP;
+                m_depthStencilState.back.compareOp = VK_COMPARE_OP_ALWAYS;
+                m_depthStencilState.stencilTestEnable = VK_FALSE;
+                m_depthStencilState.front = m_depthStencilState.back;
+                m_depthStencilState.front.compareOp = VK_COMPARE_OP_NEVER;
+            }
+
             void VKPipeline::setRasterState(const Pipeline::RasterizerState& rasterState)
             {
                 VkPolygonMode polyMode;
@@ -525,21 +544,48 @@ namespace Hatchit {
                 inputAssemblyState.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
                 inputAssemblyState.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
-                //Must have a blend attachment for each color attachment or esle the write mask will be 0x0
+                //Must have a blend attachment for each color attachment or else the write mask will be 0x0
                 //In that case nothing will be written to the attachment
-                VkPipelineColorBlendAttachmentState blendAttachmentState[3] = {};
-                blendAttachmentState[0].colorWriteMask = 0xf;
-                blendAttachmentState[0].blendEnable = VK_FALSE;
-                blendAttachmentState[1].colorWriteMask = 0xf;
-                blendAttachmentState[1].blendEnable = VK_FALSE;
-                blendAttachmentState[2].colorWriteMask = 0xf;
-                blendAttachmentState[2].blendEnable = VK_FALSE;
+
+                //Make a blend attachment state for each output target
+                std::vector<IRenderTargetHandle> outputTargets = m_renderPass->GetOutputRenderTargets();
+                std::vector<VkPipelineColorBlendAttachmentState> blendAttachmentStates;
+
+                for (size_t i = 0; i < outputTargets.size(); i++)
+                {
+                    VkPipelineColorBlendAttachmentState blendAttachmentState = {};
+                    blendAttachmentState.colorWriteMask = 0xf; //we want to write RGB and A
+                    blendAttachmentState.blendEnable = VK_FALSE; //default to false
+
+                    IRenderTargetHandle outputTarget = outputTargets[i];
+                    Resource::RenderTarget::BlendOp colorBlendOp = outputTarget->GetColorBlendOp();
+                    Resource::RenderTarget::BlendOp alphaBlendOp = outputTarget->GetAlphaBlendOp();
+
+                    if (colorBlendOp != Resource::RenderTarget::BlendOp::NONE)
+                    {
+                        blendAttachmentState.blendEnable = VK_TRUE;
+                        blendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+                        blendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
+                        blendAttachmentState.colorBlendOp = getVKBlendOpFromResourceBlendOp(colorBlendOp);
+                    }
+
+                    if (alphaBlendOp != Resource::RenderTarget::BlendOp::NONE)
+                    {
+                        blendAttachmentState.blendEnable = VK_TRUE;
+                        blendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+                        blendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+                        blendAttachmentState.alphaBlendOp = getVKBlendOpFromResourceBlendOp(alphaBlendOp);
+                    }
+
+                    blendAttachmentStates.push_back(blendAttachmentState);
+
+                }
 
                 //Color blends and masks
                 VkPipelineColorBlendStateCreateInfo colorBlendState = {};
                 colorBlendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-                colorBlendState.pAttachments = blendAttachmentState;
-                colorBlendState.attachmentCount = 3;
+                colorBlendState.attachmentCount = static_cast<uint32_t>(blendAttachmentStates.size());
+                colorBlendState.pAttachments = blendAttachmentStates.data();
 
                 //Viewport
                 VkPipelineViewportStateCreateInfo viewportState = {};
@@ -555,21 +601,6 @@ namespace Hatchit {
                 dynamicState.pNext = nullptr;
                 dynamicState.pDynamicStates = dynamicStateEnables;
                 dynamicState.dynamicStateCount = 2;
-
-                //Depth and stencil states
-                VkPipelineDepthStencilStateCreateInfo depthStencilState = {};
-                depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-                depthStencilState.pNext = nullptr;
-                depthStencilState.depthTestEnable = VK_TRUE;
-                depthStencilState.depthWriteEnable = VK_TRUE;
-                depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
-                depthStencilState.depthBoundsTestEnable = VK_FALSE;
-                depthStencilState.back.failOp = VK_STENCIL_OP_KEEP;
-                depthStencilState.back.passOp = VK_STENCIL_OP_KEEP;
-                depthStencilState.back.compareOp = VK_COMPARE_OP_ALWAYS;
-                depthStencilState.stencilTestEnable = VK_FALSE;
-                depthStencilState.front = depthStencilState.back;
-                depthStencilState.front.compareOp = VK_COMPARE_OP_NEVER;
 
                 //Get pipeline layout
                 VKRootLayoutHandle rootLayoutHandle = VKRenderer::RendererInstance->GetVKRootLayoutHandle();
@@ -587,7 +618,7 @@ namespace Hatchit {
                 pipelineInfo.pColorBlendState = &colorBlendState;
                 pipelineInfo.pMultisampleState = &m_multisampleState;
                 pipelineInfo.pViewportState = &viewportState;
-                pipelineInfo.pDepthStencilState = &depthStencilState;
+                pipelineInfo.pDepthStencilState = &m_depthStencilState;
                 pipelineInfo.pStages = m_shaderStages.data();
                 pipelineInfo.pDynamicState = &dynamicState;
 
@@ -672,6 +703,26 @@ namespace Hatchit {
                 }
 
                 outStride = static_cast<uint32_t>(offset);
+            }
+
+            VkBlendOp VKPipeline::getVKBlendOpFromResourceBlendOp(Resource::RenderTarget::BlendOp blendOp) 
+            {
+                switch (blendOp)
+                {
+                case Resource::RenderTarget::BlendOp::ADD:
+                    return VK_BLEND_OP_ADD;
+                case Resource::RenderTarget::BlendOp::SUB:
+                    return VK_BLEND_OP_SUBTRACT;
+                case Resource::RenderTarget::BlendOp::REV_SUB:
+                    return VK_BLEND_OP_REVERSE_SUBTRACT;
+                case Resource::RenderTarget::BlendOp::MIN:
+                    return VK_BLEND_OP_MIN;
+                case Resource::RenderTarget::BlendOp::MAX:
+                    return VK_BLEND_OP_MAX;
+                default:
+                    HT_WARNING_PRINTF("VKPipeline::getVKBlendOpFromResourceBlendOp: Blend op not defined, defaulting to ADD");
+                    return VK_BLEND_OP_ADD;
+                }
             }
         }
     }

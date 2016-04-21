@@ -35,7 +35,7 @@ namespace Hatchit {
 
             class VKRenderer;
 
-            class HT_API VKRenderTarget : public Core::RefCounted<VKRenderTarget>, public IRenderTarget
+            class HT_API VKRenderTarget : public Core::RefCounted<VKRenderTarget>, public RenderTargetBase
             {
             public:
                 VKRenderTarget(Core::Guid ID);

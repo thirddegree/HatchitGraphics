@@ -79,6 +79,7 @@ namespace Hatchit {
                 uint32_t m_vertexLayoutStride;
                 uint32_t m_instanceLayoutStride;
 
+                VkPipelineDepthStencilStateCreateInfo m_depthStencilState;
                 VkPipelineRasterizationStateCreateInfo m_rasterizationState;
                 VkPipelineMultisampleStateCreateInfo m_multisampleState;
                 std::vector<VkPipelineShaderStageCreateInfo> m_shaderStages;
@@ -107,6 +108,8 @@ namespace Hatchit {
                 */
                 void setInstanceLayout(const std::vector<Resource::Pipeline::Attribute> instanceLayout);
 
+                void setDepthStencilState(const Hatchit::Resource::Pipeline::DepthStencilState& depthStencilState);
+
                 /* Set the rasterization state for this pipeline
                 * \param rasterState A struct containing rasterization options
                 */
@@ -128,6 +131,8 @@ namespace Hatchit {
                 VkFormat formatFromType(const Resource::ShaderVariable::Type& type) const;
 
                 void addAttributesToLayout(const std::vector<Resource::Pipeline::Attribute>& attributes, std::vector<VkVertexInputAttributeDescription>& vkAttributes, uint32_t& outStride);
+
+                VkBlendOp getVKBlendOpFromResourceBlendOp(Resource::RenderTarget::BlendOp blendOp);
             };
 
             using VKPipelineHandle = Core::Handle<VKPipeline>;

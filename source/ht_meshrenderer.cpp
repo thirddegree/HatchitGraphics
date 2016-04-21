@@ -45,6 +45,8 @@ namespace Hatchit {
             std::vector<Resource::ShaderVariable*> instanceVariables;
             instanceVariables.push_back(&Resource::Matrix4Variable(Math::Matrix4()));
 
+            
+
             m_renderPass->VScheduleRenderRequest(m_material, m_mesh, instanceVariables);
         }
     }
