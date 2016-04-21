@@ -39,12 +39,6 @@ namespace Hatchit {
         public:
             virtual ~MeshRenderer();
 
-
-            /* Set which render pass this will be a part of
-            * \param renderPass A pointer to the render pass that this will be a part of
-            */
-            virtual void SetRenderPass(IRenderPassHandle renderPass);
-
             /* Set which material you want to render with
             * \param material the material you want to render with
             * The material should also store the appropriate pipeline
@@ -56,15 +50,20 @@ namespace Hatchit {
             */
             virtual void SetMesh(IMeshHandle mesh);
 
+            /*Sets the instance data to be used with this particular mesh renderer
+            */
+            virtual void SetInstanceData(std::vector<Resource::ShaderVariable*> data);
+
             //Override to submit a render request with a graphics language
             virtual void Render();
 
 
         protected:
-            IRenderPassHandle       m_renderPass;
+            RenderPassBaseHandle    m_renderPass;
             IPipelineHandle         m_pipeline;
             IMaterialHandle         m_material;
             IMeshHandle             m_mesh;
+            std::vector<Resource::ShaderVariable*> m_instanceData;
         };
     }
 }

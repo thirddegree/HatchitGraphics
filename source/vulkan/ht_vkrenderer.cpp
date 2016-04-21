@@ -305,7 +305,7 @@ namespace Hatchit {
 
                 std::vector<Resource::ShaderVariable*> redLightInstanceVars;
                 Math::Matrix4 redLightMat = Math::MMMatrixTranspose(Math::MMMatrixTranslation(Math::Vector3(0, 5, -3)));
-                Math::Vector4 redLightColor = Math::Vector4(0.7f, .2f, .2f, 1);
+                Math::Vector4 redLightColor = Math::Vector4(1.0f, .5f, .5f, 1);
                 float redLightRadius = 5.0f;
                 Math::Vector3 redLightAttenuation = Math::Vector3(0, 1, 0);
 
@@ -316,7 +316,7 @@ namespace Hatchit {
 
                 std::vector<Resource::ShaderVariable*> blueLightInstanceVars;
                 Math::Matrix4 blueLightMat = Math::MMMatrixTranspose(Math::MMMatrixTranslation(Math::Vector3(3, 5, 3)));
-                Math::Vector4 blueLightColor = Math::Vector4(0.2f, .2f, .7f, 1);
+                Math::Vector4 blueLightColor = Math::Vector4(0.5f, .5f, 1.0f, 1);
                 float blueLightRadius = 5.0f;
                 Math::Vector3 blueLightAttenuation = Math::Vector3(0, 1, 0);
 
@@ -327,7 +327,7 @@ namespace Hatchit {
 
                 std::vector<Resource::ShaderVariable*> greenLightInstanceVars;
                 Math::Matrix4 greenLightMat = Math::MMMatrixTranspose(Math::MMMatrixTranslation(Math::Vector3(-3, 5, 3)));
-                Math::Vector4 greenLightColor = Math::Vector4(0.2f, .7f, .2f, 1);
+                Math::Vector4 greenLightColor = Math::Vector4(0.5f, 1.0f, .5f, 1);
                 float greenLightRadius = 5.0f;
                 Math::Vector3 greenLightAttenuation = Math::Vector3(0, 1, 0);
 
