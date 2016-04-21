@@ -26,28 +26,22 @@ namespace Hatchit {
         {
             m_material = material;
             m_pipeline = material->GetPipeline();
+            m_renderPass = material->GetRenderPasses()[0];
         }
-
-        void MeshRenderer::SetRenderPass(IRenderPassHandle renderPass)
-        {
-            m_renderPass = renderPass;
-        }
-
 
         void MeshRenderer::SetMesh(IMeshHandle mesh)
         {
             m_mesh = mesh;
         }
 
-        void MeshRenderer::Render()
+        void MeshRenderer::SetInstanceData(std::vector<Resource::ShaderVariable*> data)
         {
-            //TODO: send actual transform data
-            std::vector<Resource::ShaderVariable*> instanceVariables;
-            instanceVariables.push_back(&Resource::Matrix4Variable(Math::Matrix4()));
+            m_instanceData = data;
+        }
 
-            
-
-            m_renderPass->VScheduleRenderRequest(m_material, m_mesh, instanceVariables);
+        void MeshRenderer::Render()
+        {          
+            m_renderPass->VScheduleRenderRequest(m_material, m_mesh, m_instanceData);
         }
     }
 }
