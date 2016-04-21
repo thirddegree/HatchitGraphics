@@ -49,6 +49,8 @@ namespace Hatchit {
     namespace Graphics {
 
         class IPipeline;
+        class RenderPassBase;
+        using RenderPassBaseHandle = Core::Handle<RenderPassBase>;
 
         class HT_API IMaterial
         {
@@ -65,10 +67,22 @@ namespace Hatchit {
             virtual bool VUnbindTexture(std::string name, TextureHandle texture) = 0;
 
             virtual bool VUpdate() = 0;
-
             virtual IPipelineHandle GetPipeline() = 0;
+            virtual const std::vector<RenderPassBaseHandle>& GetRenderPasses() const = 0;
+        };
+
+        class HT_API MaterialBase : public IMaterial
+        {
+        public:
+            virtual ~MaterialBase() { };
+
+            const std::vector<RenderPassBaseHandle>& GetRenderPasses() const override;
+
+        protected:
+            std::vector<RenderPassBaseHandle> m_renderPasses;
         };
 
         using IMaterialHandle = Core::Handle<IMaterial>;
+        using MaterialBaseHandle = Core::Handle<MaterialBase>;
     }
 }

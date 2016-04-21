@@ -34,13 +34,30 @@ namespace Hatchit {
 
             bool VKMaterial::Initialize(const std::string& fileName)
             {
-                m_materialResourceHandle = Hatchit::Resource::Material::GetHandleFromFileName(fileName);
+                Resource::MaterialHandle handle = Hatchit::Resource::Material::GetHandleFromFileName(fileName);
+
+                if (!handle.IsValid())
+                {
+                    HT_ERROR_PRINTF("VKMaterial::Initialize Failed to load resource handle");
+                    return false;
+                }
 
                 //Gather resources and handles
-                m_pipeline = VKPipeline::GetHandle(m_materialResourceHandle->GetPipelinePath(), m_materialResourceHandle->GetPipelinePath());
-                m_shaderVariables = m_materialResourceHandle->GetShaderVariables();
+                m_pipeline = VKPipeline::GetHandle(handle->GetPipelinePath(), handle->GetPipelinePath());
 
-                std::vector<std::string> texturePaths = m_materialResourceHandle->GetTexturePaths();
+                //Get render pass paths and construct handles
+                std::vector<std::string> renderPassPaths = handle->GetRenderPassPaths();
+                for (size_t i = 0; i < renderPassPaths.size(); i++)
+                {
+                    std::string renderPassPath = renderPassPaths[i];
+                    VKRenderPassHandle renderPassHandle = VKRenderPass::GetHandle(renderPassPath, renderPassPath);
+                    m_renderPasses.push_back(renderPassHandle.StaticCastHandle<RenderPassBase>());
+                }
+
+                //Get shader vars
+                m_shaderVariables = handle->GetShaderVariables();
+
+                std::vector<std::string> texturePaths = handle->GetTexturePaths();
                 for (size_t i = 0; i < texturePaths.size(); i++)
                 {
                     VKTextureHandle textureHandle = VKTexture::GetHandle(texturePaths[i], texturePaths[i]);

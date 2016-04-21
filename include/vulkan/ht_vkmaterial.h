@@ -39,7 +39,7 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            class HT_API VKMaterial : public Core::RefCounted<VKMaterial>, public IMaterial
+            class HT_API VKMaterial : public Core::RefCounted<VKMaterial>, public MaterialBase
             {
             public:
                 VKMaterial(Core::Guid ID);
@@ -67,8 +67,6 @@ namespace Hatchit {
                 const VkDevice& m_device;
 
                 bool setupDescriptorSet(VkDescriptorPool descriptorPool);
-
-                Resource::MaterialHandle m_materialResourceHandle;
 
                 std::vector<VkDescriptorSetLayout> m_materialLayouts;
                 std::vector<VkDescriptorSet> m_materialSets;

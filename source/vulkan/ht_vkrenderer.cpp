@@ -303,18 +303,42 @@ namespace Hatchit {
                     }
                 }
 
-                std::vector<Resource::ShaderVariable*> lightInstanceVars;
-                Math::Matrix4 lightMat = Math::MMMatrixTranspose(Math::MMMatrixTranslation(Math::Vector3(0, 5, 0)));
-                Math::Vector4 lightColor = Math::Vector4(0.7f, .2f, .2f, 1);
-                float lightRadius = 15.0f;
-                Math::Vector3 lightAttenuation = Math::Vector3(0, 1, 0);
+                std::vector<Resource::ShaderVariable*> redLightInstanceVars;
+                Math::Matrix4 redLightMat = Math::MMMatrixTranspose(Math::MMMatrixTranslation(Math::Vector3(0, 5, -3)));
+                Math::Vector4 redLightColor = Math::Vector4(0.7f, .2f, .2f, 1);
+                float redLightRadius = 5.0f;
+                Math::Vector3 redLightAttenuation = Math::Vector3(0, 1, 0);
 
-                lightInstanceVars.push_back(new Resource::Matrix4Variable(lightMat));
-                lightInstanceVars.push_back(new Resource::Float4Variable(lightColor));
-                lightInstanceVars.push_back(new Resource::FloatVariable(lightRadius));
-                lightInstanceVars.push_back(new Resource::Float3Variable(lightAttenuation));
+                redLightInstanceVars.push_back(new Resource::Matrix4Variable(redLightMat));
+                redLightInstanceVars.push_back(new Resource::Float4Variable(redLightColor));
+                redLightInstanceVars.push_back(new Resource::FloatVariable(redLightRadius));
+                redLightInstanceVars.push_back(new Resource::Float3Variable(redLightAttenuation));
 
-                m_lightingPass->VScheduleRenderRequest(m_pointLightMaterial, m_pointLightMeshHandle, lightInstanceVars);
+                std::vector<Resource::ShaderVariable*> blueLightInstanceVars;
+                Math::Matrix4 blueLightMat = Math::MMMatrixTranspose(Math::MMMatrixTranslation(Math::Vector3(3, 5, 3)));
+                Math::Vector4 blueLightColor = Math::Vector4(0.2f, .2f, .7f, 1);
+                float blueLightRadius = 5.0f;
+                Math::Vector3 blueLightAttenuation = Math::Vector3(0, 1, 0);
+
+                blueLightInstanceVars.push_back(new Resource::Matrix4Variable(blueLightMat));
+                blueLightInstanceVars.push_back(new Resource::Float4Variable(blueLightColor));
+                blueLightInstanceVars.push_back(new Resource::FloatVariable(blueLightRadius));
+                blueLightInstanceVars.push_back(new Resource::Float3Variable(blueLightAttenuation));
+
+                std::vector<Resource::ShaderVariable*> greenLightInstanceVars;
+                Math::Matrix4 greenLightMat = Math::MMMatrixTranspose(Math::MMMatrixTranslation(Math::Vector3(-3, 5, 3)));
+                Math::Vector4 greenLightColor = Math::Vector4(0.2f, .7f, .2f, 1);
+                float greenLightRadius = 5.0f;
+                Math::Vector3 greenLightAttenuation = Math::Vector3(0, 1, 0);
+
+                greenLightInstanceVars.push_back(new Resource::Matrix4Variable(greenLightMat));
+                greenLightInstanceVars.push_back(new Resource::Float4Variable(greenLightColor));
+                greenLightInstanceVars.push_back(new Resource::FloatVariable(greenLightRadius));
+                greenLightInstanceVars.push_back(new Resource::Float3Variable(greenLightAttenuation));
+
+                m_lightingPass->VScheduleRenderRequest(m_pointLightMaterial, m_pointLightMeshHandle, redLightInstanceVars);
+                m_lightingPass->VScheduleRenderRequest(m_pointLightMaterial, m_pointLightMeshHandle, blueLightInstanceVars);
+                m_lightingPass->VScheduleRenderRequest(m_pointLightMaterial, m_pointLightMeshHandle, greenLightInstanceVars);
 
                 m_compositionPass->VScheduleRenderRequest(m_compositionMaterial, m_compositionMeshHandle, std::vector<Resource::ShaderVariable*>());
 
@@ -357,8 +381,12 @@ namespace Hatchit {
                     for (size_t j = 0; j < instanceVars.size(); j++)
                         delete instanceVars[j];
                 }
-                for (size_t i = 0; i < lightInstanceVars.size(); i++)
-                    delete lightInstanceVars[i];
+                for (size_t i = 0; i < redLightInstanceVars.size(); i++)
+                {
+                    delete redLightInstanceVars[i];
+                    delete blueLightInstanceVars[i];
+                    delete greenLightInstanceVars[i];
+                }
             }
 
             void VKRenderer::VPresent()

@@ -79,6 +79,7 @@ namespace Hatchit {
         class HT_API RenderPassBase : public IRenderPass
         {
         public:
+            virtual ~RenderPassBase() { };
             virtual bool VInitFromResource(const Resource::RenderPassHandle& handle);
 
             virtual void VSetView(Math::Matrix4 view);
