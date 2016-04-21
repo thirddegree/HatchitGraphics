@@ -75,14 +75,14 @@ namespace Hatchit {
                 //Execute command list
                 m_resources->ExecuteCommandList();
                 // Wait for the command list to finish executing; the vertex/index buffers need to be uploaded to the GPU before the upload resources go out of scope.
-                m_resources->FlushCommandQueue();
+                m_resources->WaitForGpu();
 
                 return true;
             }
 
             void D3D12Renderer::VDeInitialize()
             {
-                
+                m_resources->WaitForGpu();
             }
 
             void D3D12Renderer::VSetClearColor(const Color& color)
@@ -98,6 +98,8 @@ namespace Hatchit {
             void D3D12Renderer::VPresent()
             {
                 m_resources->Present();
+
+                m_resources->MoveToNextFrame();
             }
 
             void D3D12Renderer::VResizeBuffers(uint32_t width, uint32_t height)
@@ -110,6 +112,9 @@ namespace Hatchit {
 
             void D3D12Renderer::VRender(float dt)
             {
+                m_resources->GetCommandAllocator()->Reset();
+                m_resources->GetCommandList()->Reset(m_resources->GetCommandAllocator(), m_pipeline->GetPipeline());
+
                 using namespace DirectX;
 
                 static float angle = 0.0f;
@@ -129,9 +134,6 @@ namespace Hatchit {
 
                 m_cBuffer->Fill(reinterpret_cast<void**>(&m_constantBufferData), sizeof(m_constantBufferData), sizeof(ConstantBuffer),
                     m_resources->GetCurrentFrameIndex());
-
-                m_resources->GetCommandAllocator()->Reset();
-                m_resources->GetCommandList()->Reset(m_resources->GetCommandAllocator(), m_pipeline->GetPipeline());
 
                 m_resources->GetCommandList()->SetGraphicsRootSignature(m_resources->GetRootLayout()->GetRootSignature());
                 

@@ -25,7 +25,6 @@ namespace Hatchit {
         {
             class HT_API D3D12DeviceResources
             {
-                static const int NUM_RENDER_TARGETS = 2;
                 static const int NUM_BUFFER_FRAMES = 2;
             public:
                 D3D12DeviceResources();
@@ -33,8 +32,9 @@ namespace Hatchit {
                 ~D3D12DeviceResources();
 
                 void Present();
-                void FlushCommandQueue();
+                void WaitForGpu();
                 void ExecuteCommandList();
+                void MoveToNextFrame();
                 void ValidateDevice();
                 bool Initialize(HWND hwnd, uint32_t width, uint32_t height);
 				void Resize(uint32_t width, uint32_t height);
@@ -56,8 +56,10 @@ namespace Hatchit {
             private:
 				HWND						m_hwnd;
                 bool                        m_deviceRemoved;
-                uint32_t                    m_currentBackBuffer;
+                uint32_t                    m_currentFrame;
                 ID3D12Fence*                m_fence;
+                HANDLE                      m_fenceEvent;
+                uint64_t                    m_fenceValues[NUM_BUFFER_FRAMES];
                 uint64_t                    m_currentFence;
 
                 D3D12_VIEWPORT              m_viewport;
@@ -67,9 +69,9 @@ namespace Hatchit {
                 IDXGISwapChain3*            m_swapChain;
 				DXGI_SWAP_CHAIN_DESC		m_swapChainDesc;
                 ID3D12CommandQueue*         m_commandQueue;
-                ID3D12CommandAllocator*     m_commandAllocator;
+                ID3D12CommandAllocator*     m_commandAllocators[NUM_BUFFER_FRAMES];
                 ID3D12GraphicsCommandList*  m_commandList;
-                ID3D12Resource*             m_renderTargets[NUM_RENDER_TARGETS];
+                ID3D12Resource*             m_renderTargets[NUM_BUFFER_FRAMES];
                 ID3D12Resource*             m_depthStencil;
                 ID3D12DescriptorHeap*       m_renderTargetViewHeap;
                 uint32_t                    m_renderTargetViewHeapSize;

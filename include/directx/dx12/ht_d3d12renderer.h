@@ -40,7 +40,7 @@ namespace Hatchit {
 
             class HT_API D3D12Renderer : public IRenderer
             {
-                static const int NUM_RENDER_TARGETS = 2;
+                static const int NUM_BUFFER_FRAMES = 2;
             public:
                 D3D12Renderer();
 
