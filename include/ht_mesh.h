@@ -26,7 +26,7 @@
 
 #include <ht_platform.h>
 #include <ht_model.h>
-#include <ht_mesh.h>
+#include <ht_mesh_resource.h>
 
 namespace Hatchit {
     namespace Graphics {
@@ -43,12 +43,12 @@ namespace Hatchit {
         public:
             virtual ~IMesh() {};
 
-            virtual bool VBuffer(Resource::Mesh* mesh) = 0;
-
             uint32_t GetIndexCount();
 
         protected:
             uint32_t m_indexCount;
         };
+
+        using IMeshHandle = Core::Handle<IMesh>;
     }
 }

@@ -13,54 +13,123 @@
 **/
 
 #include <ht_renderpass.h>
+#include <ht_renderer.h>
 
-namespace Hatchit {
+namespace Hatchit
+{
+    namespace Graphics
+    {
+        bool RenderPassBase::VInitFromResource(const Resource::RenderPassHandle& handle)
+        {
+            //Initialize from file here
+            return true;
+        }
 
-    namespace Graphics {
+        void RenderPassBase::VSetView(Math::Matrix4 view)
+        {
+            m_view = std::move(view);
+        }
+        void RenderPassBase::VSetProj(Math::Matrix4 proj)
+        {
+            m_proj = std::move(proj);
+        }
 
-        void IRenderPass::ScheduleRenderRequest(IPipeline* pipeline, IMaterial* material, IMesh* mesh)
+        void RenderPassBase::VScheduleRenderRequest(IMaterialHandle material, IMeshHandle mesh, std::vector<Resource::ShaderVariable*> instanceVariables)
         {
             RenderRequest renderRequest = {};
 
-            renderRequest.pipeline  = pipeline;
-            renderRequest.material  = material;
-            renderRequest.mesh      = mesh;
-
-            m_view = Math::Matrix4();
-            m_proj = Math::Matrix4();
+            renderRequest.pipeline = material->GetPipeline();
+            renderRequest.material = material;
+            renderRequest.mesh = mesh;
 
             m_renderRequests.push_back(renderRequest);
+
+            //Append instance variables to the array of bytes
+
+            //Determine how much we need to append to the array
+            size_t newSize = m_instanceDataSize;
+            m_instanceChunkSize = 0;
+            for (size_t i = 0; i < instanceVariables.size(); i++)
+            {
+                m_instanceChunkSize += Resource::ShaderVariable::SizeFromType(instanceVariables[i]->GetType());
+                newSize += m_instanceChunkSize;
+            }
+                
+            //Make an array of the new size and replace the existing one
+            BYTE* newArray = new BYTE[newSize];
+            
+            if (m_instanceData != nullptr)
+            {
+                memcpy(newArray, m_instanceData, m_instanceDataSize);
+                delete[] m_instanceData;
+            }
+
+            m_instanceData = newArray;
+
+            //Copy data to new array
+            m_currentInstanceDataOffset = m_instanceDataSize;
+            for (size_t i = 0; i < instanceVariables.size(); i++)
+            {
+                size_t size = Resource::ShaderVariable::SizeFromType(instanceVariables[i]->GetType());
+                memcpy(m_instanceData + m_currentInstanceDataOffset, instanceVariables[i]->GetData(), size);
+                m_currentInstanceDataOffset += size;
+            }
+
+            m_instanceDataSize = m_currentInstanceDataOffset;
         }
 
-        void IRenderPass::SetRenderTarget(IRenderTarget* renderTarget)
+        uint64_t RenderPassBase::GetLayerFlags()
         {
-            m_renderTarget = renderTarget;
+            return m_layerflags;
         }
 
-        void IRenderPass::SetWidth(uint32_t width) { m_width = width; }
-        void IRenderPass::SetHeight(uint32_t height) { m_height = height; }
-
-        void IRenderPass::SetView(Math::Matrix4 view) 
+        void RenderPassBase::BuildRenderRequestHeirarchy()
         {
-            m_view = view; 
-        }
-        void IRenderPass::SetProj(Math::Matrix4 proj) 
-        { 
-            m_proj = proj; 
-        }
+            uint32_t i;
 
-        void IRenderPass::BuildRenderRequestHeirarchy() 
-        {
-            for (uint32_t i = 0; i < m_renderRequests.size(); i++)
+            //Clear past pipeline requests
+            for (i = 0; i < m_renderRequests.size(); i++)
             {
                 RenderRequest renderRequest = m_renderRequests[i];
 
-                IPipeline* pipeline = renderRequest.pipeline;
-                IMaterial* material = renderRequest.material;
-                IMesh* mesh = renderRequest.mesh;
+                IPipelineHandle pipeline = renderRequest.pipeline;
 
-                m_pipelineList[pipeline].push_back({material, mesh});
+                m_pipelineList[pipeline].clear();
             }
+
+            //Build new requests
+            for (i = 0; i < m_renderRequests.size(); i++)
+            {
+                RenderRequest renderRequest = m_renderRequests[i];
+
+                IPipelineHandle pipeline = renderRequest.pipeline;
+                IMaterialHandle material = renderRequest.material;
+                IMeshHandle mesh = renderRequest.mesh;
+
+                std::vector<RenderableInstances> instances = m_pipelineList[pipeline];
+
+                //If the pipeline maps to an existing material and mesh, lets increment the count
+                bool found = false;
+                for (size_t i = 0; i < instances.size(); i++)
+                {
+                    Renderable renderable = instances[i].renderable;
+                    if (renderable.material == material && renderable.mesh == mesh)
+                    {
+                        instances[i].count++;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if(!found)
+                    instances.push_back({ material, mesh, 1 });
+
+                m_pipelineList[pipeline] = instances;
+            }
+
+            //Done with render requests so we can clear them
+            m_renderRequests.clear();
+
         }
     }
 }

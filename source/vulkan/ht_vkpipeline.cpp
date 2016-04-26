@@ -23,150 +23,97 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKPipeline::VKPipeline(const VkRenderPass* renderPass) { m_renderPass = renderPass; }
+            using namespace Resource;
+
+            VKPipeline::VKPipeline(Core::Guid ID) :
+                m_device(VKRenderer::RendererInstance->GetVKDevice()),
+                Core::RefCounted<VKPipeline>(std::move(ID))
+            {
+                m_hasVertexAttribs = false;
+                m_hasIndexAttribs = false;
+            }
+
             VKPipeline::~VKPipeline() 
             {
-                VKRenderer* renderer = VKRenderer::RendererInstance;
-
-                VkDevice device = renderer->GetVKDevice();
-
-                vkDestroyPipeline(device, m_pipeline, nullptr);
-                vkDestroyPipelineLayout(device, m_pipelineLayout, nullptr);
-                vkDestroyPipelineCache(device, m_pipelineCache, nullptr);
-
-                //vkFreeDescriptorSets(m_device, );
-                for (size_t i = 0; i < m_descriptorSetLayouts.size(); i++)
-                    vkDestroyDescriptorSetLayout(device, m_descriptorSetLayouts[i], nullptr);
+                vkDestroyPipelineCache(m_device, m_pipelineCache, nullptr);
+                vkDestroyPipeline(m_device, m_pipeline, nullptr);
             }
 
-            //If we wanted to allow users to control blending states
-            //void VSetColorBlendAttachments(ColorBlendState* colorBlendStates) override;
-
-            /* Set the rasterization state for this pipeline
-            * \param rasterState A struct containing rasterization options
-            */
-            void VKPipeline::VSetRasterState(const RasterizerState& rasterState)
+            bool VKPipeline::Initialize(const std::string& fileName)
             {
-                VkPolygonMode polyMode;
-                VkCullModeFlagBits cullMode;
-
-                switch (rasterState.polygonMode)
+                Resource::PipelineHandle handle = Resource::Pipeline::GetHandleFromFileName(fileName);
+                if (!handle.IsValid())
                 {
-                case PolygonMode::SOLID:
-                    polyMode = VK_POLYGON_MODE_FILL;
-                    break;
-                case PolygonMode::LINE:
-                    polyMode = VK_POLYGON_MODE_LINE;
-                    break;
-                default:
-                    polyMode = VK_POLYGON_MODE_FILL;
-                    break;
+                    return false;
+                    HT_DEBUG_PRINTF("VKPipeline::VInitialize() ERROR: Handle was invalid");
                 }
 
-                switch (rasterState.cullMode)
+                setVertexLayout(handle->GetVertexLayout());
+                setInstanceLayout(handle->GetInstanceLayout());
+
+                setDepthStencilState(handle->GetDepthStencilState());
+                setRasterState(handle->GetRasterizationState());
+                setMultisampleState(handle->GetMultisampleState());
+
+                VAddShaderVariables(handle->GetShaderVariables());
+
+                //Load all shaders
+                std::map<Pipeline::ShaderSlot, std::string> shaderPaths = handle->GetSPVShaderPaths();
+
+                std::map<Pipeline::ShaderSlot, std::string>::iterator it;
+                for (it = shaderPaths.begin(); it != shaderPaths.end(); it++)
                 {
-                case NONE:
-                    cullMode = VK_CULL_MODE_NONE;
-                    break;
-                case FRONT:
-                    cullMode = VK_CULL_MODE_FRONT_BIT;
-                    break;
-                case BACK:
-                    cullMode = VK_CULL_MODE_BACK_BIT;
-                    break;
+                    //Get the actual shader handle
+                    VKShaderHandle shaderHandle = VKShader::GetHandle(it->second, it->second);
+
+                    loadShader(it->first, shaderHandle.StaticCastHandle<IShader>());
                 }
 
-                m_rasterizationState = {}; //default setup
-                m_rasterizationState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-                m_rasterizationState.pNext = nullptr;
-                m_rasterizationState.polygonMode = polyMode;
-                m_rasterizationState.cullMode = cullMode;
-                m_rasterizationState.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-                m_rasterizationState.depthClampEnable = rasterState.depthClampEnable;
-                m_rasterizationState.rasterizerDiscardEnable = rasterState.discardEnable;
-                m_rasterizationState.depthBiasEnable = VK_FALSE;
+                //Get a handle to a compatible render pass
+                std::string renderPassPath = handle->GetRenderPassPath();
+                m_renderPass = VKRenderPass::GetHandle(renderPassPath, renderPassPath);
+
+                if (!preparePipeline())
+                    return false;
+
+                return true;
             }
 
-            /* Set the multisampling state for this pipeline
-            * \param multiState A struct containing multisampling options
-            */
-            void VKPipeline::VSetMultisampleState(const MultisampleState& multiState)
+            bool VKPipeline::VAddShaderVariables(std::map<std::string, ShaderVariable*> shaderVariables)
             {
-                VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT;
-
-                switch (multiState.samples)
+                std::map<std::string, ShaderVariable*>::iterator it;
+                for (it = shaderVariables.begin(); it != shaderVariables.end(); it++)
                 {
-                case SAMPLE_1_BIT:
-                    sampleCount = VK_SAMPLE_COUNT_1_BIT;
-                    break;
-                case SAMPLE_2_BIT:
-                    sampleCount = VK_SAMPLE_COUNT_2_BIT;
-                    break;
-                case SAMPLE_4_BIT:
-                    sampleCount = VK_SAMPLE_COUNT_4_BIT;
-                    break;
-                case SAMPLE_8_BIT:
-                    sampleCount = VK_SAMPLE_COUNT_8_BIT;
-                    break;
-                case SAMPLE_16_BIT:
-                    sampleCount = VK_SAMPLE_COUNT_16_BIT;
-                    break;
-                case SAMPLE_32_BIT:
-                    sampleCount = VK_SAMPLE_COUNT_32_BIT;
-                    break;
-                case SAMPLE_64_BIT:
-                    sampleCount = VK_SAMPLE_COUNT_64_BIT;
-                    break;
+                    std::string name = it->first;
+                    ShaderVariable* var = it->second;
+                    
+                    switch (var->GetType())
+                    {
+                    case ShaderVariable::INT:
+                        VSetInt(name, *static_cast<int*>(var->GetData()));
+                        break;
+                    case ShaderVariable::DOUBLE:
+                        VSetDouble(name, *static_cast<double*>(var->GetData()));
+                        break;
+                    case ShaderVariable::FLOAT:
+                        VSetFloat(name, *static_cast<float*>(var->GetData()));
+                        break;
+                    case ShaderVariable::FLOAT2:
+                        VSetFloat2(name, *static_cast<Math::Vector2 *>(var->GetData()));
+                        break;
+                    case ShaderVariable::FLOAT3:
+                        VSetFloat3(name, *static_cast<Math::Vector3 *>(var->GetData()));
+                        break;
+                    case ShaderVariable::FLOAT4:
+                        VSetFloat4(name, *static_cast<Math::Vector4 *>(var->GetData()));
+                        break;
+                    case ShaderVariable::MAT4:
+                        VSetMatrix4(name, *static_cast<Math::Matrix4 *>(var->GetData()));
+                        break;
+                    }
                 }
 
-                m_multisampleState = {};
-                m_multisampleState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-                m_multisampleState.pNext = nullptr;
-                m_multisampleState.pSampleMask = nullptr;
-                m_multisampleState.rasterizationSamples = sampleCount;
-                m_multisampleState.sampleShadingEnable = multiState.perSampleShading;
-                m_multisampleState.minSampleShading = multiState.minSamples;
-            }
-
-            /* Load a shader into a shader slot for the pipeline
-            * \param shaderSlot The slot that you want the shader in; vertex, fragment etc.
-            * \param shader A pointer to the shader that you want to load to the given shader slot
-            */
-            void VKPipeline::VLoadShader(ShaderSlot shaderSlot, IShader* shader)
-            {
-                VKShader* vkShader = (VKShader*)shader;
-
-                VkShaderStageFlagBits shaderType;
-
-                switch (shaderSlot)
-                {
-                case ShaderSlot::VERTEX:
-                    shaderType = VK_SHADER_STAGE_VERTEX_BIT;
-                    break;
-                case ShaderSlot::FRAGMENT:
-                    shaderType = VK_SHADER_STAGE_FRAGMENT_BIT;
-                    break;
-                case ShaderSlot::GEOMETRY:
-                    shaderType = VK_SHADER_STAGE_GEOMETRY_BIT;
-                    break;
-                case ShaderSlot::TESS_CONTROL:
-                    shaderType = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-                    break;
-                case ShaderSlot::TESS_EVAL:
-                    shaderType = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-                    break;
-                case ShaderSlot::COMPUTE:
-                    shaderType = VK_SHADER_STAGE_COMPUTE_BIT;
-                    break;
-                }
-
-                VkPipelineShaderStageCreateInfo shaderStage = {};
-                shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-                shaderStage.stage = shaderType;
-                shaderStage.module = vkShader->GetShaderModule();
-                shaderStage.pName = "main";
-
-                m_shaderStages.push_back(shaderStage);
+                return true;
             }
 
             bool VKPipeline::VSetInt(std::string name, int data)
@@ -181,6 +128,18 @@ namespace Hatchit {
 
                 return true;
             }
+            bool VKPipeline::VSetDouble(std::string name, double data)
+            {
+                //If the variable doesn't exist in the map lets allocate it
+                //Otherwise lets just change its data
+                std::map<std::string, ShaderVariable*>::iterator it = m_shaderVariables.find(name);
+                if (it != m_shaderVariables.end())
+                    static_cast<DoubleVariable*>(m_shaderVariables[name])->SetData(data);
+                else
+                    m_shaderVariables[name] = new DoubleVariable(data);
+
+                return true;
+            }
             bool VKPipeline::VSetFloat(std::string name, float data)
             {
                 //If the variable doesn't exist in the map lets allocate it
@@ -190,6 +149,18 @@ namespace Hatchit {
                     static_cast<FloatVariable*>(m_shaderVariables[name])->SetData(data);
                 else
                     m_shaderVariables[name] = new FloatVariable(data);
+
+                return true;
+            }
+            bool VKPipeline::VSetFloat2(std::string name, Math::Vector2 data)
+            {
+                //If the variable doesn't exist in the map lets allocate it
+                //Otherwise lets just change its data
+                std::map<std::string, ShaderVariable*>::iterator it = m_shaderVariables.find(name);
+                if (it != m_shaderVariables.end())
+                    static_cast<Float2Variable*>(m_shaderVariables[name])->SetData(data);
+                else
+                    m_shaderVariables[name] = new Float2Variable(data);
 
                 return true;
             }
@@ -230,247 +201,391 @@ namespace Hatchit {
                 return true;
             }
 
-            ///Have Vulkan create a pipeline with these settings
-            bool VKPipeline::VPrepare()
-            {
-                //Get the renderer for use later
-                VKRenderer* renderer = VKRenderer::RendererInstance;
-
-                //Get objects from renderer
-                VkDevice device = renderer->GetVKDevice();
-                VkDescriptorPool descriptorPool = renderer->GetVKDescriptorPool();
-
-                if (!prepareLayouts(device))
-                    return false;
-
-                if (!useGivenLayout)
-                {
-                    //TODO: Actually figure out how big this needs to be
-                    renderer->CreateBuffer(device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, sizeof(Math::Matrix4) * 2, nullptr, &m_uniformVSBlock);
-
-                    m_uniformVSBlock.descriptor.offset = 0;
-                    m_uniformVSBlock.descriptor.range = sizeof(Math::Matrix4) * 2;
-
-                    if (!prepareDescriptorSet(descriptorPool, device))
-                        return false;
-                }
-
-                if (!preparePipeline(device))
-                    return false;
-
-                return true;
-            }
-
             bool VKPipeline::VUpdate()
             {
+                //TODO: Organize push constant data other than just matricies
                 if (m_shaderVariables.size() == 0)
                     return true;
 
-                VkDevice device = VKRenderer::RendererInstance->GetVKDevice();
+                std::vector<uint32_t>       intList;
+                std::vector<float>          floatList;
+                std::vector<Math::Vector2>  vector2List;
+                std::vector<Math::Vector3>  vector3List;
+                std::vector<Math::Vector4>  vector4List;
+                std::vector<Math::Matrix4>  matrixList;
 
-                uint8_t* pData;
-
-                std::vector<Math::Matrix4> variableList;
-
+                //Sort data into appropriate lists
                 std::map <std::string, ShaderVariable*>::iterator it;
                 for (it = m_shaderVariables.begin(); it != m_shaderVariables.end(); it++)
-                    variableList.push_back(*(Math::Matrix4*)(it->second->GetData()));
+                {
+                    ShaderVariable::Type varType = it->second->GetType();
 
-                VkResult err = vkMapMemory(device, m_uniformVSBlock.memory, 0, sizeof(m_shaderVariables), 0, (void**)&pData);
-                assert(!err);
+                    switch (varType)
+                    {
+                    case ShaderVariable::INT:
+                        intList.push_back(*(int*)(it->second->GetData()));
+                        break;
+                    case ShaderVariable::FLOAT:
+                        floatList.push_back(*(float*)(it->second->GetData()));
+                        break;
+                    case ShaderVariable::FLOAT2:
+                        vector2List.push_back(*(Math::Vector2*)(it->second->GetData()));
+                        break;
+                    case ShaderVariable::FLOAT3:
+                        vector3List.push_back(*(Math::Vector3*)(it->second->GetData()));
+                        break;
+                    case ShaderVariable::FLOAT4:
+                        vector4List.push_back(*(Math::Vector4*)(it->second->GetData()));
+                        break;
+                    case ShaderVariable::MAT4:
+                        matrixList.push_back(*(Math::Matrix4*)(it->second->GetData()));
+                        break;
+                    }
+                }
 
-                memcpy(pData, variableList.data(), sizeof(Math::Matrix4) * 2);
+                //Resize vectors to fit new push data
+                m_intPushData.clear();
+                m_intPushData.resize(intList.size());
+
+                m_floatPushData.clear();
+                m_floatPushData.resize(floatList.size());
+
+                m_vector2PushData.clear();
+                m_vector2PushData.resize(vector2List.size() * 2);
+
+                m_vector3PushData.clear();
+                m_vector3PushData.resize(vector3List.size() * 3);
+
+                m_vector4PushData.clear();
+                m_vector4PushData.resize(vector4List.size() * 4);
+
+                m_matrixPushData.clear();
+                m_matrixPushData.resize(matrixList.size() * 16);
+
+                //Copy data into variable lists
+                size_t i = 0; //reuse i
+                for (i = 0; i < intList.size(); i++)
+                {
+                    memcpy(m_intPushData.data() + i, static_cast<void*>(&intList[i]), sizeof(uint32_t));
+                }
                 
-                vkUnmapMemory(device, m_uniformVSBlock.memory);
+                for (i = 0; i < floatList.size(); i++)
+                {
+                    memcpy(m_floatPushData.data() + i, static_cast<void*>(&floatList[i]), sizeof(float));
+                }
+                
+                for (i = 0; i < vector2List.size(); i++)
+                {
+                    Math::Vector2 vec = vector2List[i];
+                    memcpy(m_vector2PushData.data() + (2 * i), static_cast<void*>(&vec[0]), sizeof(float) * 2);
+                }
+                
+                for (i = 0; i < vector3List.size(); i++)
+                {
+                    Math::Vector3 vec = vector3List[i];
+                    memcpy(m_vector3PushData.data() + (3 * i), static_cast<void*>(&vec[0]), sizeof(float) * 3);
+                }
+
+                for (i = 0; i < vector4List.size(); i++)
+                {
+                    Math::Vector4 vec = vector4List[i];
+                    memcpy(m_vector4PushData.data() + (4 * i), static_cast<void*>(&vec[0]), sizeof(float) * 4);
+                }
+                
+                for (i = 0; i < matrixList.size(); i++)
+                {
+                    Math::Matrix4 mat = matrixList[i];
+                    memcpy(m_matrixPushData.data() + (16 * i), static_cast<void*>(matrixList[i].m_data), sizeof(float) * 16);
+                }
 
                 return true;
             }
 
-            void VKPipeline::SetVKDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout)
+            VkPipeline VKPipeline::GetVKPipeline() { return m_pipeline; }
+
+            void VKPipeline::SendPushConstants(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout)
             {
-                useGivenLayout = true;
-                m_descriptorSetLayouts.push_back(descriptorSetLayout);
+                //Send a push for each type of data to send; vectors, matricies, ints etc.
+                uint32_t matrixDataSize = static_cast<uint32_t>(m_matrixPushData.size() * sizeof(float));
+                vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, matrixDataSize, m_matrixPushData.data());
+
+                uint32_t intDataSize = static_cast<uint32_t>(m_intPushData.size() * sizeof(uint32_t));
+                vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, matrixDataSize, intDataSize, m_intPushData.data());
             }
 
-            bool VKPipeline::prepareLayouts(VkDevice device)
+            /*
+                Private Methods
+            */
+
+
+            void VKPipeline::setVertexLayout(const std::vector<Resource::Pipeline::Attribute> vertexLayout) 
+            {
+                if (vertexLayout.size() > 0)
+                {
+                    m_hasVertexAttribs = true;
+                    addAttributesToLayout(vertexLayout, m_vertexLayout, m_vertexLayoutStride);
+                }
+            }
+
+            void VKPipeline::setInstanceLayout(const std::vector<Resource::Pipeline::Attribute> instanceLayout) 
+            {
+                if (instanceLayout.size() > 0)
+                {
+                    m_hasIndexAttribs = true;
+                    addAttributesToLayout(instanceLayout, m_vertexLayout, m_instanceLayoutStride);
+                }
+            }
+
+            void VKPipeline::setDepthStencilState(const Pipeline::DepthStencilState& depthStencilState)
+            {
+                //Depth and stencil states
+                m_depthStencilState = {};
+                m_depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+                m_depthStencilState.pNext = nullptr;
+                m_depthStencilState.depthTestEnable = depthStencilState.testDepth;
+                m_depthStencilState.depthWriteEnable = depthStencilState.writeDepth;
+                m_depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+                m_depthStencilState.depthBoundsTestEnable = VK_FALSE;
+                m_depthStencilState.back.failOp = VK_STENCIL_OP_KEEP;
+                m_depthStencilState.back.passOp = VK_STENCIL_OP_KEEP;
+                m_depthStencilState.back.compareOp = VK_COMPARE_OP_ALWAYS;
+                m_depthStencilState.stencilTestEnable = VK_FALSE;
+                m_depthStencilState.front = m_depthStencilState.back;
+                m_depthStencilState.front.compareOp = VK_COMPARE_OP_NEVER;
+            }
+
+            void VKPipeline::setRasterState(const Pipeline::RasterizerState& rasterState)
+            {
+                VkPolygonMode polyMode;
+                VkCullModeFlagBits cullMode;
+                VkFrontFace frontFace;
+
+                switch (rasterState.polygonMode)
+                {
+                case Pipeline::PolygonMode::SOLID:
+                    polyMode = VK_POLYGON_MODE_FILL;
+                    break;
+                case Pipeline::PolygonMode::LINE:
+                    polyMode = VK_POLYGON_MODE_LINE;
+                    break;
+                default:
+                    polyMode = VK_POLYGON_MODE_FILL;
+                    break;
+                }
+
+                switch (rasterState.cullMode)
+                {
+                case Pipeline::NONE:
+                    cullMode = VK_CULL_MODE_NONE;
+                    break;
+                case Pipeline::FRONT:
+                    cullMode = VK_CULL_MODE_FRONT_BIT;
+                    break;
+                case Pipeline::BACK:
+                    cullMode = VK_CULL_MODE_BACK_BIT;
+                    break;
+                }
+
+                if (rasterState.frontCounterClockwise)
+                    frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+                else
+                    frontFace = VK_FRONT_FACE_CLOCKWISE;
+
+                m_rasterizationState = {}; //default setup
+                m_rasterizationState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+                m_rasterizationState.pNext = nullptr;
+                m_rasterizationState.polygonMode = polyMode;
+                m_rasterizationState.cullMode = cullMode;
+                m_rasterizationState.frontFace = frontFace;
+                m_rasterizationState.depthClampEnable = rasterState.depthClampEnable;
+                m_rasterizationState.rasterizerDiscardEnable = rasterState.discardEnable;
+                m_rasterizationState.depthBiasEnable = VK_FALSE;
+            }
+
+            void VKPipeline::setMultisampleState(const Pipeline::MultisampleState& multiState)
+            {
+                VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT;
+
+                switch (multiState.samples)
+                {
+                case Pipeline::SAMPLE_1_BIT:
+                    sampleCount = VK_SAMPLE_COUNT_1_BIT;
+                    break;
+                case Pipeline::SAMPLE_2_BIT:
+                    sampleCount = VK_SAMPLE_COUNT_2_BIT;
+                    break;
+                case Pipeline::SAMPLE_4_BIT:
+                    sampleCount = VK_SAMPLE_COUNT_4_BIT;
+                    break;
+                case Pipeline::SAMPLE_8_BIT:
+                    sampleCount = VK_SAMPLE_COUNT_8_BIT;
+                    break;
+                case Pipeline::SAMPLE_16_BIT:
+                    sampleCount = VK_SAMPLE_COUNT_16_BIT;
+                    break;
+                case Pipeline::SAMPLE_32_BIT:
+                    sampleCount = VK_SAMPLE_COUNT_32_BIT;
+                    break;
+                case Pipeline::SAMPLE_64_BIT:
+                    sampleCount = VK_SAMPLE_COUNT_64_BIT;
+                    break;
+                }
+
+                m_multisampleState = {};
+                m_multisampleState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+                m_multisampleState.pNext = nullptr;
+                m_multisampleState.pSampleMask = nullptr;
+                m_multisampleState.rasterizationSamples = sampleCount;
+                m_multisampleState.sampleShadingEnable = multiState.perSampleShading;
+                m_multisampleState.minSampleShading = multiState.minSamples;
+            }
+
+            void VKPipeline::loadShader(Pipeline::ShaderSlot shaderSlot, IShaderHandle shaderHandle)
+            {
+                VKShaderHandle shader = shaderHandle.DynamicCastHandle<VKShader>();
+                m_shaderHandles[shaderSlot] = shader;
+
+                VkShaderModule shaderModule = shader->GetShaderModule();
+
+                VkShaderStageFlagBits shaderType;
+
+                switch (shaderSlot)
+                {
+                case Pipeline::ShaderSlot::VERTEX:
+                    shaderType = VK_SHADER_STAGE_VERTEX_BIT;
+                    break;
+                case Pipeline::ShaderSlot::FRAGMENT:
+                    shaderType = VK_SHADER_STAGE_FRAGMENT_BIT;
+                    break;
+                case Pipeline::ShaderSlot::GEOMETRY:
+                    shaderType = VK_SHADER_STAGE_GEOMETRY_BIT;
+                    break;
+                case Pipeline::ShaderSlot::TESS_CONTROL:
+                    shaderType = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+                    break;
+                case Pipeline::ShaderSlot::TESS_EVAL:
+                    shaderType = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+                    break;
+                case Pipeline::ShaderSlot::COMPUTE:
+                    shaderType = VK_SHADER_STAGE_COMPUTE_BIT;
+                    break;
+                }
+
+                VkPipelineShaderStageCreateInfo shaderStage = {};
+                shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+                shaderStage.stage = shaderType;
+                shaderStage.module = shaderModule;
+                shaderStage.pName = "main";
+
+                m_shaderStages.push_back(shaderStage);
+            }
+
+            bool VKPipeline::preparePipeline()
             {
                 VkResult err;
 
-                if (!useGivenLayout)
+                //If we don't have a vertex AND fragment shader available we need to log that and fail
+                bool hasVert = false;
+                bool hasFrag = false;
+                for (uint32_t i = 0; i < m_shaderStages.size(); i++)
                 {
-                    //TODO: Properly detect and setup layout bindings
-
-                    std::vector<VkDescriptorSetLayoutBinding> perPassBindings;
-                    std::vector<VkDescriptorSetLayoutBinding> perObjectBindings;
-
-                    //Per pass binding point
-                    VkDescriptorSetLayoutBinding perPassBinding = {};
-                    perPassBinding.binding = 0;
-                    perPassBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                    perPassBinding.descriptorCount = 1;
-                    perPassBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-                    perPassBinding.pImmutableSamplers = nullptr;
-
-                    perPassBindings.push_back(perPassBinding);
-
-                    //Per model binding point
-                    VkDescriptorSetLayoutBinding perObjectBinding = {};
-                    perObjectBinding.binding = 0;
-                    perObjectBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                    perObjectBinding.descriptorCount = 1;
-                    perObjectBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-                    perObjectBinding.pImmutableSamplers = nullptr;
-
-                    perObjectBindings.push_back(perObjectBinding);
-
-                    VkDescriptorSetLayoutCreateInfo perPassDescriptorLayoutInfo = {};
-                    perPassDescriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-                    perPassDescriptorLayoutInfo.pNext = NULL;
-                    perPassDescriptorLayoutInfo.bindingCount = static_cast<uint32_t>(perPassBindings.size());
-                    perPassDescriptorLayoutInfo.pBindings = perPassBindings.data();
-
-                    VkDescriptorSetLayoutCreateInfo perObjectDescriptorLayoutInfo = {};
-                    perObjectDescriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-                    perObjectDescriptorLayoutInfo.pNext = NULL;
-                    perObjectDescriptorLayoutInfo.bindingCount = static_cast<uint32_t>(perObjectBindings.size());
-                    perObjectDescriptorLayoutInfo.pBindings = perObjectBindings.data();
-
-                    m_descriptorSetLayouts.resize(2);
-
-                    err = vkCreateDescriptorSetLayout(device, &perPassDescriptorLayoutInfo, nullptr, &m_descriptorSetLayouts[0]);
-                    assert(!err);
-                    if (err != VK_SUCCESS)
-                    {
-#ifdef _DEBUG
-                        Core::DebugPrintF("VKRenderer::preparePipeline(): Failed to create descriptor layout\n");
-#endif
-                        return false;
-                    }
-
-                    err = vkCreateDescriptorSetLayout(device, &perObjectDescriptorLayoutInfo, nullptr, &m_descriptorSetLayouts[1]);
-                    assert(!err);
-                    if (err != VK_SUCCESS)
-                    {
-#ifdef _DEBUG
-                        Core::DebugPrintF("VKRenderer::preparePipeline(): Failed to create descriptor layout\n");
-#endif
-                        return false;
-                    }
+                    if (m_shaderStages[i].stage & VK_SHADER_STAGE_VERTEX_BIT)
+                        hasVert = true;
+                    if (m_shaderStages[i].stage & VK_SHADER_STAGE_FRAGMENT_BIT)
+                        hasFrag = true;
                 }
 
-                //Pipeline layout 
-                VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-                pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-                pipelineLayoutInfo.pNext = nullptr;
-                pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(m_descriptorSetLayouts.size());
-                pipelineLayoutInfo.pSetLayouts = m_descriptorSetLayouts.data();
-
-                err = vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout);
-                assert(!err);
-                if (err != VK_SUCCESS)
+                if (!hasVert || !hasFrag)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::preparePipeline(): Failed to create pipeline layout\n");
-#endif
+                    HT_DEBUG_PRINTF("Error: Pipeline must have both Vertex and Fragment shaders");
+                    assert(!hasVert || !hasFrag);
+
                     return false;
                 }
-
-                return true;
-            }
-
-            bool VKPipeline::prepareDescriptorSet(VkDescriptorPool descriptorPool, VkDevice device)
-            {
-                VkResult err;
-
-                //Setup the descriptor sets
-                VkDescriptorSetAllocateInfo allocInfo = {};
-                allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-                allocInfo.descriptorPool = descriptorPool;
-                allocInfo.descriptorSetCount = 1;
-                allocInfo.pSetLayouts = &m_descriptorSetLayouts[0];
-
-                err = vkAllocateDescriptorSets(device, &allocInfo, &m_descriptorSet);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKPipeline::prepareDescriptorSet: Failed to allocate descriptor set\n");
-#endif
-                    return false;
-                }
-
-                std::vector<VkWriteDescriptorSet> descSetWrites = {};
-
-                VkWriteDescriptorSet perPassVSWrite = {};
-                perPassVSWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                perPassVSWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                perPassVSWrite.dstSet = m_descriptorSet;
-                perPassVSWrite.dstBinding = 0;
-                perPassVSWrite.pBufferInfo = &m_uniformVSBlock.descriptor;
-                perPassVSWrite.descriptorCount = 1;
-
-                descSetWrites.push_back(perPassVSWrite);
-
-                vkUpdateDescriptorSets(device, static_cast<uint32_t>(descSetWrites.size()), descSetWrites.data(), 0, nullptr);
-
-                return true;
-            }
-
-            bool VKPipeline::preparePipeline(VkDevice device)
-            {
-                VkResult err;
+                
 
                 //Vertex info state
-                VkVertexInputBindingDescription vertexBindingDescriptions[1] = {};
+                std::vector<VkVertexInputBindingDescription> vertexBindingDescriptions;
 
-                vertexBindingDescriptions[0] = {};
-                vertexBindingDescriptions[0].binding = 0;
-                vertexBindingDescriptions[0].stride = sizeof(Vertex);
-                vertexBindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+                uint32_t binding = 0;
 
-                VkVertexInputAttributeDescription vertexAttributeDescriptions[3] = {};
+                if (m_hasVertexAttribs)
+                {
+                    VkVertexInputBindingDescription vertexInput = {};
+                    vertexInput.binding = binding++;
+                    vertexInput.stride = m_vertexLayoutStride;
+                    vertexInput.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-                vertexAttributeDescriptions[0] = {};
-                vertexAttributeDescriptions[0].binding = 0;
-                vertexAttributeDescriptions[0].location = 0;
-                vertexAttributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-                vertexAttributeDescriptions[0].offset = 0;
+                    vertexBindingDescriptions.push_back(vertexInput);
+                }
 
-                vertexAttributeDescriptions[1] = {};
-                vertexAttributeDescriptions[1].binding = 0;
-                vertexAttributeDescriptions[1].location = 1;
-                vertexAttributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-                vertexAttributeDescriptions[1].offset = sizeof(float) * 3;
+                if (m_hasIndexAttribs)
+                {
+                    VkVertexInputBindingDescription instanceInput = {};
+                    instanceInput.binding = binding++;
+                    instanceInput.stride = m_instanceLayoutStride;
+                    instanceInput.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
-                vertexAttributeDescriptions[2] = {};
-                vertexAttributeDescriptions[2].binding = 0;
-                vertexAttributeDescriptions[2].location = 2;
-                vertexAttributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-                vertexAttributeDescriptions[2].offset = sizeof(float) * 6;
+                    vertexBindingDescriptions.push_back(instanceInput);
+                }
 
                 VkPipelineVertexInputStateCreateInfo vertexInputState = {};
                 vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
                 vertexInputState.pNext = nullptr;
-                vertexInputState.vertexBindingDescriptionCount = 1;
-                vertexInputState.vertexAttributeDescriptionCount = 3;
-                vertexInputState.pVertexBindingDescriptions = vertexBindingDescriptions;
-                vertexInputState.pVertexAttributeDescriptions = vertexAttributeDescriptions;
+                vertexInputState.vertexBindingDescriptionCount = static_cast<uint32_t>(vertexBindingDescriptions.size());
+                vertexInputState.pVertexBindingDescriptions = vertexBindingDescriptions.data();
+                vertexInputState.vertexAttributeDescriptionCount = static_cast<uint32_t>(m_vertexLayout.size());
+                vertexInputState.pVertexAttributeDescriptions = m_vertexLayout.data();
+
+                
 
                 //Topology
                 VkPipelineInputAssemblyStateCreateInfo inputAssemblyState = {};
                 inputAssemblyState.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
                 inputAssemblyState.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
-                //Only one blend attachment state; not using blend right now
-                VkPipelineColorBlendAttachmentState blendAttachmentState[1] = {};
-                blendAttachmentState[0].colorWriteMask = 0xf;
-                blendAttachmentState[0].blendEnable = VK_FALSE;
+                //Must have a blend attachment for each color attachment or else the write mask will be 0x0
+                //In that case nothing will be written to the attachment
+
+                //Make a blend attachment state for each output target
+                std::vector<IRenderTargetHandle> outputTargets = m_renderPass->GetOutputRenderTargets();
+                std::vector<VkPipelineColorBlendAttachmentState> blendAttachmentStates;
+
+                for (size_t i = 0; i < outputTargets.size(); i++)
+                {
+                    VkPipelineColorBlendAttachmentState blendAttachmentState = {};
+                    blendAttachmentState.colorWriteMask = 0xf; //we want to write RGB and A
+                    blendAttachmentState.blendEnable = VK_FALSE; //default to false
+
+                    IRenderTargetHandle outputTarget = outputTargets[i];
+                    Resource::RenderTarget::BlendOp colorBlendOp = outputTarget->GetColorBlendOp();
+                    Resource::RenderTarget::BlendOp alphaBlendOp = outputTarget->GetAlphaBlendOp();
+
+                    if (colorBlendOp != Resource::RenderTarget::BlendOp::NONE)
+                    {
+                        blendAttachmentState.blendEnable = VK_TRUE;
+                        blendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+                        blendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
+                        blendAttachmentState.colorBlendOp = getVKBlendOpFromResourceBlendOp(colorBlendOp);
+                    }
+
+                    if (alphaBlendOp != Resource::RenderTarget::BlendOp::NONE)
+                    {
+                        blendAttachmentState.blendEnable = VK_TRUE;
+                        blendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+                        blendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+                        blendAttachmentState.alphaBlendOp = getVKBlendOpFromResourceBlendOp(alphaBlendOp);
+                    }
+
+                    blendAttachmentStates.push_back(blendAttachmentState);
+
+                }
 
                 //Color blends and masks
                 VkPipelineColorBlendStateCreateInfo colorBlendState = {};
                 colorBlendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-                colorBlendState.pAttachments = blendAttachmentState;
-                colorBlendState.attachmentCount = 1;
+                colorBlendState.attachmentCount = static_cast<uint32_t>(blendAttachmentStates.size());
+                colorBlendState.pAttachments = blendAttachmentStates.data();
 
                 //Viewport
                 VkPipelineViewportStateCreateInfo viewportState = {};
@@ -487,25 +602,15 @@ namespace Hatchit {
                 dynamicState.pDynamicStates = dynamicStateEnables;
                 dynamicState.dynamicStateCount = 2;
 
-                //Depth and stencil states
-                VkPipelineDepthStencilStateCreateInfo depthStencilState = {};
-                depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-                depthStencilState.pNext = &vertexInputState;
-                depthStencilState.depthTestEnable = VK_TRUE;
-                depthStencilState.depthWriteEnable = VK_TRUE;
-                depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
-                depthStencilState.depthBoundsTestEnable = VK_FALSE;
-                depthStencilState.back.failOp = VK_STENCIL_OP_KEEP;
-                depthStencilState.back.passOp = VK_STENCIL_OP_KEEP;
-                depthStencilState.back.compareOp = VK_COMPARE_OP_ALWAYS;
-                depthStencilState.stencilTestEnable = VK_FALSE;
-                depthStencilState.front = depthStencilState.back;
+                //Get pipeline layout
+                VKRootLayoutHandle rootLayoutHandle = VKRenderer::RendererInstance->GetVKRootLayoutHandle();
+                VkPipelineLayout pipelineLayout = rootLayoutHandle->VKGetPipelineLayout();
 
                 //Finalize pipeline
                 VkGraphicsPipelineCreateInfo pipelineInfo = {};
                 pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-                pipelineInfo.layout = m_pipelineLayout;
-                pipelineInfo.renderPass = *m_renderPass;
+                pipelineInfo.layout = pipelineLayout;
+                pipelineInfo.renderPass = m_renderPass->GetVkRenderPass();
                 pipelineInfo.stageCount = static_cast<uint32_t>(m_shaderStages.size());
                 pipelineInfo.pVertexInputState = &vertexInputState;
                 pipelineInfo.pInputAssemblyState = &inputAssemblyState;
@@ -513,42 +618,112 @@ namespace Hatchit {
                 pipelineInfo.pColorBlendState = &colorBlendState;
                 pipelineInfo.pMultisampleState = &m_multisampleState;
                 pipelineInfo.pViewportState = &viewportState;
-                pipelineInfo.pDepthStencilState = &depthStencilState;
+                pipelineInfo.pDepthStencilState = &m_depthStencilState;
                 pipelineInfo.pStages = m_shaderStages.data();
                 pipelineInfo.pDynamicState = &dynamicState;
 
                 VkPipelineCacheCreateInfo pipelineCacheInfo = {};
                 pipelineCacheInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
 
-                err = vkCreatePipelineCache(device, &pipelineCacheInfo, nullptr, &m_pipelineCache);
+                err = vkCreatePipelineCache(m_device, &pipelineCacheInfo, nullptr, &m_pipelineCache);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::preparePipeline(): Failed to create pipeline cache\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::preparePipeline(): Failed to create pipeline cache\n");
                     return false;
                 }
 
-                err = vkCreateGraphicsPipelines(device, m_pipelineCache, 1, &pipelineInfo, nullptr, &m_pipeline);
+                err = vkCreateGraphicsPipelines(m_device, m_pipelineCache, 1, &pipelineInfo, nullptr, &m_pipeline);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderer::preparePipeline(): Failed to create pipeline\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderer::preparePipeline(): Failed to create pipeline\n");
                     return false;
                 }
-
-                //At this point we can unload shader modules that don't need to be sent to anymore pipelines
 
                 return true;
             }
 
-            VkPipeline                          VKPipeline::GetVKPipeline() { return m_pipeline; }
-            VkPipelineLayout                    VKPipeline::GetVKPipelineLayout() { return m_pipelineLayout; }
-            std::vector<VkDescriptorSetLayout>  VKPipeline::GetVKDescriptorSetLayouts() { return m_descriptorSetLayouts; }
-            VkDescriptorSet*                    VKPipeline::GetVKDescriptorSet() { return &m_descriptorSet; }
+            VkFormat VKPipeline::formatFromType(const Resource::ShaderVariable::Type& type) const
+            {
+                using namespace Resource;
+
+                switch(type)
+                {
+                case ShaderVariable::FLOAT:
+                    return VK_FORMAT_R32_SFLOAT;
+                case ShaderVariable::FLOAT2:
+                    return VK_FORMAT_R32G32_SFLOAT;
+                case ShaderVariable::FLOAT3:
+                    return VK_FORMAT_R32G32B32_SFLOAT;
+                case ShaderVariable::FLOAT4:
+                    return VK_FORMAT_R32G32B32A32_SFLOAT;
+                case ShaderVariable::MAT4:
+                    return VK_FORMAT_R32G32B32A32_SFLOAT;
+                }
+
+                HT_ERROR_PRINTF("VKPipeline::formatFromType(): Unhandled type passed");
+                return VK_FORMAT_UNDEFINED;
+            }
+
+            void VKPipeline::addAttributesToLayout(const std::vector<Resource::Pipeline::Attribute>& attributes, std::vector<VkVertexInputAttributeDescription>& vkAttributes, uint32_t& outStride)
+            {
+                size_t offset = 0;
+
+                for (size_t i = 0; i < attributes.size(); i++)
+                {
+                    Resource::Pipeline::Attribute attribute = attributes[i];
+
+                    Resource::ShaderVariable::Type type = attribute.type;
+
+                    uint32_t iterations = 1;
+
+                    //We have to have a different attribute for each row of the matrix
+                    if (type == ShaderVariable::MAT4)
+                        iterations = 4;
+
+                    //Get size of this attribute from its type
+                    size_t size = Resource::ShaderVariable::SizeFromType(attribute.type);
+
+                    //Get the matching VKFormat for this type
+                    VkFormat format = formatFromType(type);
+
+                    for (uint32_t j = 0; j < iterations; j++)
+                    {
+                        VkVertexInputAttributeDescription vkAttribute = {};
+                        vkAttribute.binding = attribute.slot;
+                        vkAttribute.location = attribute.semanticIndex + j;
+                        vkAttribute.offset = static_cast<uint32_t>(offset);
+                        vkAttribute.format = format;
+
+                        vkAttributes.push_back(vkAttribute);
+
+                        offset += size / iterations;
+                    }
+                }
+
+                outStride = static_cast<uint32_t>(offset);
+            }
+
+            VkBlendOp VKPipeline::getVKBlendOpFromResourceBlendOp(Resource::RenderTarget::BlendOp blendOp) 
+            {
+                switch (blendOp)
+                {
+                case Resource::RenderTarget::BlendOp::ADD:
+                    return VK_BLEND_OP_ADD;
+                case Resource::RenderTarget::BlendOp::SUB:
+                    return VK_BLEND_OP_SUBTRACT;
+                case Resource::RenderTarget::BlendOp::REV_SUB:
+                    return VK_BLEND_OP_REVERSE_SUBTRACT;
+                case Resource::RenderTarget::BlendOp::MIN:
+                    return VK_BLEND_OP_MIN;
+                case Resource::RenderTarget::BlendOp::MAX:
+                    return VK_BLEND_OP_MAX;
+                default:
+                    HT_WARNING_PRINTF("VKPipeline::getVKBlendOpFromResourceBlendOp: Blend op not defined, defaulting to ADD");
+                    return VK_BLEND_OP_ADD;
+                }
+            }
         }
     }
 }

@@ -20,6 +20,17 @@
 
 namespace Hatchit {
 
+    namespace Core
+    {
+        template<typename VarType>
+        class Handle;
+    }
+
+    namespace Resource
+    {
+        class Material;
+    }
+
     namespace Graphics {
 
         namespace DX
@@ -32,16 +43,15 @@ namespace Hatchit {
             private:
 
                 // Inherited via IMaterial
-                virtual void VOnLoaded() override;
-                virtual bool VInitFromFile(Core::File * file) override;
+                //virtual void VOnLoaded() override;
+              
                 virtual bool VSetInt(std::string name, int data) override;
                 virtual bool VSetFloat(std::string name, float data) override;
                 virtual bool VSetFloat3(std::string name, Math::Vector3 data) override;
                 virtual bool VSetFloat4(std::string name, Math::Vector4 data) override;
                 virtual bool VSetMatrix4(std::string name, Math::Matrix4 data) override;
-                virtual bool VBindTexture(std::string name, ITexture * texture) override;
-                virtual bool VUnbindTexture(std::string name, ITexture * texture) override;
-                virtual bool VPrepare(IPipeline* pipeline) override;
+                virtual bool VBindTexture(std::string name, TextureHandle texture) override;
+                virtual bool VUnbindTexture(std::string name, TextureHandle texture) override;
                 virtual bool VUpdate() override;
             };
         }

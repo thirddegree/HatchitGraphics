@@ -19,11 +19,10 @@
 #include <ht_renderer.h>
 #include <ht_vkrenderpass.h>
 #include <ht_vkswapchain.h>
+#include <ht_vkmaterial.h>
+#include <ht_vkrootlayout.h>
 #include <ht_string.h>
 #include <vector>
-
-//Totally remove this
-#include <fstream>
 
 namespace Hatchit {
 
@@ -76,27 +75,33 @@ namespace Hatchit {
                 /* Get the core Vulkan device
                 * \return The VkDevice
                 */
-                VkDevice GetVKDevice();
+                const VkDevice& GetVKDevice() const;
 
                 /* Get the core Vulkan instance
                 * \return The VkInstance for the app
                 */
-                VkInstance GetVKInstance();
+                const VkInstance& GetVKInstance() const;
 
                 /* Get the core Vulkan command pool
                 * \return a vulkan command pool
                 */
-                VkCommandPool GetVKCommandPool();
+                const VkCommandPool& GetVKCommandPool() const;
 
                 /* Get the core Vulkan descriptor pool
                 * \reutrn a vulkan descriptor pool
                 */
-                VkDescriptorPool GetVKDescriptorPool();
+                const VkDescriptorPool& GetVKDescriptorPool() const;
 
-                VkCommandBuffer GetSetupCommandBuffer();
+                const VKRootLayoutHandle& GetVKRootLayoutHandle() const;
 
-                VkFormat GetPreferredImageFormat();
-                VkFormat GetPreferredDepthFormat();
+                const VkCommandBuffer& GetSetupCommandBuffer() const;
+
+                const VkFormat& GetPreferredImageFormat() const;
+                const VkFormat& GetPreferredDepthFormat() const;
+
+                const RendererParams& GetRendererParams() const;
+
+                const VkClearValue& GetClearColor() const;
 
                 void CreateSetupCommandBuffer();
                 void FlushSetupCommandBuffer();
@@ -106,29 +111,25 @@ namespace Hatchit {
                 static bool SetImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageAspectFlags aspectMask,
                     VkImageLayout oldImageLayout, VkImageLayout newImageLayout);
                 static bool MemoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, uint32_t* typeIndex);
-                static bool CreateBuffer(VkDevice device, VkBufferUsageFlagBits usage, size_t dataSize, void* data, UniformBlock* uniformBlock);
+                static bool CreateBuffer(VkDevice device, VkBufferUsageFlagBits usage, size_t dataSize, void* data, UniformBlock_vk* uniformBlock);
 
             private:
+                bool m_enableValidation;
                 std::vector<const char*>    m_enabledLayerNames;
                 std::vector<const char*>    m_enabledExtensionNames;
 
-                std::map<IPipeline*, std::vector<Renderable>> m_pipelineList;
+                RendererParams m_rendererParams; //We will need these later to re-create the swapchain if the window resizes
 
                 //Vuklan data structs
                 VkApplicationInfo                       m_appInfo;
                 VkInstance                              m_instance;
                 VkPhysicalDevice                        m_gpu;
-                VkPhysicalDeviceProperties              m_gpuProps;
                 std::vector<VkQueueFamilyProperties>    m_queueProps;
-                VkSurfaceKHR                            m_surface;
-                uint32_t                                m_graphicsQueueNodeIndex;
                 VkDevice                                m_device; 
                 VkQueue                                 m_queue;
-                VkFormat                                m_preferredImageFormat;
-                VkColorSpaceKHR                         m_colorSpace;
                 VkPhysicalDeviceMemoryProperties        m_memoryProps;
                 
-                VKSwapchain* m_swapchain;
+                VKSwapchain*                            m_swapchain;
 
                 VkCommandBuffer                         m_setupCommandBuffer;
 
@@ -136,11 +137,29 @@ namespace Hatchit {
                 VkDescriptorPool                        m_descriptorPool;
                 
                 VkSemaphore                             m_presentSemaphore;
+                VkSemaphore                             m_renderSemaphore;
+                VkSubmitInfo                            m_submitInfo;
 
                 VkClearValue                            m_clearColor;
 
-                IRenderTarget* m_renderTarget;
-                IMaterial* m_material;
+                //Resources we want loaded elsewhere
+                VKRootLayoutHandle m_rootLayout;
+                IMaterialHandle m_material;
+                TextureHandle m_texture;
+                ISamplerHandle m_sampler;
+                IPipelineHandle m_pipeline;
+                IMeshHandle m_meshHandle;
+                VKRenderPassHandle m_renderPass;
+
+                VKRenderPassHandle m_lightingPass;
+                IPipelineHandle m_pointLightingPipeline;
+                IMaterialHandle m_pointLightMaterial;
+                IMeshHandle m_pointLightMeshHandle;
+
+                VKRenderPassHandle m_compositionPass;
+                IPipelineHandle m_compositionPipeline;
+                IMaterialHandle m_compositionMaterial;
+                IMeshHandle m_compositionMeshHandle;
 
                 float m_angle = 0;
 
@@ -155,8 +174,8 @@ namespace Hatchit {
                     const char *pLayerPrefix, const char *pMsg, void *pUserData);
 
                 //Core init methods
-                bool initVulkan(const RendererParams& params);
-                bool initVulkanSwapchain(const RendererParams& params);
+                bool initVulkan();
+                bool initVulkanSwapchain();
                 bool prepareVulkan();
 
                 //Helper init methods
@@ -168,16 +187,12 @@ namespace Hatchit {
                 bool checkDeviceLayers();
                 bool checkDeviceExtensions();
                 bool setupDebugCallbacks();
-                bool setupDeviceQueues();
                 bool setupProcAddresses();
 
                 bool setupCommandPool();
                 bool setupDescriptorPool();
 
-                //Helper inits for initVulkanSwapchain
-                bool setupQueues();
                 bool createDevice();
-                bool getSupportedFormats();
             };
 
         }

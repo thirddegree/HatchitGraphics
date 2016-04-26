@@ -12,22 +12,19 @@
 **
 **/
 
-/**
-* \class IMesh
-* \ingroup HatchitGraphics
-*
-* \brief An interface to a mesh that exists on the GPU
-*
-* You must pass this interface a Resource::Mesh which is a collection
-* of data that you want buffered onto the graphics card
-*/
-
-#include <ht_gmesh.h>
+#include <ht_material.h> //material base
+#include <ht_renderpass.h> //render pass base handle
 
 namespace Hatchit {
+
     namespace Graphics {
 
-        uint32_t IMesh::GetIndexCount() { return m_indexCount; }
+        //TODO: This should probably just be inlined?
+        const std::vector<RenderPassBaseHandle>& MaterialBase::GetRenderPasses() const 
+        {
+            return m_renderPasses;
+        }
 
     }
+
 }

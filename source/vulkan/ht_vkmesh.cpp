@@ -1,3 +1,17 @@
+/**
+**    Hatchit Engine
+**    Copyright(c) 2015 Third-Degree
+**
+**    GNU Lesser General Public License
+**    This file may be used under the terms of the GNU Lesser
+**    General Public License version 3 as published by the Free
+**    Software Foundation and appearing in the file LICENSE.LGPLv3 included
+**    in the packaging of this file. Please review the following information
+**    to ensure the GNU Lesser General Public License requirements
+**    will be met: https://www.gnu.org/licenses/lgpl.html
+**
+**/
+
 #include <ht_vkmesh.h>
 #include <ht_vkrenderer.h>
 #include <ht_debug.h>
@@ -6,7 +20,10 @@ namespace Hatchit {
     namespace Graphics {
         namespace Vulkan {
         
-            VKMesh::VKMesh() {}
+            VKMesh::VKMesh(Core::Guid ID) :
+                RefCounted<VKMesh>(std::move(ID))
+            {}
+
             VKMesh::~VKMesh() 
             {
                 //Get Device
@@ -19,7 +36,7 @@ namespace Hatchit {
                 vkFreeMemory(device, m_indexBlock.memory, nullptr);
             }
 
-            bool VKMesh::VBuffer(Resource::Mesh* mesh) 
+            bool VKMesh::Initialize(Resource::Mesh* mesh) 
             {
                 //Get Device
                 VKRenderer* renderer = VKRenderer::RendererInstance;
@@ -48,6 +65,7 @@ namespace Hatchit {
 
                     vertexBuffer.push_back(vertex);
                 }
+
                 size_t vertexBufferSize = vertexBuffer.size() * sizeof(Vertex);
 
                 //Generate Index buffer 
@@ -75,8 +93,8 @@ namespace Hatchit {
 
             }
 
-            UniformBlock VKMesh::GetVertexBlock() { return m_vertexBlock; }
-            UniformBlock VKMesh::GetIndexBlock() { return m_indexBlock; }
+            UniformBlock_vk VKMesh::GetVertexBlock() { return m_vertexBlock; }
+            UniformBlock_vk VKMesh::GetIndexBlock() { return m_indexBlock; }
 
         }
     }

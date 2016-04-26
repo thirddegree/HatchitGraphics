@@ -34,6 +34,7 @@
 #include <ht_types.h>
 #include <ht_string.h>
 #include <ht_renderpass.h>
+#include <ht_camera.h>
 
 namespace Hatchit {
 
@@ -59,18 +60,21 @@ namespace Hatchit {
 
         struct RendererParams
         {
-            RendererType renderer;
-            void*        window;
-            uint32_t     viewportWidth;
-            uint32_t     viewportHeight;
-            void*        display;
-            Color        clearColor;
-            std::string  applicationName;
+            RendererType    renderer;
+            bool            validate;
+            void*           window;
+            uint32_t        viewportWidth;
+            uint32_t        viewportHeight;
+            void*           display;
+            Color           clearColor;
+            std::string     applicationName;
         };
 
         class HT_API IRenderer
         {
         public:
+            static IRenderer* Instance;
+            
             virtual ~IRenderer() { };
             
             /** Initialize the renderer
@@ -100,14 +104,20 @@ namespace Hatchit {
             ///Present a frame to the screen via a backbuffer
             virtual void VPresent() = 0;
 
-            void AddRenderPass(IRenderPass* renderPass);
-            void RemoveRenderPass(uint32_t index);
+            uint32_t GetWidth() const;
+            uint32_t GetHeight() const;
 
-            uint32_t GetWidth();
-            uint32_t GetHeight();
+            void RegisterRenderPass(RenderPassBaseHandle pass);
+            void RegisterCamera(Camera camera, uint64_t flags);
+
+            static IRenderer* FromType(RendererType type);
 
         protected:
-            std::vector<IRenderPass*> m_renderPasses;
+
+            //A collection of renderpass layers. Each layer may contain multiple render passes.
+            std::vector<std::vector<RenderPassBaseHandle>> m_renderPassLayers = std::vector<std::vector<RenderPassBaseHandle>>(64);
+            //A collection of cameras sorted by renderpass layer. Repopulated each frame.
+            std::vector<std::vector<Graphics::Camera>> m_renderPassCameras = std::vector<std::vector<Graphics::Camera>>(64);
 
             uint32_t m_width;
             uint32_t m_height;

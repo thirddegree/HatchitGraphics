@@ -14,20 +14,35 @@
 
 #pragma once
 
+#include <ht_debug.h>
 #include <ht_platform.h>
-#include <ht_resourceobject.h>
+#include <ht_sampler.h>
+#include <cassert>
 
 namespace Hatchit {
 
     namespace Graphics {
-        
-        class HT_API ITexture : public Resource::ResourceObject
+
+        class HT_API Texture
         {
         public:
-            virtual ~ITexture() { }
+            virtual ~Texture() = default;
         
-            virtual size_t VGetWidth()  const = 0;
-            virtual size_t VGetHeight() const = 0;
+            bool Initialize(const std::string& fileName);
+
+            virtual size_t GetWidth()  const;
+            virtual size_t GetHeight() const;
+
+        protected:
+            size_t m_width;
+            size_t m_height;
+            uint32_t m_bitsPerPixel;
+            uint32_t m_channelCount;
+            uint32_t m_mipLevels;
+
+            const BYTE* m_data;
         };
+
+        using TextureHandle = Core::Handle<Texture>;
     }
 }

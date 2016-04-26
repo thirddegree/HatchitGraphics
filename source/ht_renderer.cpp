@@ -14,22 +14,72 @@
 
 #include <ht_renderer.h>
 
+#ifdef VK_SUPPORT
+#include <ht_vkrenderer.h>
+#endif
+
+#ifdef DX12_SUPPORT
+#include <ht_d3d12renderer.h>
+#endif
+
 namespace Hatchit {
 
     namespace Graphics {
 
-        void IRenderer::AddRenderPass(IRenderPass* renderPass) 
+        IRenderer*  IRenderer::Instance = nullptr;
+
+
+        uint32_t IRenderer::GetWidth() const { return m_width; }
+        uint32_t IRenderer::GetHeight() const { return m_height; }
+
+
+        void IRenderer::RegisterRenderPass(RenderPassBaseHandle pass)
         {
-            m_renderPasses.push_back(renderPass);
+            uint64_t flags = pass->GetLayerFlags();
+            for (int j = 0; flags != 0; j++)
+            {
+                if (flags & 1)
+                {
+                    m_renderPassLayers[j].push_back(pass);
+                }
+                flags >>= 1;
+            }
         }
 
-        void IRenderer::RemoveRenderPass(uint32_t index)
+        void IRenderer::RegisterCamera(Camera camera, uint64_t flags)
         {
-            m_renderPasses.erase(m_renderPasses.begin() + index);
+            for (int j = 0; flags != 0; j++)
+            {
+                if (flags & 1)
+                {
+                    m_renderPassCameras[j].push_back(camera);
+                }
+                flags >>= 1;
+            }
         }
-
-        uint32_t IRenderer::GetWidth() { return m_width; }
-        uint32_t IRenderer::GetHeight() { return m_height; }
-
+        IRenderer * IRenderer::FromType(RendererType type)
+        {
+            switch (type)
+            {
+                case RendererType::VULKAN:
+                {
+#ifdef VK_SUPPORT
+                    return new Vulkan::VKRenderer;
+#else
+                    return nullptr;
+#endif
+                } break;
+                
+                case RendererType::DIRECTX12:
+                {
+#ifdef DX12_SUPPORT
+                    return new DX::D3D12Renderer;
+#else
+                    return nullptr;
+#endif
+                } break;
+            }
+            return nullptr;
+        }
     }
 }

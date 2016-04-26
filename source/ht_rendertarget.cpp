@@ -14,11 +14,19 @@
 
 #include <ht_rendertarget.h>
 
-namespace Hatchit {
-
-    namespace Graphics {
-
-        void IRenderTarget::SetRenderPass(IRenderPass* renderPass) { m_renderPass = renderPass; }
+namespace Hatchit
+{
+    namespace Graphics
+    {
+        Resource::RenderTarget::BlendOp RenderTargetBase::GetColorBlendOp() const
+        {
+            return m_colorBlendOp;
+        }
+        Resource::RenderTarget::BlendOp RenderTargetBase::GetAlphaBlendOp() const
+        {
+            return m_alphaBlendOp;
+        }
 
     }
+
 }

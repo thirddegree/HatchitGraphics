@@ -105,9 +105,7 @@ namespace Hatchit {
                 //Initialize shader with data
                 if (!this->VInitShader())
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("DXShader::VOnLoaded, Failed to initialize shader.\n");
-#endif
+                    HT_DEBUG_PRINTF("DXShader::VOnLoaded, Failed to initialize shader.\n");
                     return;
                 }
 

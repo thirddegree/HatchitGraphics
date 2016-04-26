@@ -27,36 +27,43 @@
 #include <ht_renderpass.h>
 #include <ht_objectrenderer.h>
 #include <ht_material.h>
-#include <ht_gmesh.h>
+#include <ht_mesh.h>
+#include <ht_model.h>
 
 namespace Hatchit {
 
     namespace Graphics {
 
-        class HT_API IMeshRenderer : public IObjectRenderer
+        class HT_API MeshRenderer : public IObjectRenderer
         {
         public:
-            virtual ~IMeshRenderer() {};
+            virtual ~MeshRenderer();
 
-            ///Override to buffer a mesh with a graphics language
-            virtual void VBuffer() = 0;
-            
-            /* Set which render pass this will be a part of
-            * \param renderPass A pointer to the render pass that this will be a part of
+            /* Set which material you want to render with
+            * \param material the material you want to render with
+            * The material should also store the appropriate pipeline
             */
-            virtual void VSetRenderPass(IRenderPass* renderPass) = 0;
+            virtual void SetMaterial(IMaterialHandle material);
 
-            ///Override to render a mesh with a graphics language
-            virtual void VRender() = 0;
+            /* Set which mesh will be rendered
+            * \param mesh A pointer to the mesh you want to render
+            */
+            virtual void SetMesh(IMeshHandle mesh);
 
-            ///Override to free a mesh from a graphics language
-            virtual void VFree() = 0;
+            /*Sets the instance data to be used with this particular mesh renderer
+            */
+            virtual void SetInstanceData(std::vector<Resource::ShaderVariable*> data);
+
+            //Override to submit a render request with a graphics language
+            virtual void Render();
+
 
         protected:
-            IMesh*          m_mesh;
-            IMaterial*      m_material;
-            IPipeline*      m_pipeline;
-            IRenderPass*    m_renderPass;
+            RenderPassBaseHandle    m_renderPass;
+            IPipelineHandle         m_pipeline;
+            IMaterialHandle         m_material;
+            IMeshHandle             m_mesh;
+            std::vector<Resource::ShaderVariable*> m_instanceData;
         };
     }
 }

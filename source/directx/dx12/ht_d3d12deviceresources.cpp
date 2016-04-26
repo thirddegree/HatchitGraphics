@@ -13,6 +13,7 @@
 **/
 
 #include <ht_d3d12deviceresources.h>
+#include <ht_rootlayout_resource.h>
 #include <ht_debug.h>
 #include <wrl.h>
 
@@ -26,15 +27,18 @@ namespace Hatchit {
                 m_device = nullptr;
                 m_swapChain = nullptr;
                 m_renderTargetViewHeap = nullptr;
-                m_commandAllocator = nullptr;
+                m_commandAllocators[0] = nullptr;
+                m_commandAllocators[1] = nullptr;
                 m_commandQueue = nullptr;
+                m_commandList = nullptr;
                
                 m_fence = nullptr;
               
-                for (int i = 0; i < NUM_RENDER_TARGETS; i++)
+                for (int i = 0; i < NUM_BUFFER_FRAMES; i++)
                     m_renderTargets[i] = nullptr;
 
-                m_currentFrame = 1;
+                m_currentFrame = 0;
+                m_currentFence = 0;
             }
 
             D3D12DeviceResources::~D3D12DeviceResources()
@@ -44,22 +48,31 @@ namespace Hatchit {
                 ReleaseCOM(m_renderTargetViewHeap);
                 ReleaseCOM(m_depthStencilHeap);
                 ReleaseCOM(m_commandQueue);
-                ReleaseCOM(m_commandAllocator);
+                ReleaseCOM(m_commandList);
                 ReleaseCOM(m_fence);
-                for (int i = 0; i < NUM_RENDER_TARGETS; i++)
+                for (int i = 0; i < NUM_BUFFER_FRAMES; i++)
+                {
                     ReleaseCOM(m_renderTargets[i]);
+                    ReleaseCOM(m_commandAllocators[i]);
+                }
                 ReleaseCOM(m_depthStencil);
-                CloseHandle(m_fenceEvent);
             }
 
             bool D3D12DeviceResources::Initialize(HWND hwnd, uint32_t width, uint32_t height)
             {
+				m_hwnd = hwnd;
+
                 return CreateDeviceResources(hwnd, width, height);
             }
 
             ID3D12Device * D3D12DeviceResources::GetDevice()
             {
                 return m_device;
+            }
+
+            D3D12RootLayoutHandle D3D12DeviceResources::GetRootLayout()
+            {
+                return m_rootLayout;
             }
 
             IDXGISwapChain3 * D3D12DeviceResources::GetSwapChain()
@@ -79,12 +92,17 @@ namespace Hatchit {
 
             ID3D12CommandAllocator * D3D12DeviceResources::GetCommandAllocator()
             {
-                return m_commandAllocator;
+                return m_commandAllocators[m_currentFrame];
             }
 
             ID3D12CommandQueue * D3D12DeviceResources::GetCommandQueue()
             {
                 return m_commandQueue;
+            }
+
+            ID3D12GraphicsCommandList * D3D12DeviceResources::GetCommandList()
+            {
+                return m_commandList;
             }
 
             D3D12_VIEWPORT D3D12DeviceResources::GetScreenViewport()
@@ -107,6 +125,18 @@ namespace Hatchit {
                 return m_currentFrame;
             }
 
+			void D3D12DeviceResources::DestroyDeviceResources()
+			{
+				ReleaseCOM(m_renderTargetViewHeap);
+				ReleaseCOM(m_depthStencilHeap);
+				for (int i = 0; i < NUM_BUFFER_FRAMES; i++)
+				{
+					ReleaseCOM(m_renderTargets[i]);
+				}
+                m_currentFence = 0;
+				ReleaseCOM(m_depthStencil);
+			}
+
             bool D3D12DeviceResources::CreateDeviceResources(HWND hwnd, uint32_t width, uint32_t height)
             {
                 HRESULT hr = S_OK;
@@ -125,9 +155,7 @@ namespace Hatchit {
                 hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create DXGIFactory.\n");
-#endif
+                    HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to create DXGIFactory.\n");
                     ReleaseCOM(factory);
                     return false;
                 }
@@ -136,9 +164,7 @@ namespace Hatchit {
                 hr = CheckHardwareAdapter(factory, &hardwareAdapter);
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to find suitable Direct3D12 adapter.\n");
-#endif
+                    HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to find suitable Direct3D12 adapter.\n");
                     ReleaseCOM(hardwareAdapter);
                     ReleaseCOM(factory);
                     return false;
@@ -150,9 +176,7 @@ namespace Hatchit {
                 hr = D3D12CreateDevice(hardwareAdapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_device));
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create Direct3D12 device.\n");
-#endif
+                    HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to create Direct3D12 device.\n");
                     ReleaseCOM(hardwareAdapter);
                     ReleaseCOM(factory);
                     return false;
@@ -173,9 +197,7 @@ namespace Hatchit {
                 hr = m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_commandQueue));
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create Direct3D12 Command Queue.\n");
-#endif
+                    HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to create Direct3D12 Command Queue.\n");
                     ReleaseCOM(hardwareAdapter);
                     ReleaseCOM(factory);
                     return false;
@@ -184,16 +206,16 @@ namespace Hatchit {
 
 
                 
-                DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
-                swapChainDesc.BufferCount = NUM_RENDER_TARGETS; //double buffered
-                swapChainDesc.BufferDesc.Width = width;
-                swapChainDesc.BufferDesc.Height = height;
-                swapChainDesc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-                swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-                swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-                swapChainDesc.OutputWindow = hwnd;
-                swapChainDesc.SampleDesc.Count = 1;
-                swapChainDesc.Windowed = true;
+                m_swapChainDesc = {};
+				m_swapChainDesc.BufferCount = NUM_BUFFER_FRAMES; //double buffered
+				m_swapChainDesc.BufferDesc.Width = width;
+				m_swapChainDesc.BufferDesc.Height = height;
+				m_swapChainDesc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+				m_swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+				m_swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+				m_swapChainDesc.OutputWindow = hwnd;
+				m_swapChainDesc.SampleDesc.Count = 1;
+				m_swapChainDesc.Windowed = true;
 
 
                 /**
@@ -203,12 +225,10 @@ namespace Hatchit {
                 * the command queue directly.
                 */
                 IDXGISwapChain* swapChain;
-                hr = factory->CreateSwapChain(m_commandQueue, &swapChainDesc, &swapChain);
+                hr = factory->CreateSwapChain(m_commandQueue, &m_swapChainDesc, &swapChain);
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create swapChain.\n");
-#endif
+                    HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to create swapChain.\n");
                     ReleaseCOM(hardwareAdapter);
                     ReleaseCOM(factory);
                     return false;
@@ -220,9 +240,7 @@ namespace Hatchit {
                 hr = swapChain->QueryInterface(__uuidof(IDXGISwapChain3), reinterpret_cast<void**>(&m_swapChain));
                 if (FAILED(hr))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to query IDXGISwapChain3 interface.\n");
-#endif
+                    HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to query IDXGISwapChain3 interface.\n");
                     ReleaseCOM(hardwareAdapter);
                     ReleaseCOM(factory);
                     return false;
@@ -230,101 +248,40 @@ namespace Hatchit {
                 ReleaseCOM(swapChain);
                 m_currentFrame = m_swapChain->GetCurrentBackBufferIndex();
 
-                /*
-                * Create desciptor heaps
-                */
-                D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-                rtvHeapDesc.NumDescriptors = 2;
-                rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-                rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-                hr = m_device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_renderTargetViewHeap));
-                if (FAILED(hr))
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create render target view heap.\n");
-#endif
-                    ReleaseCOM(hardwareAdapter);
-                    ReleaseCOM(factory);
-                    return false;
-                }
-                m_renderTargetViewHeapSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
-                /*
-                * Now we will create the resources for each frame
-                */
-                CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_renderTargetViewHeap->GetCPUDescriptorHandleForHeapStart());
-                for (uint32_t i = 0; i < NUM_RENDER_TARGETS; i++)
-                {
-                    hr = m_swapChain->GetBuffer(i, IID_PPV_ARGS(&m_renderTargets[i]));
-                    if (FAILED(hr))
-                    {
-#ifdef _DEBUG
-                        Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to get render target buffer for resource creation.\n");
-#endif
-                        ReleaseCOM(hardwareAdapter);
-                        ReleaseCOM(factory);
-                        return false;
-                    }
-
-                    m_device->CreateRenderTargetView(m_renderTargets[i], nullptr, rtvHandle);
-
-                    rtvHandle.ptr += 1 * m_renderTargetViewHeapSize;
-                }
-
-                /*
-                * Create a depth stencil view
-                */
-                D3D12_DESCRIPTOR_HEAP_DESC depthStencilHeapDesc = {};
-                depthStencilHeapDesc.NumDescriptors = 1;
-                depthStencilHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-                depthStencilHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-                hr = m_device->CreateDescriptorHeap(&depthStencilHeapDesc, IID_PPV_ARGS(&m_depthStencilHeap));
-
-                D3D12_HEAP_PROPERTIES depthHeapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-                D3D12_RESOURCE_DESC   depthResourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT,
-                    width, height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
-                D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
-                depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
-                depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
-                depthOptimizedClearValue.DepthStencil.Stencil = 0;
-
-                hr = m_device->CreateCommittedResource(
-                    &depthHeapProps,
-                    D3D12_HEAP_FLAG_NONE,
-                    &depthResourceDesc,
-                    D3D12_RESOURCE_STATE_DEPTH_WRITE,
-                    &depthOptimizedClearValue,
-                    IID_PPV_ARGS(&m_depthStencil));
-
-                D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc = {};
-                depthStencilViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
-                depthStencilViewDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-                depthStencilViewDesc.Flags = D3D12_DSV_FLAG_NONE;
-
-                m_device->CreateDepthStencilView(m_depthStencil, &depthStencilViewDesc, m_depthStencilHeap->GetCPUDescriptorHandleForHeapStart());
+				if (!CreateBuffers(width, height))
+					return false;
 
                 /*
                 * Create a command allocator for managing memory for command list
                 */
-                hr = m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator));
-                if (FAILED(hr))
+                for (int i = 0; i < NUM_BUFFER_FRAMES; i++)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("D3D12Renderer::VInitialize(), Failed to create command allocator for command list memory allocation.\n");
-#endif
-                    ReleaseCOM(hardwareAdapter);
-                    ReleaseCOM(factory);
-                    return false;
+                    hr = m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocators[i]));
+                    if (FAILED(hr))
+                    {
+                        HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to create command allocator for command list memory allocation.\n");
+                        ReleaseCOM(hardwareAdapter);
+                        ReleaseCOM(factory);
+                        return false;
+                    }
                 }
+                
 
                 ReleaseCOM(hardwareAdapter);
                 ReleaseCOM(factory);
 
+                /*Create a command list*/
+                hr = m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocators[m_currentFrame],
+                    nullptr, IID_PPV_ARGS(&m_commandList));
+                if (FAILED(hr))
+                    return false;
+                m_commandList->Close();
+
                 // Create synchronization objects.
                 m_device->CreateFence(m_fenceValues[m_currentFrame], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence));
                 m_fenceValues[m_currentFrame]++;
-
-                m_fenceEvent = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
+                m_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+                
 
                 m_viewport.Width = static_cast<float>(width);
                 m_viewport.Height = static_cast<float>(height);
@@ -338,26 +295,112 @@ namespace Hatchit {
                 m_scissorRect.right = static_cast<LONG>(width);
                 m_scissorRect.bottom = static_cast<LONG>(height);
 
+				Resource::RootLayoutHandle handle = Resource::RootLayout::GetHandleFromFileName("TestRootDescriptor.json");
+                m_rootLayout = D3D12RootLayout::GetHandle("TestRootDescriptor.json", "TestRootDescriptor.json", m_device);
+
                 return true;
             }
+
+			bool D3D12DeviceResources::CreateBuffers(uint32_t width, uint32_t height)
+			{
+				HRESULT hr = S_OK;
+
+				/*
+				* Create desciptor heaps
+				*/
+				D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
+				rtvHeapDesc.NumDescriptors = 2;
+				rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+				rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+				hr = m_device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_renderTargetViewHeap));
+				if (FAILED(hr))
+				{
+					HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to create render target view heap.\n");
+					return false;
+				}
+				m_renderTargetViewHeapSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+				/*
+				* Now we will create the resources for each frame
+				*/
+				CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_renderTargetViewHeap->GetCPUDescriptorHandleForHeapStart());
+				for (uint32_t i = 0; i < NUM_BUFFER_FRAMES; i++)
+				{
+					hr = m_swapChain->GetBuffer(i, IID_PPV_ARGS(&m_renderTargets[i]));
+					if (FAILED(hr))
+					{
+						HT_DEBUG_PRINTF("D3D12Renderer::VInitialize(), Failed to get render target buffer for resource creation.\n");
+						return false;
+					}
+					m_device->CreateRenderTargetView(m_renderTargets[i], nullptr, rtvHandle);
+
+					rtvHandle.ptr += 1 * m_renderTargetViewHeapSize;
+				}
+
+				/*
+				* Create a depth stencil view
+				*/
+				D3D12_DESCRIPTOR_HEAP_DESC depthStencilHeapDesc = {};
+				depthStencilHeapDesc.NumDescriptors = 1;
+				depthStencilHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+				depthStencilHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+				hr = m_device->CreateDescriptorHeap(&depthStencilHeapDesc, IID_PPV_ARGS(&m_depthStencilHeap));
+
+				D3D12_HEAP_PROPERTIES depthHeapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+				D3D12_RESOURCE_DESC   depthResourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT,
+					width, height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+				D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
+				depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+				depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
+				depthOptimizedClearValue.DepthStencil.Stencil = 0;
+
+				hr = m_device->CreateCommittedResource(
+					&depthHeapProps,
+					D3D12_HEAP_FLAG_NONE,
+					&depthResourceDesc,
+					D3D12_RESOURCE_STATE_DEPTH_WRITE,
+					&depthOptimizedClearValue,
+					IID_PPV_ARGS(&m_depthStencil));
+
+				D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc = {};
+				depthStencilViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
+				depthStencilViewDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+				depthStencilViewDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+				m_device->CreateDepthStencilView(m_depthStencil, &depthStencilViewDesc, m_depthStencilHeap->GetCPUDescriptorHandleForHeapStart());
+
+        
+
+				return true;
+			}
+			
+			void D3D12DeviceResources::Resize(uint32_t width, uint32_t height)
+			{
+				m_viewport.Width = static_cast<float>(width);
+				m_viewport.Height = static_cast<float>(height);
+
+                WaitForGpu();
+
+                m_commandList->Reset(m_commandAllocators[m_currentFrame], nullptr);
+
+				DestroyDeviceResources();
+
+				m_swapChain->ResizeBuffers(2, width, height, m_swapChainDesc.BufferDesc.Format, 0);
+				m_swapChain->GetDesc(&m_swapChainDesc);
+
+				this->CreateBuffers(width, height);
+
+                //Close and execute the command list
+                ExecuteCommandList();
+                
+                MoveToNextFrame();
+			}
 
             void D3D12DeviceResources::Present()
             {
                 // The first argument instructs DXGI to block until VSync, putting the application
-                // to sleep until the next VSync. This ensures we don't waste any cycles rendering
-                // frames that will never be displayed to the screen.
-                HRESULT hr = m_swapChain->Present(1, 0);
-
-                // If the device was removed either by a disconnection or a driver upgrade, we 
-                // must recreate all device resources.
-                if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
-                {
-                    m_deviceRemoved = true;
-                }
-                else
-                {
-                    MoveToNextFrame();
-                }
+                // to sleep until the next VSync.
+                HRESULT hr = m_swapChain->Present(0, 0);
             }
 
 
@@ -432,32 +475,64 @@ namespace Hatchit {
                 ReleaseCOM(currentFactory);
             }
 
-            void D3D12DeviceResources::WaitForGPU()
+            //void D3D12DeviceResources::FlushCommandQueue()
+            //{
+            //    //Advance fence value to mark commands made up to this point
+            //    m_currentFence++;
+
+            //    HRESULT hr = S_OK;
+
+            //    /*
+            //    * Add an instruction to the command queue to set a fence point. Since we are on the GPU
+            //    * timeline, the new fence point wont be set until the GPU finished processing all commands
+            //    * prior to this call to Signal()
+            //    */
+            //    hr = m_commandQueue->Signal(m_fence, m_currentFence);
+
+            //    //Wait until GPU has completed events to this fence point
+            //    if (m_fence->GetCompletedValue() < m_currentFence)
+            //    {
+            //        HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+
+            //        //Fire event when GPU hits current fence
+            //        hr = m_fence->SetEventOnCompletion(m_currentFence, eventHandle);
+
+            //        WaitForSingleObject(eventHandle, INFINITE);
+            //        CloseHandle(eventHandle);
+            //    }
+            //}
+
+            void D3D12DeviceResources::WaitForGpu()
             {
-                // Schedule a Signal command in the queue.
                 m_commandQueue->Signal(m_fence, m_fenceValues[m_currentFrame]);
 
-                // Wait until the fence has been crossed.
+                //Wait until the fence has been processed
                 m_fence->SetEventOnCompletion(m_fenceValues[m_currentFrame], m_fenceEvent);
                 WaitForSingleObjectEx(m_fenceEvent, INFINITE, FALSE);
 
-                // Increment the fence value for the current frame.
                 m_fenceValues[m_currentFrame]++;
+            }
+
+            void D3D12DeviceResources::ExecuteCommandList()
+            {
+                m_commandList->Close();
+                ID3D12CommandList* cmdsLists[] = { m_commandList };
+                m_commandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
             }
 
             void D3D12DeviceResources::MoveToNextFrame()
             {
                 // Schedule a Signal command in the queue.
                 const UINT64 currentFenceValue = m_fenceValues[m_currentFrame];
-                m_commandQueue->Signal(m_fence, currentFenceValue);
+                ThrowIfFailed(m_commandQueue->Signal(m_fence, currentFenceValue));
 
-                // Advance the frame index.
-                m_currentFrame = (m_currentFrame + 1) % NUM_BUFFER_FRAMES;
+                // Update the frame index.
+                m_currentFrame = m_swapChain->GetCurrentBackBufferIndex();
 
-                // Check to see if the next frame is ready to start.
+                // If the next frame is not ready to be rendered yet, wait until it is ready.
                 if (m_fence->GetCompletedValue() < m_fenceValues[m_currentFrame])
                 {
-                    m_fence->SetEventOnCompletion(m_fenceValues[m_currentFrame], m_fenceEvent);
+                    ThrowIfFailed(m_fence->SetEventOnCompletion(m_fenceValues[m_currentFrame], m_fenceEvent));
                     WaitForSingleObjectEx(m_fenceEvent, INFINITE, FALSE);
                 }
 

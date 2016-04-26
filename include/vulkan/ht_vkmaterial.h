@@ -28,6 +28,10 @@
 #include <ht_material.h>
 
 #include <ht_vkrenderpass.h>
+#include <ht_vkpipeline.h>
+#include <ht_vktexture.h>
+#include <ht_material_resource.h>
+#include <ht_refcounted.h>
 
 namespace Hatchit {
 
@@ -35,15 +39,14 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            class HT_API VKMaterial : public IMaterial
+            class HT_API VKMaterial : public Core::RefCounted<VKMaterial>, public MaterialBase
             {
             public:
-                VKMaterial();
+                VKMaterial(Core::Guid ID);
                 ~VKMaterial();
 
-                ///Callback for when this VKMaterial has been loaded from the disk. Used to build shader variable list
-                void VOnLoaded()                                            override;
-                bool VInitFromFile(Core::File* file)                        override;
+                //Required function for RefCounted class
+                bool Initialize(const std::string& fileName);
 
                 bool VSetInt(std::string name, int data)                    override;
                 bool VSetFloat(std::string name, float data)                override;
@@ -51,25 +54,33 @@ namespace Hatchit {
                 bool VSetFloat4(std::string name, Math::Vector4 data)       override;
                 bool VSetMatrix4(std::string name, Math::Matrix4 data)      override;
 
-                bool VBindTexture(std::string name, ITexture* texture)      override;
-                bool VUnbindTexture(std::string name, ITexture* texture)    override;
+                bool VBindTexture(std::string name, TextureHandle texture)      override;
+                bool VUnbindTexture(std::string name, TextureHandle texture)    override;
 
-                ///Prepare this Material by building a descriptor set based off of its shader variables
-                bool VPrepare(IPipeline* pipeline)                         override;
                 bool VUpdate()                                              override;
 
-                VkDescriptorSet* GetVKDescriptorSet();
+                const std::vector<VkDescriptorSet>& GetVKDescriptorSets() const;
+
+                IPipelineHandle GetPipeline() override;
 
             private:
-                VkDescriptorSetLayout m_materialLayout;
-                VkDescriptorSet m_materialSet;
+                const VkDevice& m_device;
 
-                UniformBlock m_uniformVSBuffer;
-                UniformBlock m_uniformFSBuffer;
-                std::vector<UniformBlock> m_fragmentTextures;
+                bool setupDescriptorSet(VkDescriptorPool descriptorPool);
 
-                bool setupDescriptorSet(VkDescriptorPool descriptorPool, VkDevice device);
+                std::vector<VkDescriptorSetLayout> m_materialLayouts;
+                std::vector<VkDescriptorSet> m_materialSets;
+
+                UniformBlock_vk m_uniformVSBuffer;
+                //UniformBlock m_uniformFSBuffer;
+                std::vector<UniformBlock_vk> m_fragmentTextures;
+
+                VKPipelineHandle m_pipeline;
+                std::map<std::string, TextureHandle> m_textures;
+                std::map<std::string, Hatchit::Resource::ShaderVariable*> m_shaderVariables;
             };
+
+            using VKMaterialHandle = Core::Handle<VKMaterial>;
         }
     }
 }

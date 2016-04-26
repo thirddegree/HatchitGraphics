@@ -39,74 +39,103 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            class HT_API VKPipeline : public IPipeline
+            class HT_API VKPipeline : public Core::RefCounted<VKPipeline>, public IPipeline
             {
             public:
-                VKPipeline(const VkRenderPass* renderPass);
+                VKPipeline(Core::Guid ID);
                 ~VKPipeline();
 
-                //If we wanted to allow users to control blending states
-                //void VSetColorBlendAttachments(ColorBlendState* colorBlendStates) override;
+                bool Initialize(const std::string& fileName);
+
+                ///Have Vulkan update the descriptor sets in this pipeline
+                bool VUpdate()                                                  override;
+
+                /* Add a map of existing shader variables into this pipeline
+                * \param shaderVariables the map of existing shader variables you want to add
+                */
+                bool VAddShaderVariables(std::map<std::string, Hatchit::Resource::ShaderVariable*> shaderVariables);
+
+                bool VSetInt(std::string name, int data)                        override;
+                bool VSetDouble(std::string name, double data)                  override;
+                bool VSetFloat(std::string name, float data)                    override;
+                bool VSetFloat2(std::string name, Math::Vector2 data)           override;
+                bool VSetFloat3(std::string name, Math::Vector3 data)           override;
+                bool VSetFloat4(std::string name, Math::Vector4 data)           override;
+                bool VSetMatrix4(std::string name, Math::Matrix4 data)          override;
+
+                VkPipeline                          GetVKPipeline();
+                
+                void SendPushConstants(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout);
+
+            protected:
+                std::map<Resource::Pipeline::ShaderSlot, VKShaderHandle> m_shaderHandles;
+
+                //Input
+                const VkDevice& m_device;
+                VKRenderPassHandle m_renderPass;
+
+                std::vector<VkVertexInputAttributeDescription> m_vertexLayout;
+
+                uint32_t m_vertexLayoutStride;
+                uint32_t m_instanceLayoutStride;
+
+                VkPipelineDepthStencilStateCreateInfo m_depthStencilState;
+                VkPipelineRasterizationStateCreateInfo m_rasterizationState;
+                VkPipelineMultisampleStateCreateInfo m_multisampleState;
+                std::vector<VkPipelineShaderStageCreateInfo> m_shaderStages;
+
+                VkPipelineCache m_pipelineCache;
+                VkPipeline      m_pipeline;
+
+                std::vector<int>    m_intPushData;
+                std::vector<float>  m_floatPushData;
+                std::vector<float>  m_vector2PushData;
+                std::vector<float>  m_vector3PushData;
+                std::vector<float>  m_vector4PushData;
+                std::vector<float>  m_matrixPushData;
+
+            private:
+                bool m_hasVertexAttribs;
+                bool m_hasIndexAttribs;
+
+                /* Set the vertex layout
+                * \param vertexLayout A vector of all of the vertex attributes in this layout
+                */
+                void setVertexLayout(const std::vector<Resource::Pipeline::Attribute> vertexLayout);
+
+                /* Set the instance layout
+                * \param instanceLayout A vector of all of the instance attributes in this layout
+                */
+                void setInstanceLayout(const std::vector<Resource::Pipeline::Attribute> instanceLayout);
+
+                void setDepthStencilState(const Hatchit::Resource::Pipeline::DepthStencilState& depthStencilState);
 
                 /* Set the rasterization state for this pipeline
                 * \param rasterState A struct containing rasterization options
                 */
-                void VSetRasterState(const RasterizerState& rasterState)        override;
+                void setRasterState(const Hatchit::Resource::Pipeline::RasterizerState& rasterState);
 
                 /* Set the multisampling state for this pipeline
                 * \param multiState A struct containing multisampling options
                 */
-                void VSetMultisampleState(const MultisampleState& multiState)   override;
+                void setMultisampleState(const Hatchit::Resource::Pipeline::MultisampleState& multiState);
 
                 /* Load a shader into a shader slot for the pipeline
                 * \param shaderSlot The slot that you want the shader in; vertex, fragment etc.
                 * \param shader A pointer to the shader that you want to load to the given shader slot
                 */
-                void VLoadShader(ShaderSlot shaderSlot, IShader* shader)        override;
+                void loadShader(Hatchit::Resource::Pipeline::ShaderSlot shaderSlot, IShaderHandle shader);
 
-                bool VSetInt(std::string name, int data)                        override;
-                bool VSetFloat(std::string name, float data)                    override;
-                bool VSetFloat3(std::string name, Math::Vector3 data)           override;
-                bool VSetFloat4(std::string name, Math::Vector4 data)           override;
-                bool VSetMatrix4(std::string name, Math::Matrix4 data)          override;
+                bool preparePipeline();
 
-                ///Have Vulkan create a pipeline with these settings
-                bool VPrepare()                                                 override;
+                VkFormat formatFromType(const Resource::ShaderVariable::Type& type) const;
 
-                ///Have Vulkan update the descriptor sets in this pipeline
-                bool VUpdate()                                                  override;
+                void addAttributesToLayout(const std::vector<Resource::Pipeline::Attribute>& attributes, std::vector<VkVertexInputAttributeDescription>& vkAttributes, uint32_t& outStride);
 
-                //TODO: Remove this when we can just reflect shaders instead
-                void SetVKDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout);
-
-                VkPipeline                          GetVKPipeline();
-                VkPipelineLayout                    GetVKPipelineLayout();
-                std::vector<VkDescriptorSetLayout>  GetVKDescriptorSetLayouts();
-                VkDescriptorSet*                    GetVKDescriptorSet();
-
-            protected:
-                //Input
-                const VkRenderPass* m_renderPass;
-
-                VkPipelineRasterizationStateCreateInfo m_rasterizationState;
-                VkPipelineMultisampleStateCreateInfo m_multisampleState;
-                std::vector<VkPipelineShaderStageCreateInfo> m_shaderStages;
-
-                bool useGivenLayout = false;
-                std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts; //0 is this pipeline set layout, 1 is the material set layout
-                VkPipelineLayout        m_pipelineLayout;
-
-                VkDescriptorSet m_descriptorSet; //Collection of shader variables
-                UniformBlock    m_uniformVSBlock;
-
-                VkPipelineCache m_pipelineCache;
-                VkPipeline      m_pipeline;
-
-            private:
-                bool prepareLayouts(VkDevice device);
-                bool prepareDescriptorSet(VkDescriptorPool descriptorPool, VkDevice device);
-                bool preparePipeline(VkDevice device);
+                VkBlendOp getVKBlendOpFromResourceBlendOp(Resource::RenderTarget::BlendOp blendOp);
             };
+
+            using VKPipelineHandle = Core::Handle<VKPipeline>;
         }
     }
 }

@@ -33,40 +33,100 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKRenderTarget::VKRenderTarget(uint32_t width, uint32_t height) 
+            using namespace Resource;
+
+            VKRenderTarget::VKRenderTarget(Core::Guid ID) :
+                m_device(VKRenderer::RendererInstance->GetVKDevice()),
+                Core::RefCounted<VKRenderTarget>(std::move(ID))
             {
-                m_width = width;
-                m_height = height;
+                m_width = 0;
+                m_height = 0;
+                m_clearColor = nullptr;
             }
 
-            VKRenderTarget::~VKRenderTarget() 
+            VKRenderTarget::~VKRenderTarget()
             {
-                VKRenderer* renderer = VKRenderer::RendererInstance;
-                VkDevice device = renderer->GetVKDevice();
+                if (m_clearColor != nullptr)
+                    delete m_clearColor;
 
-                vkFreeMemory(device, m_color.memory, nullptr);
-                vkDestroyImage(device, m_color.image, nullptr);
-                vkDestroyImageView(device, m_color.view, nullptr);
+                vkFreeMemory(m_device, m_texture.image.memory, nullptr);
+                vkDestroyImage(m_device, m_texture.image.image, nullptr);
+                vkDestroyImageView(m_device, m_texture.image.view, nullptr);
 
-                vkFreeMemory(device, m_depth.memory, nullptr);
-                vkDestroyImage(device, m_depth.image, nullptr);
-                vkDestroyImageView(device, m_depth.view, nullptr);
+                vkDestroySampler(m_device, m_texture.sampler, nullptr);
+            }
+            
+            bool VKRenderTarget::Initialize(const std::string& fileName)
+            {
+                Resource::RenderTargetHandle handle = RenderTarget::GetHandleFromFileName(fileName);
 
-                vkDestroyFramebuffer(device, m_framebuffer, nullptr);
+                if (!handle.IsValid())
+                {
+                    HT_ERROR_PRINTF("VKRenderTarget::Initialize: Handle was null!");
+                    return false;
+                }
 
-                vkFreeMemory(device, m_texture.image.memory, nullptr);
-                vkDestroyImage(device, m_texture.image.image, nullptr);
-                vkDestroyImageView(device, m_texture.image.view, nullptr);
+                m_width = handle->GetWidth();
+                m_height = handle->GetHeight();
 
-                vkDestroySampler(device, m_texture.sampler, nullptr);
-            } 
+                std::string formatString = handle->GetFormat();
+
+                //Get clear color
+                std::vector<float> clearColor = handle->GetClearColor();
+                if (clearColor.size() > 0)
+                {
+                    m_clearColor = new VkClearValue;
+
+                    m_clearColor->color = {clearColor[0], clearColor[1], clearColor[2], clearColor[3]};
+                }
+
+                //Save blend ops
+                m_colorBlendOp = handle->GetColorBlendOp();
+                m_alphaBlendOp = handle->GetAlphaBlendOp();
+
+                //Determine format bit from resource's string
+                if (formatString == "BGRA")
+                {
+                    m_colorFormat = VK_FORMAT_B8G8R8A8_UNORM;
+                }
+                else if (formatString == "RGBA")
+                {
+                    m_colorFormat = VK_FORMAT_R8G8B8A8_UNORM;
+                }
+                else if (formatString == "BGR")
+                {
+                    m_colorFormat = VK_FORMAT_B8G8R8A8_UNORM;
+                }
+                else if (formatString == "RGB")
+                {
+                    m_colorFormat = VK_FORMAT_R8G8B8A8_UNORM;
+                }
+                else if (formatString == "R")
+                {
+                    m_colorFormat = VK_FORMAT_R32_SFLOAT;
+                }
+                else //If it's not valid or provided; query the renderer for the preferred format
+                {
+                    VKRenderer* renderer = VKRenderer::RendererInstance;
+                    m_colorFormat = renderer->GetPreferredImageFormat();
+                }
+
+                if (!VPrepare())
+                {
+                    HT_DEBUG_PRINTF("Error: VKRenderTarget did not prepare properly");
+                    return false;
+                }
+                return true;
+            }
 
             bool VKRenderTarget::VPrepare()
             {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
 
-                if (!setupFramebuffer(renderer))
-                    return false;
+                if (m_width == 0)
+                    m_width = renderer->GetWidth();
+                if (m_height == 0)
+                    m_height = renderer->GetHeight();
 
                 if (!setupTargetTexture(renderer))
                     return false;
@@ -74,25 +134,14 @@ namespace Hatchit {
                 return true;
             }
 
-            void VKRenderTarget::VReadBind()
-            {
-            
-            }
-
-            void VKRenderTarget::VWriteBind()
-            {
-            
-            }
-
-            bool VKRenderTarget::Blit(VkCommandBuffer buffer)
+            bool VKRenderTarget::Blit(VkCommandBuffer buffer, const Image_vk& image)
             {
                 VKRenderer* renderer = VKRenderer::RendererInstance;
 
                 //Make sure color writes to the render target are finished
-                renderer->SetImageLayout(buffer, m_color.image, VK_IMAGE_ASPECT_COLOR_BIT,
+                renderer->SetImageLayout(buffer, image.image, VK_IMAGE_ASPECT_COLOR_BIT,
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
-                //Transfrom texture target to the transfer source
                 renderer->SetImageLayout(buffer, m_texture.image.image, VK_IMAGE_ASPECT_COLOR_BIT,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
@@ -118,201 +167,25 @@ namespace Hatchit {
                 blit.dstOffsets[1].y = m_texture.height;
                 blit.dstOffsets[1].z = 1;
 
-                vkCmdBlitImage(buffer, m_color.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                vkCmdBlitImage(buffer, image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                     m_texture.image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
 
                 //Transform textures back
-                renderer->SetImageLayout(buffer, m_color.image, VK_IMAGE_ASPECT_COLOR_BIT,
-                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
                 renderer->SetImageLayout(buffer, m_texture.image.image, VK_IMAGE_ASPECT_COLOR_BIT,
                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-                return true;
-            }
-
-            VkFramebuffer VKRenderTarget::GetVKFramebuffer() { return m_framebuffer; }
-            Image VKRenderTarget::GetVKColor() { return m_color; }
-            Image VKRenderTarget::GetVKDepth() { return m_depth; }
-            Texture& VKRenderTarget::GetVKTexture() { return m_texture; }
-
-
-            bool VKRenderTarget::setupFramebuffer(VKRenderer* renderer) 
-            {
-                VkDevice device = renderer->GetVKDevice();
-                VkCommandBuffer setupCommand;
-
-                m_colorFormat = renderer->GetPreferredImageFormat();
-                m_depthFormat = renderer->GetPreferredDepthFormat();
-
-                renderer->CreateSetupCommandBuffer();
-
-                setupCommand = renderer->GetSetupCommandBuffer();
-
-                VkResult err;
-
-                //Color attachment
-                VkImageCreateInfo imageInfo = {};
-                imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-                imageInfo.pNext = nullptr;
-                imageInfo.format = m_colorFormat;
-                imageInfo.imageType = VK_IMAGE_TYPE_2D;
-                imageInfo.extent.width = m_width;
-                imageInfo.extent.height = m_height;
-                imageInfo.mipLevels = 1;
-                imageInfo.arrayLayers = 1;
-                imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-                imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-                imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-                imageInfo.flags = 0;
-
-                VkMemoryAllocateInfo memAllocInfo = {};
-                memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-
-                VkMemoryRequirements memReqs;
-
-                err = vkCreateImage(device, &imageInfo, nullptr, &m_color.image);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::VPrepare(): Error creating color image!\n");
-#endif
-                    return false;
-                }
-
-                vkGetImageMemoryRequirements(device, m_color.image, &memReqs);
-                memAllocInfo.allocationSize = memReqs.size;
-                renderer->MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memAllocInfo.memoryTypeIndex);
-
-                err = vkAllocateMemory(device, &memAllocInfo, nullptr, &m_color.memory);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::VPrepare(): Error allocating color image memory!\n");
-#endif
-                    return false;
-                }
-
-                err = vkBindImageMemory(device, m_color.image, m_color.memory, 0);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::VPrepare(): Error binding color image memory!\n");
-#endif
-                    return false;
-                }
-
-                renderer->SetImageLayout(setupCommand, m_color.image, VK_IMAGE_ASPECT_COLOR_BIT,
-                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
-                VkImageViewCreateInfo viewInfo = {};
-                viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-                viewInfo.pNext = nullptr;
-                viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-                viewInfo.format = m_colorFormat;
-                viewInfo.flags = 0;
-                viewInfo.subresourceRange = {};
-                viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                viewInfo.subresourceRange.baseMipLevel = 0;
-                viewInfo.subresourceRange.levelCount = 1;
-                viewInfo.subresourceRange.baseArrayLayer = 0;
-                viewInfo.subresourceRange.layerCount = 1;
-                viewInfo.image = m_color.image;
-
-                err = vkCreateImageView(device, &viewInfo, nullptr, &m_color.view);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::VPrepare(): Error creating color image view!\n");
-#endif
-                    return false;
-                }
-
-                //We can reuse the same info structs to build the depth image
-                imageInfo.format = m_depthFormat;
-                imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-
-                err = vkCreateImage(device, &imageInfo, nullptr, &(m_depth.image));
-
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::VPrepare(): Error creating depth image!\n");
-#endif
-                    return false;
-                }
-
-                viewInfo.format = m_depthFormat;
-                viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                viewInfo.image = m_depth.image;
-
-                vkGetImageMemoryRequirements(device, m_depth.image, &memReqs);
-                memAllocInfo.allocationSize = memReqs.size;
-                renderer->MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memAllocInfo.memoryTypeIndex);
-
-                err = vkAllocateMemory(device, &memAllocInfo, nullptr, &m_depth.memory);
-                assert(!err);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::VPrepare(): Error allocating depth image memory!\n");
-#endif
-                    return false;
-                }
-
-                err = vkBindImageMemory(device, m_depth.image, m_depth.memory, 0);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::VPrepare(): Error binding depth image memory!\n");
-#endif
-                    return false;
-                }
-
-                renderer->SetImageLayout(setupCommand, m_depth.image, VK_IMAGE_ASPECT_DEPTH_BIT,
-                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-
-                err = vkCreateImageView(device, &viewInfo, nullptr, &m_depth.view);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::VPrepare(): Error creating depth image view!\n");
-#endif
-                    return false;
-                }
-
-                //Finally create internal framebuffer
-                VkImageView attachments[2];
-                attachments[0] = m_color.view;
-                attachments[1] = m_depth.view;
-
-                VkFramebufferCreateInfo framebufferInfo = {};
-                framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-                framebufferInfo.pNext = nullptr;
-                framebufferInfo.flags = 0;
-                framebufferInfo.renderPass = *((VKRenderPass*)m_renderPass)->GetVkRenderPass();
-                framebufferInfo.attachmentCount = 2;
-                framebufferInfo.pAttachments = attachments;
-                framebufferInfo.width = m_width;
-                framebufferInfo.height = m_height;
-                framebufferInfo.layers = 1;
-
-                err = vkCreateFramebuffer(device, &framebufferInfo, nullptr, &m_framebuffer);
-                if (err != VK_SUCCESS)
-                {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::VPrepare(): Error creating framebuffer!\n");
-#endif
-                    return false;
-                }
-
-                renderer->FlushSetupCommandBuffer();
+                renderer->SetImageLayout(buffer, image.image, VK_IMAGE_ASPECT_COLOR_BIT,
+                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
                 return true;
             }
+
+            const VkFormat& VKRenderTarget::GetVKColorFormat() const { return m_colorFormat; }
+            const Texture_vk& VKRenderTarget::GetVKTexture() const { return m_texture; }
+
+            const uint32_t& VKRenderTarget::GetWidth() const { return m_width; }
+            const uint32_t& VKRenderTarget::GetHeight() const { return m_height; }
+            const VkClearValue* VKRenderTarget::GetClearColor() const { return m_clearColor; }
             
             bool VKRenderTarget::setupTargetTexture(VKRenderer* renderer) 
             {
@@ -325,13 +198,9 @@ namespace Hatchit {
                 assert(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT);
                 if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT))
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::setupTargetTexture(): GPU does not support blitting!\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderTarget::setupTargetTexture(): GPU does not support blitting!\n");
                     return false;
                 }
-
-                VkDevice device = renderer->GetVKDevice();
 
                 renderer->CreateSetupCommandBuffer();
 
@@ -339,9 +208,11 @@ namespace Hatchit {
 
                 m_texture.width = m_width;
                 m_texture.height = m_height;
+                m_texture.mipLevels = 1;
 
                 VkImageCreateInfo imageCreateInfo = {};
                 imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+                imageCreateInfo.pNext = nullptr;
                 imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
                 imageCreateInfo.format = m_colorFormat;
                 imageCreateInfo.extent = { m_width, m_height, 1 };
@@ -357,42 +228,43 @@ namespace Hatchit {
                 
                 VkMemoryRequirements memReqs;
 
-                err = vkCreateImage(device, &imageCreateInfo, nullptr, &m_texture.image.image);
+                err = vkCreateImage(m_device, &imageCreateInfo, nullptr, &m_texture.image.image);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::setupTargetTexture(): Error creating target texture image!\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderTarget::setupTargetTexture(): Error creating target texture image!\n");
                     return false;
                 }
 
-                vkGetImageMemoryRequirements(device, m_texture.image.image, &memReqs);
+                vkGetImageMemoryRequirements(m_device, m_texture.image.image, &memReqs);
                 memAllocInfo.allocationSize = memReqs.size;
 
-                renderer->MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memAllocInfo.memoryTypeIndex);
-
-                err = vkAllocateMemory(device, &memAllocInfo, nullptr, &m_texture.image.memory);
-                assert(!err);
-                if (err != VK_SUCCESS)
+                bool success = renderer->MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memAllocInfo.memoryTypeIndex);
+                assert(success);
+                if (!success)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::setupTargetTexture(): Error allocating target texture image memory!\n");
-#endif
+                    HT_DEBUG_PRINTF("VKTexture::VBufferImage(): Failed to find memory properties!\n");
                     return false;
                 }
 
-                err = vkBindImageMemory(device, m_texture.image.image, m_texture.image.memory, 0);
+
+                err = vkAllocateMemory(m_device, &memAllocInfo, nullptr, &m_texture.image.memory);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::setupTargetTexture(): Error binding target texture image memory!\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderTarget::setupTargetTexture(): Error allocating target texture image memory!\n");
                     return false;
                 }
 
-                m_texture.layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                err = vkBindImageMemory(m_device, m_texture.image.image, m_texture.image.memory, 0);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+                    HT_DEBUG_PRINTF("VKRenderTarget::setupTargetTexture(): Error binding target texture image memory!\n");
+                    return false;
+                }
+
+                m_texture.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
                 renderer->SetImageLayout(setupCommandBuffer, m_texture.image.image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, m_texture.layout);
 
@@ -412,13 +284,11 @@ namespace Hatchit {
                 samplerInfo.maxLod = 0.0f;
                 samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
                 
-                err = vkCreateSampler(device, &samplerInfo, nullptr, &m_texture.sampler);
+                err = vkCreateSampler(m_device, &samplerInfo, nullptr, &m_texture.sampler);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::setupTargetTexture(): Error creating target texture sampler\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderTarget::setupTargetTexture(): Error creating target texture sampler\n");
                     return false;
                 }
 
@@ -432,13 +302,11 @@ namespace Hatchit {
                 viewInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
                 viewInfo.image = m_texture.image.image;
 
-                err = vkCreateImageView(device, &viewInfo, nullptr, &m_texture.image.view);
+                err = vkCreateImageView(m_device, &viewInfo, nullptr, &m_texture.image.view);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("VKRenderTarget::setupTargetTexture(): Error creating target texture image view\n");
-#endif
+                    HT_DEBUG_PRINTF("VKRenderTarget::setupTargetTexture(): Error creating target texture image view\n");
                     return false;
                 }
 

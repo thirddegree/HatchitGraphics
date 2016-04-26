@@ -13,19 +13,21 @@
 **/
 
 /**
-* \class IRenderTarget
+* \class VKRenderPass
 * \ingroup HatchitGraphics
 *
-* \brief An interface for a class that will render the whole scene from a perspective with a graphics language
+* \brief A Render Pass implemented with Vulkan
 *
-* Used to render a whole scene to an IRenderTexture with a graphics language
-* so that it can be used later to complete the final frame.
+* This render pass uses Vulkan to create a command buffer fit for submission to the renderer.
+* It can be a part of a RenderLayer and takes in Render Submissions made up of Materials and Meshes.
 */
 
 #pragma once
 
 #include <ht_renderpass.h>
 #include <ht_vulkan.h>
+#include <ht_vktexture.h>
+#include <ht_vkrendertarget.h>
 
 namespace Hatchit {
 
@@ -33,32 +35,57 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            class HT_API VKRenderPass : public IRenderPass
+            class HT_API VKRenderPass : public Core::RefCounted<VKRenderPass>, public RenderPassBase
             {
             public:
-                VKRenderPass();
+                VKRenderPass(Core::Guid ID);
                 ~VKRenderPass();
 
-                //Prepare the internal VkRenderPass
-                bool VPrepare()   override;
+                //Required function for RefCounted classes
+                bool Initialize(const std::string& fileName);
 
                 //Will this be sent the Objects that it needs to render?
                 ///Render the scene
-                void VUpdate()  override;
+                void VUpdate() override;
 
                 bool VBuildCommandList() override;
 
-                void VSetClearColor(Color clearColor);
+                const VkRenderPass& GetVkRenderPass() const;
+                const VkCommandBuffer& GetVkCommandBuffer() const;
 
-                const VkRenderPass* GetVkRenderPass();
-                VkCommandBuffer GetVkCommandBuffer();
+                const std::vector<IRenderTargetHandle>& GetOutputRenderTargets() const;
 
             private:
+                //Input
+                uint32_t m_firstInputTargetSetIndex;
+                std::vector<VkDescriptorSet> m_inputTargetDescriptorSets;
+
+                bool setupRenderPass();
+                bool setupAttachmentImages();
+                bool setupFramebuffer();
+
+                bool allocateCommandBuffer();
+                //Mapping set index to maps of binding indicies and render targets
+                bool setupDescriptorSets(std::map < uint32_t, std::map < uint32_t, VKRenderTargetHandle >> inputTargets);
+
+                const VkDevice& m_device;
+                const VkCommandPool& m_commandPool;
+                const VkDescriptorPool& m_descriptorPool;
+
                 VkRenderPass m_renderPass;
                 VkCommandBuffer m_commandBuffer;
 
-                VkClearValue m_clearColor;
+                //For instance data
+                UniformBlock_vk m_instanceBlock;
+
+                std::vector<Image_vk> m_colorImages;
+                Image_vk m_depthImage;
+
+                VkFramebuffer m_framebuffer;
+
             };
+
+            using VKRenderPassHandle = Core::Handle<VKRenderPass>;
         }
     }
 }

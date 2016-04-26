@@ -26,6 +26,7 @@
 
 #include <ht_platform.h>
 #include <ht_math.h>
+#include <ht_rendertarget_resource.h>
 
 namespace Hatchit {
 
@@ -41,18 +42,27 @@ namespace Hatchit {
             ///Prepare the render target with a graphics language
             virtual bool VPrepare() = 0;
 
-            ///Override to bind the render target for reading with a graphics language
-            virtual void VReadBind() = 0;
-            ///Override to bind the render target to be written to with a graphics language
-            virtual void VWriteBind() = 0;
+            virtual Resource::RenderTarget::BlendOp GetColorBlendOp() const = 0;
+            virtual Resource::RenderTarget::BlendOp GetAlphaBlendOp() const = 0;
+        };
 
-            void SetRenderPass(IRenderPass* renderPass);
+        class HT_API RenderTargetBase : public IRenderTarget
+        {
+        public:
+            virtual ~RenderTargetBase() { };
+
+            Resource::RenderTarget::BlendOp GetColorBlendOp() const override;
+            Resource::RenderTarget::BlendOp GetAlphaBlendOp() const override;
 
         protected:
             uint32_t m_width;
             uint32_t m_height;
 
-            IRenderPass* m_renderPass;
+            Resource::RenderTarget::BlendOp m_colorBlendOp;
+            Resource::RenderTarget::BlendOp m_alphaBlendOp;
         };
+
+        using IRenderTargetHandle = Core::Handle<IRenderTarget>;
+        using RenderTargetBaseHandle = Core::Handle<RenderTargetBase>;
     }
 }

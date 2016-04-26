@@ -13,6 +13,8 @@
 **/
 
 #include <ht_d3d12material.h>
+#include <ht_material_resource.h>
+#include <ht_renderpass.h>
 
 namespace Hatchit {
     
@@ -25,14 +27,9 @@ namespace Hatchit {
 
             }
 
-            void D3D12Material::VOnLoaded()
+            /*void D3D12Material::VOnLoaded()
             {
-            }
-
-            bool D3D12Material::VInitFromFile(Core::File * file)
-            {
-                return false;
-            }
+            }*/
 
             bool D3D12Material::VSetInt(std::string name, int data)
             {
@@ -59,17 +56,12 @@ namespace Hatchit {
                 return false;
             }
 
-            bool D3D12Material::VBindTexture(std::string name, ITexture * texture)
+            bool D3D12Material::VBindTexture(std::string name, TextureHandle texture)
             {
                 return false;
             }
 
-            bool D3D12Material::VUnbindTexture(std::string name, ITexture * texture)
-            {
-                return false;
-            }
-
-            bool D3D12Material::VPrepare(IPipeline* pipeline)
+            bool D3D12Material::VUnbindTexture(std::string name, TextureHandle texture)
             {
                 return false;
             }

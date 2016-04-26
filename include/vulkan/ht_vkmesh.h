@@ -24,29 +24,35 @@
 
 #pragma once
 
-#include <ht_gmesh.h>
+#include <ht_mesh.h>
 #include <ht_vulkan.h>
 
 namespace Hatchit {
+
     namespace Graphics {
+
         namespace Vulkan {
 
-            class HT_API VKMesh : public IMesh
+            class HT_API VKMesh : public Core::RefCounted<VKMesh>, public IMesh
             {
             public:
-                VKMesh();
+                VKMesh(Core::Guid ID);
                 ~VKMesh();
 
-                bool VBuffer(Resource::Mesh* mesh)  override;
+                bool Initialize(Hatchit::Resource::Mesh* mesh);
 
-                UniformBlock GetVertexBlock();
-                UniformBlock GetIndexBlock();
+                UniformBlock_vk GetVertexBlock();
+                UniformBlock_vk GetIndexBlock();
 
             private:
-                UniformBlock m_vertexBlock;
-                UniformBlock m_indexBlock;
+                UniformBlock_vk m_vertexBlock;
+                UniformBlock_vk m_indexBlock;
             };
 
+            using VKMeshHandle = Core::Handle<VKMesh>;
+
         }
+
     }
+
 }

@@ -39,9 +39,7 @@ namespace Hatchit {
                 GLenum glewErr = glewInit();
                 if (glewErr != GLEW_OK)
                 {
-#ifdef _DEBUG
-                    Core::DebugPrintF("[GLRenderer]--Failed to initialize GLEW. Exiting.\n");
-#endif
+                    HT_DEBUG_PRINTF("[GLRenderer]--Failed to initialize GLEW. Exiting.\n");
                     return false;
                 }
 
@@ -92,6 +90,11 @@ namespace Hatchit {
 
             void GLRenderer::VPresent()
             {
+
+            }
+
+	        void GLRenderer::VRender(float dt)
+	        {
 
             }
 
