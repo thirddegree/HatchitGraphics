@@ -41,7 +41,7 @@ namespace Hatchit {
                 HRESULT hr = S_OK;
 
                 CD3DX12_HEAP_PROPERTIES uploadHeapProperties(D3D12_HEAP_TYPE_UPLOAD);
-                CD3DX12_RESOURCE_DESC constantBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(DX::ConstantBufferByteSize(size));
+                CD3DX12_RESOURCE_DESC constantBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(DX::ConstantBufferByteSize(static_cast<UINT>(size)));
                 hr = device->CreateCommittedResource(
                     &uploadHeapProperties,
                     D3D12_HEAP_FLAG_NONE,
@@ -54,7 +54,7 @@ namespace Hatchit {
 
                 CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle(heap->GetCPUDescriptorHandleForHeapStart());
                 m_view.BufferLocation = m_gpuAddress;
-                m_view.SizeInBytes = DX::ConstantBufferByteSize(size);
+                m_view.SizeInBytes = DX::ConstantBufferByteSize(static_cast<UINT>(size));
                 device->CreateConstantBufferView(&m_view, cpuHandle);
 
                 return true;
@@ -75,7 +75,7 @@ namespace Hatchit {
 
             void D3D12ConstantBuffer::Fill(void** data, size_t size, size_t cbSize, uint32_t currentFrame)
             {
-                UINT8* destination = m_mappedData + (currentFrame * DX::ConstantBufferByteSize(cbSize));
+                UINT8* destination = m_mappedData + (currentFrame * DX::ConstantBufferByteSize(static_cast<UINT>(cbSize)));
 
                 memcpy(destination, &data[0], size);
             }

@@ -48,9 +48,7 @@ namespace Hatchit {
 
     namespace Graphics {
 
-        class IPipeline;
         class RenderPassBase;
-        using RenderPassBaseHandle = Core::Handle<RenderPassBase>;
 
         class HT_API IMaterial
         {
@@ -68,7 +66,7 @@ namespace Hatchit {
 
             virtual bool VUpdate() = 0;
             virtual IPipelineHandle GetPipeline() = 0;
-            virtual const std::vector<RenderPassBaseHandle>& GetRenderPasses() const = 0;
+            virtual const std::vector<Core::Handle<RenderPassBase>>& GetRenderPasses() const = 0;
         };
 
         class HT_API MaterialBase : public IMaterial
@@ -76,10 +74,10 @@ namespace Hatchit {
         public:
             virtual ~MaterialBase() { };
 
-            const std::vector<RenderPassBaseHandle>& GetRenderPasses() const override;
+            const std::vector<Core::Handle<RenderPassBase>>& GetRenderPasses() const override;
 
         protected:
-            std::vector<RenderPassBaseHandle> m_renderPasses;
+            std::vector<Core::Handle<RenderPassBase>> m_renderPasses;
         };
 
         using IMaterialHandle = Core::Handle<IMaterial>;

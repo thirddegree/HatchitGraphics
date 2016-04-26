@@ -14,6 +14,7 @@
 
 #include <ht_d3d12material.h>
 #include <ht_material_resource.h>
+#include <ht_renderpass.h>
 
 namespace Hatchit {
     
