@@ -207,110 +207,79 @@ namespace Hatchit {
                 if (m_shaderVariables.size() == 0)
                     return true;
 
-                std::vector<uint32_t>       intList;
-                std::vector<float>          floatList;
-                std::vector<Math::Vector2>  vector2List;
-                std::vector<Math::Vector3>  vector3List;
-                std::vector<Math::Vector4>  vector4List;
-                std::vector<Math::Matrix4>  matrixList;
+                //clear out old data
+                m_pushData.clear();
+                m_descriptorData.clear();
 
-                //Sort data into appropriate lists
+                //Add the first 128 bytes of data we have to the push data, all other data goes to the descriptor
                 std::map <std::string, ShaderVariable*>::iterator it;
                 for (it = m_shaderVariables.begin(); it != m_shaderVariables.end(); it++)
                 {
                     ShaderVariable::Type varType = it->second->GetType();
 
+                    size_t dataSize = 0;
+
                     switch (varType)
                     {
                     case ShaderVariable::INT:
-                        intList.push_back(*(int*)(it->second->GetData()));
+                        dataSize = sizeof(uint32_t);
                         break;
                     case ShaderVariable::FLOAT:
-                        floatList.push_back(*(float*)(it->second->GetData()));
+                        dataSize = sizeof(float);
                         break;
                     case ShaderVariable::FLOAT2:
-                        vector2List.push_back(*(Math::Vector2*)(it->second->GetData()));
+                        dataSize = sizeof(float) * 2;
                         break;
                     case ShaderVariable::FLOAT3:
-                        vector3List.push_back(*(Math::Vector3*)(it->second->GetData()));
+                        dataSize = sizeof(float) * 3;
                         break;
                     case ShaderVariable::FLOAT4:
-                        vector4List.push_back(*(Math::Vector4*)(it->second->GetData()));
+                        dataSize = sizeof(float) * 4;
                         break;
                     case ShaderVariable::MAT4:
-                        matrixList.push_back(*(Math::Matrix4*)(it->second->GetData()));
+                        dataSize = sizeof(float) * 16;
                         break;
                     }
+                    
+                    std::vector<BYTE>* dataVector;
+
+                    //Determine which vector we push back to
+                    if (m_pushData.size() + dataSize <= 256)
+                        dataVector = &m_pushData;
+                    else
+                        dataVector = &m_descriptorData;
+
+                    //Push bytes into the appropriate vector
+                    for (size_t i = 0; i < dataSize; i++)
+                    {
+                        BYTE* bytes = (BYTE*)(it->second->GetData());
+                        dataVector->push_back(bytes[i]);
+                    }
+                    
                 }
-
-                //Resize vectors to fit new push data
-                m_intPushData.clear();
-                m_intPushData.resize(intList.size());
-
-                m_floatPushData.clear();
-                m_floatPushData.resize(floatList.size());
-
-                m_vector2PushData.clear();
-                m_vector2PushData.resize(vector2List.size() * 2);
-
-                m_vector3PushData.clear();
-                m_vector3PushData.resize(vector3List.size() * 3);
-
-                m_vector4PushData.clear();
-                m_vector4PushData.resize(vector4List.size() * 4);
-
-                m_matrixPushData.clear();
-                m_matrixPushData.resize(matrixList.size() * 16);
-
-                //Copy data into variable lists
-                size_t i = 0; //reuse i
-                for (i = 0; i < intList.size(); i++)
-                {
-                    memcpy(m_intPushData.data() + i, static_cast<void*>(&intList[i]), sizeof(uint32_t));
-                }
-                
-                for (i = 0; i < floatList.size(); i++)
-                {
-                    memcpy(m_floatPushData.data() + i, static_cast<void*>(&floatList[i]), sizeof(float));
-                }
-                
-                for (i = 0; i < vector2List.size(); i++)
-                {
-                    Math::Vector2 vec = vector2List[i];
-                    memcpy(m_vector2PushData.data() + (2 * i), static_cast<void*>(&vec[0]), sizeof(float) * 2);
-                }
-                
-                for (i = 0; i < vector3List.size(); i++)
-                {
-                    Math::Vector3 vec = vector3List[i];
-                    memcpy(m_vector3PushData.data() + (3 * i), static_cast<void*>(&vec[0]), sizeof(float) * 3);
-                }
-
-                for (i = 0; i < vector4List.size(); i++)
-                {
-                    Math::Vector4 vec = vector4List[i];
-                    memcpy(m_vector4PushData.data() + (4 * i), static_cast<void*>(&vec[0]), sizeof(float) * 4);
-                }
-                
-                for (i = 0; i < matrixList.size(); i++)
-                {
-                    Math::Matrix4 mat = matrixList[i];
-                    memcpy(m_matrixPushData.data() + (16 * i), static_cast<void*>(matrixList[i].m_data), sizeof(float) * 16);
-                }
-
                 return true;
             }
 
             VkPipeline VKPipeline::GetVKPipeline() { return m_pipeline; }
 
-            void VKPipeline::SendPushConstants(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout)
-            {
-                //Send a push for each type of data to send; vectors, matricies, ints etc.
-                uint32_t matrixDataSize = static_cast<uint32_t>(m_matrixPushData.size() * sizeof(float));
-                vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, matrixDataSize, m_matrixPushData.data());
+            /**
+            \fn void VKPipeline::BindPipeline(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout)
+            \brief Binds this pipeline to a command buffer
+            \param commandBuffer A reference to the command buffer you want to bind to
 
-                uint32_t intDataSize = static_cast<uint32_t>(m_intPushData.size() * sizeof(uint32_t));
-                vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, matrixDataSize, intDataSize, m_intPushData.data());
+            This function binds the pipeline as a graphics pipeline and sends all of the pipeline's data to the given command buffer. 
+            This includes up to 128 bytes of push constant data and all other data sent via a descriptor set.
+            **/
+            void VKPipeline::BindPipeline(const VkCommandBuffer& commandBuffer)
+            {
+                //Bind to the graphics pipeline point
+                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
+
+                //Send a push for each type of data to send; vectors, matricies, ints etc.
+                uint32_t pushDataSize = static_cast<uint32_t>(m_pushData.size());
+                vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, pushDataSize, m_pushData.data());
+
+                //Bind the appropriate descriptor set for all the descriptor data
             }
 
             /*
@@ -604,12 +573,12 @@ namespace Hatchit {
 
                 //Get pipeline layout
                 VKRootLayoutHandle rootLayoutHandle = VKRenderer::RendererInstance->GetVKRootLayoutHandle();
-                VkPipelineLayout pipelineLayout = rootLayoutHandle->VKGetPipelineLayout();
+                m_pipelineLayout = rootLayoutHandle->VKGetPipelineLayout();
 
                 //Finalize pipeline
                 VkGraphicsPipelineCreateInfo pipelineInfo = {};
                 pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-                pipelineInfo.layout = pipelineLayout;
+                pipelineInfo.layout = m_pipelineLayout;
                 pipelineInfo.renderPass = m_renderPass->GetVkRenderPass();
                 pipelineInfo.stageCount = static_cast<uint32_t>(m_shaderStages.size());
                 pipelineInfo.pVertexInputState = &vertexInputState;
