@@ -65,13 +65,14 @@ namespace Hatchit {
 
                 VkPipeline                          GetVKPipeline();
                 
-                void BindPipeline(const VkCommandBuffer& commandBuffer);
+                void BindPipeline(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout);
 
             protected:
                 std::map<Resource::Pipeline::ShaderSlot, VKShaderHandle> m_shaderHandles;
 
                 //Input
                 const VkDevice& m_device;
+                const VkDescriptorPool& m_descriptorPool;
                 VKRenderPassHandle m_renderPass;
 
                 std::vector<VkVertexInputAttributeDescription> m_vertexLayout;
@@ -90,6 +91,10 @@ namespace Hatchit {
 
                 std::vector<BYTE> m_pushData;
                 std::vector<BYTE> m_descriptorData;
+
+                UniformBlock_vk m_uniformVSBuffer;
+                uint8_t* m_uniformBindPoint;
+                VkDescriptorSet m_descriptorSet; //Descriptor set for data that can't fit into push constants
 
             private:
                 bool m_hasVertexAttribs;
@@ -124,6 +129,8 @@ namespace Hatchit {
                 void loadShader(Hatchit::Resource::Pipeline::ShaderSlot shaderSlot, IShaderHandle shader);
 
                 bool preparePipeline();
+
+                bool prepareDescriptorSet();
 
                 VkFormat formatFromType(const Resource::ShaderVariable::Type& type) const;
 

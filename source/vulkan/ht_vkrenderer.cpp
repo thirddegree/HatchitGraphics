@@ -1106,13 +1106,18 @@ namespace Hatchit {
 
                 VkDescriptorPoolSize uniformSize = {};
                 uniformSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                uniformSize.descriptorCount = 4;
+                uniformSize.descriptorCount = 10;
+
+                VkDescriptorPoolSize imageSize = {};
+                imageSize.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+                imageSize.descriptorCount = 10;
 
                 VkDescriptorPoolSize samplerSize = {};
-                samplerSize.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-                samplerSize.descriptorCount = 10;
+                samplerSize.type = VK_DESCRIPTOR_TYPE_SAMPLER;
+                samplerSize.descriptorCount = 6;
 
                 poolSizes.push_back(uniformSize);
+                poolSizes.push_back(imageSize);
                 poolSizes.push_back(samplerSize);
 
                 VkDescriptorPoolCreateInfo poolCreateInfo = {};

@@ -251,7 +251,7 @@ namespace Hatchit {
                     VkPipeline vkPipeline = pipeline->GetVKPipeline();
                     VkPipelineLayout vkPipelineLayout = renderer->GetVKRootLayoutHandle()->VKGetPipelineLayout();
 
-                    pipeline->BindPipeline(m_commandBuffer);
+                    pipeline->BindPipeline(m_commandBuffer, vkPipelineLayout);
 
                     //Bind input textures
                     if(m_inputTargetDescriptorSets.size() > 0)
@@ -274,7 +274,7 @@ namespace Hatchit {
                         
                         //Bind material descriptor sets
                         vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            vkPipelineLayout, 1, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, nullptr);
+                            vkPipelineLayout, 2, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, nullptr);
                     
                         //Bind instance buffer
                         if(m_instanceDataSize > 0)

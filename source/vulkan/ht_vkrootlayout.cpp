@@ -64,20 +64,12 @@ namespace Hatchit
                     return false;
 
                 //The first entry in m_descriptorSetLayouts will be this descriptor set layout
-                //It will contain a uniform buffer (for pipeline state info) and all immutable samplers
-                VkDescriptorSetLayoutCreateInfo immutableSetLayoutInfo = {};
-                immutableSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-                immutableSetLayoutInfo.pNext = nullptr;
-                immutableSetLayoutInfo.flags = 0;
-
+                //It will contain all immutable samplers
+                VkDescriptorSetLayoutCreateInfo immutableSamplersSetLayoutCreateInfo = {};
+                immutableSamplersSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+                immutableSamplersSetLayoutCreateInfo.pNext = nullptr;
+                immutableSamplersSetLayoutCreateInfo.flags = 0;
                 std::vector<VkDescriptorSetLayoutBinding> immutableBindings;
-
-                //One binding for a uniform buffer
-                VkDescriptorSetLayoutBinding bufferBinding = {};
-                bufferBinding.binding = 0;
-                bufferBinding.descriptorCount = 1;
-                bufferBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                bufferBinding.stageFlags = VK_SHADER_STAGE_ALL;
 
                 //Parse immutable samplers
                 std::vector<Resource::Sampler> samplers = handle->GetSamplers();
@@ -95,20 +87,20 @@ namespace Hatchit
 
                 //One binding for immutable samplers
                 VkDescriptorSetLayoutBinding samplerBinding = {};
-                samplerBinding.binding = 1;
+                samplerBinding.binding = 0;
                 samplerBinding.descriptorCount = static_cast<uint32_t>(vkSamplers.size());
                 samplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
                 samplerBinding.stageFlags = VK_SHADER_STAGE_ALL;
                 samplerBinding.pImmutableSamplers = vkSamplers.data();
 
-                immutableBindings.push_back(bufferBinding);
                 immutableBindings.push_back(samplerBinding);
 
-                immutableSetLayoutInfo.bindingCount = static_cast<uint32_t>(immutableBindings.size());
-                immutableSetLayoutInfo.pBindings = immutableBindings.data();
+                immutableSamplersSetLayoutCreateInfo.bindingCount = static_cast<uint32_t>(immutableBindings.size());
+                immutableSamplersSetLayoutCreateInfo.pBindings = immutableBindings.data();
 
-                VkDescriptorSetLayout immutableSetLayout;
-                err = vkCreateDescriptorSetLayout(device, &immutableSetLayoutInfo, nullptr, &immutableSetLayout);
+                VkDescriptorSetLayout immutableSamplersSetLayout;
+
+                err = vkCreateDescriptorSetLayout(device, &immutableSamplersSetLayoutCreateInfo, nullptr, &immutableSamplersSetLayout);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -116,7 +108,7 @@ namespace Hatchit
                     return false;
                 }
 
-                m_descriptorSetLayouts.push_back(immutableSetLayout);
+                m_descriptorSetLayouts.push_back(immutableSamplersSetLayout);
 
                 //Parse layout parameters
                 std::vector<RootLayout::Parameter> parameters = handle->GetParameters();

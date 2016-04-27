@@ -71,7 +71,7 @@ namespace Hatchit {
                 
                 //Only take the first two descriptor sets
                 std::vector<VkDescriptorSetLayout> layouts = renderer->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts();
-                for (uint32_t i = 1; i < 3; i++)
+                for (uint32_t i = 2; i < 4; i++)
                     m_materialLayouts.push_back(layouts[i]);
 
                 //Prepare uniform buffers
@@ -176,7 +176,6 @@ namespace Hatchit {
 
             bool VKMaterial::setupDescriptorSet(VkDescriptorPool descriptorPool)
             {
-
                 VkResult err;
 
                 //Setup the descriptor sets

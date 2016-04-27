@@ -27,6 +27,7 @@ namespace Hatchit {
 
             VKPipeline::VKPipeline(Core::Guid ID) :
                 m_device(VKRenderer::RendererInstance->GetVKDevice()),
+                m_descriptorPool(VKRenderer::RendererInstance->GetVKDescriptorPool()),
                 Core::RefCounted<VKPipeline>(std::move(ID))
             {
                 m_hasVertexAttribs = false;
@@ -35,6 +36,14 @@ namespace Hatchit {
 
             VKPipeline::~VKPipeline() 
             {
+                //Destroy buffer
+                vkUnmapMemory(m_device, m_uniformVSBuffer.memory);
+                DeleteUniformBuffer(m_device, m_uniformVSBuffer);
+
+                //Destroy descriptor sets
+                vkFreeDescriptorSets(m_device, m_descriptorPool, 1, &m_descriptorSet);
+
+                //Destroy Pipeline
                 vkDestroyPipelineCache(m_device, m_pipelineCache, nullptr);
                 vkDestroyPipeline(m_device, m_pipeline, nullptr);
             }
@@ -74,6 +83,9 @@ namespace Hatchit {
                 m_renderPass = VKRenderPass::GetHandle(renderPassPath, renderPassPath);
 
                 if (!preparePipeline())
+                    return false;
+
+                if (!prepareDescriptorSet())
                     return false;
 
                 return true;
@@ -244,7 +256,7 @@ namespace Hatchit {
                     std::vector<BYTE>* dataVector;
 
                     //Determine which vector we push back to
-                    if (m_pushData.size() + dataSize <= 256)
+                    if (m_pushData.size() + dataSize <= 128)
                         dataVector = &m_pushData;
                     else
                         dataVector = &m_descriptorData;
@@ -255,8 +267,11 @@ namespace Hatchit {
                         BYTE* bytes = (BYTE*)(it->second->GetData());
                         dataVector->push_back(bytes[i]);
                     }
-                    
                 }
+
+                //Push data onto descriptor set memory
+                memcpy(m_uniformBindPoint, m_descriptorData.data(), m_descriptorData.size());
+
                 return true;
             }
 
@@ -266,11 +281,12 @@ namespace Hatchit {
             \fn void VKPipeline::BindPipeline(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout)
             \brief Binds this pipeline to a command buffer
             \param commandBuffer A reference to the command buffer you want to bind to
+            \param pipelineLayout The pipeline layout to reference when binding data
 
             This function binds the pipeline as a graphics pipeline and sends all of the pipeline's data to the given command buffer. 
             This includes up to 128 bytes of push constant data and all other data sent via a descriptor set.
             **/
-            void VKPipeline::BindPipeline(const VkCommandBuffer& commandBuffer)
+            void VKPipeline::BindPipeline(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout)
             {
                 //Bind to the graphics pipeline point
                 vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
@@ -280,6 +296,7 @@ namespace Hatchit {
                 vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, pushDataSize, m_pushData.data());
 
                 //Bind the appropriate descriptor set for all the descriptor data
+                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1, 1, &m_descriptorSet, 0, nullptr);
             }
 
             /*
@@ -506,8 +523,6 @@ namespace Hatchit {
                 vertexInputState.vertexAttributeDescriptionCount = static_cast<uint32_t>(m_vertexLayout.size());
                 vertexInputState.pVertexAttributeDescriptions = m_vertexLayout.data();
 
-                
-
                 //Topology
                 VkPipelineInputAssemblyStateCreateInfo inputAssemblyState = {};
                 inputAssemblyState.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -607,6 +622,59 @@ namespace Hatchit {
                 if (err != VK_SUCCESS)
                 {
                     HT_DEBUG_PRINTF("VKRenderer::preparePipeline(): Failed to create pipeline\n");
+                    return false;
+                }
+
+                return true;
+            }
+
+            bool VKPipeline::prepareDescriptorSet() 
+            {
+                VkResult err;
+
+                size_t bufferSize = 128;
+                CreateUniformBuffer(m_device, bufferSize, nullptr, &m_uniformVSBuffer);
+
+                m_uniformVSBuffer.descriptor.offset = 0;
+                m_uniformVSBuffer.descriptor.range = bufferSize;
+
+                VkDescriptorSetLayout layout = VKRenderer::RendererInstance->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts()[1]; //Hack as fuck
+
+                VkDescriptorSetAllocateInfo allocInfo = {};
+                allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+                allocInfo.pNext = nullptr;
+                allocInfo.descriptorPool = m_descriptorPool;
+                allocInfo.descriptorSetCount = 1;
+                allocInfo.pSetLayouts = &layout;
+
+                err = vkAllocateDescriptorSets(m_device, &allocInfo, &m_descriptorSet);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+                    HT_ERROR_PRINTF("VKPipeline::prepareDescriptorSet: Failed to allocate descriptor set\n");
+                    return false;
+                }
+
+                std::vector<VkWriteDescriptorSet> descSetWrites = {};
+
+                VkWriteDescriptorSet uniformVSWrite = {};
+                uniformVSWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                uniformVSWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                uniformVSWrite.dstSet = m_descriptorSet;
+                uniformVSWrite.dstBinding = 0;
+                uniformVSWrite.pBufferInfo = &m_uniformVSBuffer.descriptor;
+                uniformVSWrite.descriptorCount = 1;
+
+                descSetWrites.push_back(uniformVSWrite);
+
+                vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(descSetWrites.size()), descSetWrites.data(), 0, nullptr);
+
+                //Map memory to bind point once; will unmap on shutdown
+                err = vkMapMemory(m_device, m_uniformVSBuffer.memory, 0, bufferSize, 0, (void**)&m_uniformBindPoint);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+                    HT_ERROR_PRINTF("VKPipeline::prepareDescriptorSet: Failed to map descriptor set memory to bind point\n");
                     return false;
                 }
 
