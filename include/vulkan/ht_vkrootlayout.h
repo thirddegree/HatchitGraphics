@@ -24,6 +24,8 @@ namespace Hatchit
     {
         namespace Vulkan
         {
+            class VKSampler;
+
             class HT_API VKRootLayout : public Core::RefCounted<VKRootLayout>, public IRootLayout
             {
             public:
@@ -40,6 +42,7 @@ namespace Hatchit
             private:
                 VkDevice m_device;
 
+                std::vector<VKSampler*> m_samplers; //So we can delete them later
                 VkPipelineLayout m_pipelineLayout;
                 std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;
                 std::vector<VkPushConstantRange> m_pushConstantRanges;

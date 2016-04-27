@@ -24,27 +24,20 @@ namespace Hatchit {
 
         namespace Vulkan {
         
-            class HT_API VKSampler : public Core::RefCounted<VKSampler>, public ISampler
+            class HT_API VKSampler : public ISampler
             {
             public:
-                VKSampler(Core::Guid ID);
+                VKSampler();
                 ~VKSampler();
 
-                //Required function of RefCounted classes
-                bool Initialize(const std::string& fileName);
-
-                //bool VPrepare() override;
+                //For initializing directly from a resource (immutable samplers)
+                bool InitFromResource(const Resource::Sampler& sampler);
 
                 VkSampler GetVkSampler();
-                VkFormat  GetVkColorSpace();
 
             private:
                 const VkDevice&             m_device;
                 VkSampler                   m_sampler;
-                VkFormat                    m_colorSpace;
-                std::string                 m_fileName;
-                Hatchit::Resource::Sampler  m_base;
-
 
                 VkSamplerAddressMode    VKAddressModeFromType(Resource::Sampler::AddressMode mode);
                 VkFilter                VKFilterModeFromType(Resource::Sampler::FilterMode mode);

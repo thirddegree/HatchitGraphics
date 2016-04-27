@@ -13,6 +13,7 @@
 **/
 
 #include <ht_vkrootlayout.h>
+#include <ht_vksampler.h>
 
 namespace Hatchit
 {
@@ -32,6 +33,9 @@ namespace Hatchit
             {
                 if (m_device != VK_NULL_HANDLE)
                 {
+                    //Destroy samplers
+                    for (size_t i = 0; i < m_samplers.size(); i++)
+                        delete m_samplers[i];
 
                     //Destroy descriptor set layouts
                     for (size_t i = 0; i < m_descriptorSetLayouts.size(); i++)
@@ -59,6 +63,62 @@ namespace Hatchit
                 if (!handle.IsValid())
                     return false;
 
+                //The first entry in m_descriptorSetLayouts will be this descriptor set layout
+                //It will contain a uniform buffer (for pipeline state info) and all immutable samplers
+                VkDescriptorSetLayoutCreateInfo immutableSetLayoutInfo = {};
+                immutableSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+                immutableSetLayoutInfo.pNext = nullptr;
+                immutableSetLayoutInfo.flags = 0;
+
+                std::vector<VkDescriptorSetLayoutBinding> immutableBindings;
+
+                //One binding for a uniform buffer
+                VkDescriptorSetLayoutBinding bufferBinding = {};
+                bufferBinding.binding = 0;
+                bufferBinding.descriptorCount = 1;
+                bufferBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                bufferBinding.stageFlags = VK_SHADER_STAGE_ALL;
+
+                //Parse immutable samplers
+                std::vector<Resource::Sampler> samplers = handle->GetSamplers();
+                std::vector<VkSampler> vkSamplers;
+                for (size_t i = 0; i < samplers.size(); i++)
+                {
+                    Resource::Sampler sampler = samplers[i];
+
+                    VKSampler* vkSampler = new VKSampler();
+                    vkSampler->InitFromResource(sampler);
+                    m_samplers.push_back(vkSampler);
+
+                    vkSamplers.push_back(vkSampler->GetVkSampler());
+                }
+
+                //One binding for immutable samplers
+                VkDescriptorSetLayoutBinding samplerBinding = {};
+                samplerBinding.binding = 1;
+                samplerBinding.descriptorCount = static_cast<uint32_t>(vkSamplers.size());
+                samplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+                samplerBinding.stageFlags = VK_SHADER_STAGE_ALL;
+                samplerBinding.pImmutableSamplers = vkSamplers.data();
+
+                immutableBindings.push_back(bufferBinding);
+                immutableBindings.push_back(samplerBinding);
+
+                immutableSetLayoutInfo.bindingCount = static_cast<uint32_t>(immutableBindings.size());
+                immutableSetLayoutInfo.pBindings = immutableBindings.data();
+
+                VkDescriptorSetLayout immutableSetLayout;
+                err = vkCreateDescriptorSetLayout(device, &immutableSetLayoutInfo, nullptr, &immutableSetLayout);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+                    HT_DEBUG_PRINTF("VKRootLayout::VInitialize(): Error creating descriptor set layout!");
+                    return false;
+                }
+
+                m_descriptorSetLayouts.push_back(immutableSetLayout);
+
+                //Parse layout parameters
                 std::vector<RootLayout::Parameter> parameters = handle->GetParameters();
                 uint32_t currentPushContentOffset = 0; //How many bytes the next push constant should be offset by
 
@@ -123,7 +183,7 @@ namespace Hatchit
                                     descType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
                                     break;
                                 case RootLayout::Range::Type::SHADER_RESOURCE:
-                                    descType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                                    descType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
                                     break;
                                 }
 

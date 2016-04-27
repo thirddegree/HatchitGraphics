@@ -146,7 +146,6 @@ namespace Hatchit {
                 VKRootLayoutHandle m_rootLayout;
                 IMaterialHandle m_material;
                 TextureHandle m_texture;
-                ISamplerHandle m_sampler;
                 IPipelineHandle m_pipeline;
                 IMeshHandle m_meshHandle;
                 VKRenderPassHandle m_renderPass;

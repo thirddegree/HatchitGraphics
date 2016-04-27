@@ -71,7 +71,7 @@ namespace Hatchit {
                 
                 //Only take the first two descriptor sets
                 std::vector<VkDescriptorSetLayout> layouts = renderer->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts();
-                for (uint32_t i = 0; i < 2; i++)
+                for (uint32_t i = 1; i < 3; i++)
                     m_materialLayouts.push_back(layouts[i]);
 
                 //Prepare uniform buffers
@@ -225,13 +225,13 @@ namespace Hatchit {
 
                     //Create Texture description
                     VkDescriptorImageInfo textureDescriptor = {};
-                    textureDescriptor.sampler = VKSampler::GetHandle("DeferredSampler.json", "DeferredSampler.json")->GetVkSampler(); //VERY TEMPORARY
+                    textureDescriptor.sampler = nullptr; //Sampler applied in shader
                     textureDescriptor.imageView = texture->GetView();
                     textureDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
                     VkWriteDescriptorSet samplerFSWrite = {};
                     samplerFSWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                    samplerFSWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                    samplerFSWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
                     samplerFSWrite.dstSet = m_materialSets[1];
                     samplerFSWrite.dstBinding = 0;
                     samplerFSWrite.pImageInfo = &textureDescriptor;

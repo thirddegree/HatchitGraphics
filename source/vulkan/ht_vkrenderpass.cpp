@@ -274,7 +274,7 @@ namespace Hatchit {
                         
                         //Bind material descriptor sets
                         vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            vkPipelineLayout, 0, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, nullptr);
+                            vkPipelineLayout, 1, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, nullptr);
                     
                         //Bind instance buffer
                         if(m_instanceDataSize > 0)
@@ -728,7 +728,7 @@ namespace Hatchit {
                     {
                         VkWriteDescriptorSet inputTextureWrite = {};
                         inputTextureWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                        inputTextureWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                        inputTextureWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
                         inputTextureWrite.dstSet = m_inputTargetDescriptorSets[index];
                         inputTextureWrite.dstBinding = it->first;
                         inputTextureWrite.pImageInfo = &targetDescriptors[targetIndex];

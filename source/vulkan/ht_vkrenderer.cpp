@@ -124,8 +124,6 @@ namespace Hatchit {
                 
                 CreateSetupCommandBuffer();
 
-                m_sampler = VKSampler::GetHandle("DeferredSampler.json", "DeferredSampler.json").StaticCastHandle<ISampler>();
-
                 m_texture = VKTexture::GetHandle("raptor.png", "raptor.png").StaticCastHandle<Texture>();
 
                 m_pipeline = VKPipeline::GetHandle("DeferredPipeline.json", "DeferredPipeline.json").StaticCastHandle<IPipeline>();
@@ -170,7 +168,6 @@ namespace Hatchit {
 
                 m_material.Release();
                 m_texture.Release();
-                m_sampler.Release();
                 m_pipeline.Release();
                 m_meshHandle.Release();
                 m_renderPass.Release();
@@ -1112,7 +1109,7 @@ namespace Hatchit {
                 uniformSize.descriptorCount = 4;
 
                 VkDescriptorPoolSize samplerSize = {};
-                samplerSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                samplerSize.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
                 samplerSize.descriptorCount = 10;
 
                 poolSizes.push_back(uniformSize);
