@@ -209,7 +209,7 @@ namespace Hatchit {
                 VkDescriptorSetAllocateInfo allocInfo = {};
                 allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
                 allocInfo.descriptorPool = m_renderer->GetVKDescriptorPool();
-                allocInfo.pSetLayouts = &descriptorSetLayouts[1];
+                allocInfo.pSetLayouts = &descriptorSetLayouts[3];
                 allocInfo.descriptorSetCount = 1;
 
                 err = vkAllocateDescriptorSets(m_device, &allocInfo, &m_descriptorSet);
@@ -238,15 +238,15 @@ namespace Hatchit {
 
                 for (size_t i = 0; i < m_inputTextures.size(); i++)
                 {
-                    VkWriteDescriptorSet uniformSampler2DWrite = {};
-                    uniformSampler2DWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                    uniformSampler2DWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                    uniformSampler2DWrite.dstSet = m_descriptorSet;
-                    uniformSampler2DWrite.dstBinding = static_cast<uint32_t>(i);
-                    uniformSampler2DWrite.pImageInfo = &textureDescriptors[i];
-                    uniformSampler2DWrite.descriptorCount = 1;
+                    VkWriteDescriptorSet uniformTexure2DWrite = {};
+                    uniformTexure2DWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                    uniformTexure2DWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+                    uniformTexure2DWrite.dstSet = m_descriptorSet;
+                    uniformTexure2DWrite.dstBinding = static_cast<uint32_t>(i);
+                    uniformTexure2DWrite.pImageInfo = &textureDescriptors[i];
+                    uniformTexure2DWrite.descriptorCount = 1;
 
-                    descriptorWrites.push_back(uniformSampler2DWrite);
+                    descriptorWrites.push_back(uniformTexure2DWrite);
                 }
 
                 vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
@@ -336,7 +336,7 @@ namespace Hatchit {
                     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
                     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-                        1, 1, &m_descriptorSet, 0, nullptr);
+                        3, 1, &m_descriptorSet, 0, nullptr);
                     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline->GetVKPipeline());
 
                     //Draw fullscreen Tri; geometry created in shader

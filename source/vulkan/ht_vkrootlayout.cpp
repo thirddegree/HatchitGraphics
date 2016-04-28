@@ -13,6 +13,7 @@
 **/
 
 #include <ht_vkrootlayout.h>
+#include <ht_vksampler.h>
 
 namespace Hatchit
 {
@@ -32,13 +33,16 @@ namespace Hatchit
             {
                 if (m_device != VK_NULL_HANDLE)
                 {
+                    //Destroy samplers
+                    for (size_t i = 0; i < m_samplers.size(); i++)
+                        delete m_samplers[i];
 
                     //Destroy descriptor set layouts
                     for (size_t i = 0; i < m_descriptorSetLayouts.size(); i++)
-                        vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayouts[i], nullptr);
+                        vkDestroyDescriptorSetLayout(*m_device, m_descriptorSetLayouts[i], nullptr);
 
                     //Destroy pipeline layout
-                    vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
+                    vkDestroyPipelineLayout(*m_device, m_pipelineLayout, nullptr);
                 }
                 else 
                 {
@@ -46,7 +50,7 @@ namespace Hatchit
                 }
             }
 
-            bool VKRootLayout::Initialize(const std::string& fileName, const VkDevice& device) 
+            bool VKRootLayout::Initialize(const std::string& fileName, const VkDevice* device) 
             {
                 using namespace Resource;
 
@@ -59,6 +63,54 @@ namespace Hatchit
                 if (!handle.IsValid())
                     return false;
 
+                //The first entry in m_descriptorSetLayouts will be this descriptor set layout
+                //It will contain all immutable samplers
+                VkDescriptorSetLayoutCreateInfo immutableSamplersSetLayoutCreateInfo = {};
+                immutableSamplersSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+                immutableSamplersSetLayoutCreateInfo.pNext = nullptr;
+                immutableSamplersSetLayoutCreateInfo.flags = 0;
+                std::vector<VkDescriptorSetLayoutBinding> immutableBindings;
+
+                //Parse immutable samplers
+                std::vector<Resource::Sampler> samplers = handle->GetSamplers();
+                std::vector<VkSampler> vkSamplers;
+                for (size_t i = 0; i < samplers.size(); i++)
+                {
+                    Resource::Sampler sampler = samplers[i];
+
+                    VKSampler* vkSampler = new VKSampler();
+                    vkSampler->InitFromResource(sampler, device);
+                    m_samplers.push_back(vkSampler);
+
+                    vkSamplers.push_back(vkSampler->GetVkSampler());
+                }
+
+                //One binding for immutable samplers
+                VkDescriptorSetLayoutBinding samplerBinding = {};
+                samplerBinding.binding = 0;
+                samplerBinding.descriptorCount = static_cast<uint32_t>(vkSamplers.size());
+                samplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+                samplerBinding.stageFlags = VK_SHADER_STAGE_ALL;
+                samplerBinding.pImmutableSamplers = vkSamplers.data();
+
+                immutableBindings.push_back(samplerBinding);
+
+                immutableSamplersSetLayoutCreateInfo.bindingCount = static_cast<uint32_t>(immutableBindings.size());
+                immutableSamplersSetLayoutCreateInfo.pBindings = immutableBindings.data();
+
+                VkDescriptorSetLayout immutableSamplersSetLayout;
+
+                err = vkCreateDescriptorSetLayout(*device, &immutableSamplersSetLayoutCreateInfo, nullptr, &immutableSamplersSetLayout);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+                    HT_DEBUG_PRINTF("VKRootLayout::VInitialize(): Error creating descriptor set layout!");
+                    return false;
+                }
+
+                m_descriptorSetLayouts.push_back(immutableSamplersSetLayout);
+
+                //Parse layout parameters
                 std::vector<RootLayout::Parameter> parameters = handle->GetParameters();
                 uint32_t currentPushContentOffset = 0; //How many bytes the next push constant should be offset by
 
@@ -123,7 +175,7 @@ namespace Hatchit
                                     descType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
                                     break;
                                 case RootLayout::Range::Type::SHADER_RESOURCE:
-                                    descType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                                    descType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
                                     break;
                                 }
 
@@ -141,7 +193,7 @@ namespace Hatchit
                             descriptorSetLayoutInfo.pBindings = descriptorSetLayoutBindings.data();
 
                             VkDescriptorSetLayout descriptorSetLayout;
-                            err = vkCreateDescriptorSetLayout(device, &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout);
+                            err = vkCreateDescriptorSetLayout(*device, &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout);
                             assert(!err);
                             if (err != VK_SUCCESS)
                             {
@@ -187,7 +239,7 @@ namespace Hatchit
                 pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(m_pushConstantRanges.size());
                 pipelineLayoutInfo.pPushConstantRanges = m_pushConstantRanges.data();
                 
-                err = vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout);
+                err = vkCreatePipelineLayout(*device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {

@@ -108,7 +108,7 @@ namespace Hatchit {
                     return false;
 
                 //TODO: remove this test code
-                m_rootLayout = VKRootLayout::GetHandle("TestRootDescriptor.json", "TestRootDescriptor.json", m_device);
+                m_rootLayout = VKRootLayout::GetHandle("TestRootDescriptor.json", "TestRootDescriptor.json", &m_device);
 
                 ModelHandle model = Model::GetHandleFromFileName("Raptor.obj");
                 ModelHandle lightModel = Model::GetHandleFromFileName("IcoSphere.dae");
@@ -119,9 +119,6 @@ namespace Hatchit {
                 m_compositionPass = VKRenderPass::GetHandle("CompositionPass.json", "CompositionPass.json", this);
                 
                 CreateSetupCommandBuffer();
-
-                m_sampler = VKSampler::GetHandle("DeferredSampler.json", "DeferredSampler.json", this).StaticCastHandle<ISampler>();
-
                 m_texture = VKTexture::GetHandle("raptor.png", "raptor.png", this).StaticCastHandle<Texture>();
 
                 m_pipeline = VKPipeline::GetHandle("DeferredPipeline.json", "DeferredPipeline.json", this).StaticCastHandle<IPipeline>();
@@ -166,7 +163,6 @@ namespace Hatchit {
 
                 m_material.Release();
                 m_texture.Release();
-                m_sampler.Release();
                 m_pipeline.Release();
                 m_meshHandle.Release();
                 m_renderPass.Release();
@@ -1105,13 +1101,18 @@ namespace Hatchit {
 
                 VkDescriptorPoolSize uniformSize = {};
                 uniformSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                uniformSize.descriptorCount = 4;
+                uniformSize.descriptorCount = 10;
+
+                VkDescriptorPoolSize imageSize = {};
+                imageSize.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+                imageSize.descriptorCount = 10;
 
                 VkDescriptorPoolSize samplerSize = {};
-                samplerSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                samplerSize.descriptorCount = 10;
+                samplerSize.type = VK_DESCRIPTOR_TYPE_SAMPLER;
+                samplerSize.descriptorCount = 6;
 
                 poolSizes.push_back(uniformSize);
+                poolSizes.push_back(imageSize);
                 poolSizes.push_back(samplerSize);
 
                 VkDescriptorPoolCreateInfo poolCreateInfo = {};

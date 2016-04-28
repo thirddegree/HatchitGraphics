@@ -65,7 +65,7 @@ namespace Hatchit {
 
                 VkPipeline                          GetVKPipeline();
                 
-                void SendPushConstants(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout);
+                void BindPipeline(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout);
 
             protected:
                 std::map<Resource::Pipeline::ShaderSlot, VKShaderHandle> m_shaderHandles;
@@ -73,6 +73,7 @@ namespace Hatchit {
                 //Input
                 VKRenderer* m_renderer;
                 const VkDevice* m_device;
+                const VkDescriptorPool* m_descriptorPool;
                 VKRenderPassHandle m_renderPass;
 
                 std::vector<VkVertexInputAttributeDescription> m_vertexLayout;
@@ -86,14 +87,15 @@ namespace Hatchit {
                 std::vector<VkPipelineShaderStageCreateInfo> m_shaderStages;
 
                 VkPipelineCache m_pipelineCache;
+                VkPipelineLayout m_pipelineLayout; //Given by the root layout
                 VkPipeline      m_pipeline;
 
-                std::vector<int>    m_intPushData;
-                std::vector<float>  m_floatPushData;
-                std::vector<float>  m_vector2PushData;
-                std::vector<float>  m_vector3PushData;
-                std::vector<float>  m_vector4PushData;
-                std::vector<float>  m_matrixPushData;
+                std::vector<BYTE> m_pushData;
+                std::vector<BYTE> m_descriptorData;
+
+                UniformBlock_vk m_uniformVSBuffer;
+                uint8_t* m_uniformBindPoint;
+                VkDescriptorSet m_descriptorSet; //Descriptor set for data that can't fit into push constants
 
             private:
                 bool m_hasVertexAttribs;
@@ -128,6 +130,8 @@ namespace Hatchit {
                 void loadShader(Hatchit::Resource::Pipeline::ShaderSlot shaderSlot, IShaderHandle shader);
 
                 bool preparePipeline(VKRenderer& renderer);
+
+                bool prepareDescriptorSet();
 
                 VkFormat formatFromType(const Resource::ShaderVariable::Type& type) const;
 
