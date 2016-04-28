@@ -386,7 +386,8 @@ namespace Hatchit {
                 m_rasterizationState.cullMode = cullMode;
                 m_rasterizationState.frontFace = frontFace;
                 m_rasterizationState.depthClampEnable = rasterState.depthClampEnable;
-                m_rasterizationState.rasterizerDiscardEnable = rasterState.discardEnable;
+                m_rasterizationState.rasterizerDiscardEnable = rasterState.discardEnable; 
+                m_rasterizationState.lineWidth = rasterState.lineWidth;
                 m_rasterizationState.depthBiasEnable = VK_FALSE;
             }
 
