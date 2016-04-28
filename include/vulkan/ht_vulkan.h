@@ -30,6 +30,11 @@ namespace Hatchit {
     namespace Graphics {
         namespace Vulkan {
 
+            struct LayoutLocation {
+                uint32_t set;
+                uint32_t binding;
+            };
+
             struct UniformBlock_vk
             {
                 VkBuffer                buffer;

@@ -59,7 +59,7 @@ namespace Hatchit {
 
                 bool VUpdate()                                              override;
 
-                const std::vector<VkDescriptorSet>& GetVKDescriptorSets() const;
+                const void BindMaterial(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout) const;
 
                 IPipelineHandle GetPipeline() override;
 
@@ -68,6 +68,7 @@ namespace Hatchit {
 
                 bool setupDescriptorSet(VkDescriptorPool descriptorPool);
 
+                std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;
                 std::vector<VkDescriptorSetLayout> m_materialLayouts;
                 std::vector<VkDescriptorSet> m_materialSets;
 
@@ -76,8 +77,12 @@ namespace Hatchit {
                 std::vector<UniformBlock_vk> m_fragmentTextures;
 
                 VKPipelineHandle m_pipeline;
-                std::map<std::string, TextureHandle> m_textures;
-                std::map<std::string, Hatchit::Resource::ShaderVariable*> m_shaderVariables;
+                
+                std::vector<LayoutLocation> m_textureLocations;
+                std::vector<TextureHandle> m_textures;
+
+                //std::vector<LayoutLocation> m_shaderVariableLocations;
+                //std::vector<std::map<std::string, Hatchit::Resource::ShaderVariable*>> m_shaderVariables;
             };
 
             using VKMaterialHandle = Core::Handle<VKMaterial>;
