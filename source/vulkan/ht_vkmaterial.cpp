@@ -57,31 +57,35 @@ namespace Hatchit {
                 }
 
                 //Get shader vars
-                m_shaderVariables = handle->GetShaderVariables();
+               // m_shaderVariables = handle->GetShaderVariables();
 
-                std::vector<std::string> texturePaths = handle->GetTexturePaths();
+
+                m_descriptorSetLayouts = renderer->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts();
+
+                std::vector<Resource::Material::TexturePath> texturePaths = handle->GetTexturePaths();
+                //Map layout location to file handle
                 for (size_t i = 0; i < texturePaths.size(); i++)
                 {
-                    VKTextureHandle textureHandle = VKTexture::GetHandle(texturePaths[i], texturePaths[i], renderer);
-                    m_textures[texturePaths[i]] = textureHandle.StaticCastHandle<Texture>();
+                    Resource::Material::TexturePath texturePath = texturePaths[i];
+
+                    LayoutLocation location;
+                    location.set = texturePath.set;
+                    location.binding = texturePath.binding;
+
+                    std::string filePath = texturePath.path;
+
+                    VKTextureHandle textureHandle = VKTexture::GetHandle(filePath, filePath, renderer);
+
+                    m_textureLocations.push_back(location);
+                    m_textures.push_back(textureHandle.StaticCastHandle<Texture>());    
+
+                    //Record which descriptor set layouts we need
+                    m_materialLayouts.push_back(m_descriptorSetLayouts[location.set]);
                 }
 
-                VkDescriptorPool descriptorPool = m_renderer->GetVKDescriptorPool();
+                VkDescriptorPool descriptorPool = renderer->GetVKDescriptorPool();
 
                 VKPipelineHandle vkPipeline = m_pipeline.DynamicCastHandle<VKPipeline>();
-                
-                //Only take the first two descriptor sets
-                std::vector<VkDescriptorSetLayout> layouts = renderer->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts();
-                for (uint32_t i = 0; i < 2; i++)
-                    m_materialLayouts.push_back(layouts[i]);
-
-                //Prepare uniform buffers
-                //if(m_shaderVariables.size() > 0)
-                m_renderer->CreateBuffer(*m_device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, sizeof(Math::Matrix4), nullptr, &m_uniformVSBuffer);
-                //renderer->CreateBuffer(device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 0, nullptr, &m_uniformFSBuffer);
-
-                m_uniformVSBuffer.descriptor.offset = 0;
-                m_uniformVSBuffer.descriptor.range = sizeof(Math::Matrix4);
 
                 setupDescriptorSet(descriptorPool);
 
@@ -106,39 +110,39 @@ namespace Hatchit {
 
             bool VKMaterial::VSetInt(std::string name, int data)
             {
-                static_cast<IntVariable*>(m_shaderVariables[name])->SetData(data);
+                //static_cast<IntVariable*>(m_shaderVariables[name])->SetData(data);
                 return true;
             }
             bool VKMaterial::VSetFloat(std::string name, float data)
             {
-                static_cast<FloatVariable*>(m_shaderVariables[name])->SetData(data);
+                //static_cast<FloatVariable*>(m_shaderVariables[name])->SetData(data);
                 return true;
             }
             bool VKMaterial::VSetFloat3(std::string name, Math::Vector3 data)
             {
-                static_cast<Float3Variable*>(m_shaderVariables[name])->SetData(data);
+                //static_cast<Float3Variable*>(m_shaderVariables[name])->SetData(data);
                 return true;
             }
             bool VKMaterial::VSetFloat4(std::string name, Math::Vector4 data) 
             {
-                static_cast<Float4Variable*>(m_shaderVariables[name])->SetData(data);
+                //static_cast<Float4Variable*>(m_shaderVariables[name])->SetData(data);
                 return true;
             }
             bool VKMaterial::VSetMatrix4(std::string name, Math::Matrix4 data) 
             {
-                Matrix4Variable* var = static_cast<Matrix4Variable*>(m_shaderVariables[name]);
-                var->SetData(data);
+                //Matrix4Variable* var = static_cast<Matrix4Variable*>(m_shaderVariables[name]);
+                //var->SetData(data);
                 return true;
             }
 
             bool VKMaterial::VBindTexture(std::string name, TextureHandle texture) 
             {
-                m_textures[name] = texture;
+                //m_textures[name] = texture;
                 return true;
             }
             bool VKMaterial::VUnbindTexture(std::string name, TextureHandle texture)
             {
-                m_textures.erase(name);
+                //m_textures.erase(name);
                 return true;
             }
 
@@ -150,32 +154,41 @@ namespace Hatchit {
             bool VKMaterial::VUpdate() 
             {
                 //TODO: Figure out what data is going into what buffers
+                //if (m_shaderVariables.size() == 0)
+                //    return true;
 
-                if (m_shaderVariables.size() == 0)
-                    return true;
-
-                uint8_t* pData;
-                
-                std::vector<Math::Matrix4> variableList;
-
-                std::map <std::string, ShaderVariable*>::iterator it;
-                for (it = m_shaderVariables.begin(); it != m_shaderVariables.end(); it++)
-                    variableList.push_back(*(Math::Matrix4*)(it->second->GetData()));
-                
-                VkResult err = vkMapMemory(*m_device, m_uniformVSBuffer.memory, 0, sizeof(m_shaderVariables), 0, (void**)&pData);
-                assert(!err);
-                
-                memcpy(pData, variableList.data(), sizeof(Math::Matrix4));
-
-                vkUnmapMemory(*m_device, m_uniformVSBuffer.memory);
+                //uint8_t* pData;
+                //
+                //std::vector<Math::Matrix4> variableList;
+                //
+                //std::map <std::string, ShaderVariable*>::iterator it;
+                //for (it = m_shaderVariables.begin(); it != m_shaderVariables.end(); it++)
+                //    variableList.push_back(*(Math::Matrix4*)(it->second->GetData()));
+                //
+                //VkResult err = vkMapMemory(m_device, m_uniformVSBuffer.memory, 0, sizeof(m_shaderVariables), 0, (void**)&pData);
+                //assert(!err);
+                //
+                //memcpy(pData, variableList.data(), sizeof(Math::Matrix4));
+                //
+                //vkUnmapMemory(m_device, m_uniformVSBuffer.memory);
 
                 return true;
             }
 
-            const std::vector<VkDescriptorSet>& VKMaterial::GetVKDescriptorSets() const { return m_materialSets; }
+            const void VKMaterial::BindMaterial(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout) const
+            { 
+                if (m_materialSets.size() <= 0)
+                    return;
+
+                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 3, 
+                    static_cast<uint32_t>(m_materialSets.size()), m_materialSets.data(), 0, nullptr);
+            }
 
             bool VKMaterial::setupDescriptorSet(VkDescriptorPool descriptorPool)
             {
+                if (m_materialLayouts.size() <= 0)
+                    return true;
+
                 VkResult err;
 
                 //Setup the descriptor sets
@@ -195,32 +208,14 @@ namespace Hatchit {
                 }
 
                 std::vector<VkWriteDescriptorSet> descSetWrites = {};
-                uint32_t descCount = 0;
+                uint32_t writeCount = 0;
 
-                VkWriteDescriptorSet uniformVSWrite = {};
-                uniformVSWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                uniformVSWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                uniformVSWrite.dstSet = m_materialSets[0];
-                uniformVSWrite.dstBinding = 0;
-                uniformVSWrite.pBufferInfo = &m_uniformVSBuffer.descriptor;
-                uniformVSWrite.descriptorCount = 1;
-
-                //VkWriteDescriptorSet uniformFSWrite = {};
-                //uniformFSWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                //uniformFSWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                //uniformFSWrite.dstSet = m_materialSet;
-                //uniformFSWrite.dstBinding = descCount++;
-                //uniformFSWrite.pBufferInfo = &m_uniformFSBuffer.descriptor;
-                //uniformFSWrite.descriptorCount = 1;
-
-                descSetWrites.push_back(uniformVSWrite);
-                //descSetWrites.push_back(uniformFSWrite);
 
                 //Setup writes for textures
-                std::map<std::string, TextureHandle>::iterator it;
-                for (it = m_textures.begin(); it != m_textures.end(); it++)
+                for (size_t i = 0; i < m_textures.size(); i++)
                 {
-                    VKTextureHandle texture = it->second.DynamicCastHandle<VKTexture>();
+                    LayoutLocation location = m_textureLocations[i];
+                    VKTextureHandle texture = m_textures[i].DynamicCastHandle<VKTexture>();
 
                     //Create Texture description
                     VkDescriptorImageInfo textureDescriptor = {};
@@ -231,8 +226,8 @@ namespace Hatchit {
                     VkWriteDescriptorSet samplerFSWrite = {};
                     samplerFSWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                     samplerFSWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-                    samplerFSWrite.dstSet = m_materialSets[1];
-                    samplerFSWrite.dstBinding = 0;
+                    samplerFSWrite.dstSet = m_materialSets[writeCount++];
+                    samplerFSWrite.dstBinding = location.binding;
                     samplerFSWrite.pImageInfo = &textureDescriptor;
                     samplerFSWrite.descriptorCount = 1;
 

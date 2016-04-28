@@ -268,11 +268,7 @@ namespace Hatchit {
                         VKMaterialHandle material = renderable.material.DynamicCastHandle<VKMaterial>();
                         VKMeshHandle     mesh = renderable.mesh.DynamicCastHandle<VKMesh>();
                     
-                        std::vector<VkDescriptorSet> descriptorSets = material->GetVKDescriptorSets();
-                        
-                        //Bind material descriptor sets
-                        vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            vkPipelineLayout, 2, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, nullptr);
+                        material->BindMaterial(m_commandBuffer, vkPipelineLayout);
                     
                         //Bind instance buffer
                         if(m_instanceDataSize > 0)
