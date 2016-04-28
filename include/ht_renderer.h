@@ -35,6 +35,7 @@
 #include <ht_string.h>
 #include <ht_renderpass.h>
 #include <ht_camera.h>
+#include <ht_device.h>
 
 namespace Hatchit {
 
@@ -113,6 +114,7 @@ namespace Hatchit {
             static IRenderer* FromType(RendererType type);
 
         protected:
+            static IDevice* _Device;
 
             //A collection of renderpass layers. Each layer may contain multiple render passes.
             std::vector<std::vector<RenderPassBaseHandle>> m_renderPassLayers = std::vector<std::vector<RenderPassBaseHandle>>(64);

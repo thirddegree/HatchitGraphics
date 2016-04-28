@@ -27,6 +27,7 @@ namespace Hatchit {
     namespace Graphics {
 
         IRenderer*  IRenderer::Instance = nullptr;
+        IDevice*    IRenderer::_Device = nullptr;
 
 
         uint32_t IRenderer::GetWidth() const { return m_width; }
