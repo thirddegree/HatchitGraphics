@@ -33,8 +33,8 @@ namespace Hatchit {
 
             bool VKMaterial::Initialize(const std::string& fileName, VKRenderer* renderer)
             {
-                m_renderer = renderer;
                 m_device = &(renderer->GetVKDevice());
+                m_descriptorPool = &(renderer->GetVKDescriptorPool());
 
                 Resource::MaterialHandle handle = Hatchit::Resource::Material::GetHandleFromFileName(fileName);
 
@@ -83,29 +83,24 @@ namespace Hatchit {
                     m_materialLayouts.push_back(m_descriptorSetLayouts[location.set]);
                 }
 
-                VkDescriptorPool descriptorPool = renderer->GetVKDescriptorPool();
-
                 VKPipelineHandle vkPipeline = m_pipeline.DynamicCastHandle<VKPipeline>();
 
-                setupDescriptorSet(descriptorPool);
+                setupDescriptorSet();
 
                 return true;
             }
 
             VKMaterial::~VKMaterial() 
             {
-
-                VkDescriptorPool descriptorPool = m_renderer->GetVKDescriptorPool();
-
                 //Free descriptor sets
                 uint32_t descriptorSetCount = static_cast<uint32_t>(m_materialSets.size());
                 VkDescriptorSet* descriptorSets = m_materialSets.data();
 
-                vkFreeDescriptorSets(*m_device, descriptorPool, descriptorSetCount, descriptorSets);
+                vkFreeDescriptorSets(*m_device, *m_descriptorPool, descriptorSetCount, descriptorSets);
 
                 //Destroy unifrom blocks
-                vkFreeMemory(*m_device, m_uniformVSBuffer.memory, nullptr);
-                vkDestroyBuffer(*m_device, m_uniformVSBuffer.buffer, nullptr);
+                //vkFreeMemory(*m_device, m_uniformVSBuffer.memory, nullptr);
+                //vkDestroyBuffer(*m_device, m_uniformVSBuffer.buffer, nullptr);
             }
 
             bool VKMaterial::VSetInt(std::string name, int data)
@@ -184,7 +179,7 @@ namespace Hatchit {
                     static_cast<uint32_t>(m_materialSets.size()), m_materialSets.data(), 0, nullptr);
             }
 
-            bool VKMaterial::setupDescriptorSet(VkDescriptorPool descriptorPool)
+            bool VKMaterial::setupDescriptorSet()
             {
                 if (m_materialLayouts.size() <= 0)
                     return true;
@@ -194,7 +189,7 @@ namespace Hatchit {
                 //Setup the descriptor sets
                 VkDescriptorSetAllocateInfo allocInfo = {};
                 allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-                allocInfo.descriptorPool = descriptorPool;
+                allocInfo.descriptorPool = *m_descriptorPool;
                 allocInfo.descriptorSetCount = static_cast<uint32_t>(m_materialLayouts.size());
                 allocInfo.pSetLayouts = m_materialLayouts.data();
 

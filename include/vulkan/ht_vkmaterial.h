@@ -64,10 +64,10 @@ namespace Hatchit {
                 IPipelineHandle GetPipeline() override;
 
             private:
-                VKRenderer* m_renderer;
                 const VkDevice* m_device;
+                const VkDescriptorPool* m_descriptorPool;
 
-                bool setupDescriptorSet(VkDescriptorPool descriptorPool);
+                bool setupDescriptorSet();
 
                 std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;
                 std::vector<VkDescriptorSetLayout> m_materialLayouts;
