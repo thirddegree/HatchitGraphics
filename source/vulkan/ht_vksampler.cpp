@@ -25,13 +25,12 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKSampler::VKSampler(Core::Guid ID) :
-                RefCounted<VKSampler>(std::move(ID)),
-                m_device(VKRenderer::RendererInstance->GetVKDevice())
+            VKSampler::VKSampler(Core::Guid ID)
             {}
 
-            bool VKSampler::Initialize(const std::string& fileName)
+            bool VKSampler::Initialize(const std::string& fileName, VKRenderer* renderer)
             {
+                m_device = &(renderer->GetVKDevice());
                 m_fileName = fileName;
                 m_sampler = nullptr;
 
@@ -65,7 +64,7 @@ namespace Hatchit {
                 samplerInfo.borderColor = VKBorderColorFromType(handle->GetBorderColor());
                 m_colorSpace = VKColorSpaceFromType(handle->GetColorSpace());
 
-                err = vkCreateSampler(m_device, &samplerInfo, nullptr, &m_sampler);
+                err = vkCreateSampler(*m_device, &samplerInfo, nullptr, &m_sampler);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -78,7 +77,7 @@ namespace Hatchit {
 
             VKSampler::~VKSampler() 
             {
-                vkDestroySampler(m_device, m_sampler, nullptr);
+                vkDestroySampler(*m_device, m_sampler, nullptr);
             }
 
             VkSampler VKSampler::GetVkSampler()

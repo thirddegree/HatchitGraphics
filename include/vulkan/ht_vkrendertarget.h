@@ -42,7 +42,7 @@ namespace Hatchit {
                 ~VKRenderTarget();
 
                 //Required function from RefCounted classes
-                bool Initialize(const std::string& fileName);
+                bool Initialize(const std::string& fileName, VKRenderer* renderer);
 
                 ///Prepare the render target with Vulkan
                 bool VPrepare() override;
@@ -57,14 +57,15 @@ namespace Hatchit {
                 const VkClearValue* GetClearColor() const;
 
             protected:
-                const VkDevice& m_device;
+                VKRenderer* m_renderer;
+                const VkDevice* m_device;
 
                 VkClearValue* m_clearColor;
 
                 VkFormat m_colorFormat;
                 Texture_vk m_texture;
 
-                bool setupTargetTexture(VKRenderer* renderer);
+                bool setupTargetTexture();
             };
 
             using VKRenderTargetHandle = Core::Handle<VKRenderTarget>;

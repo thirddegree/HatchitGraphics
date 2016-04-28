@@ -70,12 +70,10 @@ namespace Hatchit {
             std::string     applicationName;
         };
 
-        class HT_API IRenderer
+        class HT_API Renderer
         {
         public:
-            static IRenderer* Instance;
-            
-            virtual ~IRenderer() { };
+            virtual ~Renderer() { };
             
             /** Initialize the renderer
             * \param params The paramaters to intialize this renderer with
@@ -108,9 +106,9 @@ namespace Hatchit {
             uint32_t GetHeight() const;
 
             void RegisterRenderPass(RenderPassBaseHandle pass);
-            void RegisterCamera(Camera camera, uint64_t flags);
+            void RegisterCamera(Camera camera);
 
-            static IRenderer* FromType(RendererType type);
+            static Renderer* FromType(RendererType type);
 
         protected:
 

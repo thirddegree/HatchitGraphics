@@ -30,6 +30,8 @@ namespace Hatchit {
     namespace Graphics {
         namespace Vulkan {
 
+            class VKRenderer;
+
             struct UniformBlock_vk
             {
                 VkBuffer                buffer;
@@ -60,8 +62,8 @@ namespace Hatchit {
                 uint32_t mipLevels;
             };
 
-            bool CreateUniformBuffer(const VkDevice& device, size_t dataSize, void* data, UniformBlock_vk* uniformBlock);
-            bool CreateTexelBuffer(const VkDevice& device, size_t dataSize, void* data, TexelBlock_vk* texelBlock);
+            bool CreateUniformBuffer(VKRenderer& renderer, const VkDevice& device, size_t dataSize, void* data, UniformBlock_vk* uniformBlock);
+            bool CreateTexelBuffer(VKRenderer& renderer, const VkDevice& device, size_t dataSize, void* data, TexelBlock_vk* texelBlock);
 
             void DeleteUniformBuffer(const VkDevice& device, UniformBlock_vk& uniformBlock);
             void DeleteTexelBuffer(const VkDevice& device, TexelBlock_vk& texelBlock);

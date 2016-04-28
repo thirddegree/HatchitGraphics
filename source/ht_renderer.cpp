@@ -26,14 +26,11 @@ namespace Hatchit {
 
     namespace Graphics {
 
-        IRenderer*  IRenderer::Instance = nullptr;
+        uint32_t Renderer::GetWidth() const { return m_width; }
+        uint32_t Renderer::GetHeight() const { return m_height; }
 
 
-        uint32_t IRenderer::GetWidth() const { return m_width; }
-        uint32_t IRenderer::GetHeight() const { return m_height; }
-
-
-        void IRenderer::RegisterRenderPass(RenderPassBaseHandle pass)
+        void Renderer::RegisterRenderPass(RenderPassBaseHandle pass)
         {
             uint64_t flags = pass->GetLayerFlags();
             for (int j = 0; flags != 0; j++)
@@ -46,8 +43,9 @@ namespace Hatchit {
             }
         }
 
-        void IRenderer::RegisterCamera(Camera camera, uint64_t flags)
+        void Renderer::RegisterCamera(Camera camera)
         {
+            uint64_t flags = camera.GetLayerFlags();
             for (int j = 0; flags != 0; j++)
             {
                 if (flags & 1)
@@ -57,7 +55,7 @@ namespace Hatchit {
                 flags >>= 1;
             }
         }
-        IRenderer * IRenderer::FromType(RendererType type)
+        Renderer * Renderer::FromType(RendererType type)
         {
             switch (type)
             {

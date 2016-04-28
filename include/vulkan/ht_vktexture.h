@@ -32,17 +32,17 @@ namespace Hatchit {
                 virtual ~VKTexture();
 
                 //Required function for RefCounted classes
-                bool Initialize(const std::string& fileName);
+                bool Initialize(const std::string& fileName, VKRenderer* renderer);
 
                 //For building a texture *not* from a file
-                bool Initialize(const BYTE* data, size_t width, size_t height, uint32_t channelCount, uint32_t mipLevels);
+                bool Initialize(VKRenderer& renderer, const BYTE* data, size_t width, size_t height, uint32_t channelCount, uint32_t mipLevels);
 
                 VkImageView GetView();
 
             private:
-                bool VKBufferImage();
+                bool VKBufferImage(VKRenderer& renderer);
 
-                VkDevice m_device;
+                const VkDevice* m_device;
 
                 VkImageView m_view;
                 VkImage m_image;

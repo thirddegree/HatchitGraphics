@@ -33,18 +33,20 @@ namespace Hatchit {
 
         namespace Vulkan {
 
+            class VKRenderer;
             class HT_API VKMesh : public Core::RefCounted<VKMesh>, public IMesh
             {
             public:
                 VKMesh(Core::Guid ID);
                 ~VKMesh();
 
-                bool Initialize(Hatchit::Resource::Mesh* mesh);
+                bool Initialize(Hatchit::Resource::Mesh* mesh, VKRenderer* renderer);
 
                 UniformBlock_vk GetVertexBlock();
                 UniformBlock_vk GetIndexBlock();
 
             private:
+                VKRenderer* m_renderer;
                 UniformBlock_vk m_vertexBlock;
                 UniformBlock_vk m_indexBlock;
             };

@@ -23,7 +23,8 @@ namespace Hatchit {
     namespace Graphics {
 
         namespace Vulkan {
-        
+            class VKRenderer;
+
             class HT_API VKSampler : public Core::RefCounted<VKSampler>, public ISampler
             {
             public:
@@ -31,7 +32,7 @@ namespace Hatchit {
                 ~VKSampler();
 
                 //Required function of RefCounted classes
-                bool Initialize(const std::string& fileName);
+                bool Initialize(const std::string& fileName, VKRenderer* renderer);
 
                 //bool VPrepare() override;
 
@@ -39,7 +40,7 @@ namespace Hatchit {
                 VkFormat  GetVkColorSpace();
 
             private:
-                const VkDevice&             m_device;
+                const VkDevice*             m_device;
                 VkSampler                   m_sampler;
                 VkFormat                    m_colorSpace;
                 std::string                 m_fileName;

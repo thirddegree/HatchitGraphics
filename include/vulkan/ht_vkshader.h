@@ -44,12 +44,12 @@ namespace Hatchit {
                 ~VKShader();
 
                 //Required function for RefCounted classes
-                bool Initialize(const std::string& fileName);
+                bool Initialize(const std::string& fileName, VKRenderer* renderer);
 
                 VkShaderModule GetShaderModule();
 
             private:
-                const VkDevice& m_device;
+                const VkDevice* m_device;
                 VkShaderModule m_shader;
             };
 

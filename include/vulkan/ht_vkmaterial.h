@@ -46,7 +46,7 @@ namespace Hatchit {
                 ~VKMaterial();
 
                 //Required function for RefCounted class
-                bool Initialize(const std::string& fileName);
+                bool Initialize(const std::string& fileName, VKRenderer* renderer);
 
                 bool VSetInt(std::string name, int data)                    override;
                 bool VSetFloat(std::string name, float data)                override;
@@ -64,7 +64,8 @@ namespace Hatchit {
                 IPipelineHandle GetPipeline() override;
 
             private:
-                const VkDevice& m_device;
+                VKRenderer* m_renderer;
+                const VkDevice* m_device;
 
                 bool setupDescriptorSet(VkDescriptorPool descriptorPool);
 

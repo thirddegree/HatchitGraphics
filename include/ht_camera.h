@@ -32,6 +32,8 @@ namespace Hatchit {
 
     namespace Graphics {
 
+        class Renderer;
+
         class HT_API Camera
         {
         public:
@@ -46,7 +48,7 @@ namespace Hatchit {
             void SetView(Math::Matrix4 view);
             void SetProjection(Math::Matrix4 projection);
 
-            void RegisterCamera();
+            void RegisterCamera(Renderer& renderer);
 
         private:
             Math::Matrix4 m_view;
