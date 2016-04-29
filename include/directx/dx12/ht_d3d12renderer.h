@@ -38,7 +38,7 @@ namespace Hatchit {
                 Math::Matrix4 proj;
             };
 
-            class HT_API D3D12Renderer : public IRenderer
+            class HT_API D3D12Renderer : public Graphics::Renderer
             {
                 static const int NUM_BUFFER_FRAMES = 2;
             public:

@@ -24,10 +24,17 @@
 #include <ht_d3d12device.h>
 #endif
 
+#include <ht_d3d12texture.h>
+
 namespace Hatchit
 {
+
+    using namespace Core;
+
     namespace Graphics
     {
+        using namespace DX;
+
         bool GPUResourcePool::Initialize(IDevice* device)
         {
             if (!device)
@@ -36,11 +43,19 @@ namespace Hatchit
             GPUResourcePool& instance = GPUResourcePool::instance();
 
             instance.m_thread = new DX::D3D12GPUResourceThread(static_cast<DX::D3D12Device*>(device));
+            instance.m_device = device;
 
             return true;
         }
+        
+        void GPUResourcePool::DeInitialize()
+        {
+            GPUResourcePool& instance = GPUResourcePool::instance();
 
-        std::shared_ptr<TextureHandle> GPUResourcePool::CreateTexture(std::string file)
+            delete instance.m_thread;
+        }
+
+        TextureHandle GPUResourcePool::CreateTexture(std::string file)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
 
@@ -48,12 +63,11 @@ namespace Hatchit
             GPUResourceRequest request;
             request.type = GPUResourceRequest::Type::Texture;
             request.file = file;
-            
 
-            instance.m_thread->Load(request);
+            instance.m_thread->VLoad(request);
         
             /*Return the default texture*/
-            return nullptr;
+            return TextureHandle();
         }
     }
 }

@@ -24,13 +24,14 @@ namespace Hatchit {
             using namespace Resource;
 
             VKShader::VKShader(Core::Guid ID) :
-                m_device(VKRenderer::RendererInstance->GetVKDevice()),
                 Core::RefCounted<VKShader>(std::move(ID)),
                 m_shader(VK_NULL_HANDLE)
             {}
 
-            bool VKShader::Initialize(const std::string& fileName)
+            bool VKShader::Initialize(const std::string& fileName, VKRenderer* renderer)
             {
+                m_device = &(renderer->GetVKDevice());
+
                 m_shader = VK_NULL_HANDLE;
                 ShaderHandle shaderResourceHandle = Shader::GetHandleFromFileName(fileName);
 
@@ -46,7 +47,7 @@ namespace Hatchit {
                 moduleCreateInfo.pCode = (uint32_t*)(shaderCode);
                 moduleCreateInfo.flags = 0;
 
-                err = vkCreateShaderModule(m_device, &moduleCreateInfo, nullptr, &m_shader);
+                err = vkCreateShaderModule(*m_device, &moduleCreateInfo, nullptr, &m_shader);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -58,10 +59,8 @@ namespace Hatchit {
 
             VKShader::~VKShader() 
             {
-                VkDevice device = VKRenderer::RendererInstance->GetVKDevice();
-
                 if(m_shader != VK_NULL_HANDLE)
-                    vkDestroyShaderModule(device, m_shader, nullptr);
+                    vkDestroyShaderModule(*m_device, m_shader, nullptr);
             }
 
             VkShaderModule VKShader::GetShaderModule()

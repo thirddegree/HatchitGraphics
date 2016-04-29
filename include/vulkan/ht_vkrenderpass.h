@@ -42,7 +42,7 @@ namespace Hatchit {
                 ~VKRenderPass();
 
                 //Required function for RefCounted classes
-                bool Initialize(const std::string& fileName);
+                bool Initialize(const std::string& fileName, VKRenderer* renderer);
 
                 //Will this be sent the Objects that it needs to render?
                 ///Render the scene
@@ -68,9 +68,10 @@ namespace Hatchit {
                 //Mapping set index to maps of binding indicies and render targets
                 bool setupDescriptorSets(std::map < uint32_t, std::map < uint32_t, VKRenderTargetHandle >> inputTargets);
 
-                const VkDevice& m_device;
-                const VkCommandPool& m_commandPool;
-                const VkDescriptorPool& m_descriptorPool;
+                VKRenderer* m_renderer;
+                const VkDevice* m_device;
+                const VkCommandPool* m_commandPool;
+                const VkDescriptorPool* m_descriptorPool;
 
                 VkRenderPass m_renderPass;
                 VkCommandBuffer m_commandBuffer;

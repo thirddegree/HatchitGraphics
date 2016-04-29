@@ -28,7 +28,7 @@ namespace Hatchit
     {
         namespace DX
         {
-            class D3D12DeviceResources;
+            class D3D12Device;
 
             class HT_API D3D12Texture : public Core::RefCounted<D3D12Texture>, public Texture
             {
@@ -37,9 +37,9 @@ namespace Hatchit
 
                 ~D3D12Texture();
 
-                void Upload(D3D12DeviceResources* resources, uint32_t descriptorOffset);
+                void Upload(ID3D12CommandList* commandList, uint32_t descriptorOffset);
 
-                bool Initialize(const std::string& fileName, D3D12DeviceResources* resources);
+                bool Initialize(const std::string& fileName, D3D12Device* _device);
 
             private:
                 D3D12_RESOURCE_DESC         m_desc;

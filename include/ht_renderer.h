@@ -53,6 +53,7 @@ namespace Hatchit {
 
         enum RendererType
         {
+            UNKNOWN,
             OPENGL,
             DIRECTX11,
             DIRECTX12,
@@ -71,12 +72,10 @@ namespace Hatchit {
             std::string     applicationName;
         };
 
-        class HT_API IRenderer
+        class HT_API Renderer
         {
         public:
-            static IRenderer* Instance;
-            
-            virtual ~IRenderer() { };
+            virtual ~Renderer() { };
             
             /** Initialize the renderer
             * \param params The paramaters to intialize this renderer with
@@ -109,12 +108,16 @@ namespace Hatchit {
             uint32_t GetHeight() const;
 
             void RegisterRenderPass(RenderPassBaseHandle pass);
-            void RegisterCamera(Camera camera, uint64_t flags);
+            void RegisterCamera(Camera camera);
 
-            static IRenderer* FromType(RendererType type);
+            static Renderer* FromType(RendererType type);
+
+            static IDevice* const GetDevice();
+            static RendererType GetType();
 
         protected:
-            static IDevice* _Device;
+            static IDevice*     _Device;
+            static RendererType _Type;
 
             //A collection of renderpass layers. Each layer may contain multiple render passes.
             std::vector<std::vector<RenderPassBaseHandle>> m_renderPassLayers = std::vector<std::vector<RenderPassBaseHandle>>(64);
@@ -123,6 +126,7 @@ namespace Hatchit {
 
             uint32_t m_width;
             uint32_t m_height;
+
         };
 
     }

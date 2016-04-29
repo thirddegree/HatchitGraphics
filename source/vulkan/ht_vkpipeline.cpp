@@ -26,8 +26,6 @@ namespace Hatchit {
             using namespace Resource;
 
             VKPipeline::VKPipeline(Core::Guid ID) :
-                m_device(VKRenderer::RendererInstance->GetVKDevice()),
-                m_descriptorPool(VKRenderer::RendererInstance->GetVKDescriptorPool()),
                 Core::RefCounted<VKPipeline>(std::move(ID))
             {
                 m_hasVertexAttribs = false;
@@ -37,19 +35,23 @@ namespace Hatchit {
             VKPipeline::~VKPipeline() 
             {
                 //Destroy buffer
-                vkUnmapMemory(m_device, m_uniformVSBuffer.memory);
-                DeleteUniformBuffer(m_device, m_uniformVSBuffer);
+                vkUnmapMemory(*m_device, m_uniformVSBuffer.memory);
+                DeleteUniformBuffer(*m_device, m_uniformVSBuffer);
 
                 //Destroy descriptor sets
-                vkFreeDescriptorSets(m_device, m_descriptorPool, 1, &m_descriptorSet);
+                vkFreeDescriptorSets(*m_device, *m_descriptorPool, 1, &m_descriptorSet);
 
                 //Destroy Pipeline
-                vkDestroyPipelineCache(m_device, m_pipelineCache, nullptr);
-                vkDestroyPipeline(m_device, m_pipeline, nullptr);
+                vkDestroyPipelineCache(*m_device, m_pipelineCache, nullptr);
+                vkDestroyPipeline(*m_device, m_pipeline, nullptr);
             }
 
-            bool VKPipeline::Initialize(const std::string& fileName)
+            bool VKPipeline::Initialize(const std::string& fileName, VKRenderer* renderer)
             {
+                m_renderer = renderer;
+                m_device = &(renderer->GetVKDevice());
+                m_descriptorPool = &(renderer->GetVKDescriptorPool());
+
                 Resource::PipelineHandle handle = Resource::Pipeline::GetHandleFromFileName(fileName);
                 if (!handle.IsValid())
                 {
@@ -73,16 +75,16 @@ namespace Hatchit {
                 for (it = shaderPaths.begin(); it != shaderPaths.end(); it++)
                 {
                     //Get the actual shader handle
-                    VKShaderHandle shaderHandle = VKShader::GetHandle(it->second, it->second);
+                    VKShaderHandle shaderHandle = VKShader::GetHandle(it->second, it->second, renderer);
 
                     loadShader(it->first, shaderHandle.StaticCastHandle<IShader>());
                 }
 
                 //Get a handle to a compatible render pass
                 std::string renderPassPath = handle->GetRenderPassPath();
-                m_renderPass = VKRenderPass::GetHandle(renderPassPath, renderPassPath);
+                m_renderPass = VKRenderPass::GetHandle(renderPassPath, renderPassPath, renderer);
 
-                if (!preparePipeline())
+                if (!preparePipeline(*m_renderer))
                     return false;
 
                 if (!prepareDescriptorSet())
@@ -384,7 +386,8 @@ namespace Hatchit {
                 m_rasterizationState.cullMode = cullMode;
                 m_rasterizationState.frontFace = frontFace;
                 m_rasterizationState.depthClampEnable = rasterState.depthClampEnable;
-                m_rasterizationState.rasterizerDiscardEnable = rasterState.discardEnable;
+                m_rasterizationState.rasterizerDiscardEnable = rasterState.discardEnable; 
+                m_rasterizationState.lineWidth = rasterState.lineWidth;
                 m_rasterizationState.depthBiasEnable = VK_FALSE;
             }
 
@@ -466,7 +469,7 @@ namespace Hatchit {
                 m_shaderStages.push_back(shaderStage);
             }
 
-            bool VKPipeline::preparePipeline()
+            bool VKPipeline::preparePipeline(VKRenderer& renderer)
             {
                 VkResult err;
 
@@ -587,7 +590,7 @@ namespace Hatchit {
                 dynamicState.dynamicStateCount = 2;
 
                 //Get pipeline layout
-                VKRootLayoutHandle rootLayoutHandle = VKRenderer::RendererInstance->GetVKRootLayoutHandle();
+                VKRootLayoutHandle rootLayoutHandle = renderer.GetVKRootLayoutHandle();
                 m_pipelineLayout = rootLayoutHandle->VKGetPipelineLayout();
 
                 //Finalize pipeline
@@ -609,7 +612,7 @@ namespace Hatchit {
                 VkPipelineCacheCreateInfo pipelineCacheInfo = {};
                 pipelineCacheInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
 
-                err = vkCreatePipelineCache(m_device, &pipelineCacheInfo, nullptr, &m_pipelineCache);
+                err = vkCreatePipelineCache(*m_device, &pipelineCacheInfo, nullptr, &m_pipelineCache);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -617,7 +620,7 @@ namespace Hatchit {
                     return false;
                 }
 
-                err = vkCreateGraphicsPipelines(m_device, m_pipelineCache, 1, &pipelineInfo, nullptr, &m_pipeline);
+                err = vkCreateGraphicsPipelines(*m_device, m_pipelineCache, 1, &pipelineInfo, nullptr, &m_pipeline);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -633,21 +636,21 @@ namespace Hatchit {
                 VkResult err;
 
                 size_t bufferSize = 128;
-                CreateUniformBuffer(m_device, bufferSize, nullptr, &m_uniformVSBuffer);
+                CreateUniformBuffer(*m_renderer, *m_device, bufferSize, nullptr, &m_uniformVSBuffer);
 
                 m_uniformVSBuffer.descriptor.offset = 0;
                 m_uniformVSBuffer.descriptor.range = bufferSize;
 
-                VkDescriptorSetLayout layout = VKRenderer::RendererInstance->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts()[1]; //Hack as fuck
+                VkDescriptorSetLayout layout = m_renderer->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts()[1]; //Hack as fuck
 
                 VkDescriptorSetAllocateInfo allocInfo = {};
                 allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
                 allocInfo.pNext = nullptr;
-                allocInfo.descriptorPool = m_descriptorPool;
+                allocInfo.descriptorPool = *m_descriptorPool;
                 allocInfo.descriptorSetCount = 1;
                 allocInfo.pSetLayouts = &layout;
 
-                err = vkAllocateDescriptorSets(m_device, &allocInfo, &m_descriptorSet);
+                err = vkAllocateDescriptorSets(*m_device, &allocInfo, &m_descriptorSet);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -667,10 +670,10 @@ namespace Hatchit {
 
                 descSetWrites.push_back(uniformVSWrite);
 
-                vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(descSetWrites.size()), descSetWrites.data(), 0, nullptr);
+                vkUpdateDescriptorSets(*m_device, static_cast<uint32_t>(descSetWrites.size()), descSetWrites.data(), 0, nullptr);
 
                 //Map memory to bind point once; will unmap on shutdown
-                err = vkMapMemory(m_device, m_uniformVSBuffer.memory, 0, bufferSize, 0, (void**)&m_uniformBindPoint);
+                err = vkMapMemory(*m_device, m_uniformVSBuffer.memory, 0, bufferSize, 0, (void**)&m_uniformBindPoint);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {

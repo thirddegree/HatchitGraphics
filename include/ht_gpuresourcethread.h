@@ -30,14 +30,16 @@ namespace Hatchit
 
             Type            type;
             std::string     file;
+            std::string     dflt;
         };
 
         class HT_API IGPUResourceThread
         {
         public:
-            virtual void Start() = 0;
-            virtual void Load(GPUResourceRequest request) = 0;
-            virtual void Kill() = 0;
+            virtual ~IGPUResourceThread() { };
+            virtual void VStart() = 0;
+            virtual void VLoad(GPUResourceRequest request) = 0;
+            virtual void VKill() = 0;
         };
     }
 }

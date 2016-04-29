@@ -45,7 +45,7 @@ namespace Hatchit {
                 VKPipeline(Core::Guid ID);
                 ~VKPipeline();
 
-                bool Initialize(const std::string& fileName);
+                bool Initialize(const std::string& fileName, VKRenderer* renderer);
 
                 ///Have Vulkan update the descriptor sets in this pipeline
                 bool VUpdate()                                                  override;
@@ -71,8 +71,9 @@ namespace Hatchit {
                 std::map<Resource::Pipeline::ShaderSlot, VKShaderHandle> m_shaderHandles;
 
                 //Input
-                const VkDevice& m_device;
-                const VkDescriptorPool& m_descriptorPool;
+                VKRenderer* m_renderer;
+                const VkDevice* m_device;
+                const VkDescriptorPool* m_descriptorPool;
                 VKRenderPassHandle m_renderPass;
 
                 std::vector<VkVertexInputAttributeDescription> m_vertexLayout;
@@ -128,7 +129,7 @@ namespace Hatchit {
                 */
                 void loadShader(Hatchit::Resource::Pipeline::ShaderSlot shaderSlot, IShaderHandle shader);
 
-                bool preparePipeline();
+                bool preparePipeline(VKRenderer& renderer);
 
                 bool prepareDescriptorSet();
 

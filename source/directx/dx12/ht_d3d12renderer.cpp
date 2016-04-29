@@ -63,6 +63,7 @@ namespace Hatchit {
                 if (!_Device)
                 {
                     _Device = new D3D12Device;
+                    _Type = RendererType::DIRECTX12;
                     if (!_Device->VInitialize())
                     {
                         HT_ERROR_PRINTF("Failed to create D3D12 Device.\n");
@@ -70,13 +71,6 @@ namespace Hatchit {
                         return false;
                     }
                 }
-
-
-
-                GPUResourcePool::Initialize(_Device);
-                GPUResourcePool::CreateTexture("raptor.png");
-
-
 
                 //m_resources = new D3D12DeviceResources;
                 //if (!m_resources->Initialize((HWND)params.window, params.viewportWidth, params.viewportHeight))
@@ -111,8 +105,7 @@ namespace Hatchit {
 
             void D3D12Renderer::VDeInitialize()
             {
-                delete IRenderer::_Device;
-                //m_resources->WaitForGpu();
+                delete Renderer::_Device;
             }
 
             void D3D12Renderer::VSetClearColor(const Color& color)

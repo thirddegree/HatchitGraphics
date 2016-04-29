@@ -16,7 +16,8 @@
 
 #include <ht_platform.h>
 #include <ht_directx.h>
-#include <ht_material.h>
+#include <ht_material_base.h>
+#include <ht_material_resource.h>
 
 namespace Hatchit {
 
@@ -33,18 +34,16 @@ namespace Hatchit {
 
     namespace Graphics {
 
+        class Material;
         namespace DX
         {
-            class HT_API D3D12Material : public IMaterial
+            class D3D12Device;
+
+            class HT_API D3D12Material : public MaterialBase
             {
             public:
                 D3D12Material();
 
-            private:
-
-                // Inherited via IMaterial
-                //virtual void VOnLoaded() override;
-              
                 virtual bool VSetInt(std::string name, int data) override;
                 virtual bool VSetFloat(std::string name, float data) override;
                 virtual bool VSetFloat3(std::string name, Math::Vector3 data) override;
@@ -53,6 +52,10 @@ namespace Hatchit {
                 virtual bool VBindTexture(std::string name, TextureHandle texture) override;
                 virtual bool VUnbindTexture(std::string name, TextureHandle texture) override;
                 virtual bool VUpdate() override;
+            private:
+                bool Initialize(Resource::MaterialHandle handle, D3D12Device* device);
+
+                friend class Material;
             };
         }
     }

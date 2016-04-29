@@ -41,13 +41,13 @@ namespace Hatchit {
         struct RenderRequest 
         {
             IPipelineHandle  pipeline;
-            IMaterialHandle  material;
+            MaterialHandle  material;
             IMeshHandle      mesh;
         };
 
         struct Renderable 
         {
-            IMaterialHandle  material;
+            MaterialHandle  material;
             IMeshHandle      mesh;
         };
 
@@ -73,7 +73,7 @@ namespace Hatchit {
             virtual void VSetView(Math::Matrix4 view) = 0;
             virtual void VSetProj(Math::Matrix4 proj) = 0;
 
-            virtual void VScheduleRenderRequest(IMaterialHandle material, IMeshHandle mesh, std::vector<Resource::ShaderVariable*> instanceVariables) = 0;
+            virtual void VScheduleRenderRequest(MaterialHandle material, IMeshHandle mesh, std::vector<Resource::ShaderVariable*> instanceVariables) = 0;
         };
 
         class HT_API RenderPassBase : public IRenderPass
@@ -85,7 +85,7 @@ namespace Hatchit {
             virtual void VSetView(Math::Matrix4 view);
             virtual void VSetProj(Math::Matrix4 proj);
 
-            virtual void VScheduleRenderRequest(IMaterialHandle material, IMeshHandle mesh, std::vector<Resource::ShaderVariable*> instanceVariables);
+            virtual void VScheduleRenderRequest(MaterialHandle material, IMeshHandle mesh, std::vector<Resource::ShaderVariable*> instanceVariables);
 
             uint64_t GetLayerFlags();
 

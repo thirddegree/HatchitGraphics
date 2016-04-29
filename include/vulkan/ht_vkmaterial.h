@@ -46,7 +46,7 @@ namespace Hatchit {
                 ~VKMaterial();
 
                 //Required function for RefCounted class
-                bool Initialize(const std::string& fileName);
+                bool Initialize(const std::string& fileName, VKRenderer* renderer);
 
                 bool VSetInt(std::string name, int data)                    override;
                 bool VSetFloat(std::string name, float data)                override;
@@ -59,15 +59,17 @@ namespace Hatchit {
 
                 bool VUpdate()                                              override;
 
-                const std::vector<VkDescriptorSet>& GetVKDescriptorSets() const;
+                const void BindMaterial(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout) const;
 
                 IPipelineHandle GetPipeline() override;
 
             private:
-                const VkDevice& m_device;
+                const VkDevice* m_device;
+                const VkDescriptorPool* m_descriptorPool;
 
-                bool setupDescriptorSet(VkDescriptorPool descriptorPool);
+                bool setupDescriptorSet();
 
+                std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;
                 std::vector<VkDescriptorSetLayout> m_materialLayouts;
                 std::vector<VkDescriptorSet> m_materialSets;
 
@@ -76,8 +78,12 @@ namespace Hatchit {
                 std::vector<UniformBlock_vk> m_fragmentTextures;
 
                 VKPipelineHandle m_pipeline;
-                std::map<std::string, TextureHandle> m_textures;
-                std::map<std::string, Hatchit::Resource::ShaderVariable*> m_shaderVariables;
+                
+                std::vector<LayoutLocation> m_textureLocations;
+                std::vector<TextureHandle> m_textures;
+
+                //std::vector<LayoutLocation> m_shaderVariableLocations;
+                //std::vector<std::map<std::string, Hatchit::Resource::ShaderVariable*>> m_shaderVariables;
             };
 
             using VKMaterialHandle = Core::Handle<VKMaterial>;

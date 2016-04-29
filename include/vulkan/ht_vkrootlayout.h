@@ -33,14 +33,14 @@ namespace Hatchit
 
                 ~VKRootLayout();
 
-                bool Initialize(const std::string& fileName, const VkDevice& device);
+                bool Initialize(const std::string& fileName, const VkDevice* device);
 
                 const VkPipelineLayout& VKGetPipelineLayout() const;
                 std::vector<VkDescriptorSetLayout> VKGetDescriptorSetLayouts() const;
                 std::vector<VkPushConstantRange> VKGetPushConstantRanges() const;
 
             private:
-                VkDevice m_device;
+                const VkDevice* m_device;
 
                 std::vector<VKSampler*> m_samplers; //So we can delete them later
                 VkPipelineLayout m_pipelineLayout;

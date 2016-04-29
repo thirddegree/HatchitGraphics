@@ -30,6 +30,7 @@
 #include <ht_math.h>
 #include <ht_debug.h>
 #include <ht_pipeline.h>
+#include <ht_guid.h>
 
 #include <map>
 
@@ -49,38 +50,37 @@ namespace Hatchit {
     namespace Graphics {
 
         class RenderPassBase;
+        class MaterialBase;
 
-        class HT_API IMaterial
+        class HT_API Material : public Core::RefCounted<Material>
         {
         public:
-            virtual ~IMaterial() { };
+            Material(Core::Guid ID);
 
-            virtual bool VSetInt(std::string name, int data) = 0;
-            virtual bool VSetFloat(std::string name, float data) = 0;
-            virtual bool VSetFloat3(std::string name, Math::Vector3 data) = 0;
-            virtual bool VSetFloat4(std::string name, Math::Vector4 data) = 0;
-            virtual bool VSetMatrix4(std::string name, Math::Matrix4 data) = 0;
+            ~Material();
 
-            virtual bool VBindTexture(std::string name, TextureHandle texture) = 0;
-            virtual bool VUnbindTexture(std::string name, TextureHandle texture) = 0;
+            bool Initialize(const std::string& fileName);
 
-            virtual bool VUpdate() = 0;
-            virtual IPipelineHandle GetPipeline() = 0;
-            virtual const std::vector<Core::Handle<RenderPassBase>>& GetRenderPasses() const = 0;
-        };
+            bool SetInt(std::string name, int data);
+            bool SetFloat(std::string name, float data);
+            bool SetFloat3(std::string name, Math::Vector3 data);
+            bool SetFloat4(std::string name, Math::Vector4 data);
+            bool SetMatrix4(std::string name, Math::Matrix4 data);
 
-        class HT_API MaterialBase : public IMaterial
-        {
-        public:
-            virtual ~MaterialBase() { };
+            bool BindTexture(std::string name, TextureHandle texture);
+            bool UnbindTexture(std::string name, TextureHandle texture);
 
-            const std::vector<Core::Handle<RenderPassBase>>& GetRenderPasses() const override;
+            bool Update();
+
+            IPipelineHandle GetPipeline();
+
+            const std::vector<Core::Handle<RenderPassBase>>& GetRenderPasses() const;
 
         protected:
             std::vector<Core::Handle<RenderPassBase>> m_renderPasses;
+            MaterialBase*                             m_base;
         };
 
-        using IMaterialHandle = Core::Handle<IMaterial>;
-        using MaterialBaseHandle = Core::Handle<MaterialBase>;
+        using MaterialHandle = Core::Handle<Material>;
     }
 }

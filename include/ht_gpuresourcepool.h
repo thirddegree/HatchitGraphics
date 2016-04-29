@@ -30,7 +30,8 @@ namespace Hatchit
         {
         public:
             static bool                                     Initialize(IDevice* device);
-            static std::shared_ptr<TextureHandle>           CreateTexture(std::string file);
+            static void                                     DeInitialize();
+            static TextureHandle                            CreateTexture(std::string file);
 
         private:
             IGPUResourceThread* m_thread;

@@ -44,8 +44,6 @@ namespace Hatchit {
 
             using namespace Hatchit::Resource;
 
-            VKRenderer* VKRenderer::RendererInstance = nullptr;
-
             VKRenderer::VKRenderer()
             {
                 m_setupCommandBuffer = 0;
@@ -84,8 +82,6 @@ namespace Hatchit {
                 m_clearColor.color.float32[2] = params.clearColor.b;
                 m_clearColor.color.float32[3] = params.clearColor.a;
 
-                if (RendererInstance == nullptr)
-                    RendererInstance = this;
 
                 /*
                 * Initialize Core Vulkan Systems: Driver layers & extensions 
@@ -112,32 +108,31 @@ namespace Hatchit {
                     return false;
 
                 //TODO: remove this test code
-                m_rootLayout = VKRootLayout::GetHandle("TestRootDescriptor.json", "TestRootDescriptor.json", m_device);
+                m_rootLayout = VKRootLayout::GetHandle("TestRootDescriptor.json", "TestRootDescriptor.json", &m_device);
 
                 ModelHandle model = Model::GetHandleFromFileName("Raptor.obj");
                 ModelHandle lightModel = Model::GetHandleFromFileName("IcoSphere.dae");
                 ModelHandle fullscreenTri = Model::GetHandleFromFileName("Tri.obj");
 
-                m_renderPass = VKRenderPass::GetHandle("DeferredPass.json", "DeferredPass.json");
-                m_lightingPass = VKRenderPass::GetHandle("LightingPass.json", "LightingPass.json");
-                m_compositionPass = VKRenderPass::GetHandle("CompositionPass.json", "CompositionPass.json");
+                m_renderPass = VKRenderPass::GetHandle("DeferredPass.json", "DeferredPass.json", this);
+                m_lightingPass = VKRenderPass::GetHandle("LightingPass.json", "LightingPass.json", this);
+                m_compositionPass = VKRenderPass::GetHandle("CompositionPass.json", "CompositionPass.json", this);
                 
                 CreateSetupCommandBuffer();
+                m_texture = VKTexture::GetHandle("raptor.png", "raptor.png", this).StaticCastHandle<Texture>();
 
-                m_texture = VKTexture::GetHandle("raptor.png", "raptor.png").StaticCastHandle<Texture>();
-
-                m_pipeline = VKPipeline::GetHandle("DeferredPipeline.json", "DeferredPipeline.json").StaticCastHandle<IPipeline>();
+                m_pipeline = VKPipeline::GetHandle("DeferredPipeline.json", "DeferredPipeline.json", this).StaticCastHandle<IPipeline>();
                 m_pipeline->VUpdate();
-                m_pointLightingPipeline = VKPipeline::GetHandle("PointLightingPipeline.json", "PointLightingPipeline.json").StaticCastHandle<IPipeline>();
-                m_compositionPipeline = VKPipeline::GetHandle("CompositionPipeline.json", "CompositionPipeline.json").StaticCastHandle<IPipeline>();
+                m_pointLightingPipeline = VKPipeline::GetHandle("PointLightingPipeline.json", "PointLightingPipeline.json", this).StaticCastHandle<IPipeline>();
+                m_compositionPipeline = VKPipeline::GetHandle("CompositionPipeline.json", "CompositionPipeline.json", this).StaticCastHandle<IPipeline>();
 
-                m_material = VKMaterial::GetHandle("DeferredMaterial.json", "DeferredMaterial.json").StaticCastHandle<IMaterial>();
-                m_pointLightMaterial = VKMaterial::GetHandle("PointLightMaterial.json", "PointLightMaterial.json").StaticCastHandle<IMaterial>();
-                m_compositionMaterial = VKMaterial::GetHandle("CompositionMaterial.json", "CompositionMaterial.json").StaticCastHandle<IMaterial>();
+                m_material = VKMaterial::GetHandle("DeferredMaterial.json", "DeferredMaterial.json", this).StaticCastHandle<IMaterial>();
+                m_pointLightMaterial = VKMaterial::GetHandle("PointLightMaterial.json", "PointLightMaterial.json", this).StaticCastHandle<IMaterial>();
+                m_compositionMaterial = VKMaterial::GetHandle("CompositionMaterial.json", "CompositionMaterial.json", this).StaticCastHandle<IMaterial>();
 
-                m_meshHandle = VKMesh::GetHandle("raptor", model->GetMeshes()[0]).StaticCastHandle<IMesh>();
-                m_pointLightMeshHandle = VKMesh::GetHandle("pointLight", lightModel->GetMeshes()[0]).StaticCastHandle<IMesh>();
-                m_compositionMeshHandle = VKMesh::GetHandle("pointLight", fullscreenTri->GetMeshes()[0]).StaticCastHandle<IMesh>();
+                m_meshHandle = VKMesh::GetHandle("raptor", model->GetMeshes()[0], this).StaticCastHandle<IMesh>();
+                m_pointLightMeshHandle = VKMesh::GetHandle("pointLight", lightModel->GetMeshes()[0], this).StaticCastHandle<IMesh>();
+                m_compositionMeshHandle = VKMesh::GetHandle("pointLight", fullscreenTri->GetMeshes()[0], this).StaticCastHandle<IMesh>();
 
                 RegisterRenderPass(m_renderPass.StaticCastHandle<RenderPassBase>());
                 RegisterRenderPass(m_lightingPass.StaticCastHandle<RenderPassBase>());
@@ -572,7 +567,7 @@ namespace Hatchit {
 
             bool VKRenderer::initVulkanSwapchain()
             {
-                m_swapchain = new VKSwapchain(m_instance, m_gpu, m_device, m_commandPool);
+                m_swapchain = new VKSwapchain(this, m_instance, m_gpu, m_device, m_commandPool);
 
                 const VkSurfaceKHR& surface = m_swapchain->VKGetSurface();
 
@@ -831,7 +826,7 @@ namespace Hatchit {
                 memAllocInfo.allocationSize = memReqs.size;
                 memAllocInfo.memoryTypeIndex = 0;
 
-                bool okay = VKRenderer::RendererInstance->MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memAllocInfo.memoryTypeIndex);
+                bool okay = MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memAllocInfo.memoryTypeIndex);
                 assert(okay);
                 if (!okay)
                 {
@@ -1329,13 +1324,7 @@ namespace Hatchit {
 
             bool VKRenderer::MemoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, uint32_t* typeIndex)
             {
-                if (RendererInstance == nullptr)
-                {
-                    HT_DEBUG_PRINTF("VKRenderer::MemoryTypeFromProperties(): Tried to call static before the renderer instance was set.\n");
-                    return false;
-                }
-
-                VkPhysicalDeviceMemoryProperties memoryProps = RendererInstance->m_memoryProps;
+                VkPhysicalDeviceMemoryProperties memoryProps = m_memoryProps;
 
                 //Search mem types to find the first index with those properties
                 for (uint32_t i = 0; i < 32; i++)

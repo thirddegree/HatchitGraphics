@@ -22,7 +22,7 @@ namespace Hatchit {
         {
         }
 
-        void MeshRenderer::SetMaterial(IMaterialHandle material)
+        void MeshRenderer::SetMaterial(MaterialHandle material)
         {
             m_material = material;
             m_pipeline = material->GetPipeline();
@@ -41,7 +41,7 @@ namespace Hatchit {
 
         void MeshRenderer::Render()
         {          
-            m_renderPass->VScheduleRenderRequest(m_material, m_mesh, m_instanceData);
+            //m_renderPass->VScheduleRenderRequest(m_material, m_mesh, m_instanceData);
         }
     }
 }

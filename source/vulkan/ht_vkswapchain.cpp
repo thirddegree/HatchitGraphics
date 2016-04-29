@@ -24,21 +24,15 @@ namespace Hatchit {
 
             using namespace Resource;
 
-            VKSwapchain::VKSwapchain(VkInstance& instance, VkPhysicalDevice& gpu, VkDevice& device, VkCommandPool& commandPool) :
-                m_instance(instance), m_gpu(gpu), m_device(device), m_commandPool(commandPool)
+            VKSwapchain::VKSwapchain(VKRenderer* renderer, VkInstance& instance, VkPhysicalDevice& gpu, VkDevice& device, VkCommandPool& commandPool) :
+                m_renderer(renderer), m_instance(instance), m_gpu(gpu), m_device(device), m_commandPool(commandPool)
             {
                 m_swapchain = VK_NULL_HANDLE;
-
-                m_instance = instance;
-                m_gpu = gpu;
-                m_device = device;
-                m_commandPool = commandPool;
 
                 /*
                 Prepare surface
                 */
-                VKRenderer* renderer = VKRenderer::RendererInstance;
-                const RendererParams& rendererParams = renderer->GetRendererParams();
+                const RendererParams& rendererParams = m_renderer->GetRendererParams();
                 if (!prepareSurface(rendererParams))
                     HT_DEBUG_PRINTF("VKSwapchain(): Failed to prepare surface");
             }
@@ -166,19 +160,17 @@ namespace Hatchit {
                     preTransform = surfCaps.currentTransform;
                 }
 
-                VKRenderer* renderer = VKRenderer::RendererInstance;
-
                 /*
                     Prepare Color
                 */
-                if (!prepareSwapchain(renderer, m_preferredColorFormat, m_colorSpace,
+                if (!prepareSwapchain(m_renderer, m_preferredColorFormat, m_colorSpace,
                     presentModes, surfCaps, swapchainExtent))
                     return false;
 
                 /*
                     Prepare depth
                 */
-                if (!prepareSwapchainDepth(renderer, m_preferredDepthFormat, swapchainExtent))
+                if (!prepareSwapchainDepth(m_renderer, m_preferredDepthFormat, swapchainExtent))
                     return false;
 
                 /*
@@ -198,8 +190,6 @@ namespace Hatchit {
 
             bool VKSwapchain::VKPrepareResources()
             {
-                VKRenderer* renderer = VKRenderer::RendererInstance;
-
                 VkResult err;
 
                 Pipeline::RasterizerState rasterState = {};
@@ -211,14 +201,14 @@ namespace Hatchit {
                 multisampleState.minSamples = 0;
                 multisampleState.samples = Pipeline::SAMPLE_1_BIT;
 
-                m_pipeline = VKPipeline::GetHandle("SwapchainPipeline.json", "SwapchainPipeline.json");
+                m_pipeline = VKPipeline::GetHandle("SwapchainPipeline.json", "SwapchainPipeline.json", m_renderer);
 
                 //Setup the descriptor sets
-                const std::vector<VkDescriptorSetLayout> descriptorSetLayouts = renderer->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts();
+                const std::vector<VkDescriptorSetLayout> descriptorSetLayouts = m_renderer->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts();
 
                 VkDescriptorSetAllocateInfo allocInfo = {};
                 allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-                allocInfo.descriptorPool = renderer->GetVKDescriptorPool();
+                allocInfo.descriptorPool = m_renderer->GetVKDescriptorPool();
                 allocInfo.pSetLayouts = &descriptorSetLayouts[3];
                 allocInfo.descriptorSetCount = 1;
 
@@ -263,7 +253,7 @@ namespace Hatchit {
 
                 //Buffer 3 blank points
                 float blank[9] = { 0,0,0,0,0,0,0,0,0 };
-                if (!renderer->CreateBuffer(m_device, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 9, blank, &m_vertexBuffer))
+                if (!m_renderer->CreateBuffer(m_device, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 9, blank, &m_vertexBuffer))
                     return false;
 
                 m_vertexBuffer.descriptor.offset = 0;
@@ -302,7 +292,7 @@ namespace Hatchit {
                 clearValues[0] = clearColor;
                 clearValues[1] = { 1.0f, 0 };
 
-                VkPipelineLayout pipelineLayout = VKRenderer::RendererInstance->GetVKRootLayoutHandle()->VKGetPipelineLayout();
+                VkPipelineLayout pipelineLayout = m_renderer->GetVKRootLayoutHandle()->VKGetPipelineLayout();
 
                 for (uint32_t i = 0; i < m_swapchainBuffers.size(); i++)
                 {
@@ -433,7 +423,7 @@ namespace Hatchit {
             VkResult VKSwapchain::VKGetNextImage(VkSemaphore presentSemaphore)
             {
                 //TODO: Use fences
-                VkDevice device = VKRenderer::RendererInstance->GetVKDevice();
+                VkDevice device = m_renderer->GetVKDevice();
                 return fpAcquireNextImageKHR(device, m_swapchain, UINT64_MAX, presentSemaphore, VK_NULL_HANDLE, &m_currentBuffer);
             }
 
@@ -1142,12 +1132,10 @@ namespace Hatchit {
             }
             void VKSwapchain::destroyPipeline()
             {
-                VKRenderer* renderer = VKRenderer::RendererInstance;
-
                 vkFreeMemory(m_device, m_vertexBuffer.memory, nullptr);
                 vkDestroyBuffer(m_device, m_vertexBuffer.buffer, nullptr);
 
-                vkFreeDescriptorSets(m_device, renderer->GetVKDescriptorPool(), 1, &m_descriptorSet);
+                vkFreeDescriptorSets(m_device, m_renderer->GetVKDescriptorPool(), 1, &m_descriptorSet);
 
                 m_pipeline.Release();
             }

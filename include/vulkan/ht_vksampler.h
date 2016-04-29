@@ -23,7 +23,7 @@ namespace Hatchit {
     namespace Graphics {
 
         namespace Vulkan {
-        
+            class VKRenderer;
             class HT_API VKSampler : public ISampler
             {
             public:
@@ -31,12 +31,12 @@ namespace Hatchit {
                 ~VKSampler();
 
                 //For initializing directly from a resource (immutable samplers)
-                bool InitFromResource(const Resource::Sampler& sampler);
+                bool InitFromResource(const Resource::Sampler& sampler, const VkDevice* device);
 
                 VkSampler GetVkSampler();
 
             private:
-                const VkDevice&             m_device;
+                const VkDevice*             m_device;
                 VkSampler                   m_sampler;
 
                 VkSamplerAddressMode    VKAddressModeFromType(Resource::Sampler::AddressMode mode);

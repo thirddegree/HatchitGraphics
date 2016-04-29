@@ -36,7 +36,6 @@ namespace Hatchit {
             using namespace Resource;
 
             VKRenderTarget::VKRenderTarget(Core::Guid ID) :
-                m_device(VKRenderer::RendererInstance->GetVKDevice()),
                 Core::RefCounted<VKRenderTarget>(std::move(ID))
             {
                 m_width = 0;
@@ -49,15 +48,18 @@ namespace Hatchit {
                 if (m_clearColor != nullptr)
                     delete m_clearColor;
 
-                vkFreeMemory(m_device, m_texture.image.memory, nullptr);
-                vkDestroyImage(m_device, m_texture.image.image, nullptr);
-                vkDestroyImageView(m_device, m_texture.image.view, nullptr);
+                vkFreeMemory(*m_device, m_texture.image.memory, nullptr);
+                vkDestroyImage(*m_device, m_texture.image.image, nullptr);
+                vkDestroyImageView(*m_device, m_texture.image.view, nullptr);
 
-                vkDestroySampler(m_device, m_texture.sampler, nullptr);
+                vkDestroySampler(*m_device, m_texture.sampler, nullptr);
             }
             
-            bool VKRenderTarget::Initialize(const std::string& fileName)
+            bool VKRenderTarget::Initialize(const std::string& fileName, VKRenderer* renderer)
             {
+                m_renderer = renderer;
+                m_device = &(renderer->GetVKDevice());
+
                 Resource::RenderTargetHandle handle = RenderTarget::GetHandleFromFileName(fileName);
 
                 if (!handle.IsValid())
@@ -107,8 +109,7 @@ namespace Hatchit {
                 }
                 else //If it's not valid or provided; query the renderer for the preferred format
                 {
-                    VKRenderer* renderer = VKRenderer::RendererInstance;
-                    m_colorFormat = renderer->GetPreferredImageFormat();
+                    m_colorFormat = m_renderer->GetPreferredImageFormat();
                 }
 
                 if (!VPrepare())
@@ -121,14 +122,12 @@ namespace Hatchit {
 
             bool VKRenderTarget::VPrepare()
             {
-                VKRenderer* renderer = VKRenderer::RendererInstance;
-
                 if (m_width == 0)
-                    m_width = renderer->GetWidth();
+                    m_width = m_renderer->GetWidth();
                 if (m_height == 0)
-                    m_height = renderer->GetHeight();
+                    m_height = m_renderer->GetHeight();
 
-                if (!setupTargetTexture(renderer))
+                if (!setupTargetTexture())
                     return false;
 
                 return true;
@@ -136,13 +135,11 @@ namespace Hatchit {
 
             bool VKRenderTarget::Blit(VkCommandBuffer buffer, const Image_vk& image)
             {
-                VKRenderer* renderer = VKRenderer::RendererInstance;
-
                 //Make sure color writes to the render target are finished
-                renderer->SetImageLayout(buffer, image.image, VK_IMAGE_ASPECT_COLOR_BIT,
+                m_renderer->SetImageLayout(buffer, image.image, VK_IMAGE_ASPECT_COLOR_BIT,
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
-                renderer->SetImageLayout(buffer, m_texture.image.image, VK_IMAGE_ASPECT_COLOR_BIT,
+                m_renderer->SetImageLayout(buffer, m_texture.image.image, VK_IMAGE_ASPECT_COLOR_BIT,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
                 VkImageBlit blit;
@@ -171,10 +168,10 @@ namespace Hatchit {
                     m_texture.image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
 
                 //Transform textures back
-                renderer->SetImageLayout(buffer, m_texture.image.image, VK_IMAGE_ASPECT_COLOR_BIT,
+                m_renderer->SetImageLayout(buffer, m_texture.image.image, VK_IMAGE_ASPECT_COLOR_BIT,
                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-                renderer->SetImageLayout(buffer, image.image, VK_IMAGE_ASPECT_COLOR_BIT,
+                m_renderer->SetImageLayout(buffer, image.image, VK_IMAGE_ASPECT_COLOR_BIT,
                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
                 return true;
@@ -187,10 +184,10 @@ namespace Hatchit {
             const uint32_t& VKRenderTarget::GetHeight() const { return m_height; }
             const VkClearValue* VKRenderTarget::GetClearColor() const { return m_clearColor; }
             
-            bool VKRenderTarget::setupTargetTexture(VKRenderer* renderer) 
+            bool VKRenderTarget::setupTargetTexture() 
             {
                 VkResult err;
-                VkPhysicalDevice gpu = renderer->GetVKPhysicalDevice();
+                VkPhysicalDevice gpu = m_renderer->GetVKPhysicalDevice();
 
                 //Test that the GPU supports blitting
                 VkFormatProperties formatProperties;
@@ -202,9 +199,9 @@ namespace Hatchit {
                     return false;
                 }
 
-                renderer->CreateSetupCommandBuffer();
+                m_renderer->CreateSetupCommandBuffer();
 
-                VkCommandBuffer setupCommandBuffer = renderer->GetSetupCommandBuffer();
+                VkCommandBuffer setupCommandBuffer = m_renderer->GetSetupCommandBuffer();
 
                 m_texture.width = m_width;
                 m_texture.height = m_height;
@@ -228,7 +225,7 @@ namespace Hatchit {
                 
                 VkMemoryRequirements memReqs;
 
-                err = vkCreateImage(m_device, &imageCreateInfo, nullptr, &m_texture.image.image);
+                err = vkCreateImage(*m_device, &imageCreateInfo, nullptr, &m_texture.image.image);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -236,10 +233,10 @@ namespace Hatchit {
                     return false;
                 }
 
-                vkGetImageMemoryRequirements(m_device, m_texture.image.image, &memReqs);
+                vkGetImageMemoryRequirements(*m_device, m_texture.image.image, &memReqs);
                 memAllocInfo.allocationSize = memReqs.size;
 
-                bool success = renderer->MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memAllocInfo.memoryTypeIndex);
+                bool success = m_renderer->MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memAllocInfo.memoryTypeIndex);
                 assert(success);
                 if (!success)
                 {
@@ -248,7 +245,7 @@ namespace Hatchit {
                 }
 
 
-                err = vkAllocateMemory(m_device, &memAllocInfo, nullptr, &m_texture.image.memory);
+                err = vkAllocateMemory(*m_device, &memAllocInfo, nullptr, &m_texture.image.memory);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -256,7 +253,7 @@ namespace Hatchit {
                     return false;
                 }
 
-                err = vkBindImageMemory(m_device, m_texture.image.image, m_texture.image.memory, 0);
+                err = vkBindImageMemory(*m_device, m_texture.image.image, m_texture.image.memory, 0);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -266,7 +263,7 @@ namespace Hatchit {
 
                 m_texture.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-                renderer->SetImageLayout(setupCommandBuffer, m_texture.image.image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, m_texture.layout);
+                m_renderer->SetImageLayout(setupCommandBuffer, m_texture.image.image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, m_texture.layout);
 
                 //Create a sampler
                 VkSamplerCreateInfo samplerInfo = {};
@@ -284,7 +281,7 @@ namespace Hatchit {
                 samplerInfo.maxLod = 0.0f;
                 samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
                 
-                err = vkCreateSampler(m_device, &samplerInfo, nullptr, &m_texture.sampler);
+                err = vkCreateSampler(*m_device, &samplerInfo, nullptr, &m_texture.sampler);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -302,7 +299,7 @@ namespace Hatchit {
                 viewInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
                 viewInfo.image = m_texture.image.image;
 
-                err = vkCreateImageView(m_device, &viewInfo, nullptr, &m_texture.image.view);
+                err = vkCreateImageView(*m_device, &viewInfo, nullptr, &m_texture.image.view);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -310,7 +307,7 @@ namespace Hatchit {
                     return false;
                 }
 
-                renderer->FlushSetupCommandBuffer();
+                m_renderer->FlushSetupCommandBuffer();
 
                 return true;
             }

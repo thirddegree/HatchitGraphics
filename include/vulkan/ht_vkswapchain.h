@@ -54,7 +54,7 @@ namespace Hatchit {
             class HT_API VKSwapchain : public ISwapchain
             {
             public:
-                VKSwapchain(VkInstance& instance, VkPhysicalDevice& gpu, VkDevice& device, VkCommandPool& commandPool);
+                VKSwapchain(VKRenderer* renderer, VkInstance& instance, VkPhysicalDevice& gpu, VkDevice& device, VkCommandPool& commandPool);
                 ~VKSwapchain();
                 
                 const VkCommandBuffer&  VKGetCurrentCommand();
@@ -76,6 +76,7 @@ namespace Hatchit {
                 void VKSetIncomingRenderPass(VKRenderPassHandle renderPass);
 
             private:
+                VKRenderer*         m_renderer;
                 VkInstance&         m_instance;
                 VkPhysicalDevice&   m_gpu;
                 VkDevice&           m_device;

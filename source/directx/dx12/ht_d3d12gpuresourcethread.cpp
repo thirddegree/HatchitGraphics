@@ -28,33 +28,35 @@ namespace Hatchit
             D3D12GPUResourceThread::D3D12GPUResourceThread(D3D12Device* device)
             {
                 m_alive = false;
+                m_tfinished = false;
                 m_device = device;
             }
 
             D3D12GPUResourceThread::~D3D12GPUResourceThread()
             {
-                Kill();
+                VKill();
             }
 
-            void D3D12GPUResourceThread::Start()
+            void D3D12GPUResourceThread::VStart()
             {
                 m_alive = true;
 
                 m_thread = std::thread(&D3D12GPUResourceThread::thread_main, this);
-                m_thread.detach();
             }
 
-            void D3D12GPUResourceThread::Load(GPUResourceRequest request)
+            void D3D12GPUResourceThread::VLoad(GPUResourceRequest request)
             {
                 if (!m_alive)
-                    Start();
+                    VStart();
 
                 m_requests.push(request);
             }
 
-            void D3D12GPUResourceThread::Kill()
+            void D3D12GPUResourceThread::VKill()
             {
                 m_alive = false;
+                if (m_thread.joinable())
+                    m_thread.join();
             }
 
             void D3D12GPUResourceThread::thread_main()
@@ -70,7 +72,7 @@ namespace Hatchit
                 if (FAILED(hr))
                 {
                     HT_ERROR_PRINTF("Failed to create command allocator in thread.\n");
-                    Kill();
+                    VKill();
                 }
 
                 while (m_alive)

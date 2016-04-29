@@ -19,6 +19,7 @@
 #include <ht_gpuresourcethread.h>
 #include <ht_threadvector.h>
 #include <ht_threadstack.h>
+#include <ht_threadqueue.inl>
 #include <thread>
 #include <atomic>
 
@@ -32,21 +33,22 @@ namespace Hatchit
 
             class HT_API D3D12GPUResourceThread : public IGPUResourceThread
             {
-                typedef Core::ThreadsafeStack<GPUResourceRequest> GPURequestStack;
+                using GPURequestQueue = Core::ThreadsafeQueue<GPUResourceRequest>;
             public:
                 D3D12GPUResourceThread(D3D12Device* device);
 
                 ~D3D12GPUResourceThread();
 
-                void Start()                            override;
-                void Load(GPUResourceRequest request)   override;
-                void Kill()                             override;
+                void VStart()                            override;
+                void VLoad(GPUResourceRequest request)   override;
+                void VKill()                             override;
 
             private:
                 std::thread             m_thread;
                 std::atomic_bool        m_alive;
+                std::atomic_bool        m_tfinished;
                 D3D12Device*            m_device;
-                GPURequestStack         m_requests;
+                GPURequestQueue         m_requests;
 
                 void thread_main();
             };

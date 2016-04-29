@@ -43,7 +43,7 @@ namespace Hatchit {
             * \param material the material you want to render with
             * The material should also store the appropriate pipeline
             */
-            virtual void SetMaterial(IMaterialHandle material);
+            virtual void SetMaterial(MaterialHandle material);
 
             /* Set which mesh will be rendered
             * \param mesh A pointer to the mesh you want to render
@@ -61,7 +61,7 @@ namespace Hatchit {
         protected:
             RenderPassBaseHandle    m_renderPass;
             IPipelineHandle         m_pipeline;
-            IMaterialHandle         m_material;
+            MaterialHandle         m_material;
             IMeshHandle             m_mesh;
             std::vector<Resource::ShaderVariable*> m_instanceData;
         };

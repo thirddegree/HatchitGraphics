@@ -66,9 +66,9 @@ namespace Hatchit {
         }
 
         //Register this camera to the renderer based on its layer flags
-        void Camera::RegisterCamera()
+        void Camera::RegisterCamera(Renderer& renderer)
         {
-            IRenderer::Instance->RegisterCamera(*this, m_layerflags);
+            renderer.RegisterCamera(*this);
         }
 
     }

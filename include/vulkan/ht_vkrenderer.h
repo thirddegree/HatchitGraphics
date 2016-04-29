@@ -30,11 +30,9 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            class HT_API VKRenderer : public IRenderer
+            class HT_API VKRenderer : public Graphics::Renderer
             {
             public:
-                static VKRenderer* RendererInstance;
-
                 VKRenderer();
 
                 ~VKRenderer();
@@ -107,11 +105,11 @@ namespace Hatchit {
                 void FlushSetupCommandBuffer();
 
                 //Reused helpers
-                static bool CheckLayers(std::vector<const char*> layerNames, VkLayerProperties* layers, uint32_t layerCount);
-                static bool SetImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageAspectFlags aspectMask,
+                bool CheckLayers(std::vector<const char*> layerNames, VkLayerProperties* layers, uint32_t layerCount);
+                bool SetImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageAspectFlags aspectMask,
                     VkImageLayout oldImageLayout, VkImageLayout newImageLayout);
-                static bool MemoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, uint32_t* typeIndex);
-                static bool CreateBuffer(VkDevice device, VkBufferUsageFlagBits usage, size_t dataSize, void* data, UniformBlock_vk* uniformBlock);
+                bool MemoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, uint32_t* typeIndex);
+                bool CreateBuffer(VkDevice device, VkBufferUsageFlagBits usage, size_t dataSize, void* data, UniformBlock_vk* uniformBlock);
 
             private:
                 bool m_enableValidation;

@@ -13,16 +13,112 @@
 **/
 
 #include <ht_material.h> //material base
+#include <ht_renderer.h>
 #include <ht_renderpass.h> //render pass base handle
+#include <ht_material_base.h>
+
+#ifdef HT_SYS_WINDOWS
+#include <ht_d3d12device.h>
+#include <ht_d3d12material.h>
+#endif
 
 namespace Hatchit {
 
     namespace Graphics {
 
         //TODO: This should probably just be inlined?
-        const std::vector<RenderPassBaseHandle>& MaterialBase::GetRenderPasses() const 
+        const std::vector<RenderPassBaseHandle>& Material::GetRenderPasses() const 
         {
             return m_renderPasses;
+        }
+
+        Material::Material(Core::Guid ID)
+            : Core::RefCounted<Material>(ID)
+        {
+
+        }
+
+        Material::~Material()
+        {
+
+        }
+
+
+        bool Material::Initialize(const std::string& fileName)
+        {
+            Resource::MaterialHandle handle = Resource::Material::GetHandleFromFileName(fileName);
+            if (!handle.IsValid())
+                return false;
+
+#ifdef HT_SYS_WINDOWS
+            switch (Renderer::GetType())
+            {
+                case RendererType::DIRECTX12:
+                {
+                    m_base = new DX::D3D12Material;
+                    auto base = static_cast<DX::D3D12Material*>(m_base);
+                    if (!base->Initialize(handle, static_cast<DX::D3D12Device*>(Renderer::GetDevice())))
+                        return false;
+
+                } break;
+
+                case RendererType::VULKAN:
+                {
+
+                } return false;
+
+                default:
+                    return false;
+            }
+
+#else
+
+#endif
+
+            return true;
+        }
+
+        bool Material::SetInt(std::string name, int data)
+        {
+            return m_base->VSetInt(name, data);
+        }
+
+        bool Material::SetFloat(std::string name, float data)
+        {
+            return m_base->VSetFloat(name, data);
+        }
+
+        bool Material::SetFloat3(std::string name, Math::Vector3 data)
+        {
+            return m_base->VSetFloat3(name, data);
+        }
+
+        bool Material::SetFloat4(std::string name, Math::Vector4 data)
+        {
+            return m_base->VSetFloat4(name, data);
+        }
+
+        bool Material::SetMatrix4(std::string name, Math::Matrix4 data)
+        {
+            return m_base->VSetMatrix4(name, data);
+        }
+
+        bool Material::BindTexture(std::string name, TextureHandle texture)
+        {
+            return m_base->VBindTexture(name, texture);
+        }
+        bool Material::UnbindTexture(std::string name, TextureHandle texture)
+        {
+            return m_base->VUnbindTexture(name, texture);
+        }
+
+        bool Material::Update()
+        {
+            return m_base->VUpdate();
+        }
+
+        IPipelineHandle Material::GetPipeline() {
+            return IPipelineHandle();
         }
 
     }

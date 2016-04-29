@@ -21,7 +21,7 @@ namespace Hatchit {
     namespace Graphics {
         namespace Vulkan {
 
-            bool CreateUniformBuffer(const VkDevice& device, size_t dataSize, void* data, UniformBlock_vk* uniformBlock)
+            bool CreateUniformBuffer(VKRenderer& renderer, const VkDevice& device, size_t dataSize, void* data, UniformBlock_vk* uniformBlock)
             {
                 VkResult err;
 
@@ -50,7 +50,7 @@ namespace Hatchit {
                 memAllocInfo.allocationSize = memReqs.size;
                 memAllocInfo.memoryTypeIndex = 0;
 
-                bool okay = VKRenderer::RendererInstance->MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memAllocInfo.memoryTypeIndex);
+                bool okay = renderer.MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memAllocInfo.memoryTypeIndex);
                 assert(okay);
                 if (!okay)
                 {
@@ -102,7 +102,7 @@ namespace Hatchit {
                 return true;
             }
 
-            bool CreateTexelBuffer(const VkDevice& device, size_t dataSize, void* data, TexelBlock_vk* texelBlock) 
+            bool CreateTexelBuffer(VKRenderer& renderer, const VkDevice& device, size_t dataSize, void* data, TexelBlock_vk* texelBlock) 
             {
                 VkResult err;
 
@@ -131,7 +131,7 @@ namespace Hatchit {
                 memAllocInfo.allocationSize = memReqs.size;
                 memAllocInfo.memoryTypeIndex = 0;
 
-                bool okay = VKRenderer::RendererInstance->MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memAllocInfo.memoryTypeIndex);
+                bool okay = renderer.MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memAllocInfo.memoryTypeIndex);
                 assert(okay);
                 if (!okay)
                 {
