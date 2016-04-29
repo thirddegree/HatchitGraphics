@@ -19,7 +19,7 @@
 #include <ht_gpuresourcethread.h>
 #include <ht_threadvector.h>
 #include <ht_threadstack.h>
-#include <ht_threadqueue.inl>
+#include <ht_threadqueue.h>
 #include <thread>
 #include <atomic>
 
@@ -33,7 +33,7 @@ namespace Hatchit
 
             class HT_API D3D12GPUResourceThread : public IGPUResourceThread
             {
-                using GPURequestQueue = Core::ThreadsafeQueue<GPUResourceRequest>;
+                using GPURequestQueue = Core::ThreadsafeStack<GPUResourceRequest>;
             public:
                 D3D12GPUResourceThread(D3D12Device* device);
 

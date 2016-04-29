@@ -13,12 +13,8 @@
 **/
 
 #include <ht_d3d12texture.h>
-#include <ht_image.h>
 #include <ht_debug.h>
-#include <ht_texture_resource.h>
 #include <ht_d3d12device.h>
-
-#include <ht_path_singleton.h>
 
 namespace Hatchit
 {
@@ -26,37 +22,34 @@ namespace Hatchit
     {
         namespace DX
         {
-            D3D12Texture::D3D12Texture(Core::Guid ID)
-                : Core::RefCounted<D3D12Texture>(std::move(ID))
+            D3D12Texture::D3D12Texture()
             {
-                
-                
+                m_texture = nullptr;
+                m_uploadHeap = nullptr;
             }
 
             D3D12Texture::~D3D12Texture()
             {
-                
-                
+                ReleaseCOM(m_texture);
+                ReleaseCOM(m_uploadHeap);
             }
 
 
-            bool D3D12Texture::Initialize(const std::string & fileName, D3D12Device* _device)
+            bool D3D12Texture::Initialize(Resource::TextureHandle handle, D3D12Device* _device)
             {
+                if (!handle.IsValid())
+                    return false;
+
                 using namespace Resource;
 
                 auto device = _device->GetDevice();
-
-                m_handle = Resource::Texture::GetHandleFromFileName(fileName);
-                if (!m_handle.IsValid())
-                    return false;
-
 
                 /*Descibe and create a Texture2D*/
                 m_desc = {};
                 m_desc.MipLevels = 1;
                 m_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-                m_desc.Width = m_handle->GetWidth();
-                m_desc.Height = m_handle->GetHeight();
+                m_desc.Width = handle->GetWidth();
+                m_desc.Height = handle->GetHeight();
                 m_desc.Flags = D3D12_RESOURCE_FLAG_NONE;
                 m_desc.DepthOrArraySize = 1;
                 m_desc.SampleDesc.Count = 1;
@@ -79,7 +72,7 @@ namespace Hatchit
                 }
 
                 /*Create upload heap*/
-                const uint64_t uploadSize = GetRequiredIntermediateSize(m_texture.Get(), 0, 1);
+                const uint64_t uploadSize = GetRequiredIntermediateSize(m_texture, 0, 1);
                 hr = device->CreateCommittedResource(
                     &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
                     D3D12_HEAP_FLAG_NONE,

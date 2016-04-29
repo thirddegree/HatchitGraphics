@@ -16,6 +16,7 @@
 #include <ht_material_resource.h>
 #include <ht_renderpass.h>
 #include <ht_gpuresourcepool.h>
+#include <ht_texture.h>
 
 namespace Hatchit {
     
@@ -37,15 +38,13 @@ namespace Hatchit {
                 auto texturePaths = handle->GetTexturePaths();
                 for (auto path : texturePaths)
                 {
-                    GPUResourcePool::CreateTexture(path.path);
+                    TextureHandle h = Texture::GetHandle(path.path, path.path);
+/*
+                    GPUResourcePool::CreateTexture(path.path);*/
                 }
 
                 return true;
             }
-
-            /*void D3D12Material::VOnLoaded()
-            {
-            }*/
 
             bool D3D12Material::VSetInt(std::string name, int data)
             {

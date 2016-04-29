@@ -23,24 +23,23 @@ namespace Hatchit {
 
     namespace Graphics {
 
-        class HT_API Texture
+        class TextureBase;
+
+        class HT_API Texture : public Core::RefCounted<Texture>
         {
         public:
-            virtual ~Texture() = default;
+            Texture(Core::Guid ID);
+
+            ~Texture();
         
-            bool Initialize(const std::string& fileName);
+            bool Initialize(const std::string& file);
 
-            virtual size_t GetWidth()  const;
-            virtual size_t GetHeight() const;
+            uint32_t            GetWidth()  const;
+            uint32_t            GetHeight() const;
+            TextureBase* const  GetBase();
 
-        protected:
-            size_t m_width;
-            size_t m_height;
-            uint32_t m_bitsPerPixel;
-            uint32_t m_channelCount;
-            uint32_t m_mipLevels;
-
-            const BYTE* m_data;
+        private:
+            TextureBase* m_base;
         };
 
         using TextureHandle = Core::Handle<Texture>;

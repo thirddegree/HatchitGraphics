@@ -55,6 +55,7 @@ namespace Hatchit {
             private:
                 bool Initialize(Resource::MaterialHandle handle, D3D12Device* device);
 
+
                 friend class Material;
             };
         }

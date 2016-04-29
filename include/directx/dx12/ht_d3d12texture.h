@@ -16,11 +16,8 @@
 
 #include <ht_platform.h>
 #include <ht_directx.h>
-#include <ht_texture.h>
+#include <ht_texture_base.h>
 #include <ht_texture_resource.h>
-#include <ht_image.h>
-#include <ht_refcounted.h>
-#include <wrl/client.h>
 
 namespace Hatchit
 {
@@ -30,29 +27,23 @@ namespace Hatchit
         {
             class D3D12Device;
 
-            class HT_API D3D12Texture : public Core::RefCounted<D3D12Texture>, public Texture
+            class HT_API D3D12Texture : public TextureBase
             {
             public:
-                D3D12Texture(Core::Guid ID);
+                D3D12Texture();
 
                 ~D3D12Texture();
 
                 void Upload(ID3D12CommandList* commandList, uint32_t descriptorOffset);
 
-                bool Initialize(const std::string& fileName, D3D12Device* _device);
+                bool Initialize(Resource::TextureHandle handle, D3D12Device* _device);
 
             private:
                 D3D12_RESOURCE_DESC         m_desc;
-                Microsoft::WRL::ComPtr<ID3D12Resource>             m_texture;
-                Microsoft::WRL::ComPtr<ID3D12Resource>             m_uploadHeap;
+                ID3D12Resource*             m_texture;
+                ID3D12Resource*             m_uploadHeap;
                 Resource::TextureHandle     m_handle;
-                uint32_t                    m_width;
-                uint32_t                    m_height;
-
-                static HRESULT CreateD3DResourceFromHandle(const Resource::TextureHandle& handle);
             };
-
-            using D3D12TextureHandle = Core::Handle<D3D12Texture>;
         }
     }
 }

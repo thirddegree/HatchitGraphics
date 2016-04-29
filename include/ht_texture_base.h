@@ -15,29 +15,28 @@
 #pragma once
 
 #include <ht_platform.h>
-#include <ht_texture.h>
-#include <ht_singleton.h>
-#include <ht_device.h>
+#include <ht_types.h>
 
 namespace Hatchit
 {
     namespace Graphics
     {
-
-        class IGPUResourceThread;
-
-        class HT_API GPUResourcePool : public Core::Singleton<GPUResourcePool>
+        class HT_API TextureBase
         {
         public:
-            static bool                                     Initialize(IDevice* device);
-            static void                                     DeInitialize();
-            static TextureHandle                            RequestTexture(std::string file);
+            virtual ~TextureBase() = default;
 
+            uint32_t GetWidth() const;
+            uint32_t GetHeight() const;
 
-            static TextureHandle _DefaultTexture;
-        private:
-            IGPUResourceThread* m_thread;
-            IDevice*            m_device;
+        protected:
+            uint32_t    m_width;
+            uint32_t    m_height;
+            uint32_t    m_bpp;
+            uint32_t    m_channels;
+            uint32_t    m_mipLevels;
+
+            friend class Texture;
         };
     }
 }

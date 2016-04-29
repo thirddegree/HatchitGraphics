@@ -35,6 +35,8 @@ namespace Hatchit
     {
         using namespace DX;
 
+        TextureHandle GPUResourcePool::_DefaultTexture;
+
         bool GPUResourcePool::Initialize(IDevice* device)
         {
             if (!device)
@@ -45,6 +47,9 @@ namespace Hatchit
             instance.m_thread = new DX::D3D12GPUResourceThread(static_cast<DX::D3D12Device*>(device));
             instance.m_device = device;
 
+            /*Initialize default assets*/
+            _DefaultTexture = Texture::GetHandle("raptor.png", "raptor.png");
+
             return true;
         }
         
@@ -53,9 +58,12 @@ namespace Hatchit
             GPUResourcePool& instance = GPUResourcePool::instance();
 
             delete instance.m_thread;
+
+            //Release the static defaults
+            _DefaultTexture.Release();
         }
 
-        TextureHandle GPUResourcePool::CreateTexture(std::string file)
+        TextureHandle GPUResourcePool::RequestTexture(std::string file)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
 

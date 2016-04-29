@@ -64,7 +64,6 @@ namespace Hatchit {
                 D3D12DeviceResources*       m_resources;
                 uint32_t                    m_cbDescriptorSize;
                 D3D12PipelineHandle         m_pipeline;
-                D3D12TextureHandle          m_texture;
                 Color                       m_clearColor;
 
                 //Demo only

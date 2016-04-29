@@ -15,19 +15,77 @@
 #pragma once
 
 #include <ht_texture.h>
+#include <ht_texture_base.h>
+#include <ht_texture_resource.h>
+#include <ht_renderer.h>
+
+#ifdef HT_SYS_WINDOWS
+#include <ht_d3d12device.h>
+#include <ht_d3d12texture.h>
+#else
+
+#endif
 
 namespace Hatchit {
 
     namespace Graphics {
 
-        size_t Texture::GetWidth() const
+        Texture::Texture(Core::Guid ID)
+            : Core::RefCounted<Texture>(ID)
         {
-            return m_width;
+            m_base = nullptr;
         }
 
-        size_t Texture::GetHeight() const
+        Texture::~Texture()
         {
-            return m_height;
+            delete m_base;
+        }
+
+        bool Texture::Initialize(const std::string& file)
+        {
+            Resource::TextureHandle handle = Resource::Texture::GetHandleFromFileName(file);
+            if (!handle.IsValid())
+                return false;
+
+#ifdef HT_SYS_WINDOWS
+            switch (Renderer::GetType())
+            {
+                case RendererType::DIRECTX12:
+                {
+                    m_base = new DX::D3D12Texture;
+                    auto base = static_cast<DX::D3D12Texture*>(m_base);
+                    if (!base->Initialize(handle, static_cast<DX::D3D12Device*>(Renderer::GetDevice())))
+                        return false;
+
+                } break;
+
+                case RendererType::VULKAN:
+                {
+
+                } return false;
+
+                default:
+                    return false;
+            }
+#else
+
+#endif
+            return true;
+        }
+
+        uint32_t Texture::GetWidth() const
+        {
+            return m_base->m_width;
+        }
+
+        uint32_t Texture::GetHeight() const
+        {
+            return m_base->m_height;
+        }
+
+        TextureBase* const Texture::GetBase()
+        {
+            return m_base;
         }
     }
 }
