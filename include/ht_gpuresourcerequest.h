@@ -16,20 +16,39 @@
 
 #include <ht_platform.h>
 #include <ht_string.h>
+#include <ht_refcounted.h>
+
+#include <ht_texture.h>
+#include <ht_material.h>
 
 namespace Hatchit
 {
     namespace Graphics
     {
-        class GPUResourceRequest;
-
-        class HT_API IGPUResourceThread
+        class GPUResourceRequest
         {
         public:
-            virtual ~IGPUResourceThread() { };
-            virtual void VStart() = 0;
-            virtual void VLoad(GPUResourceRequest* request) = 0;
-            virtual void VKill() = 0;
+            virtual ~GPUResourceRequest() { };
+
+            enum class Type
+            {
+                Texture,
+                Material
+            };
+
+            Type type;
         };
+
+        template <typename T>
+        class HT_API GPURequest : public GPUResourceRequest
+        {
+        public:
+            Core::Handle<T>     defaultHandle;
+            Core::Handle<T>     tempHandle;
+            std::string         file;
+        };
+
+        using TextureRequest = GPURequest<Texture>;
+        using MaterialRequest = GPURequest<Material>;
     }
 }

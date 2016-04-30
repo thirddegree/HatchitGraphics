@@ -19,6 +19,8 @@
 #include <ht_texture_resource.h>
 #include <ht_renderer.h>
 
+#include <ht_gpuresourcepool.h>
+
 #ifdef HT_SYS_WINDOWS
 #include <ht_d3d12device.h>
 #include <ht_d3d12texture.h>
@@ -70,6 +72,13 @@ namespace Hatchit {
 #else
 
 #endif
+            return true;
+        }
+
+        bool Texture::InitializeAsync(Core::Handle<Texture> tempHandle, Core::Handle<Texture> defaultHandle, const std::string & file)
+        {
+            GPUResourcePool::RequestTextureAsync(defaultHandle, tempHandle, file);
+
             return true;
         }
 

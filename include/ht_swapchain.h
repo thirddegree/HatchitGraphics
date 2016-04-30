@@ -34,19 +34,25 @@ namespace Hatchit {
 
     namespace Graphics {
 
-        class HT_API ISwapchain
+        class HT_API SwapChain
         {
         public:
-            virtual ~ISwapchain() {}
+            virtual ~SwapChain() {}
 
             uint32_t GetWidth();
+
             uint32_t GetHeight();
+
+            virtual bool VInitialize() = 0;
+            virtual void VResize(uint32_t width, uint32_t height) = 0;
+            virtual void VPresent() = 0;
 
         protected:
             //For rendering
             IPipeline* m_pipeline;
             uint32_t m_currentBuffer;
-            uint32_t m_width, m_height;
+            uint32_t m_width;
+            uint32_t m_height;
         };
     }
 }

@@ -33,6 +33,7 @@ namespace Hatchit {
             ~Texture();
         
             bool Initialize(const std::string& file);
+            bool InitializeAsync(Core::Handle<Texture> tempHandle, Core::Handle<Texture> defaultHandle, const std::string& file);
 
             uint32_t            GetWidth()  const;
             uint32_t            GetHeight() const;

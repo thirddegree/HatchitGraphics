@@ -16,7 +16,7 @@
 #include <ht_device.h>
 #include <ht_d3d12device.h>
 #include <ht_debug.h>
-
+#include <ht_gpuresourcerequest.h>
 #include <ht_texture_resource.h>
 
 namespace Hatchit
@@ -44,7 +44,7 @@ namespace Hatchit
                 m_thread = std::thread(&D3D12GPUResourceThread::thread_main, this);
             }
 
-            void D3D12GPUResourceThread::VLoad(GPUResourceRequest request)
+            void D3D12GPUResourceThread::VLoad(GPUResourceRequest* request)
             {
                 if (!m_alive)
                     VStart();
@@ -68,6 +68,8 @@ namespace Hatchit
 
                 /*Create thread specific resources*/
                 ID3D12CommandAllocator* _allocator = nullptr;
+                ID3D12GraphicsCommandList* cmdList = nullptr;
+                
                 hr = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&_allocator));
                 if (FAILED(hr))
                 {
@@ -83,28 +85,17 @@ namespace Hatchit
                         continue;
                     
                     auto request = m_requests.pop();
-                    switch (request->type)
+                    switch ((*request)->type)
                     {
                         case GPUResourceRequest::Type::Texture:
                         {
-                            HT_DEBUG_PRINTF("GPU Resource Request\n");
-                            HT_DEBUG_PRINTF("\tFile: %s\n", request->file);
-                            HT_DEBUG_PRINTF("\tType: Texture\n");
+                            auto textureRequest = static_cast<TextureRequest*>(*request);
+                            
+                            TextureHandle real = Texture::GetHandle(textureRequest->file, textureRequest->file);
 
-                            try
-                            {
-                                Resource::TextureHandle handle = Resource::Texture::GetHandleFromFileName(request->file);
-                                if (!handle.IsValid())
-                                {
-                                    HT_DEBUG_PRINTF("\tFailed to load resource handle.\n");
-                                }
-                            }
-                            catch (std::exception& e)
-                            {
-                                HT_ERROR_PRINTF("%s", e.what());
-                            }
-                           
                         } break;
+
+                        
                     }
                     
                 }

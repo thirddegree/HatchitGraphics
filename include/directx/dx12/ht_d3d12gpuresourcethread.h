@@ -33,14 +33,14 @@ namespace Hatchit
 
             class HT_API D3D12GPUResourceThread : public IGPUResourceThread
             {
-                using GPURequestQueue = Core::ThreadsafeStack<GPUResourceRequest>;
+                using GPURequestQueue = Core::ThreadsafeStack<GPUResourceRequest*>;
             public:
                 D3D12GPUResourceThread(D3D12Device* device);
 
                 ~D3D12GPUResourceThread();
 
                 void VStart()                            override;
-                void VLoad(GPUResourceRequest request)   override;
+                void VLoad(GPUResourceRequest* request)   override;
                 void VKill()                             override;
 
             private:

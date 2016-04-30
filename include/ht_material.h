@@ -32,9 +32,6 @@
 #include <ht_pipeline.h>
 #include <ht_guid.h>
 
-#include <ht_d3d12gpuresourcethread.h>
-#include <ht_vkgpuresourcethread.h>
-
 #include <map>
 
 namespace Hatchit {
@@ -54,7 +51,7 @@ namespace Hatchit {
 
         class RenderPassBase;
         class MaterialBase;
-
+        
         class HT_API Material : public Core::RefCounted<Material>
         {
         public:
@@ -63,6 +60,7 @@ namespace Hatchit {
             ~Material();
 
             bool Initialize(const std::string& fileName);
+            bool InitializeAsync(Core::Handle<Material> handle);
 
             bool SetInt(std::string name, int data);
             bool SetFloat(std::string name, float data);
@@ -82,8 +80,12 @@ namespace Hatchit {
         protected:
             MaterialBase* m_base;
 
+#ifdef VK_SUPPORT
             friend class Vulkan::VKGPUResourceThread;
-            friend class DX::D3D12GPUResourceThread;
+#endif
+#ifdef DX12_SUPPORT
+            friend class D3D12GPUResourceThread;
+#endif
         };
 
         using MaterialHandle = Core::Handle<Material>;

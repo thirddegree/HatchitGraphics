@@ -33,17 +33,15 @@ namespace Hatchit
         public:
             static bool             Initialize(IDevice* device);
             static void             DeInitialize();
-            static TextureHandle    RequestTexture(std::string file);
-            static TextureHandle    RequestTextureAsync(std::string file);
-            static MaterialHandle   RequestMaterial(std::string file);
-            static MaterialHandle   RequestMaterialAsync(std::string file);
-            static PipelineHandle   RequestPipeline(std::string file);
+            static void             RequestTextureAsync(TextureHandle _default, TextureHandle temporary, std::string file);
+            static void             RequestMaterialAsync(MaterialHandle _default, MaterialHandle temporary, std::string file);
 
 
-            static TextureHandle _DefaultTexture;
         private:
             IGPUResourceThread* m_thread;
             IDevice*            m_device;
+            
+            std::map<std::string, TextureHandle> m_defaultTextures;
         };
     }
 }

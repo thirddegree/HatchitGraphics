@@ -12,24 +12,32 @@
 **
 **/
 
-#pragma once
-
-#include <ht_platform.h>
-#include <ht_string.h>
+#include <ht_d3d12swapchain.h>
 
 namespace Hatchit
 {
     namespace Graphics
     {
-        class GPUResourceRequest;
-
-        class HT_API IGPUResourceThread
+        namespace DX
         {
-        public:
-            virtual ~IGPUResourceThread() { };
-            virtual void VStart() = 0;
-            virtual void VLoad(GPUResourceRequest* request) = 0;
-            virtual void VKill() = 0;
-        };
+            D3D12SwapChain::D3D12SwapChain()
+            {
+
+            }
+
+            bool D3D12SwapChain::VInitialize()
+            {
+                return true;
+            }
+
+            void D3D12SwapChain::VResize(uint32_t width, uint32_t height)
+            {
+            }
+
+            void D3D12SwapChain::VPresent()
+            {
+
+            }
+        }
     }
 }

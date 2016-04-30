@@ -14,6 +14,7 @@
 
 #include <ht_gpuresourcepool.h>
 #include <ht_gpuresourcethread.h>
+#include <ht_gpuresourcerequest.h>
 
 #ifdef VK_SUPPORT
 //#include <ht_vkgpuresourcethread.h>
@@ -35,8 +36,6 @@ namespace Hatchit
     {
         using namespace DX;
 
-        TextureHandle GPUResourcePool::_DefaultTexture;
-
         bool GPUResourcePool::Initialize(IDevice* device)
         {
             if (!device)
@@ -46,10 +45,7 @@ namespace Hatchit
 
             instance.m_thread = new DX::D3D12GPUResourceThread(static_cast<DX::D3D12Device*>(device));
             instance.m_device = device;
-
-            /*Initialize default assets*/
-            _DefaultTexture = Texture::GetHandle("raptor.png", "raptor.png");
-
+            
             return true;
         }
         
@@ -58,27 +54,26 @@ namespace Hatchit
             GPUResourcePool& instance = GPUResourcePool::instance();
 
             delete instance.m_thread;
-
-            //Release the static defaults
-            _DefaultTexture.Release();
         }
 
-        TextureHandle GPUResourcePool::RequestTexture(std::string file)
+        void GPUResourcePool::RequestTextureAsync(TextureHandle _default, TextureHandle temporary, std::string file)
         {
-            return Texture::GetHandle(file, file);
+            GPUResourcePool& instance = GPUResourcePool::instance();
+
+            TextureRequest* request = new TextureRequest;
+            request->file = file;
+            request->defaultHandle = _default;
+            request->tempHandle = temporary;
+            request->type = GPUResourceRequest::Type::Texture;
+
+            instance.m_thread->VLoad(request);
         }
 
-        TextureHandle GPUResourcePool::RequestTextureAsync(std::string file) 
+        void GPUResourcePool::RequestMaterialAsync(MaterialHandle _default, MaterialHandle temporary, std::string file)
         {
-            return Texture::GetHandleAsync(file, file);
+
         }
 
-        MaterialHandle GPUResourcePool::RequestMaterial(std::string file) {}
-
-        MaterialHandle GPUResourcePool::RequestMaterialAsync(std::string file) {}
-
-        PipelineHandle GPUResourcePool::RequestPipeline(std::string file)
-        {
-        }
+     
     }
 }

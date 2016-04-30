@@ -18,8 +18,15 @@ namespace Hatchit {
 
     namespace Graphics {
 
-        uint32_t ISwapchain::GetWidth() { return m_width; }
-        uint32_t ISwapchain::GetHeight() { return m_height; }
+        uint32_t SwapChain::GetWidth()
+        { 
+            return m_width; 
+        }
+
+        uint32_t SwapChain::GetHeight()
+        { 
+            return m_height;
+        }
 
     }
 }

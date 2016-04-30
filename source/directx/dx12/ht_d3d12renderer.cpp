@@ -56,8 +56,6 @@ namespace Hatchit {
                 HRESULT hr = S_OK;
 
                 m_clearColor = params.clearColor;
-                m_width = params.viewportWidth;
-                m_height = params.viewportHeight;
 
                 /*Create Global D3D12 Hardware Device*/
                 if (!_Device)
@@ -127,10 +125,7 @@ namespace Hatchit {
 
             void D3D12Renderer::VResizeBuffers(uint32_t width, uint32_t height)
             {
-                m_width = width;
-                m_height = height;
-/*
-                m_resources->Resize(width, height);*/
+                /*m_resources->Resize(width, height);*/
             }
 
             void D3D12Renderer::VRender(float dt)

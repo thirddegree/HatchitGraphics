@@ -20,6 +20,7 @@
 #include <ht_math.h>
 #include <ht_texture.h>
 #include <ht_pipeline.h>
+#include <ht_refcounted.h>
 
 namespace Hatchit {
 
