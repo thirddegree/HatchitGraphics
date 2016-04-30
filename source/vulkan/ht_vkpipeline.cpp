@@ -301,8 +301,10 @@ namespace Hatchit {
                 vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1, 1, &m_descriptorSet, 0, nullptr);
             }
 
+            const VKRenderPassHandle& VKPipeline::GetVKRenderPass() const { return m_renderPass; }
+
             /*
-                Private Methods
+                Protected Methods
             */
 
 
@@ -590,8 +592,8 @@ namespace Hatchit {
                 dynamicState.dynamicStateCount = 2;
 
                 //Get pipeline layout
-                VKRootLayoutHandle rootLayoutHandle = renderer.GetVKRootLayoutHandle();
-                m_pipelineLayout = rootLayoutHandle->VKGetPipelineLayout();
+                VKRootLayoutHandle rootLayoutHandle = m_renderPass->GetVKRootLayout();
+                m_pipelineLayout = rootLayoutHandle->GetVKPipelineLayout();
 
                 //Finalize pipeline
                 VkGraphicsPipelineCreateInfo pipelineInfo = {};
@@ -641,7 +643,7 @@ namespace Hatchit {
                 m_uniformVSBuffer.descriptor.offset = 0;
                 m_uniformVSBuffer.descriptor.range = bufferSize;
 
-                VkDescriptorSetLayout layout = m_renderer->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts()[1]; //Hack as fuck
+                VkDescriptorSetLayout layout = m_renderPass->GetVKRootLayout()->GetVKDescriptorSetLayouts()[1]; //Hack as fuck
 
                 VkDescriptorSetAllocateInfo allocInfo = {};
                 allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;

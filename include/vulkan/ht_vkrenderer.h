@@ -90,8 +90,6 @@ namespace Hatchit {
                 */
                 const VkDescriptorPool& GetVKDescriptorPool() const;
 
-                const VKRootLayoutHandle& GetVKRootLayoutHandle() const;
-
                 const VkCommandBuffer& GetSetupCommandBuffer() const;
 
                 const VkFormat& GetPreferredImageFormat() const;
@@ -141,7 +139,6 @@ namespace Hatchit {
                 VkClearValue                            m_clearColor;
 
                 //Resources we want loaded elsewhere
-                VKRootLayoutHandle m_rootLayout;
                 IMaterialHandle m_material;
                 TextureHandle m_texture;
                 IPipelineHandle m_pipeline;

@@ -35,9 +35,9 @@ namespace Hatchit
 
                 bool Initialize(const std::string& fileName, const VkDevice* device);
 
-                const VkPipelineLayout& VKGetPipelineLayout() const;
-                std::vector<VkDescriptorSetLayout> VKGetDescriptorSetLayouts() const;
-                std::vector<VkPushConstantRange> VKGetPushConstantRanges() const;
+                const VkPipelineLayout& GetVKPipelineLayout() const;
+                std::vector<VkDescriptorSetLayout> GetVKDescriptorSetLayouts() const;
+                std::vector<VkPushConstantRange> GetVKPushConstantRanges() const;
 
             private:
                 const VkDevice* m_device;

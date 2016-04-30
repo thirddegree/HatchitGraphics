@@ -28,6 +28,7 @@
 #include <ht_vulkan.h>
 #include <ht_vktexture.h>
 #include <ht_vkrendertarget.h>
+#include <ht_vkrootlayout.h>
 
 namespace Hatchit {
 
@@ -52,11 +53,13 @@ namespace Hatchit {
 
                 const VkRenderPass& GetVkRenderPass() const;
                 const VkCommandBuffer& GetVkCommandBuffer() const;
+                const VKRootLayoutHandle& GetVKRootLayout() const;
 
                 const std::vector<IRenderTargetHandle>& GetOutputRenderTargets() const;
 
             private:
                 //Input
+                VKRootLayoutHandle m_rootLayout;
                 uint32_t m_firstInputTargetSetIndex;
                 std::vector<VkDescriptorSet> m_inputTargetDescriptorSets;
 

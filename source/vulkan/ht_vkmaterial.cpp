@@ -60,7 +60,7 @@ namespace Hatchit {
                // m_shaderVariables = handle->GetShaderVariables();
 
 
-                m_descriptorSetLayouts = renderer->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts();
+                m_descriptorSetLayouts = m_pipeline->GetVKRenderPass()->GetVKRootLayout()->GetVKDescriptorSetLayouts();
 
                 std::vector<Resource::Material::TexturePath> texturePaths = handle->GetTexturePaths();
                 //Map layout location to file handle

@@ -250,9 +250,9 @@ namespace Hatchit
                 return true;
             }
 
-            const VkPipelineLayout& VKRootLayout::VKGetPipelineLayout() const { return m_pipelineLayout; }
-            std::vector<VkDescriptorSetLayout> VKRootLayout::VKGetDescriptorSetLayouts() const { return m_descriptorSetLayouts; }
-            std::vector<VkPushConstantRange> VKRootLayout::VKGetPushConstantRanges() const { return m_pushConstantRanges;  }
+            const VkPipelineLayout& VKRootLayout::GetVKPipelineLayout() const { return m_pipelineLayout; }
+            std::vector<VkDescriptorSetLayout> VKRootLayout::GetVKDescriptorSetLayouts() const { return m_descriptorSetLayouts; }
+            std::vector<VkPushConstantRange> VKRootLayout::GetVKPushConstantRanges() const { return m_pushConstantRanges;  }
         }
     }
 }

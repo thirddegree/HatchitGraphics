@@ -81,6 +81,7 @@ namespace Hatchit {
                 VkPhysicalDevice&   m_gpu;
                 VkDevice&           m_device;
                 VkCommandPool&      m_commandPool;
+                VkPipelineLayout    m_pipelineLayout;
 
                 VkSurfaceKHR                            m_surface;
                 VkPhysicalDeviceProperties              m_gpuProps;
@@ -103,7 +104,7 @@ namespace Hatchit {
                 std::vector<VkFramebuffer>   m_framebuffers;
                 DepthBuffer                  m_depthBuffer;
 
-                UniformBlock_vk    m_vertexBuffer;
+                UniformBlock_vk         m_vertexBuffer;
                 std::vector<Texture_vk> m_inputTextures;
 
                 bool prepareSurface(const RendererParams& rendererParams);

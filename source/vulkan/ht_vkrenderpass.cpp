@@ -92,6 +92,10 @@ namespace Hatchit {
                     return false;
                 }
                 
+                //Get root layout 
+                std::string rootLayoutPath = m_renderPassResourceHandle->GetRootLayoutPath();
+                m_rootLayout = VKRootLayout::GetHandle(rootLayoutPath, rootLayoutPath, m_device);
+
                 std::vector<Resource::RenderPass::InputTarget> inputTargets = m_renderPassResourceHandle->GetInputTargets();
                 std::vector<std::string> outputPaths = m_renderPassResourceHandle->GetOutputPaths();
 
@@ -247,7 +251,7 @@ namespace Hatchit {
                     pipeline->VUpdate();
 
                     VkPipeline vkPipeline = pipeline->GetVKPipeline();
-                    VkPipelineLayout vkPipelineLayout = m_renderer->GetVKRootLayoutHandle()->VKGetPipelineLayout();
+                    VkPipelineLayout vkPipelineLayout = m_rootLayout->GetVKPipelineLayout();
 
                     pipeline->BindPipeline(m_commandBuffer, vkPipelineLayout);
 
@@ -319,6 +323,8 @@ namespace Hatchit {
             const VkRenderPass& VKRenderPass::GetVkRenderPass() const { return m_renderPass; }
 
             const VkCommandBuffer& VKRenderPass::GetVkCommandBuffer() const { return m_commandBuffer; }
+
+            const VKRootLayoutHandle& VKRenderPass::GetVKRootLayout() const { return m_rootLayout; }
 
             const std::vector<IRenderTargetHandle>& VKRenderPass::GetOutputRenderTargets() const { return m_outputRenderTargets; }
 
@@ -653,7 +659,7 @@ namespace Hatchit {
                 VkResult err;
 
                 //Get the root layout so that we can determine which set layouts we'll need
-                std::vector<VkDescriptorSetLayout> allDescriptorSetLayouts = m_renderer->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts();
+                std::vector<VkDescriptorSetLayout> allDescriptorSetLayouts = m_rootLayout->GetVKDescriptorSetLayouts();
 
                 //Collect every descriptor set layout that will show up
                 bool recordedFirstSetIndex = false;

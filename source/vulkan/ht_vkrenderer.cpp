@@ -108,8 +108,6 @@ namespace Hatchit {
                     return false;
 
                 //TODO: remove this test code
-                m_rootLayout = VKRootLayout::GetHandle("TestRootDescriptor.json", "TestRootDescriptor.json", &m_device);
-
                 ModelHandle model = Model::GetHandleFromFileName("Raptor.obj");
                 ModelHandle lightModel = Model::GetHandleFromFileName("IcoSphere.dae");
                 ModelHandle fullscreenTri = Model::GetHandleFromFileName("Tri.obj");
@@ -158,8 +156,6 @@ namespace Hatchit {
                 {
                     m_renderPassLayers[i].clear();
                 }
-
-                m_rootLayout.Release();
 
                 m_material.Release();
                 m_texture.Release();
@@ -425,11 +421,6 @@ namespace Hatchit {
             const VkDescriptorPool& VKRenderer::GetVKDescriptorPool() const
             {
                 return m_descriptorPool;
-            }
-
-            const VKRootLayoutHandle& VKRenderer::GetVKRootLayoutHandle() const
-            {
-                return m_rootLayout;
             }
 
             const VkCommandBuffer& VKRenderer::GetSetupCommandBuffer() const

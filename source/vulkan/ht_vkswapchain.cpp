@@ -204,7 +204,9 @@ namespace Hatchit {
                 m_pipeline = VKPipeline::GetHandle("SwapchainPipeline.json", "SwapchainPipeline.json", m_renderer);
 
                 //Setup the descriptor sets
-                const std::vector<VkDescriptorSetLayout> descriptorSetLayouts = m_renderer->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts();
+                VKRootLayoutHandle rootLayoutHandle = m_pipeline->GetVKRenderPass()->GetVKRootLayout();
+                const std::vector<VkDescriptorSetLayout> descriptorSetLayouts = rootLayoutHandle->GetVKDescriptorSetLayouts();
+                m_pipelineLayout = rootLayoutHandle->GetVKPipelineLayout();
 
                 VkDescriptorSetAllocateInfo allocInfo = {};
                 allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -292,8 +294,6 @@ namespace Hatchit {
                 clearValues[0] = clearColor;
                 clearValues[1] = { 1.0f, 0 };
 
-                VkPipelineLayout pipelineLayout = m_renderer->GetVKRootLayoutHandle()->VKGetPipelineLayout();
-
                 for (uint32_t i = 0; i < m_swapchainBuffers.size(); i++)
                 {
                     VkRenderPassBeginInfo renderPassBeginInfo = {};
@@ -335,7 +335,7 @@ namespace Hatchit {
                     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
                     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
+                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout,
                         3, 1, &m_descriptorSet, 0, nullptr);
                     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline->GetVKPipeline());
 

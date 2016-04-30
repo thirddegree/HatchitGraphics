@@ -66,6 +66,8 @@ namespace Hatchit {
                 VkPipeline                          GetVKPipeline();
                 
                 void BindPipeline(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout);
+                
+                const VKRenderPassHandle& GetVKRenderPass() const;
 
             protected:
                 std::map<Resource::Pipeline::ShaderSlot, VKShaderHandle> m_shaderHandles;
