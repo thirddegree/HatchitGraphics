@@ -29,6 +29,7 @@ namespace Hatchit
             virtual ~IGPUResourceThread() { };
             virtual void VStart() = 0;
             virtual void VLoad(GPUResourceRequest* request) = 0;
+            virtual void VLoadAsync(GPUResourceRequest* request) = 0;
             virtual void VKill() = 0;
         };
     }

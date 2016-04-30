@@ -56,6 +56,19 @@ namespace Hatchit
             delete instance.m_thread;
         }
 
+        TextureHandle GPUResourcePool::RequestTexture(std::string file)
+        {
+            GPUResourcePool& instance = GPUResourcePool::instance();
+
+            TextureRequest* request = new TextureRequest;
+            request->file = file;
+            request->type = GPUResourceRequest::Type::Texture;
+
+            instance.m_thread->VLoad(request);
+
+            return TextureHandle();
+        }
+
         void GPUResourcePool::RequestTextureAsync(TextureHandle _default, TextureHandle temporary, std::string file)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -66,7 +79,7 @@ namespace Hatchit
             request->tempHandle = temporary;
             request->type = GPUResourceRequest::Type::Texture;
 
-            instance.m_thread->VLoad(request);
+            instance.m_thread->VLoadAsync(request);
         }
 
         void GPUResourcePool::RequestMaterialAsync(MaterialHandle _default, MaterialHandle temporary, std::string file)

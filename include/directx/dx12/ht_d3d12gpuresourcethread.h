@@ -22,6 +22,8 @@
 #include <ht_threadqueue.h>
 #include <thread>
 #include <atomic>
+#include <mutex>
+#include <condition_variable>
 
 namespace Hatchit
 {
@@ -39,9 +41,10 @@ namespace Hatchit
 
                 ~D3D12GPUResourceThread();
 
-                void VStart()                            override;
-                void VLoad(GPUResourceRequest* request)   override;
-                void VKill()                             override;
+                void VStart()                                   override;
+                void VLoad(GPUResourceRequest* request)         override;
+                void VLoadAsync(GPUResourceRequest* request)    override;
+                void VKill()                                    override;
 
             private:
                 std::thread             m_thread;
@@ -49,6 +52,9 @@ namespace Hatchit
                 std::atomic_bool        m_tfinished;
                 D3D12Device*            m_device;
                 GPURequestQueue         m_requests;
+                mutable std::mutex      m_mutex;
+                std::condition_variable m_cv;
+                std::atomic_bool        m_processed;
 
                 void thread_main();
             };

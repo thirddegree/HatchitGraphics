@@ -33,6 +33,7 @@ namespace Hatchit
         public:
             static bool             Initialize(IDevice* device);
             static void             DeInitialize();
+            static TextureHandle    RequestTexture(std::string file);
             static void             RequestTextureAsync(TextureHandle _default, TextureHandle temporary, std::string file);
             static void             RequestMaterialAsync(MaterialHandle _default, MaterialHandle temporary, std::string file);
 

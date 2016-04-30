@@ -45,33 +45,11 @@ namespace Hatchit {
 
         bool Texture::Initialize(const std::string& file)
         {
-            Resource::TextureHandle handle = Resource::Texture::GetHandleFromFileName(file);
-            if (!handle.IsValid())
-                return false;
+            //Request texture immediately for main thread of execution
+            //This call will block the active thread while the GPUResourcePool
+            //allocated the memory
+            TextureHandle handle = GPUResourcePool::RequestTexture(file);
 
-#ifdef HT_SYS_WINDOWS
-            switch (Renderer::GetType())
-            {
-                case RendererType::DIRECTX12:
-                {
-                    m_base = new DX::D3D12Texture;
-                    auto base = static_cast<DX::D3D12Texture*>(m_base);
-                    if (!base->Initialize(handle, static_cast<DX::D3D12Device*>(Renderer::GetDevice())))
-                        return false;
-
-                } break;
-
-                case RendererType::VULKAN:
-                {
-
-                } return false;
-
-                default:
-                    return false;
-            }
-#else
-
-#endif
             return true;
         }
 

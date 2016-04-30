@@ -49,6 +49,18 @@ namespace Hatchit
                 if (!m_alive)
                     VStart();
 
+                m_processed = false;
+                m_requests.push(request);
+                std::unique_lock<std::mutex> lock(m_mutex);
+                m_cv.wait(lock, [this]() -> bool { return this->m_processed; });
+                std::cout << "Processed." << std::endl;
+            }
+
+            void D3D12GPUResourceThread::VLoadAsync(GPUResourceRequest* request)
+            {
+                if (!m_alive)
+                    VStart();
+
                 m_requests.push(request);
             }
 
@@ -79,8 +91,7 @@ namespace Hatchit
 
                 while (m_alive)
                 {
-                    /*Load any resource requests*/
-                    
+                    /*Load any resource requests asynchrounsly*/
                     if (m_requests.empty())
                         continue;
                     
@@ -91,13 +102,16 @@ namespace Hatchit
                         {
                             auto textureRequest = static_cast<TextureRequest*>(*request);
                             
-                            TextureHandle real = Texture::GetHandle(textureRequest->file, textureRequest->file);
+                            //TextureHandle real = Texture::GetHandle(textureRequest->file, textureRequest->file);
 
+
+                            
                         } break;
 
-                        
                     }
-                    
+
+                    m_processed = true;
+                    m_cv.notify_all();
                 }
 
                 ReleaseCOM(_allocator);
