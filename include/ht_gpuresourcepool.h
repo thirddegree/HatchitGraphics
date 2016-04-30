@@ -18,6 +18,8 @@
 #include <ht_texture.h>
 #include <ht_singleton.h>
 #include <ht_device.h>
+#include <ht_material.h>
+#include <ht_pipeline.h>
 
 namespace Hatchit
 {
@@ -29,9 +31,13 @@ namespace Hatchit
         class HT_API GPUResourcePool : public Core::Singleton<GPUResourcePool>
         {
         public:
-            static bool                                     Initialize(IDevice* device);
-            static void                                     DeInitialize();
-            static TextureHandle                            RequestTexture(std::string file);
+            static bool             Initialize(IDevice* device);
+            static void             DeInitialize();
+            static TextureHandle    RequestTexture(std::string file);
+            static TextureHandle    RequestTextureAsync(std::string file);
+            static MaterialHandle   RequestMaterial(std::string file);
+            static MaterialHandle   RequestMaterialAsync(std::string file);
+            static PipelineHandle   RequestPipeline(std::string file);
 
 
             static TextureHandle _DefaultTexture;

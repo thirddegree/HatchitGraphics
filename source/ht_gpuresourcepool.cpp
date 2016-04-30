@@ -65,17 +65,20 @@ namespace Hatchit
 
         TextureHandle GPUResourcePool::RequestTexture(std::string file)
         {
-            GPUResourcePool& instance = GPUResourcePool::instance();
+            return Texture::GetHandle(file, file);
+        }
 
-            /*Create a Texture Resource Request*/
-            GPUResourceRequest request;
-            request.type = GPUResourceRequest::Type::Texture;
-            request.file = file;
+        TextureHandle GPUResourcePool::RequestTextureAsync(std::string file) 
+        {
+            return Texture::GetHandleAsync(file, file);
+        }
 
-            instance.m_thread->VLoad(request);
-        
-            /*Return the default texture*/
-            return TextureHandle();
+        MaterialHandle GPUResourcePool::RequestMaterial(std::string file) {}
+
+        MaterialHandle GPUResourcePool::RequestMaterialAsync(std::string file) {}
+
+        PipelineHandle GPUResourcePool::RequestPipeline(std::string file)
+        {
         }
     }
 }

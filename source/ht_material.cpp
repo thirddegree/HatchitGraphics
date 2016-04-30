@@ -17,7 +17,11 @@
 #include <ht_renderpass.h> //render pass base handle
 #include <ht_material_base.h>
 
-#ifdef HT_SYS_WINDOWS
+#ifdef VK_SUPPORT
+#include <ht_vkmaterial.h>
+#endif
+
+#ifdef DX12_SUPPORT
 #include <ht_d3d12device.h>
 #include <ht_d3d12material.h>
 #endif
@@ -29,7 +33,7 @@ namespace Hatchit {
         //TODO: This should probably just be inlined?
         const std::vector<RenderPassBaseHandle>& Material::GetRenderPasses() const 
         {
-            return m_renderPasses;
+            return m_base->m_renderPasses;
         }
 
         Material::Material(Core::Guid ID)
@@ -50,30 +54,23 @@ namespace Hatchit {
             if (!handle.IsValid())
                 return false;
 
-#ifdef HT_SYS_WINDOWS
             switch (Renderer::GetType())
             {
+#ifdef DX12_SUPPORT
                 case RendererType::DIRECTX12:
                 {
                     m_base = new DX::D3D12Material;
-                    auto base = static_cast<DX::D3D12Material*>(m_base);
-                    if (!base->Initialize(handle, static_cast<DX::D3D12Device*>(Renderer::GetDevice())))
-                        return false;
-
                 } break;
-
+#endif
+#ifdef VK_SUPPORT
                 case RendererType::VULKAN:
                 {
-
-                } return false;
-
+                    m_base = new Vulkan::VKMaterial;
+                } break;
+#endif
                 default:
                     return false;
             }
-
-#else
-
-#endif
 
             return true;
         }

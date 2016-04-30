@@ -30,7 +30,7 @@ namespace Hatchit {
 
             bool VKShader::Initialize(const std::string& fileName, VKRenderer* renderer)
             {
-                m_device = &(renderer->GetVKDevice());
+                m_device = &(renderer->GetVKDevice()).GetVKDevices()[0];
 
                 m_shader = VK_NULL_HANDLE;
                 ShaderHandle shaderResourceHandle = Shader::GetHandleFromFileName(fileName);

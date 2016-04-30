@@ -15,6 +15,7 @@
 #pragma once
 
 #include <ht_texture.h>
+#include <ht_texture_base.h>
 #include <ht_texture_resource.h>
 #include <ht_vksampler.h>
 #include <ht_vulkan.h>
@@ -25,10 +26,10 @@ namespace Hatchit {
     
         namespace Vulkan {
 
-            class HT_API VKTexture : public Core::RefCounted<VKTexture>, public Texture
+            class HT_API VKTexture : public TextureBase
             {
             public:
-                VKTexture(Core::Guid ID);
+                VKTexture();
                 virtual ~VKTexture();
 
                 //Required function for RefCounted classes

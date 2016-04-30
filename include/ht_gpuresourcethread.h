@@ -25,7 +25,9 @@ namespace Hatchit
         {
             enum class Type
             {
-                Texture
+                Texture,
+                Material,
+                Pipeline
             };
 
             Type            type;

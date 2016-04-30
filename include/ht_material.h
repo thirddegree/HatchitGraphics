@@ -32,6 +32,9 @@
 #include <ht_pipeline.h>
 #include <ht_guid.h>
 
+#include <ht_d3d12gpuresourcethread.h>
+#include <ht_vkgpuresourcethread.h>
+
 #include <map>
 
 namespace Hatchit {
@@ -77,8 +80,10 @@ namespace Hatchit {
             const std::vector<Core::Handle<RenderPassBase>>& GetRenderPasses() const;
 
         protected:
-            std::vector<Core::Handle<RenderPassBase>> m_renderPasses;
-            MaterialBase*                             m_base;
+            MaterialBase* m_base;
+
+            friend class Vulkan::VKGPUResourceThread;
+            friend class DX::D3D12GPUResourceThread;
         };
 
         using MaterialHandle = Core::Handle<Material>;

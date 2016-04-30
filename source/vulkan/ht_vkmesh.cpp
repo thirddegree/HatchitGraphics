@@ -27,7 +27,7 @@ namespace Hatchit {
             VKMesh::~VKMesh() 
             {
                 //Get Device
-                VkDevice device = m_renderer->GetVKDevice();
+                VkDevice device = (m_renderer->GetVKDevice()).GetVKDevices()[0];
 
                 vkDestroyBuffer(device, m_vertexBlock.buffer, nullptr);
                 vkFreeMemory(device, m_vertexBlock.memory, nullptr);
@@ -40,7 +40,7 @@ namespace Hatchit {
             {
                 m_renderer = renderer;
                 //Get Device
-                VkDevice device = renderer->GetVKDevice();
+                VkDevice device = (renderer->GetVKDevice()).GetVKDevices()[0];
 
                 //Generate Vertex Buffer
                 std::vector<Vertex> vertexBuffer; 

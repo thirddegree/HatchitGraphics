@@ -54,6 +54,10 @@ namespace Hatchit {
             virtual bool VUnbindTexture(std::string name, TextureHandle texture) = 0;
 
             virtual bool VUpdate() = 0;
+        protected:
+            std::vector<Core::Handle<RenderPassBase>> m_renderPasses;
+
+            friend class Material;
         };
     }
 }

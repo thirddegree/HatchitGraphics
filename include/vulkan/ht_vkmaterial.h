@@ -26,7 +26,7 @@
 #pragma once
 
 #include <ht_material.h>
-
+#include <ht_material_base.h>
 #include <ht_vkrenderpass.h>
 #include <ht_vkpipeline.h>
 #include <ht_vktexture.h>
@@ -39,14 +39,14 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            class HT_API VKMaterial : public Core::RefCounted<VKMaterial>, public MaterialBase
+            class HT_API VKMaterial :  public MaterialBase
             {
             public:
-                VKMaterial(Core::Guid ID);
+                VKMaterial();
                 ~VKMaterial();
 
                 //Required function for RefCounted class
-                bool Initialize(const std::string& fileName, VKRenderer* renderer);
+                bool Initialize(Resource::MaterialHandle handle, const VkDevice& device, const VkDescriptorPool& descriptorPool);
 
                 bool VSetInt(std::string name, int data)                    override;
                 bool VSetFloat(std::string name, float data)                override;
@@ -61,7 +61,7 @@ namespace Hatchit {
 
                 const void BindMaterial(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout) const;
 
-                IPipelineHandle GetPipeline() override;
+                IPipelineHandle GetPipeline();
 
             private:
                 const VkDevice* m_device;

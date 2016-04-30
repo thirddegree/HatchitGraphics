@@ -28,15 +28,12 @@ namespace Hatchit {
 
             using namespace Resource;
 
-            VKMaterial::VKMaterial(Core::Guid ID) :
-                Core::RefCounted<VKMaterial>(std::move(ID)) {}
+            VKMaterial::VKMaterial() {}
 
-            bool VKMaterial::Initialize(const std::string& fileName, VKRenderer* renderer)
+            bool VKMaterial::Initialize(Resource::MaterialHandle handle, const VkDevice& device, const VkDescriptorPool& descriptorPool)
             {
-                m_device = &(renderer->GetVKDevice());
-                m_descriptorPool = &(renderer->GetVKDescriptorPool());
-
-                Resource::MaterialHandle handle = Hatchit::Resource::Material::GetHandleFromFileName(fileName);
+                m_device = &device;
+                m_descriptorPool = &descriptorPool;
 
                 if (!handle.IsValid())
                 {

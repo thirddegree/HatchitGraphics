@@ -423,7 +423,7 @@ namespace Hatchit {
             VkResult VKSwapchain::VKGetNextImage(VkSemaphore presentSemaphore)
             {
                 //TODO: Use fences
-                VkDevice device = m_renderer->GetVKDevice();
+                VkDevice device = m_device = (m_renderer->GetVKDevice()).GetVKDevices()[0];
                 return fpAcquireNextImageKHR(device, m_swapchain, UINT64_MAX, presentSemaphore, VK_NULL_HANDLE, &m_currentBuffer);
             }
 

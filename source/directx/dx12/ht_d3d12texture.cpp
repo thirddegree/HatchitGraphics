@@ -95,18 +95,18 @@ namespace Hatchit
                 //data.pData = m_handle->GetData();
                 //data.RowPitch = m_handle->GetWidth() * 4;
                 //data.SlicePitch = m_handle->GetMIPLevels();
-
+                //
                 //auto cmdList = resources->GetCommandList();
-
+                //
                 //cmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_texture.Get(),
                 //    D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST));
-
+                //
                 //// Use Heap-allocating UpdateSubresources implementation for variable number of subresources (which is the case for textures).
                 //UpdateSubresources(cmdList, m_texture.Get(), m_uploadHeap.Get(), 0, 0, 1, &data);
-
+                //
                 //cmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_texture.Get(),
                 //    D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
-
+                //
                 //// Describe and create a SRV for the texture.
                 //CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle(resources->GetRootLayout()->GetHeap(D3D12RootLayout::HeapType::CBV_SRV_UAV)->GetCPUDescriptorHandleForHeapStart());
                 //cpuHandle.Offset(descriptorOffset, resources->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));

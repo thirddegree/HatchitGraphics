@@ -21,8 +21,7 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKTexture::VKTexture(Core::Guid ID) :
-                Core::RefCounted<VKTexture>(std::move(ID)) 
+            VKTexture::VKTexture()
             {}
 
             VKTexture::~VKTexture() 
@@ -34,7 +33,7 @@ namespace Hatchit {
 
             bool VKTexture::Initialize(const std::string& fileName, VKRenderer* renderer)
             {
-                m_device = &(renderer->GetVKDevice());
+                m_device = m_device = &(renderer->GetVKDevice()).GetVKDevices()[0];
                 Resource::TextureHandle resource = Resource::Texture::GetHandleFromFileName(fileName);
                 if (!resource.IsValid())
                     return false;
@@ -43,7 +42,7 @@ namespace Hatchit {
 
                 m_width = resource->GetWidth();
                 m_height = resource->GetHeight();
-                m_channelCount = resource->GetChannels();
+                m_channels = resource->GetChannels();
                 m_mipLevels = resource->GetMIPLevels();
 
                 return VKBufferImage(*renderer);
@@ -55,7 +54,7 @@ namespace Hatchit {
 
                 m_width = width;
                 m_height = height;
-                m_channelCount = channelCount;
+                m_channels = channelCount;
                 m_mipLevels = mipLevels;
 
                 return VKBufferImage(renderer);
@@ -69,11 +68,11 @@ namespace Hatchit {
                 VkResult err;
 
                 VkFormat format;
-                if (m_channelCount == 4 || m_channelCount == 3)
+                if (m_channels == 4 || m_channels == 3)
                 {
                     format = VK_FORMAT_R8G8B8A8_UNORM;
                 }
-                else if (m_channelCount == 1)
+                else if (m_channels == 1)
                 {
                     format = VK_FORMAT_R32_SFLOAT;
                 }
@@ -169,7 +168,7 @@ namespace Hatchit {
                 }
 
                 //Copy image data
-                memcpy(pData, m_data, m_width * m_height * m_channelCount);
+                memcpy(pData, m_data, m_width * m_height * m_channels);
 
                 vkUnmapMemory(*m_device, m_deviceMemory);
 

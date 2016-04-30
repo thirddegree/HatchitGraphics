@@ -79,7 +79,7 @@ namespace Hatchit {
             bool VKRenderPass::Initialize(const std::string& fileName, VKRenderer* renderer)
             {
                 m_renderer = renderer;
-                m_device = &(renderer->GetVKDevice());
+                m_device = &(renderer->GetVKDevice()).GetVKDevices()[0];
                 m_commandPool = &(renderer->GetVKCommandPool());
                 m_descriptorPool = &(renderer->GetVKDescriptorPool());
 

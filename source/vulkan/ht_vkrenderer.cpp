@@ -50,9 +50,6 @@ namespace Hatchit {
 
                 m_swapchain = nullptr;
 
-                m_instance = VK_NULL_HANDLE;
-
-                m_device = VK_NULL_HANDLE;
                 m_commandPool = VK_NULL_HANDLE;
                 m_descriptorPool = VK_NULL_HANDLE;
 
@@ -82,12 +79,19 @@ namespace Hatchit {
                 m_clearColor.color.float32[2] = params.clearColor.b;
                 m_clearColor.color.float32[3] = params.clearColor.a;
 
+                /*
+                * Create core VKDevice
+                */
+                m_device.SetValidation(m_enableValidation);
+                m_device.VInitialize();
 
                 /*
-                * Initialize Core Vulkan Systems: Driver layers & extensions 
+                * Setup debug callbacks
                 */
-                if (!initVulkan())
+#ifdef _DEBUG
+                if (!setupDebugCallbacks())
                     return false;
+#endif
 
                 /*
                 * Initialize Vulkan swapchain
@@ -108,7 +112,7 @@ namespace Hatchit {
                     return false;
 
                 //TODO: remove this test code
-                m_rootLayout = VKRootLayout::GetHandle("TestRootDescriptor.json", "TestRootDescriptor.json", &m_device);
+                m_rootLayout = VKRootLayout::GetHandle("TestRootDescriptor.json", "TestRootDescriptor.json", &m_device.GetVKDevices()[0]);
 
                 ModelHandle model = Model::GetHandleFromFileName("Raptor.obj");
                 ModelHandle lightModel = Model::GetHandleFromFileName("IcoSphere.dae");
@@ -126,9 +130,9 @@ namespace Hatchit {
                 m_pointLightingPipeline = VKPipeline::GetHandle("PointLightingPipeline.json", "PointLightingPipeline.json", this).StaticCastHandle<IPipeline>();
                 m_compositionPipeline = VKPipeline::GetHandle("CompositionPipeline.json", "CompositionPipeline.json", this).StaticCastHandle<IPipeline>();
 
-                m_material = VKMaterial::GetHandle("DeferredMaterial.json", "DeferredMaterial.json", this).StaticCastHandle<IMaterial>();
-                m_pointLightMaterial = VKMaterial::GetHandle("PointLightMaterial.json", "PointLightMaterial.json", this).StaticCastHandle<IMaterial>();
-                m_compositionMaterial = VKMaterial::GetHandle("CompositionMaterial.json", "CompositionMaterial.json", this).StaticCastHandle<IMaterial>();
+                m_material = Material::GetHandle("DeferredMaterial.json", "DeferredMaterial.json");
+                m_pointLightMaterial = Material::GetHandle("PointLightMaterial.json", "PointLightMaterial.json");
+                m_compositionMaterial = Material::GetHandle("CompositionMaterial.json", "CompositionMaterial.json");
 
                 m_meshHandle = VKMesh::GetHandle("raptor", model->GetMeshes()[0], this).StaticCastHandle<IMesh>();
                 m_pointLightMeshHandle = VKMesh::GetHandle("pointLight", lightModel->GetMeshes()[0], this).StaticCastHandle<IMesh>();
@@ -177,27 +181,30 @@ namespace Hatchit {
                 m_compositionMaterial.Release();
                 m_compositionMeshHandle.Release();
 
-                if (m_device != VK_NULL_HANDLE)
+                VkInstance instance = m_device.GetVKInstance();
+                VkDevice device = m_device.GetVKDevices()[0];
+
+                if (device != VK_NULL_HANDLE)
                 {
                     if (m_presentSemaphore != VK_NULL_HANDLE)
-                        vkDestroySemaphore(m_device, m_presentSemaphore, nullptr);
+                        vkDestroySemaphore(device, m_presentSemaphore, nullptr);
                     if (m_renderSemaphore != VK_NULL_HANDLE)
-                        vkDestroySemaphore(m_device, m_renderSemaphore, nullptr);
+                        vkDestroySemaphore(device, m_renderSemaphore, nullptr);
 
                     if (m_commandPool != VK_NULL_HANDLE)
-                        vkDestroyCommandPool(m_device, m_commandPool, nullptr);
+                        vkDestroyCommandPool(device, m_commandPool, nullptr);
                     if (m_descriptorPool != VK_NULL_HANDLE)
-                        vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
+                        vkDestroyDescriptorPool(device, m_descriptorPool, nullptr);
 
-                    vkDestroyDevice(m_device, nullptr);
+                    vkDestroyDevice(device, nullptr);
                 }
 
-                if (m_instance != VK_NULL_HANDLE)
+                if (instance != VK_NULL_HANDLE)
                 {
                     if(msg_callback != VK_NULL_HANDLE)
-                        m_destroyDebugReportCallback(m_instance, msg_callback, nullptr);
+                        m_destroyDebugReportCallback(instance, msg_callback, nullptr);
 
-                    vkDestroyInstance(m_instance, nullptr);
+                    vkDestroyInstance(instance, nullptr);
                 }
             }
 
@@ -402,20 +409,11 @@ namespace Hatchit {
                 //vkResetCommandPool(m_device, m_commandPool, 0);
             }
 
-            VkPhysicalDevice VKRenderer::GetVKPhysicalDevice() 
-            {
-                return m_gpu;
-            }
-
-            const VkDevice& VKRenderer::GetVKDevice() const
+            const VKDevice& VKRenderer::GetVKDevice() const
             {
                 return m_device;
             }
 
-            const VkInstance& VKRenderer::GetVKInstance() const
-            {
-                return m_instance;
-            }
 
             const VkCommandPool& VKRenderer::GetVKCommandPool() const
             {
@@ -456,134 +454,29 @@ namespace Hatchit {
                 return m_clearColor; 
             }
 
-            bool VKRenderer::initVulkan() 
-            {
-                VkResult err;
-                bool success = true;
-                /*
-                * Check Vulkan instance layers
-                */
-                success = checkInstanceLayers();
-                assert(success);
-                if (!success)
-                    return false;
-
-
-                /*
-                * Check Vulkan instance extensions
-                */
-                success = checkInstanceExtensions();
-                assert(success);
-                if (!success)
-                    return false;
-
-                /*
-                * Setup Vulkan application info structure
-                */
-
-                m_appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-                m_appInfo.pNext = nullptr;
-                m_appInfo.pApplicationName = m_rendererParams.applicationName.c_str();
-                m_appInfo.applicationVersion = 0;
-                m_appInfo.pEngineName = "Hatchit";
-                m_appInfo.engineVersion = 0;
-                m_appInfo.apiVersion = VK_MAKE_VERSION(1,0,8);
-
-                /*
-                * Setup Vulkan instance create info
-                */
-                VkInstanceCreateInfo instanceInfo;
-                instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-                instanceInfo.pNext = nullptr;
-                instanceInfo.flags = 0;
-                instanceInfo.pApplicationInfo = &m_appInfo;
-                instanceInfo.enabledLayerCount = static_cast<uint32_t>(m_enabledLayerNames.size());
-                instanceInfo.ppEnabledLayerNames = m_enabledLayerNames.data();
-                instanceInfo.enabledExtensionCount = static_cast<uint32_t>(m_enabledExtensionNames.size());
-                instanceInfo.ppEnabledExtensionNames = m_enabledExtensionNames.data();
-
-                /**
-                * Create Vulkan instance handle
-                */
-                err = vkCreateInstance(&instanceInfo, nullptr, &m_instance);
-                switch (err)
-                {
-                case VK_SUCCESS:
-                    break;
-
-                case VK_ERROR_INCOMPATIBLE_DRIVER:
-                {
-                    HT_DEBUG_PRINTF("Cannot find a compatible Vulkan installable client driver"
-                        "(ICD).\n\nPlease look at the Getting Started guide for "
-                        "additional information.\n"
-                        "vkCreateInstance Failure\n");
-                } return false;
-
-                case VK_ERROR_EXTENSION_NOT_PRESENT:
-                {
-                    //TODO: print something
-                } return false;
-
-                default:
-                    return false;
-                }
-
-                /**
-                *
-                * Enumerate available GPU devices for use with Vulkan
-                *
-                */
-                if (!enumeratePhysicalDevices())
-                    return false;
-
-                /*
-                * Check layers that we want against the layers available on the device
-                */
-                if (!checkDeviceLayers())
-                    return false;
-
-                /*
-                * Check extensions that we want against the extensions supported by the device
-                */
-                if (!checkDeviceExtensions())
-                    return false;
-
-                /*
-                * Setup debug callbacks
-                */
-#ifdef _DEBUG
-                if (!setupDebugCallbacks())
-                    return false;
-#endif
-
-                /*
-                * Query the device for advanced feature support
-                */
-                if (!setupProcAddresses())
-                    return false;
-
-                return true;
-            }
-
             bool VKRenderer::initVulkanSwapchain()
             {
-                m_swapchain = new VKSwapchain(this, m_instance, m_gpu, m_device, m_commandPool);
+                VkInstance instance = m_device.GetVKInstance();
+                VkPhysicalDevice gpu = m_device.GetVKPhysicalDevices()[0];
+                VkDevice device = m_device.GetVKDevices()[0];
+
+                m_swapchain = new VKSwapchain(this, instance, gpu, device, m_commandPool);
 
                 const VkSurfaceKHR& surface = m_swapchain->VKGetSurface();
 
                 /*
                 * Create the device object that is in charge of allocating memory and making draw calls
                 */
-                if (!createDevice())
+                if (!setupSwapchainFunctions())
                     return false;                
 
                 //Get Device queue
-                vkGetDeviceQueue(m_device, m_swapchain->VKGetGraphicsQueueIndex(), 0, &m_queue);
+                vkGetDeviceQueue(device, m_swapchain->VKGetGraphicsQueueIndex(), 0, &m_queue);
 
                 VkResult err;
 
                 //Get memory information
-                vkGetPhysicalDeviceMemoryProperties(m_gpu, &m_memoryProps);
+                vkGetPhysicalDeviceMemoryProperties(gpu, &m_memoryProps);
 
                 //Setup semaphores and submission info
                 VkSemaphoreCreateInfo semaphoreCreateInfo = {};
@@ -591,10 +484,10 @@ namespace Hatchit {
                 semaphoreCreateInfo.pNext = nullptr;
                 semaphoreCreateInfo.flags = 0;
 
-                err = vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_presentSemaphore);
+                err = vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &m_presentSemaphore);
                 assert(!err);
 
-                err = vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_renderSemaphore);
+                err = vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &m_renderSemaphore);
                 assert(!err);
 
                 VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
@@ -608,193 +501,6 @@ namespace Hatchit {
                 m_submitInfo.pSignalSemaphores = &m_renderSemaphore;
 
                 return true;
-            }
-
-
-            bool VKRenderer::checkInstanceLayers()
-            {
-                //If we don't want to validate, just skip this
-                if (!m_enableValidation)
-                    return true;
-
-                VkResult err;
-
-                /**
-                * Check the following requested Vulkan layers against available layers
-                */
-                VkBool32 validationFound = 0;
-                uint32_t instanceLayerCount = 0;
-                err = vkEnumerateInstanceLayerProperties(&instanceLayerCount, NULL);
-                assert(!err);
-
-                m_enabledLayerNames = {
-                    "VK_LAYER_GOOGLE_threading",      "VK_LAYER_LUNARG_core_validation",
-                    "VK_LAYER_LUNARG_object_tracker", "VK_LAYER_LUNARG_parameter_validation",
-                    "VK_LAYER_LUNARG_standard_validation",  "VK_LAYER_LUNARG_swapchain",
-                    "VK_LAYER_LUNARG_device_limits",  "VK_LAYER_LUNARG_image",
-                    "VK_LAYER_GOOGLE_unique_objects",
-                };
-
-                if (instanceLayerCount > 0)
-                {
-                    VkLayerProperties* instanceLayers = new VkLayerProperties[instanceLayerCount];
-                    err = vkEnumerateInstanceLayerProperties(&instanceLayerCount, instanceLayers);
-                    assert(!err);
-
-                    bool validated = CheckLayers(m_enabledLayerNames, instanceLayers, instanceLayerCount);
-
-                    delete[] instanceLayers;
-                    if (!validated)
-                        return false;
-
-                    return true;
-                }
-
-                HT_DEBUG_PRINTF("VKRenderer::checkInstanceLayers(), instanceLayerCount is zero. \n");
-                return false;
-            }
-
-            bool VKRenderer::checkInstanceExtensions()
-            {
-                VkResult err;
-
-                /**
-                * Vulkan:
-                *
-                * Check the for correct Vulkan instance extensions
-                *
-                */
-                VkBool32 surfaceExtFound = 0;
-                VkBool32 platformSurfaceExtFound = 0;
-                uint32_t instanceExtensionCount = 0;
-
-                err = vkEnumerateInstanceExtensionProperties(NULL, &instanceExtensionCount, NULL);
-                assert(!err);
-
-                if (instanceExtensionCount > 0)
-                {
-                    VkExtensionProperties* instanceExtensions = new VkExtensionProperties[instanceExtensionCount];
-                    err = vkEnumerateInstanceExtensionProperties(NULL, &instanceExtensionCount, instanceExtensions);
-                    assert(!err);
-                    for (uint32_t i = 0; i < instanceExtensionCount; i++)
-                    {
-                        if (!strcmp(VK_KHR_SURFACE_EXTENSION_NAME, instanceExtensions[i].extensionName))
-                        {
-                            surfaceExtFound = 1;
-                            m_enabledExtensionNames.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
-                        }
-#ifdef HT_SYS_WINDOWS
-                        if (!strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, instanceExtensions[i].extensionName)) {
-                            platformSurfaceExtFound = 1;
-                            m_enabledExtensionNames.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-                        }
-#elif defined(HT_SYS_LINUX)
-                        if (!strcmp(VK_KHR_XCB_SURFACE_EXTENSION_NAME, instanceExtensions[i].extensionName))
-                        {
-                            platformSurfaceExtFound = 1;
-                            m_enabledExtensionNames.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
-                        }
-#endif
-                        if (m_enableValidation)
-                        {
-                            if (!strcmp(VK_EXT_DEBUG_REPORT_EXTENSION_NAME, instanceExtensions[i].extensionName)) {
-                                m_enabledExtensionNames.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-                            }
-                        }
-
-                        assert(m_enabledExtensionNames.size() < 64);
-                    }
-
-                    delete[] instanceExtensions;
-
-                    return true;
-                }
-
-                HT_DEBUG_PRINTF("VKRenderer::checkInstanceExtensions(), instanceExtensionCount is zero. \n");
-
-                return false;
-            }
-
-            bool VKRenderer::enumeratePhysicalDevices()
-            {
-                VkResult err;
-                uint32_t gpuCount = 0;
-
-                err = vkEnumeratePhysicalDevices(m_instance, &gpuCount, nullptr);
-                if (gpuCount <= 0 || err != VK_SUCCESS)
-                {
-                    HT_DEBUG_PRINTF("No compatible devices were found.\n");
-                    return false;
-                }
-
-                VkPhysicalDevice* physicalDevices = new VkPhysicalDevice[gpuCount];
-                err = vkEnumeratePhysicalDevices(m_instance, &gpuCount, physicalDevices);
-                if (err)
-                {
-                    HT_DEBUG_PRINTF("Vulkan encountered error enumerating physical devices.\n");
-                    delete[] physicalDevices;
-                    return false;
-                }
-
-                /*For now, we store the first device Vulkan finds*/
-                m_gpu = physicalDevices[0];
-                delete[] physicalDevices;
-
-                return true;
-            }
-
-            bool VKRenderer::checkDeviceLayers()
-            {
-                VkResult err;
-                uint32_t deviceLayerCount = 0;
-                err = vkEnumerateDeviceLayerProperties(m_gpu, &deviceLayerCount, NULL);
-                assert(!err);
-
-                if (deviceLayerCount == 0)
-                {
-                    HT_DEBUG_PRINTF("VKRenderer::checkValidationLayers(): No layers were found on the device.\n");
-                    return false;
-                }
-
-                VkLayerProperties* deviceLayers = new VkLayerProperties[deviceLayerCount];
-                err = vkEnumerateDeviceLayerProperties(m_gpu, &deviceLayerCount, deviceLayers);
-                assert(!err);
-
-                bool validated = CheckLayers(m_enabledLayerNames, deviceLayers, deviceLayerCount);
-                delete[] deviceLayers;
-
-                if (!validated)
-                {
-                    HT_DEBUG_PRINTF("VkRenderer::checkValidationLayers(): Could not validate enabled layers against device layers.\n");
-                    return false;
-                }
-
-                return true;
-            }
-
-            bool VKRenderer::CheckLayers(std::vector<const char*> layerNames, VkLayerProperties * layers, uint32_t layerCount)
-            {
-                bool validated = true;
-                for (size_t i = 0; i < layerNames.size(); i++)
-                {
-                    VkBool32 found = 0;
-                    for (uint32_t j = 0; j < layerCount; j++)
-                    {
-                        if (!strcmp(layerNames[i], layers[j].layerName))
-                        {
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found)
-                    {
-                        HT_DEBUG_PRINTF("VKRenderer::checkLayers(), Cannot find layer: %s\n", layerNames[i]);
-                        validated = false;
-                    }
-
-                }
-
-                return validated;
             }
 
             bool VKRenderer::CreateBuffer(VkDevice device, VkBufferUsageFlagBits usage, size_t dataSize, void* data, UniformBlock_vk* uniformBlock)
@@ -878,56 +584,10 @@ namespace Hatchit {
                 return true;
             }
             
-            bool VKRenderer::checkDeviceExtensions()
-            {
-                VkResult err;
-                uint32_t deviceExtensionCount = 0;
-                VkBool32 swapchainExtFound = 0;
-                m_enabledExtensionNames.clear();
-
-                //Check how many extensions are on the device
-                err = vkEnumerateDeviceExtensionProperties(m_gpu, NULL, &deviceExtensionCount, NULL);
-                assert(!err);
-
-                if (deviceExtensionCount == 0)
-                {
-                    HT_DEBUG_PRINTF("VKRenderer::checkDeviceExtensions(): Device reported no available extensions\n");
-                    return false;
-                }
-
-                //Get extension properties
-                VkExtensionProperties* deviceExtensions = new VkExtensionProperties[deviceExtensionCount];
-                err = vkEnumerateDeviceExtensionProperties(m_gpu, NULL, &deviceExtensionCount, deviceExtensions);
-                assert(!err);
-
-                for (uint32_t i = 0; i < deviceExtensionCount; i++) {
-                    if (!strcmp(VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-                        deviceExtensions[i].extensionName)) {
-                        swapchainExtFound = 1;
-                        m_enabledExtensionNames.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-                    }
-                    assert(m_enabledExtensionNames.size() < 64);
-                }
-
-                delete[] deviceExtensions;
-
-
-                if (!swapchainExtFound)
-                {
-                    HT_DEBUG_PRINTF("vkEnumerateDeviceExtensionProperties failed to find "
-                        "the " VK_KHR_SWAPCHAIN_EXTENSION_NAME
-                        " extension.\n\nDo you have a compatible "
-                        "Vulkan installable client driver (ICD) installed?\nPlease "
-                        "look at the Getting Started guide for additional "
-                        "information.\n");
-                    return false;
-                }
-
-                return true;
-            }
-
             bool VKRenderer::setupDebugCallbacks()
             {
+                VkInstance instance = m_device.GetVKInstance();
+
                 //Skip this if we don't want to validate
                 if (!m_enableValidation)
                     return true;
@@ -936,9 +596,9 @@ namespace Hatchit {
 
                 //Get debug callback function pointers
                 m_createDebugReportCallback =
-                    (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(m_instance, "vkCreateDebugReportCallbackEXT");
+                    (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT");
                 m_destroyDebugReportCallback =
-                    (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(m_instance, "vkDestroyDebugReportCallbackEXT");
+                    (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT");
 
                 if (!m_createDebugReportCallback)
                 {
@@ -951,7 +611,7 @@ namespace Hatchit {
                 }
 
                 m_debugReportMessage =
-                    (PFN_vkDebugReportMessageEXT)vkGetInstanceProcAddr(m_instance, "vkDebugReportMessageEXT");
+                    (PFN_vkDebugReportMessageEXT)vkGetInstanceProcAddr(instance, "vkDebugReportMessageEXT");
                 if (!m_debugReportMessage) {
                     HT_DEBUG_PRINTF("GetProcAddr: Unable to find vkDebugReportMessageEXT\n");
                     return false;
@@ -967,7 +627,7 @@ namespace Hatchit {
                 dbgCreateInfo.pUserData = NULL;
                 dbgCreateInfo.flags =
                     VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
-                err = m_createDebugReportCallback(m_instance, &dbgCreateInfo, NULL,
+                err = m_createDebugReportCallback(instance, &dbgCreateInfo, NULL,
                     &msg_callback);
                 switch (err) {
                 case VK_SUCCESS:
@@ -983,95 +643,28 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKRenderer::setupProcAddresses()
+            bool VKRenderer::setupSwapchainFunctions()
             {
-                // Query fine-grained feature support for this device.
-                //  If app has specific feature requirements it should check supported
-                //  features based on this query
-                VkPhysicalDeviceFeatures physDevFeatures;
-                vkGetPhysicalDeviceFeatures(m_gpu, &physDevFeatures);
-
-                fpGetPhysicalDeviceSurfaceSupportKHR = (PFN_vkGetPhysicalDeviceSurfaceSupportKHR)
-                    vkGetInstanceProcAddr(m_instance, "vkGetPhysicalDeviceSurfaceSupportKHR");
-                if (fpGetPhysicalDeviceSurfaceSupportKHR == nullptr)
-                {
-                    HT_DEBUG_PRINTF("VKRenderer::setupProcAddresses: vkGetPhysicalDeviceSurfaceSupportKHR not found.\n");
-                    return false;
-                }
-
-                fpGetPhysicalDeviceSurfaceCapabilitiesKHR = (PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR)
-                    vkGetInstanceProcAddr(m_instance, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
-                if (fpGetPhysicalDeviceSurfaceCapabilitiesKHR == nullptr)
-                {
-                    HT_DEBUG_PRINTF("VKRenderer::setupProcAddresses: vkGetPhysicalDeviceSurfaceCapabilitiesKHR not found.\n");
-                    return false;
-                }
-
-                fpGetPhysicalDeviceSurfaceFormatsKHR = (PFN_vkGetPhysicalDeviceSurfaceFormatsKHR)
-                    vkGetInstanceProcAddr(m_instance, "vkGetPhysicalDeviceSurfaceFormatsKHR");
-                if (fpGetPhysicalDeviceSurfaceFormatsKHR == nullptr)
-                {
-                    HT_DEBUG_PRINTF("VKRenderer::setupProcAddresses: vkGetPhysicalDeviceSurfaceFormatsKHR not found.\n");
-                    return false;
-                }
-
-                fpGetPhysicalDeviceSurfacePresentModesKHR = (PFN_vkGetPhysicalDeviceSurfacePresentModesKHR)
-                    vkGetInstanceProcAddr(m_instance, "vkGetPhysicalDeviceSurfacePresentModesKHR");
-                if (fpGetPhysicalDeviceSurfacePresentModesKHR == nullptr)
-                {
-                    HT_DEBUG_PRINTF("VKRenderer::setupProcAddresses: vkGetPhysicalDeviceSurfacePresentModesKHR not found.\n");
-                    return false;
-                }
-
-                return true;
-            }
-
-            //TODO: Support more than one queue / device?
-            bool VKRenderer::createDevice() 
-            {
-                VkResult err;
-                float queuePriorities[1] = { 0.0f };
-
-                VkDeviceQueueCreateInfo queue;
-                queue.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-                queue.pNext = nullptr;
-                queue.queueFamilyIndex = m_swapchain->VKGetGraphicsQueueIndex();
-                queue.queueCount = 1;
-                queue.pQueuePriorities = queuePriorities;
-
-                VkDeviceCreateInfo device;
-                device.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-                device.pNext = nullptr;
-                device.queueCreateInfoCount = 1;
-                device.pQueueCreateInfos = &queue;
-                device.enabledLayerCount = static_cast<uint32_t>(m_enabledLayerNames.size());
-                device.ppEnabledLayerNames = m_enabledLayerNames.data();
-                device.enabledExtensionCount = static_cast<uint32_t>(m_enabledExtensionNames.size());
-                device.ppEnabledExtensionNames = m_enabledExtensionNames.data();
-                device.pEnabledFeatures = nullptr; //Request specific features here
-
-                err = vkCreateDevice(m_gpu, &device, nullptr, &m_device);
-                if (err != VK_SUCCESS)
-                {
-                    HT_DEBUG_PRINTF("Failed to create device. \n");
-                    return false;
-                }
+                VkInstance instance = m_device.GetVKInstance();
+                VkDevice device = m_device.GetVKDevices()[0];
 
                 //Pointer to function to get function pointers from device
                 PFN_vkGetDeviceProcAddr g_gdpa = (PFN_vkGetDeviceProcAddr)
-                    vkGetInstanceProcAddr(m_instance, "vkGetDeviceProcAddr");
+                    vkGetInstanceProcAddr(instance, "vkGetDeviceProcAddr");
 
-                fpCreateSwapchainKHR = (PFN_vkCreateSwapchainKHR)g_gdpa(m_device, "vkCreateSwapchainKHR");
-                fpDestroySwapchainKHR = (PFN_vkDestroySwapchainKHR)g_gdpa(m_device, "vkDestroySwapchainKHR");
-                fpGetSwapchainImagesKHR = (PFN_vkGetSwapchainImagesKHR)g_gdpa(m_device, "vkGetSwapchainImagesKHR");
-                fpAcquireNextImageKHR = (PFN_vkAcquireNextImageKHR)g_gdpa(m_device, "vkAcquireNextImageKHR");
-                fpQueuePresentKHR = (PFN_vkQueuePresentKHR)g_gdpa(m_device, "vkQueuePresentKHR");
+                fpCreateSwapchainKHR = (PFN_vkCreateSwapchainKHR)g_gdpa(device, "vkCreateSwapchainKHR");
+                fpDestroySwapchainKHR = (PFN_vkDestroySwapchainKHR)g_gdpa(device, "vkDestroySwapchainKHR");
+                fpGetSwapchainImagesKHR = (PFN_vkGetSwapchainImagesKHR)g_gdpa(device, "vkGetSwapchainImagesKHR");
+                fpAcquireNextImageKHR = (PFN_vkAcquireNextImageKHR)g_gdpa(device, "vkAcquireNextImageKHR");
+                fpQueuePresentKHR = (PFN_vkQueuePresentKHR)g_gdpa(device, "vkQueuePresentKHR");
 
                 return true;
             }
 
             bool VKRenderer::setupCommandPool() 
             {
+                VkDevice device = m_device.GetVKDevices()[0];
+
                 VkResult err;
 
                 //Create the command pool
@@ -1081,7 +674,7 @@ namespace Hatchit {
                 commandPoolInfo.queueFamilyIndex = m_swapchain->VKGetGraphicsQueueIndex();
                 commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-                err = vkCreateCommandPool(m_device, &commandPoolInfo, nullptr, &m_commandPool);
+                err = vkCreateCommandPool(device, &commandPoolInfo, nullptr, &m_commandPool);
 
                 if (err != VK_SUCCESS)
                 {
@@ -1094,6 +687,8 @@ namespace Hatchit {
 
             bool VKRenderer::setupDescriptorPool() 
             {
+                VkDevice device = m_device.GetVKDevices()[0];
+
                 VkResult err;
 
                 //Setup the descriptor pool
@@ -1122,7 +717,7 @@ namespace Hatchit {
                 poolCreateInfo.maxSets = 16;
                 poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
-                err = vkCreateDescriptorPool(m_device, &poolCreateInfo, nullptr, &m_descriptorPool);
+                err = vkCreateDescriptorPool(device, &poolCreateInfo, nullptr, &m_descriptorPool);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -1150,9 +745,11 @@ namespace Hatchit {
         
             void VKRenderer::CreateSetupCommandBuffer() 
             {
+                VkDevice device = m_device.GetVKDevices()[0];
+
                 if (m_setupCommandBuffer != VK_NULL_HANDLE)
                 {
-                    vkFreeCommandBuffers(m_device, m_commandPool, 1, &m_setupCommandBuffer);
+                    vkFreeCommandBuffers(device, m_commandPool, 1, &m_setupCommandBuffer);
                     m_setupCommandBuffer = VK_NULL_HANDLE;
                 }
 
@@ -1168,7 +765,7 @@ namespace Hatchit {
                     command.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
                     command.commandBufferCount = 1;
 
-                    err = vkAllocateCommandBuffers(m_device, &command, &m_setupCommandBuffer);
+                    err = vkAllocateCommandBuffers(device, &command, &m_setupCommandBuffer);
                     if (err != VK_SUCCESS)
                     {
                         HT_DEBUG_PRINTF("VKRenderer::CreateSetupCommandBuffer(): Failed to allocate command buffer.\n");
@@ -1184,6 +781,8 @@ namespace Hatchit {
 
             void VKRenderer::FlushSetupCommandBuffer()
             {
+                VkDevice device = m_device.GetVKDevices()[0];
+
                 VkResult err;
                 if (m_setupCommandBuffer == VK_NULL_HANDLE)
                     return;
@@ -1210,7 +809,7 @@ namespace Hatchit {
                 err = vkQueueWaitIdle(m_queue);
                 assert(!err);
 
-                vkFreeCommandBuffers(m_device, m_commandPool, 1, &m_setupCommandBuffer);
+                vkFreeCommandBuffers(device, m_commandPool, 1, &m_setupCommandBuffer);
                 m_setupCommandBuffer = VK_NULL_HANDLE;
             }
 

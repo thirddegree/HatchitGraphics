@@ -58,7 +58,7 @@ namespace Hatchit {
             bool VKRenderTarget::Initialize(const std::string& fileName, VKRenderer* renderer)
             {
                 m_renderer = renderer;
-                m_device = &(renderer->GetVKDevice());
+                m_device = &(renderer->GetVKDevice()).GetVKDevices()[0];
 
                 Resource::RenderTargetHandle handle = RenderTarget::GetHandleFromFileName(fileName);
 
@@ -187,7 +187,7 @@ namespace Hatchit {
             bool VKRenderTarget::setupTargetTexture() 
             {
                 VkResult err;
-                VkPhysicalDevice gpu = m_renderer->GetVKPhysicalDevice();
+                VkPhysicalDevice gpu = (m_renderer->GetVKDevice()).GetVKPhysicalDevices()[0];
 
                 //Test that the GPU supports blitting
                 VkFormatProperties formatProperties;
