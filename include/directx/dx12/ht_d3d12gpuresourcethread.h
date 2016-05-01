@@ -53,8 +53,10 @@ namespace Hatchit
                 D3D12Device*            m_device;
                 GPURequestQueue         m_requests;
                 mutable std::mutex      m_mutex;
+                std::unique_lock<std::mutex> m_lock;
                 std::condition_variable m_cv;
                 std::atomic_bool        m_processed;
+
 
                 void thread_main();
             };

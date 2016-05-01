@@ -83,7 +83,9 @@ namespace Hatchit {
                         _Type = RendererType::DIRECTX12;
                     }
 
-                    m_swapChain = new DX::D3D12SwapChain;
+                    m_swapChain = new DX::D3D12SwapChain((HWND)params.window);
+                    if (!m_swapChain->VInitialize(params.viewportWidth, params.viewportHeight))
+                        return false;
 
                 } break;
                 
@@ -113,6 +115,8 @@ namespace Hatchit {
             //Step 01: Clear the buffer
             //Not exactly sure how this will work, as the clear command
             //need to be recorded as part of a command list
+            float color[] = { 1.0f, 0.0f, 0.0f, 1.0f };
+            m_swapChain->VClear(color);
 
             //Step 02: Render each renderpass in a pass thread
             //We will need to *SMARTLY* spawn enough threads to handle

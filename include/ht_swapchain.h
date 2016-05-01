@@ -40,10 +40,10 @@ namespace Hatchit {
             virtual ~SwapChain() {}
 
             uint32_t GetWidth();
-
             uint32_t GetHeight();
 
-            virtual bool VInitialize() = 0;
+            virtual void VClear(float* color) = 0;
+            virtual bool VInitialize(uint32_t width, uint32_t height) = 0;
             virtual void VResize(uint32_t width, uint32_t height) = 0;
             virtual void VPresent() = 0;
 

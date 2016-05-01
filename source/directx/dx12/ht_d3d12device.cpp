@@ -21,7 +21,7 @@ namespace Hatchit
     {
         namespace DX
         {
-            bool D3D12Device::_DebugInterfaceEnabled = false;
+            bool        D3D12Device::_DebugInterfaceEnabled = false;
 
             D3D12Device::D3D12Device()
             {
@@ -48,6 +48,26 @@ namespace Hatchit
             ID3D12CommandQueue * D3D12Device::GetQueue()
             {
                 return m_queue;
+            }
+
+            uint32_t D3D12Device::GetRTVHeapIncrement()
+            {
+                return m_RTVHeapIncrement;
+            }
+
+            uint32_t D3D12Device::GetDSVHeapIncrement()
+            {
+                return m_DSVHeapIncrement;
+            }
+
+            uint32_t D3D12Device::GetSamHeapIncrement()
+            {
+                return m_SamHeapIncrement;
+            }
+
+            uint32_t D3D12Device::GetCBVHeapIncrement()
+            {
+                return m_CBVHeapIncrement;
             }
 
             bool D3D12Device::VInitialize()
@@ -91,6 +111,12 @@ namespace Hatchit
                     HT_ERROR_PRINTF("Failed to create Direct3D 12 device.\n");
                     return false;
                 }
+
+                /*Cache heap increments*/
+                m_RTVHeapIncrement = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+                m_DSVHeapIncrement = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+                m_CBVHeapIncrement = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                m_SamHeapIncrement = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 
                 /*Create the command queue*/
                 D3D12_COMMAND_QUEUE_DESC queueDesc = {};

@@ -37,16 +37,24 @@ namespace Hatchit
 
                 ID3D12Device*       GetDevice();
                 ID3D12CommandQueue* GetQueue();
+                uint32_t            GetRTVHeapIncrement();
+                uint32_t            GetDSVHeapIncrement();
+                uint32_t            GetSamHeapIncrement();
+                uint32_t            GetCBVHeapIncrement();
 
             private:
                 ID3D12Device*                   m_device;
                 IDXGIAdapter3*                  m_adapter;
                 IDXGIFactory4*                  m_factory;
                 bool                            m_initialized;
+                uint32_t                        m_RTVHeapIncrement;
+                uint32_t                        m_DSVHeapIncrement;
+                uint32_t                        m_SamHeapIncrement;
+                uint32_t                        m_CBVHeapIncrement;
                 DXGI_QUERY_VIDEO_MEMORY_INFO    m_vminfo;
                 ID3D12CommandQueue*             m_queue;
 
-                static bool _DebugInterfaceEnabled;
+                static bool         _DebugInterfaceEnabled;
 
                 static HRESULT CheckHardwareAdapter(IDXGIFactory4* factory, IDXGIAdapter3** adapter);
             };
