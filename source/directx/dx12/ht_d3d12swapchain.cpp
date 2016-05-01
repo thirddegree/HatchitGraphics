@@ -35,10 +35,13 @@ namespace Hatchit
                 m_depthStencilTargetHeap = nullptr;
                 m_renderTargetHeap = nullptr;
                 m_commandList = nullptr;
+                m_fence = nullptr;
             }
 
             D3D12SwapChain::~D3D12SwapChain()
             {
+                ReleaseCOM(m_fence);
+                ReleaseCOM(m_commandList);
                 ReleaseCOM(m_depthStencilTarget);
                 ReleaseCOM(m_depthStencilTargetHeap);
                 ReleaseCOM(m_renderTargetHeap);
@@ -134,7 +137,6 @@ namespace Hatchit
 
             void D3D12SwapChain::VClear(float* color)
             {
-                m_commandList->Close();
                 m_commandList->Reset(m_commandAllocators[m_currentBuffer], nullptr);
                 m_commandList->ClearRenderTargetView(GetRenderTargetView(), color, 0, nullptr);
                 m_commandList->ClearDepthStencilView(GetDepthStencilView(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
@@ -150,9 +152,12 @@ namespace Hatchit
 
                 auto queue = static_cast<D3D12Device*>(Renderer::GetDevice())->GetQueue();
 
+                m_commandList->Close();
                 ID3D12CommandList* commands = { m_commandList };
                 queue->ExecuteCommandLists(1, &commands);
                 hr = m_chain->Present(0, 0);
+
+                MoveToNextFrame();
             }
 
             bool D3D12SwapChain::CreateBuffers(uint32_t width, uint32_t height)

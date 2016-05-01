@@ -115,7 +115,8 @@ namespace Hatchit {
             //A collection of cameras sorted by renderpass layer. Repopulated each frame.
             std::vector<std::vector<Graphics::Camera>> m_renderPassCameras = std::vector<std::vector<Graphics::Camera>>(64);
             
-            SwapChain* m_swapChain;
+            RendererParams  m_params;
+            SwapChain*      m_swapChain;
 
             TextureHandle test;
         };

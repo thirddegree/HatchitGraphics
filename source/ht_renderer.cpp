@@ -69,6 +69,8 @@ namespace Hatchit {
 
         bool Renderer::Initialize(const RendererParams& params)
         {
+            m_params = params;
+
             /*Initialize the swapchain and device*/
 #ifdef HT_SYS_WINDOWS
             switch (params.renderer)
@@ -115,8 +117,7 @@ namespace Hatchit {
             //Step 01: Clear the buffer
             //Not exactly sure how this will work, as the clear command
             //need to be recorded as part of a command list
-            float color[] = { 1.0f, 0.0f, 0.0f, 1.0f };
-            m_swapChain->VClear(color);
+            m_swapChain->VClear(reinterpret_cast<float*>(&m_params.clearColor));
 
             //Step 02: Render each renderpass in a pass thread
             //We will need to *SMARTLY* spawn enough threads to handle
@@ -131,8 +132,6 @@ namespace Hatchit {
             //The previous step and this are quite related.
             //The execution of the previous command lists may also include,
             //the commands for presenting to the buffer.
-
-
             m_swapChain->VPresent();
         }
 
