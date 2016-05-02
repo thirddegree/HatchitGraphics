@@ -16,6 +16,8 @@
 #pragma once
 
 #include <ht_platform.h>
+#include <ht_texture_resource.h>
+#include <ht_material_resource.h>
 #include <ht_gpuresourcethread.h>
 #include <ht_gpuresourcerequest.h>
 #include <ht_threadvector.h>
@@ -61,6 +63,9 @@ namespace Hatchit
 
                 void ProcessTextureRequest(TextureRequest* request);
                 void ProcessMaterialRequest(MaterialRequest* request);
+
+                void CreateTextureBase(Resource::TextureHandle handle, void** base);
+                void CreateMaterialBase(Resource::MaterialHandle handle, void** base);
 
                 void thread_main();
             };

@@ -145,15 +145,7 @@ namespace Hatchit
                 {
                     HT_DEBUG_PRINTF("Non-Async load.\n");
 
-                    D3D12Texture** base = reinterpret_cast<D3D12Texture**>(request->data);
-                    if (!*base)
-                    {
-                        *base = new D3D12Texture;
-                        if (!(*base)->Initialize(handle, m_device))
-                        {
-                            HT_DEBUG_PRINTF("Failed to initialize GPU Texture Resource.\n");
-                        }
-                    }
+                    CreateTextureBase(handle, request->data);
                 }
             }
 
@@ -169,17 +161,36 @@ namespace Hatchit
                 {
                     HT_DEBUG_PRINTF("Non-Async load.\n");
 
-                    D3D12Material** base = reinterpret_cast<D3D12Material**>(request->data);
-                    if (!*base)
+                    CreateMaterialBase(handle, request->data);
+                }
+            }
+
+            void D3D12GPUResourceThread::CreateTextureBase(Resource::TextureHandle handle, void ** base)
+            {
+                D3D12Texture** _base = reinterpret_cast<D3D12Texture**>(base);
+                if (!*_base)
+                {
+                    *_base = new D3D12Texture;
+                    if (!(*_base)->Initialize(handle, m_device))
                     {
-                        *base = new D3D12Material;
-                        if (!(*base)->Initialize(handle, m_device))
-                        {
-                            HT_DEBUG_PRINTF("Failed to initialize GPU Material Resource.\n");
-                        }
+                        HT_DEBUG_PRINTF("Failed to initialize GPU Texture Resource.\n");
                     }
                 }
             }
+
+            void D3D12GPUResourceThread::CreateMaterialBase(Resource::MaterialHandle handle, void ** base)
+            {
+                D3D12Material** _base = reinterpret_cast<D3D12Material**>(base);
+                if (!*_base)
+                {
+                    *_base = new D3D12Material;
+                    if (!(*_base)->Initialize(handle, m_device))
+                    {
+                        HT_DEBUG_PRINTF("Failed to initialize GPU Material Resource.\n");
+                    }
+                }
+            }
+
 
                 
         }
