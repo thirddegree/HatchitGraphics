@@ -80,6 +80,20 @@ namespace Hatchit
                     m_thread.join();
             }
 
+            void D3D12GPUResourceThread::VCreateTexture(std::string file, void ** data)
+            {
+                Resource::TextureHandle handle = Resource::Texture::GetHandle(file, file);
+
+                CreateTextureBase(handle, data);
+            }
+
+            void D3D12GPUResourceThread::VCreateMaterial(std::string file, void ** data)
+            {
+                Resource::MaterialHandle handle = Resource::Material::GetHandle(file, file);
+
+                CreateMaterialBase(handle, data);
+            }
+
             void D3D12GPUResourceThread::thread_main()
             {
                 HRESULT hr = S_OK;

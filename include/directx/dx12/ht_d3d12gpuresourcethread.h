@@ -44,11 +44,14 @@ namespace Hatchit
 
                 ~D3D12GPUResourceThread();
 
-                void VStart()                                   override;
-                bool VLocked() const                            override;
-                void VLoad(GPUResourceRequest* request)         override;
-                void VLoadAsync(GPUResourceRequest* request)    override;
-                void VKill()                                    override;
+                void VStart()                                       override;
+                bool VLocked() const                                override;
+                void VLoad(GPUResourceRequest* request)             override;
+                void VLoadAsync(GPUResourceRequest* request)        override;
+                void VKill()                                        override;
+
+                void VCreateTexture(std::string file, void** data)  override;
+                void VCreateMaterial(std::string file, void** data) override;
 
             private:
                 std::thread             m_thread;

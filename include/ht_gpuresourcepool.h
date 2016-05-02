@@ -39,12 +39,15 @@ namespace Hatchit
             static void             RequestTextureAsync(TextureHandle _default, TextureHandle temporary, std::string file, void** data);
             static void             RequestMaterialAsync(MaterialHandle _default, MaterialHandle temporary, std::string file, void** data);
 
+            static void             CreateTexture(std::string file, void** data);
+            static void             CreateMaterial(std::string file, void** data);
 
         private:
             IGPUResourceThread* m_thread;
             IDevice*            m_device;
             
             std::map<std::string, TextureHandle> m_defaultTextures;
+
         };
     }
 }

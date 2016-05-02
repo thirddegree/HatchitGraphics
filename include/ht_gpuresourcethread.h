@@ -31,6 +31,8 @@ namespace Hatchit
             virtual bool VLocked() const = 0;
             virtual void VLoad(GPUResourceRequest* request) = 0;
             virtual void VLoadAsync(GPUResourceRequest* request) = 0;
+            virtual void VCreateTexture(std::string file, void** data) = 0;
+            virtual void VCreateMaterial(std::string file, void** data) = 0;
             virtual void VKill() = 0;
         };
     }
