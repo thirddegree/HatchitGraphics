@@ -45,11 +45,18 @@ namespace Hatchit {
 
         bool Texture::Initialize(const std::string& file)
         {
-            //Request texture immediately for main thread of execution
-            //This call will block the active thread while the GPUResourcePool
-            //allocated the memory
-            GPUResourcePool::RequestTexture(file, reinterpret_cast<void**>(&m_base));
-
+            if (GPUResourcePool::IsLocked())
+            {
+                HT_DEBUG_PRINTF("In GPU Resource Thread.\n");
+            }
+            else
+            {
+                //Request texture immediately for main thread of execution
+                //This call will block the active thread while the GPUResourcePool
+                //allocated the memory
+                GPUResourcePool::RequestTexture(file, reinterpret_cast<void**>(&m_base));
+            }
+            
             return true;
         }
 

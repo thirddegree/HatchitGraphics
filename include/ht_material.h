@@ -58,7 +58,7 @@ namespace Hatchit {
             Material(Core::Guid ID);
             virtual ~Material();
 
-            bool Initialize(const std::string& fileName);
+            bool Initialize(const std::string& file);
             bool InitializeAsync(Core::Handle<Material> handle);
 
             bool SetInt(std::string name, int data);
@@ -78,12 +78,8 @@ namespace Hatchit {
         protected:
             MaterialBase* m_base;
 
-#ifdef VK_SUPPORT
-            friend class Vulkan::VKGPUResourceThread;
-#endif
-#ifdef DX12_SUPPORT
-            friend class DX::D3D12GPUResourceThread;
-#endif
+            friend class VKGPUResourceThread;
+            friend class D3D12GPUResourceThread;
         };
 
         using MaterialHandle = Core::Handle<Material>;

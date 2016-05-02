@@ -16,15 +16,7 @@
 #include <ht_renderer.h>
 #include <ht_renderpass.h> //render pass base handle
 #include <ht_material_base.h>
-
-#ifdef VK_SUPPORT
-#include <ht_vkmaterial.h>
-#endif
-
-#ifdef DX12_SUPPORT
-#include <ht_d3d12device.h>
-#include <ht_d3d12material.h>
-#endif
+#include <ht_gpuresourcepool.h>
 
 namespace Hatchit {
 
@@ -39,7 +31,7 @@ namespace Hatchit {
         Material::Material(Core::Guid ID)
             : Core::RefCounted<Material>(ID)
         {
-
+            m_base = nullptr;
         }
 
         Material::~Material()
@@ -48,28 +40,18 @@ namespace Hatchit {
         }
 
 
-        bool Material::Initialize(const std::string& fileName)
+        bool Material::Initialize(const std::string& file)
         {
-            Resource::MaterialHandle handle = Resource::Material::GetHandleFromFileName(fileName);
-            if (!handle.IsValid())
-                return false;
-
-            switch (Renderer::GetType())
+            if (GPUResourcePool::IsLocked())
             {
-#ifdef DX12_SUPPORT
-                case RendererType::DIRECTX12:
-                {
-                    m_base = new DX::D3D12Material;
-                } break;
-#endif
-#ifdef VK_SUPPORT
-                case RendererType::VULKAN:
-                {
-                    m_base = new Vulkan::VKMaterial;
-                } break;
-#endif
-                default:
-                    return false;
+                HT_DEBUG_PRINTF("In GPU Resource Thread.\n");
+            }
+            else
+            {
+                //Request texture immediately for main thread of execution
+                //This call will block the active thread while the GPUResourcePool
+                //allocated the memory
+                GPUResourcePool::RequestMaterial(file, reinterpret_cast<void**>(&m_base));
             }
 
             return true;
