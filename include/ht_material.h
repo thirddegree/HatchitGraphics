@@ -49,7 +49,7 @@ namespace Hatchit {
 
     namespace Graphics {
 
-        class RenderPassBase;
+        class RenderPass;
         class MaterialBase;
         
         class HT_API Material : public Core::RefCounted<Material>
@@ -72,8 +72,10 @@ namespace Hatchit {
 
             bool Update();
 
-            const std::vector<Core::Handle<RenderPassBase>>& GetRenderPasses() const;
+            const std::vector<Core::Handle<RenderPass>>& GetRenderPasses() const;
             const PipelineHandle& GetPipeline() const;
+
+            MaterialBase* const GetBase() const;
 
         protected:
             MaterialBase* m_base;

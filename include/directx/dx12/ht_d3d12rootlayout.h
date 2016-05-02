@@ -16,8 +16,10 @@
 
 #include <ht_platform.h>
 #include <ht_directx.h>
-#include <ht_rootlayout.h>
+#include <ht_rootlayout_base.h>
+#include <ht_rootlayout_resource.h>
 #include <ht_refcounted.h>
+#include <ht_sampler_resource.h>
 
 namespace Hatchit
 { 
@@ -25,7 +27,7 @@ namespace Hatchit
     {
         namespace DX
         {
-            class HT_API D3D12RootLayout : public Core::RefCounted<D3D12RootLayout>, public IRootLayout
+            class HT_API D3D12RootLayout : public RootLayoutBase
             {
             public:
                 enum class HeapType
@@ -35,7 +37,7 @@ namespace Hatchit
                     DSV
                 };
 
-                D3D12RootLayout(Core::Guid ID);
+                D3D12RootLayout();
 
                 ~D3D12RootLayout();
 

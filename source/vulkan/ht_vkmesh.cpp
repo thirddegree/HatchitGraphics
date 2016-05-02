@@ -25,21 +25,16 @@ namespace Hatchit {
 
             VKMesh::~VKMesh() 
             {
-                //Get Device
-                VkDevice device = (m_renderer->GetVKDevice()).GetVKDevices()[0];
+                vkDestroyBuffer(m_device, m_vertexBlock.buffer, nullptr);
+                vkFreeMemory(m_device, m_vertexBlock.memory, nullptr);
 
-                vkDestroyBuffer(device, m_vertexBlock.buffer, nullptr);
-                vkFreeMemory(device, m_vertexBlock.memory, nullptr);
-
-                vkDestroyBuffer(device, m_indexBlock.buffer, nullptr);
-                vkFreeMemory(device, m_indexBlock.memory, nullptr);
+                vkDestroyBuffer(m_device, m_indexBlock.buffer, nullptr);
+                vkFreeMemory(m_device, m_indexBlock.memory, nullptr);
             }
 
-            bool VKMesh::Initialize(Resource::Mesh* mesh, VKRenderer* renderer)
+            bool VKMesh::Initialize(Resource::Mesh* mesh, const VKDevice& device)
             {
-                m_renderer = renderer;
-                //Get Device
-                VkDevice device = (renderer->GetVKDevice()).GetVKDevices()[0];
+                m_device = device.GetVKDevices()[0];
 
                 //Generate Vertex Buffer
                 std::vector<Vertex> vertexBuffer; 
@@ -82,10 +77,10 @@ namespace Hatchit {
                 m_indexCount = static_cast<uint32_t>(indexBuffer.size());
                 size_t indexBufferSize = m_indexCount * sizeof(uint32_t);
 
-                if (!m_renderer->CreateBuffer(device, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexBufferSize, vertexBuffer.data(), &m_vertexBlock))
+                if (!CreateUniformBuffer(m_device, vertexBufferSize, vertexBuffer.data(), &m_vertexBlock))
                     return false;
 
-                if (!m_renderer->CreateBuffer(device, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indexBufferSize, indexBuffer.data(), &m_indexBlock))
+                if (!CreateUniformBuffer(m_device, indexBufferSize, indexBuffer.data(), &m_indexBlock))
                     return false;
 
                 return true;

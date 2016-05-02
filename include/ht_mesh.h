@@ -48,6 +48,8 @@ namespace Hatchit {
 
             uint32_t GetIndexCount();
 
+            MeshBase* const GetBase() const;
+
         protected:
             MeshBase* m_base;
         };

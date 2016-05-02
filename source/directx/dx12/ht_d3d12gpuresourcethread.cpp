@@ -37,7 +37,7 @@ namespace Hatchit
 
             D3D12GPUResourceThread::~D3D12GPUResourceThread()
             {
-                VKill();
+                Kill();
             }
 
             void D3D12GPUResourceThread::VStart()
@@ -45,39 +45,6 @@ namespace Hatchit
                 m_alive = true;
 
                 m_thread = std::thread(&D3D12GPUResourceThread::thread_main, this);
-            }
-
-            bool D3D12GPUResourceThread::VLocked() const
-            {
-                return m_locked;
-            }
-
-            void D3D12GPUResourceThread::VLoad(GPUResourceRequest* request)
-            {
-                if (!m_alive)
-                    VStart();
-
-                m_processed = false;
-
-                m_requests.push(request);
-                std::unique_lock<std::mutex> lock(m_mutex);
-                m_cv.wait(lock, [this]() -> bool { m_locked = true;  return this->m_processed; });
-                m_locked = false;
-            }
-
-            void D3D12GPUResourceThread::VLoadAsync(GPUResourceRequest* request)
-            {
-                if (!m_alive)
-                    VStart();
-
-                m_requests.push(request);
-            }
-
-            void D3D12GPUResourceThread::VKill()
-            {
-                m_alive = false;
-                if (m_thread.joinable())
-                    m_thread.join();
             }
 
             void D3D12GPUResourceThread::thread_main()
@@ -95,7 +62,7 @@ namespace Hatchit
                 if (FAILED(hr))
                 {
                     HT_ERROR_PRINTF("Failed to create command allocator in thread.\n");
-                    VKill();
+                    Kill();
                 }
 
                 while (m_alive)

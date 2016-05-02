@@ -74,7 +74,7 @@ namespace Hatchit {
                 VKRenderer* m_renderer;
                 const VkDevice* m_device;
                 const VkDescriptorPool* m_descriptorPool;
-                VKRenderPassHandle m_renderPass;
+                VKRenderPass* m_renderPass;
 
                 std::vector<VkVertexInputAttributeDescription> m_vertexLayout;
 

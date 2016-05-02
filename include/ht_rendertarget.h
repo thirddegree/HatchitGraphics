@@ -42,6 +42,8 @@ namespace Hatchit {
             Resource::RenderTarget::BlendOp GetColorBlendOp() const;
             Resource::RenderTarget::BlendOp GetAlphaBlendOp() const;
 
+            RenderTargetBase* const GetBase() const;
+
         private:
             RenderTargetBase* m_base;
         };

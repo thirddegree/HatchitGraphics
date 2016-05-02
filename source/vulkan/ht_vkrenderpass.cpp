@@ -25,8 +25,7 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKRenderPass::VKRenderPass(Core::Guid ID) :
-                Core::RefCounted<VKRenderPass>(std::move(ID))
+            VKRenderPass::VKRenderPass()
             {
                 m_width = 0;
                 m_height = 0;
@@ -96,7 +95,7 @@ namespace Hatchit {
                 std::vector<std::string> outputPaths = m_renderPassResourceHandle->GetOutputPaths();
 
                 //Create a structure to map set index to maps of binding indicies and render target handles
-                std::map<uint32_t, std::map<uint32_t, VKRenderTargetHandle>> mappedInputTargets;
+                std::map<uint32_t, std::map<uint32_t, VKRenderTarget*>> mappedInputTargets;
 
                 for (size_t i = 0; i < inputTargets.size(); i++)
                 {
@@ -104,14 +103,15 @@ namespace Hatchit {
                     uint32_t targetSetIndex = inputTargets[i].set;
                     uint32_t targetBindingIndex = inputTargets[i].binding;
 
-                    VKRenderTargetHandle inputTargetHandle = VKRenderTarget::GetHandle(targetPath, targetPath, renderer);
+                    RenderTargetHandle renderTargetHandle = RenderTarget::GetHandle(targetPath, targetPath);
+                    VKRenderTarget* inputTarget = static_cast<VKRenderTarget*>(renderTargetHandle->GetBase());
 
-                    mappedInputTargets[targetSetIndex][targetBindingIndex] = inputTargetHandle;
+                    mappedInputTargets[targetSetIndex][targetBindingIndex] = inputTarget;
                 }
 
                 for (size_t i = 0; i < outputPaths.size(); i++)
                 {
-                    IRenderTargetHandle outputTargetHandle = VKRenderTarget::GetHandle(outputPaths[i], outputPaths[i], renderer).StaticCastHandle<IRenderTarget>();
+                    RenderTargetHandle outputTargetHandle = RenderTarget::GetHandle(outputPaths[i], outputPaths[i]);
                     m_outputRenderTargets.push_back(outputTargetHandle);
                 }
 
@@ -175,9 +175,10 @@ namespace Hatchit {
                 std::vector<VkClearValue> clearValues;
                 for (size_t i = 0; i < m_outputRenderTargets.size(); i++)
                 {
-                    VKRenderTargetHandle vkTarget= m_outputRenderTargets[i].DynamicCastHandle<VKRenderTarget>();
+                    RenderTargetHandle renderTargetHandle = m_outputRenderTargets[i];
+                    VKRenderTarget* renderTarget = static_cast<VKRenderTarget*>(renderTargetHandle->GetBase());
 
-                    const VkClearValue* targetClearColor = vkTarget->GetClearColor();
+                    const VkClearValue* targetClearColor = renderTarget->GetClearColor();
                     //If a clear color is provided by the render target, lets use that
                     if (targetClearColor == nullptr)
                         clearValues.push_back(clearColor);
@@ -231,7 +232,8 @@ namespace Hatchit {
 
                 for (iterator = m_pipelineList.begin(); iterator != m_pipelineList.end(); iterator++)
                 {
-                    VKPipelineHandle pipeline = iterator->first.DynamicCastHandle<VKPipeline>();
+                    PipelineHandle pipelineHandle = iterator->first;
+                    VKPipeline* pipeline = static_cast<VKPipeline*>(pipelineHandle->GetBase());
 
                     //Calculate inverse view
                     Math::Matrix4 invView = Math::MMMatrixTranspose(Math::MMMatrixInverse(m_view));
@@ -265,9 +267,12 @@ namespace Hatchit {
                         Renderable renderable = renderables[i].renderable;
                         uint32_t count = renderables[i].count;
 
-                        MaterialHandle material = renderable.material;
-                        VKMeshHandle     mesh = renderable.mesh.DynamicCastHandle<VKMesh>();
+                        MaterialHandle materialHandle = renderable.material;
+                        MeshHandle meshHandle = renderable.mesh;
                     
+                        VKMaterial* material = static_cast<VKMaterial*>(materialHandle->GetBase());
+                        VKMesh* mesh = static_cast<VKMesh*>(meshHandle->GetBase());
+
                         material->BindMaterial(m_commandBuffer, vkPipelineLayout);
                     
                         //Bind instance buffer
@@ -294,7 +299,7 @@ namespace Hatchit {
                 //Blit to render targets
                 for (size_t i = 0; i < m_outputRenderTargets.size(); i++)
                 {
-                    VKRenderTargetHandle renderTarget = m_outputRenderTargets[i].DynamicCastHandle<VKRenderTarget>();
+                    VKRenderTarget* renderTarget = static_cast<VKRenderTarget*>(m_outputRenderTargets[i]->GetBase());
 
                     if (!renderTarget->Blit(m_commandBuffer, m_colorImages[i]))
                         return false;
@@ -320,7 +325,7 @@ namespace Hatchit {
 
             const VkCommandBuffer& VKRenderPass::GetVkCommandBuffer() const { return m_commandBuffer; }
 
-            const std::vector<IRenderTargetHandle>& VKRenderPass::GetOutputRenderTargets() const { return m_outputRenderTargets; }
+            const std::vector<RenderTargetHandle>& VKRenderPass::GetOutputRenderTargets() const { return m_outputRenderTargets; }
 
             /*
                 Private methods
@@ -337,9 +342,9 @@ namespace Hatchit {
                 {
                     VkAttachmentDescription description;
 
-                    VKRenderTargetHandle m_vkOutputTarget = m_outputRenderTargets[i].DynamicCastHandle<VKRenderTarget>();
+                    VKRenderTarget* outputTarget = static_cast<VKRenderTarget*>(m_outputRenderTargets[i]->GetBase());
 
-                    description.format = m_vkOutputTarget->GetVKColorFormat();
+                    description.format = outputTarget->GetVKColorFormat();
                     description.samples = VK_SAMPLE_COUNT_1_BIT;
                     description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
                     description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -428,7 +433,7 @@ namespace Hatchit {
                 //Create an image for every output texture
                 for (size_t i = 0; i < m_outputRenderTargets.size(); i++)
                 {
-                    VKRenderTargetHandle vkRenderTarget = m_outputRenderTargets[i].DynamicCastHandle<VKRenderTarget>();
+                    VKRenderTarget* vkRenderTarget = static_cast<VKRenderTarget*>(m_outputRenderTargets[i]->GetBase());
                     VkFormat colorFormat = vkRenderTarget->GetVKColorFormat();
 
                     //Attachment image that we will push back into a vector
@@ -645,7 +650,7 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKRenderPass::setupDescriptorSets(std::map<uint32_t, std::map<uint32_t, VKRenderTargetHandle>> inputTargets)
+            bool VKRenderPass::setupDescriptorSets(std::map<uint32_t, std::map<uint32_t, VKRenderTarget*>> inputTargets)
             {
                 if (inputTargets.size() <= 0)
                     return true;
@@ -697,13 +702,13 @@ namespace Hatchit {
                 {
                     uint32_t setIndex = it->first;
 
-                    std::map<uint32_t, VKRenderTargetHandle> targetBindings = it->second;
+                    std::map<uint32_t, VKRenderTarget*> targetBindings = it->second;
 
                     
                     for (auto it = targetBindings.begin(); it != targetBindings.end(); it++)
                     {
-                        VKRenderTargetHandle targetHandle = it->second;
-                        Texture_vk texture = targetHandle->GetVKTexture();
+                        VKRenderTarget* target = it->second;
+                        Texture_vk texture = target->GetVKTexture();
 
                         //Create Texture description
                         VkDescriptorImageInfo targetDescriptor = {};

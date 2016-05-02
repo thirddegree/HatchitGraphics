@@ -73,6 +73,8 @@ namespace Hatchit {
             ///Update the pipeline after you've changed the uniform data
             bool Update();
 
+            PipelineBase* const GetBase() const;
+
         protected:
             PipelineBase* m_base;
 

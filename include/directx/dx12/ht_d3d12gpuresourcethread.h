@@ -20,13 +20,6 @@
 #include <ht_material_resource.h>
 #include <ht_gpuresourcethread.h>
 #include <ht_gpuresourcerequest.h>
-#include <ht_threadvector.h>
-#include <ht_threadstack.h>
-#include <ht_threadqueue.h>
-#include <thread>
-#include <atomic>
-#include <mutex>
-#include <condition_variable>
 
 namespace Hatchit
 {
@@ -36,30 +29,17 @@ namespace Hatchit
         {
             class D3D12Device;
 
-            class HT_API D3D12GPUResourceThread : public IGPUResourceThread
+            class HT_API D3D12GPUResourceThread : public GPUResourceThread
             {
-                using GPURequestQueue = Core::ThreadsafeStack<GPUResourceRequest*>;
             public:
                 D3D12GPUResourceThread(D3D12Device* device);
 
                 ~D3D12GPUResourceThread();
 
-                void VStart()                                   override;
-                bool VLocked() const                            override;
-                void VLoad(GPUResourceRequest* request)         override;
-                void VLoadAsync(GPUResourceRequest* request)    override;
-                void VKill()                                    override;
+                void VStart()   override;
 
             private:
-                std::thread             m_thread;
-                std::atomic_bool        m_alive;
-                std::atomic_bool        m_tfinished;
-                std::atomic_bool        m_locked;
                 D3D12Device*            m_device;
-                GPURequestQueue         m_requests;
-                mutable std::mutex      m_mutex;
-                std::condition_variable m_cv;
-                std::atomic_bool        m_processed;
 
                 void ProcessTextureRequest(TextureRequest* request);
                 void ProcessMaterialRequest(MaterialRequest* request);

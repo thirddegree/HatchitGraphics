@@ -81,7 +81,8 @@ namespace Hatchit {
 
                 //Get a handle to a compatible render pass
                 std::string renderPassPath = handle->GetRenderPassPath();
-                m_renderPass = VKRenderPass::GetHandle(renderPassPath, renderPassPath, renderer);
+                RenderPassHandle renderPassHandle = RenderPass::GetHandle(renderPassPath, renderPassPath);
+                m_renderPass = static_cast<VKRenderPass*>(renderPassHandle->GetBase());
 
                 if (!preparePipeline(*m_renderer))
                     return false;
@@ -533,7 +534,7 @@ namespace Hatchit {
                 //In that case nothing will be written to the attachment
 
                 //Make a blend attachment state for each output target
-                std::vector<IRenderTargetHandle> outputTargets = m_renderPass->GetOutputRenderTargets();
+                std::vector<RenderTargetHandle> outputTargets = m_renderPass->GetOutputRenderTargets();
                 std::vector<VkPipelineColorBlendAttachmentState> blendAttachmentStates;
 
                 for (size_t i = 0; i < outputTargets.size(); i++)
@@ -542,7 +543,7 @@ namespace Hatchit {
                     blendAttachmentState.colorWriteMask = 0xf; //we want to write RGB and A
                     blendAttachmentState.blendEnable = VK_FALSE; //default to false
 
-                    IRenderTargetHandle outputTarget = outputTargets[i];
+                    RenderTargetHandle outputTarget = outputTargets[i];
                     Resource::RenderTarget::BlendOp colorBlendOp = outputTarget->GetColorBlendOp();
                     Resource::RenderTarget::BlendOp alphaBlendOp = outputTarget->GetAlphaBlendOp();
 

@@ -22,8 +22,7 @@ namespace Hatchit
     {
         namespace DX
         {
-            D3D12RenderPass::D3D12RenderPass(Core::Guid ID)
-                : Core::RefCounted<D3D12RenderPass>(std::move(ID))
+            D3D12RenderPass::D3D12RenderPass()
             {
 
             }
@@ -32,7 +31,7 @@ namespace Hatchit
             {
                 using namespace Resource;
 
-                RenderPassHandle handle = RenderPass::GetHandleFromFileName(fileName);
+                Resource::RenderPassHandle handle = Resource::RenderPass::GetHandleFromFileName(fileName);
                 if (!handle.IsValid())
                 {
                     HT_DEBUG_PRINTF("Error: Tried to load D3D12RenderPass but the resource handle was invalid!\n");

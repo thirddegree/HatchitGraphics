@@ -16,7 +16,7 @@
 
 #include <ht_platform.h>
 #include <ht_directx.h>
-#include <ht_rendertarget.h>
+#include <ht_rendertarget_base.h>
 #include <ht_rendertarget_resource.h>
 #include <ht_refcounted.h>
 
@@ -28,15 +28,12 @@ namespace Hatchit
         {
             class D3D12DeviceResources;
 
-            class HT_API D3D12RenderTarget : public Core::RefCounted<D3D12RenderTarget>, public IRenderTarget
+            class HT_API D3D12RenderTarget : public RenderTargetBase
             {
             public:
-                D3D12RenderTarget(Core::Guid ID);
+                D3D12RenderTarget();
 
-                bool Initialize(const std::string& fileName, D3D12DeviceResources* device);
-
-                // Inherited via IRenderTarget
-                virtual bool VPrepare() override;
+                bool Initialize(const std::string& fileName);
 
             private:
                 ID3D12Resource*                 m_resource;

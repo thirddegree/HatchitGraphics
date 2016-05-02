@@ -13,6 +13,7 @@
 **/
 
 #include <ht_meshrenderer.h>
+#include <ht_pipeline.h>
 
 namespace Hatchit {
 

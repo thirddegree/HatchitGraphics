@@ -88,6 +88,11 @@ namespace Hatchit {
                 return false;
             }
 
+            PipelineHandle D3D12Material::VGetPipeline()
+            {
+                return PipelineHandle();
+            }
+
         }
     }
 }

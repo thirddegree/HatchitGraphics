@@ -29,14 +29,15 @@
 #include <ht_material.h>
 #include <ht_math.h>
 #include <ht_color.h>
-#include <ht_renderpass_resource.h>
 #include <ht_shadervariable.h>
 
 namespace Hatchit {
 
     namespace Graphics {
 
-        class HT_API RenderPass : public Core::RefCounted<RenderPass>
+        class RenderPassBase;
+
+        class HT_API RenderPass : public Core::RefCounted<Graphics::RenderPass>
         {
         public:
             RenderPass(Core::Guid ID);
@@ -51,10 +52,12 @@ namespace Hatchit {
 
             uint64_t GetLayerFlags();
 
+            RenderPassBase* const GetBase() const;
+
         private:
             RenderPassBase* m_base;
         };
 
-        using RenderPassHandle = Core::Handle<IRenderPass>;
+        using RenderPassHandle = Core::Handle<RenderPass>;
     }
 }

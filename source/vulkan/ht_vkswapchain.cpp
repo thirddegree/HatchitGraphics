@@ -14,7 +14,8 @@
 
 #include <ht_VKSwapChain.h>
 #include <ht_vkrenderer.h>
-#include <ht_vkrenderer.h>
+#include <ht_vkrootlayout.h>
+#include <ht_rootlayout.h>
 
 namespace Hatchit {
 
@@ -24,15 +25,14 @@ namespace Hatchit {
 
             using namespace Resource;
 
-            VKSwapChain::VKSwapChain(VKRenderer* renderer, VkInstance& instance, VkPhysicalDevice& gpu, VkDevice& device, VkCommandPool& commandPool) :
-                m_renderer(renderer), m_instance(instance), m_gpu(gpu), m_device(device), m_commandPool(commandPool)
+            VKSwapChain::VKSwapChain(const RendererParams& rendererParams, VKDevice* device)
             {
                 m_swapchain = VK_NULL_HANDLE;
 
-                /*
-                Prepare surface
-                */
-                const RendererParams& rendererParams = m_renderer->GetRendererParams();
+                m_device = device->GetVKDevices()[0];
+                m_instance = device->GetVKInstance();
+                m_gpu = device->GetVKPhysicalDevices()[0];
+
                 if (!prepareSurface(rendererParams))
                     HT_DEBUG_PRINTF("VKSwapChain(): Failed to prepare surface");
             }
@@ -163,14 +163,14 @@ namespace Hatchit {
                 /*
                     Prepare Color
                 */
-                if (!prepareSwapchain(m_renderer, m_preferredColorFormat, m_colorSpace,
+                if (!prepareSwapchain(m_preferredColorFormat, m_colorSpace,
                     presentModes, surfCaps, swapchainExtent))
                     return false;
 
                 /*
                     Prepare depth
                 */
-                if (!prepareSwapchainDepth(m_renderer, m_preferredDepthFormat, swapchainExtent))
+                if (!prepareSwapchainDepth(m_preferredDepthFormat, swapchainExtent))
                     return false;
 
                 /*
@@ -201,14 +201,17 @@ namespace Hatchit {
                 multisampleState.minSamples = 0;
                 multisampleState.samples = Resource::Pipeline::SAMPLE_1_BIT;
 
-                m_pipeline = VKPipeline::GetHandle("SwapchainPipeline.json", "SwapchainPipeline.json", m_renderer);
+                PipelineHandle pipelineHandle = Pipeline::GetHandle("SwapchainPipeline.json", "SwapchainPipeline.json");
+                m_pipeline = static_cast<VKPipeline*>(pipelineHandle->GetBase());
 
                 //Setup the descriptor sets
-                const std::vector<VkDescriptorSetLayout> descriptorSetLayouts = m_renderer->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts();
+                Graphics::RootLayoutHandle rootLayoutHandle = Graphics::RootLayout::GetHandle("TestRootDescriptor.json", "TestRootDescriptor.json");
+                VKRootLayout* rootLayout = static_cast<VKRootLayout*>(rootLayoutHandle->GetBase());
+                const std::vector<VkDescriptorSetLayout> descriptorSetLayouts = rootLayout->VKGetDescriptorSetLayouts();
 
                 VkDescriptorSetAllocateInfo allocInfo = {};
                 allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-                allocInfo.descriptorPool = m_renderer->GetVKDescriptorPool();
+                allocInfo.descriptorPool = m_descriptorPool;
                 allocInfo.pSetLayouts = &descriptorSetLayouts[3];
                 allocInfo.descriptorSetCount = 1;
 
@@ -253,7 +256,7 @@ namespace Hatchit {
 
                 //Buffer 3 blank points
                 float blank[9] = { 0,0,0,0,0,0,0,0,0 };
-                if (!m_renderer->CreateBuffer(m_device, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 9, blank, &m_vertexBuffer))
+                if (!CreateUniformBuffer(m_device, 9, blank, &m_vertexBuffer))
                     return false;
 
                 m_vertexBuffer.descriptor.offset = 0;
@@ -292,7 +295,9 @@ namespace Hatchit {
                 clearValues[0] = clearColor;
                 clearValues[1] = { 1.0f, 0 };
 
-                VkPipelineLayout pipelineLayout = m_renderer->GetVKRootLayoutHandle()->VKGetPipelineLayout();
+                Graphics::RootLayoutHandle rootLayoutHandle = Graphics::RootLayout::GetHandle("TestRootDescriptor.json", "TestRootDescriptor.json");
+                VKRootLayout* rootLayout = static_cast<VKRootLayout*>(rootLayoutHandle->GetBase());
+                VkPipelineLayout pipelineLayout = rootLayout->VKGetPipelineLayout();
 
                 for (uint32_t i = 0; i < m_swapchainBuffers.size(); i++)
                 {
@@ -423,8 +428,7 @@ namespace Hatchit {
             VkResult VKSwapChain::VKGetNextImage(VkSemaphore presentSemaphore)
             {
                 //TODO: Use fences
-                VkDevice device = m_device = (m_renderer->GetVKDevice()).GetVKDevices()[0];
-                return fpAcquireNextImageKHR(device, m_swapchain, UINT64_MAX, presentSemaphore, VK_NULL_HANDLE, &m_currentBuffer);
+                return fpAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, presentSemaphore, VK_NULL_HANDLE, &m_currentBuffer);
             }
 
             bool VKSwapChain::VKPostPresentBarrier(const VkQueue& queue)
@@ -456,10 +460,10 @@ namespace Hatchit {
 
             void VKSwapChain::VKSetIncomingRenderPass(VKRenderPassHandle renderPass)
             {
-                std::vector<IRenderTargetHandle> incomingRenderTargets = renderPass->GetOutputRenderTargets();
+                std::vector<RenderTargetHandle> incomingRenderTargets = renderPass->GetOutputRenderTargets();
                 for (size_t i = 0; i < incomingRenderTargets.size(); i++)
                 {
-                    VKRenderTargetHandle vkRenderTarget = incomingRenderTargets[i].DynamicCastHandle<VKRenderTarget>();
+                    VKRenderTarget* vkRenderTarget = static_cast<VKRenderTarget*>(incomingRenderTargets[i]->GetBase());
                     m_inputTextures.push_back(vkRenderTarget->GetVKTexture());
                 }
             }
@@ -467,6 +471,40 @@ namespace Hatchit {
             /*
                 Private Methods
             */
+
+            bool VKSwapChain::createAllocatorPools()
+            {
+                VkResult err;
+
+                VkCommandPoolCreateInfo commandPoolInfo = {};
+                commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+                commandPoolInfo.pNext = nullptr;
+                commandPoolInfo.flags = 0;
+                commandPoolInfo.queueFamilyIndex = m_graphicsQueueNodeIndex;
+               
+                err = vkCreateCommandPool(m_device, &commandPoolInfo, nullptr, &m_commandPool);
+                assert(!err);
+
+                std::vector<VkDescriptorPoolSize> poolSizes;
+
+                VkDescriptorPoolSize imageSize = {};
+                imageSize.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+                imageSize.descriptorCount = 2;
+
+                poolSizes.push_back(imageSize);
+
+                VkDescriptorPoolCreateInfo poolCreateInfo = {};
+                poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+                poolCreateInfo.pPoolSizes = poolSizes.data();
+                poolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+                poolCreateInfo.maxSets = 2;
+                poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+
+                err = vkCreateDescriptorPool(m_device, &poolCreateInfo, nullptr, &m_descriptorPool);
+                assert(!err);
+
+                return true;
+            }
 
             bool VKSwapChain::prepareSurface(const RendererParams& rendererParams) 
             {
@@ -520,6 +558,9 @@ namespace Hatchit {
 
                 if (!getPreferredFormats())
                     HT_DEBUG_PRINTF("VKSwapChain::prepareSurface(): Error getting preffered image formats");
+
+                if (!createAllocatorPools())
+                    HT_DEBUG_PRINTF("VKSwapChain::prepareSurface(): Error creating allocator pools");
 
                 return true;
             }
@@ -674,7 +715,7 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKSwapChain::prepareSwapchain(VKRenderer* renderer, VkFormat preferredColorFormat, VkColorSpaceKHR colorSpace, std::vector<VkPresentModeKHR> presentModes, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D surfaceExtents)
+            bool VKSwapChain::prepareSwapchain(VkFormat preferredColorFormat, VkColorSpaceKHR colorSpace, std::vector<VkPresentModeKHR> presentModes, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D surfaceExtents)
             {
                 VkResult err;
                 VkSwapchainKHR oldSwapchain = VK_NULL_HANDLE;
@@ -823,7 +864,7 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKSwapChain::prepareSwapchainDepth(VKRenderer* renderer, const VkFormat& preferredDepthFormat, VkExtent2D extent)
+            bool VKSwapChain::prepareSwapchainDepth(const VkFormat& preferredDepthFormat, VkExtent2D extent)
             {
                 VkResult err;
 
@@ -1135,9 +1176,7 @@ namespace Hatchit {
                 vkFreeMemory(m_device, m_vertexBuffer.memory, nullptr);
                 vkDestroyBuffer(m_device, m_vertexBuffer.buffer, nullptr);
 
-                vkFreeDescriptorSets(m_device, m_renderer->GetVKDescriptorPool(), 1, &m_descriptorSet);
-
-                m_pipeline.Release();
+                vkFreeDescriptorSets(m_device, m_descriptorPool, 1, &m_descriptorSet);
             }
             void VKSwapChain::destroyDepth()
             {

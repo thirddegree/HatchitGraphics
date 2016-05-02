@@ -35,7 +35,7 @@ namespace Hatchit {
         class HT_API MeshBase
         {
         public:
-            virtual ~MeshBase();
+            virtual ~MeshBase() {};
 
             virtual uint32_t VGetIndexCount() = 0;
 

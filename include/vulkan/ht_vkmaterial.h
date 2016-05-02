@@ -46,7 +46,7 @@ namespace Hatchit {
                 ~VKMaterial();
 
                 //Required function for RefCounted class
-                bool Initialize(Resource::MaterialHandle handle, const VkDevice& device, const VkDescriptorPool& descriptorPool);
+                bool Initialize(Resource::MaterialHandle handle, const VkDevice& device, const VkDescriptorPool& descriptorPool, const VKRootLayout* rootLayout);
 
                 bool VSetInt(std::string name, int data)                    override;
                 bool VSetFloat(std::string name, float data)                override;
@@ -60,12 +60,15 @@ namespace Hatchit {
                 bool VUpdate()                                              override;
 
                 const void BindMaterial(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout) const;
+                const VKPipeline* GetVKPipeline() const;
 
             private:
                 const VkDevice* m_device;
                 const VkDescriptorPool* m_descriptorPool;
 
                 bool setupDescriptorSet();
+
+                VKPipeline* m_pipeline;
 
                 std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;
                 std::vector<VkDescriptorSetLayout> m_materialLayouts;
@@ -76,7 +79,7 @@ namespace Hatchit {
                 std::vector<UniformBlock_vk> m_fragmentTextures;
                 
                 std::vector<LayoutLocation> m_textureLocations;
-                std::vector<TextureHandle> m_textures;
+                std::vector<VKTexture*> m_textures;
 
                 //std::vector<LayoutLocation> m_shaderVariableLocations;
                 //std::vector<std::map<std::string, Hatchit::Resource::ShaderVariable*>> m_shaderVariables;

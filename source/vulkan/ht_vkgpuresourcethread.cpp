@@ -47,12 +47,17 @@ namespace Hatchit
                 m_thread = std::thread(&VKGPUResourceThread::thread_main, this);
             }
 
-            void VKGPUResourceThread::VLoad(GPUResourceRequest request)
+            void VKGPUResourceThread::VLoad(GPUResourceRequest* request)
             {
                 if (!m_alive)
                     VStart();
 
+                m_processed = false;
+
                 m_requests.push(request);
+                std::unique_lock<std::mutex> lock(m_mutex);
+                m_cv.wait(lock, [this]() -> bool { m_locked = true;  return this->m_processed; });
+                m_locked = false;
             }
 
             void VKGPUResourceThread::VKill()
@@ -90,7 +95,6 @@ namespace Hatchit
 
                     auto request = m_requests.pop();
                     HT_DEBUG_PRINTF("GPU Resource Request\n");
-                    HT_DEBUG_PRINTF("\tFile: %s\n", request->file);
 
                     switch (request->type)
                     {

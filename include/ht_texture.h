@@ -37,7 +37,7 @@ namespace Hatchit {
 
             uint32_t            GetWidth()  const;
             uint32_t            GetHeight() const;
-            TextureBase* const  GetBase();
+            TextureBase* const GetBase() const;
 
         private:
             TextureBase* m_base;

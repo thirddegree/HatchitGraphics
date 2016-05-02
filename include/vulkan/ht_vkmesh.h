@@ -37,7 +37,7 @@ namespace Hatchit {
                 VKMesh();
                 ~VKMesh();
 
-                bool Initialize(Hatchit::Resource::Mesh* mesh, VKRenderer* renderer);
+                bool Initialize(Hatchit::Resource::Mesh* mesh, const VKDevice& device);
 
                 uint32_t VGetIndexCount() override;
 
@@ -45,12 +45,10 @@ namespace Hatchit {
                 UniformBlock_vk GetIndexBlock();
 
             private:
-                VKRenderer* m_renderer;
+                VkDevice m_device;
                 UniformBlock_vk m_vertexBlock;
                 UniformBlock_vk m_indexBlock;
             };
-
-            using VKMeshHandle = Core::Handle<VKMesh>;
 
         }
 

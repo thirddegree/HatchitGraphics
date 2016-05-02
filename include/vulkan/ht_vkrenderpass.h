@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include <ht_renderpass.h>
+#include <ht_renderpass_base.h>
 #include <ht_vulkan.h>
 #include <ht_vktexture.h>
 #include <ht_vkrendertarget.h>
@@ -35,10 +35,10 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            class HT_API VKRenderPass : public Core::RefCounted<VKRenderPass>, public RenderPassBase
+            class HT_API VKRenderPass : public RenderPassBase
             {
             public:
-                VKRenderPass(Core::Guid ID);
+                VKRenderPass();
                 ~VKRenderPass();
 
                 //Required function for RefCounted classes
@@ -53,7 +53,7 @@ namespace Hatchit {
                 const VkRenderPass& GetVkRenderPass() const;
                 const VkCommandBuffer& GetVkCommandBuffer() const;
 
-                const std::vector<IRenderTargetHandle>& GetOutputRenderTargets() const;
+                const std::vector<RenderTargetHandle>& GetOutputRenderTargets() const;
 
             private:
                 //Input
@@ -66,7 +66,7 @@ namespace Hatchit {
 
                 bool allocateCommandBuffer();
                 //Mapping set index to maps of binding indicies and render targets
-                bool setupDescriptorSets(std::map < uint32_t, std::map < uint32_t, VKRenderTargetHandle >> inputTargets);
+                bool setupDescriptorSets(std::map < uint32_t, std::map < uint32_t, VKRenderTarget* >> inputTargets);
 
                 VKRenderer* m_renderer;
                 const VkDevice* m_device;

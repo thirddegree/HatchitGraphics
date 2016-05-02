@@ -14,6 +14,7 @@
 
 #include <ht_vkrootlayout.h>
 #include <ht_vksampler.h>
+#include <ht_rootlayout_resource.h>
 
 namespace Hatchit
 {
@@ -21,8 +22,7 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            VKRootLayout::VKRootLayout(Core::Guid ID) :
-                Core::RefCounted<VKRootLayout>(std::move(ID))
+            VKRootLayout::VKRootLayout()
             {
                 m_device = VK_NULL_HANDLE;
 
@@ -56,7 +56,7 @@ namespace Hatchit
 
                 m_device = device; //Save device for destruction later
 
-                RootLayoutHandle handle = RootLayout::GetHandleFromFileName(fileName);
+                Resource::RootLayoutHandle handle = Resource::RootLayout::GetHandleFromFileName(fileName);
 
                 VkResult err;
 

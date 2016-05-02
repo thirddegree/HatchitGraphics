@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 ThirdDegree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -12,28 +12,26 @@
 **
 **/
 
-#include <ht_rendertarget.h>
-#include <ht_rendertarget_base.h>
+#pragma once
+
+#include <ht_rootlayout.h>
+#include <ht_rootlayout_base.h>
 
 namespace Hatchit
 {
     namespace Graphics
     {
-        RenderTarget::RenderTarget(Core::Guid ID) :
-            Core::RefCounted<RenderTarget>(std::move(ID))
+
+        RootLayout::RootLayout(Core::Guid ID) :
+            Core::RefCounted<RootLayout>(std::move(ID))
         {
-            m_base = nullptr;
+        
         }
 
-        Resource::RenderTarget::BlendOp RenderTarget::GetColorBlendOp() const
+        RootLayoutBase* const RootLayout::GetBase() const
         {
-            return m_base->GetColorBlendOp();
-        }
-        Resource::RenderTarget::BlendOp RenderTarget::GetAlphaBlendOp() const
-        {
-            return m_base->GetAlphaBlendOp();
+            return m_base;
         }
 
     }
-
 }

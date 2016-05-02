@@ -54,9 +54,14 @@ namespace Hatchit {
             class HT_API VKSwapChain : public SwapChain
             {
             public:
-                VKSwapChain(VKRenderer* renderer, VkInstance& instance, VkPhysicalDevice& gpu, VkDevice& device, VkCommandPool& commandPool);
+                VKSwapChain(const RendererParams& rendererParams, VKDevice* device);
                 ~VKSwapChain();
                 
+                void VClear(float* color)                           override;
+                bool VInitialize(uint32_t width, uint32_t height)   override;
+                void VResize(uint32_t width, uint32_t height)       override;
+                void VPresent()                                     override;
+
                 const VkCommandBuffer&  VKGetCurrentCommand();
                 const VkSurfaceKHR&     VKGetSurface();
                 const uint32_t&         VKGetGraphicsQueueIndex();
@@ -76,11 +81,11 @@ namespace Hatchit {
                 void VKSetIncomingRenderPass(VKRenderPassHandle renderPass);
 
             private:
-                VKRenderer*         m_renderer;
-                VkInstance&         m_instance;
-                VkPhysicalDevice&   m_gpu;
-                VkDevice&           m_device;
-                VkCommandPool&      m_commandPool;
+                VkInstance          m_instance;
+                VkPhysicalDevice    m_gpu;
+                VkDevice            m_device;
+                VkCommandPool       m_commandPool;
+                VkDescriptorPool    m_descriptorPool;
 
                 VkSurfaceKHR                            m_surface;
                 VkPhysicalDeviceProperties              m_gpuProps;
@@ -92,7 +97,7 @@ namespace Hatchit {
                 VkColorSpaceKHR m_colorSpace;
 
                 VkRenderPass            m_renderPass;
-                VKPipeline              m_pipeline;
+                VKPipeline*             m_pipeline;
                 VkDescriptorSet         m_descriptorSet;
 
                 std::vector<VkCommandBuffer> m_postPresentCommands;
@@ -106,6 +111,8 @@ namespace Hatchit {
                 UniformBlock_vk    m_vertexBuffer;
                 std::vector<Texture_vk> m_inputTextures;
 
+                bool createAllocatorPools();
+
                 bool prepareSurface(const RendererParams& rendererParams);
 
                 bool getQueueProperties();
@@ -115,11 +122,11 @@ namespace Hatchit {
                 bool getPreferredFormats();
 
                 //Prepare the swapchain base
-                bool prepareSwapchain(VKRenderer* renderer, VkFormat preferredColorFormat, VkColorSpaceKHR colorSpace,
+                bool prepareSwapchain(VkFormat preferredColorFormat, VkColorSpaceKHR colorSpace,
                     std::vector<VkPresentModeKHR> presentModes, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D surfaceExtents);
 
                 //Prepare the swapchain depth buffer
-                bool prepareSwapchainDepth(VKRenderer* renderer, const VkFormat& preferredDepthFormat, VkExtent2D extent);
+                bool prepareSwapchainDepth(const VkFormat& preferredDepthFormat, VkExtent2D extent);
 
                 //Prepare the internal render pass
                 bool prepareRenderPass();

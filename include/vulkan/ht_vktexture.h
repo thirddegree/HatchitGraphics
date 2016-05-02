@@ -52,8 +52,6 @@ namespace Hatchit {
                 VkDeviceMemory m_deviceMemory;
             };
 
-            using VKTextureHandle = Core::Handle<VKTexture>;
-
         }
     }
 }

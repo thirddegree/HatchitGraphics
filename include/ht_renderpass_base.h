@@ -34,7 +34,6 @@ namespace Hatchit
 {
     namespace Graphics
     {
-
         struct RenderRequest
         {
             PipelineHandle  pipeline;
@@ -60,12 +59,16 @@ namespace Hatchit
             virtual ~RenderPassBase() { };
             virtual bool VInitFromResource(const Resource::RenderPassHandle& handle) = 0;
 
+            virtual void VUpdate() = 0;
+
             virtual void VSetView(Math::Matrix4 view) = 0;
             virtual void VSetProj(Math::Matrix4 proj) = 0;
 
-            virtual void VScheduleRenderRequest(MaterialHandle material, MeshHandle mesh, std::vector<Resource::ShaderVariable*> instanceVariables) = 0;
+            virtual bool VBuildCommandList() = 0;
 
-            virtual uint64_t VGetLayerFlags() = 0;
+            virtual void ScheduleRenderRequest(MaterialHandle material, MeshHandle mesh, std::vector<Resource::ShaderVariable*> instanceVariables);
+
+            virtual uint64_t GetLayerFlags();
 
         protected:
             void BuildRenderRequestHeirarchy();

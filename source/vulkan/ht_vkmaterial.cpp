@@ -30,7 +30,7 @@ namespace Hatchit {
 
             VKMaterial::VKMaterial() {}
 
-            bool VKMaterial::Initialize(Resource::MaterialHandle handle, const VkDevice& device, const VkDescriptorPool& descriptorPool)
+            bool VKMaterial::Initialize(Resource::MaterialHandle handle, const VkDevice& device, const VkDescriptorPool& descriptorPool, const VKRootLayout* rootLayout)
             {
                 m_device = &device;
                 m_descriptorPool = &descriptorPool;
@@ -42,23 +42,25 @@ namespace Hatchit {
                 }
 
                 //Gather resources and handles
-                
-                m_pipeline = VKPipeline::GetHandle(handle->GetPipelinePath(), handle->GetPipelinePath(), renderer);
+                std::string pipelinePath = handle->GetPipelinePath();
+
+                PipelineHandle pipelineHandle = Pipeline::GetHandle(pipelinePath, pipelinePath);
+                m_pipeline = static_cast<VKPipeline*>(pipelineHandle->GetBase());
 
                 //Get render pass paths and construct handles
                 std::vector<std::string> renderPassPaths = handle->GetRenderPassPaths();
                 for (size_t i = 0; i < renderPassPaths.size(); i++)
                 {
                     std::string renderPassPath = renderPassPaths[i];
-                    VKRenderPassHandle renderPassHandle = VKRenderPass::GetHandle(renderPassPath, renderPassPath, renderer);
-                    m_renderPasses.push_back(renderPassHandle.StaticCastHandle<RenderPassBase>());
+                    RenderPassHandle renderPassHandle = RenderPass::GetHandle(renderPassPath, renderPassPath);
+                    m_renderPasses.push_back(renderPassHandle->GetBase());
                 }
 
                 //Get shader vars
                // m_shaderVariables = handle->GetShaderVariables();
 
 
-                m_descriptorSetLayouts = renderer->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts();
+                m_descriptorSetLayouts = rootLayout->VKGetDescriptorSetLayouts();
 
                 std::vector<Resource::Material::TexturePath> texturePaths = handle->GetTexturePaths();
                 //Map layout location to file handle
@@ -72,16 +74,15 @@ namespace Hatchit {
 
                     std::string filePath = texturePath.path;
 
-                    VKTextureHandle textureHandle = VKTexture::GetHandle(filePath, filePath, renderer);
+                    TextureHandle textureHandle = Texture::GetHandle(filePath, filePath);
+                    VKTexture* texture = static_cast<VKTexture*>(textureHandle->GetBase());
 
                     m_textureLocations.push_back(location);
-                    m_textures.push_back(textureHandle.StaticCastHandle<Texture>());    
+                    m_textures.push_back(texture);
 
                     //Record which descriptor set layouts we need
                     m_materialLayouts.push_back(m_descriptorSetLayouts[location.set]);
                 }
-
-                VKPipelineHandle vkPipeline = m_pipeline.DynamicCastHandle<VKPipeline>();
 
                 setupDescriptorSet();
 
@@ -139,7 +140,7 @@ namespace Hatchit {
                 return true;
             }
 
-            const VKPipelineHandle& VKMaterial::GetVKPipeline() const
+            const VKPipeline* VKMaterial::GetVKPipeline() const
             {
                 return m_pipeline;
             }
@@ -208,7 +209,7 @@ namespace Hatchit {
                 for (size_t i = 0; i < m_textures.size(); i++)
                 {
                     LayoutLocation location = m_textureLocations[i];
-                    VKTextureHandle texture = m_textures[i].DynamicCastHandle<VKTexture>();
+                    VKTexture* texture = m_textures[i];
 
                     //Create Texture description
                     VkDescriptorImageInfo textureDescriptor = {};

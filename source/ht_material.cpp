@@ -22,10 +22,14 @@ namespace Hatchit {
 
     namespace Graphics {
 
-        //TODO: This should probably just be inlined?
-        const std::vector<RenderPassBaseHandle>& Material::GetRenderPasses() const 
+        const std::vector<RenderPassHandle>& Material::GetRenderPasses() const 
         {
             return m_base->m_renderPasses;
+        }
+
+        const PipelineHandle& Material::GetPipeline() const
+        {
+            return m_base->VGetPipeline();
         }
 
         Material::Material(Core::Guid ID)

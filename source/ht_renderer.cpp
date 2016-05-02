@@ -21,6 +21,8 @@
 #endif
 
 #ifdef VK_SUPPORT
+#include <ht_vkdevice.h>
+#include <ht_vkswapchain.h>
 #endif
 
 
@@ -28,10 +30,10 @@ namespace Hatchit {
 
     namespace Graphics {
 
-        IDevice*    Renderer::_Device = nullptr;
-        RendererType Renderer::_Type = UNKNOWN;
+        IDevice*        Renderer::_Device = nullptr;
+        RendererType    Renderer::_Type = UNKNOWN;
 
-        void Renderer::RegisterRenderPass(RenderPassBaseHandle pass)
+        void Renderer::RegisterRenderPass(RenderPassHandle pass)
         {
             uint64_t flags = pass->GetLayerFlags();
             for (int j = 0; flags != 0; j++)
@@ -73,9 +75,9 @@ namespace Hatchit {
             m_params = params;
 
             /*Initialize the swapchain and device*/
-#ifdef HT_SYS_WINDOWS
             switch (params.renderer)
             {
+#ifdef DX12_SUPPORT
                 case RendererType::DIRECTX12:
                 {
                     if (!_Device)
@@ -91,16 +93,26 @@ namespace Hatchit {
                         return false;
 
                 } break;
-                
+#endif
+#ifdef VK_SUPPORT
                 case RendererType::VULKAN:
                 {
+                    if (!_Device)
+                    {
+                        _Device = new Vulkan::VKDevice;
+                        if (!_Device->VInitialize())
+                            return false;
+                        _Type = RendererType::VULKAN;
+                    }
 
+                    m_swapChain = new Vulkan::VKSwapChain();
+                    if (!m_swapChain->VInitialize(params.viewportWidth, params.viewportHeight))
+                        return false;
                 } break;
-
+#endif
                 default:
                     return false;
             }
-#endif
 
             return true;
         }

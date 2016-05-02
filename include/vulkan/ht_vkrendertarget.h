@@ -64,8 +64,6 @@ namespace Hatchit {
 
                 bool setupTargetTexture();
             };
-
-            using VKRenderTargetHandle = Core::Handle<VKRenderTarget>;
         }
     }
 }

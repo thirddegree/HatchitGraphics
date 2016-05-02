@@ -82,7 +82,7 @@ namespace Hatchit {
             return m_base->m_height;
         }
 
-        TextureBase* const Texture::GetBase()
+        TextureBase* const Texture::GetBase() const
         {
             return m_base;
         }

@@ -98,7 +98,7 @@ namespace Hatchit {
             ///Present a frame to the screen via a backbuffer
             void Present();
 
-            void RegisterRenderPass(RenderPassBaseHandle pass);
+            void RegisterRenderPass(RenderPassHandle pass);
 
             void RegisterCamera(Camera camera);
 
@@ -111,7 +111,7 @@ namespace Hatchit {
             static RendererType _Type;
 
             //A collection of renderpass layers. Each layer may contain multiple render passes.
-            std::vector<std::vector<RenderPassBaseHandle>> m_renderPassLayers = std::vector<std::vector<RenderPassBaseHandle>>(64);
+            std::vector<std::vector<RenderPassHandle>> m_renderPassLayers = std::vector<std::vector<RenderPassHandle>>(64);
             //A collection of cameras sorted by renderpass layer. Repopulated each frame.
             std::vector<std::vector<Graphics::Camera>> m_renderPassCameras = std::vector<std::vector<Graphics::Camera>>(64);
             

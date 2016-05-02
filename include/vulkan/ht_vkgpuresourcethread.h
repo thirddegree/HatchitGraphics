@@ -39,9 +39,11 @@ namespace Hatchit
 
                 ~VKGPUResourceThread();
 
-                void VStart()                            override;
-                void VLoad(GPUResourceRequest request)   override;
-                void VKill()                             override;
+                void VStart()                                   override;
+                bool VLocked() const                            override;
+                void VLoad(GPUResourceRequest* request)         override;
+                void VLoadAsync(GPUResourceRequest* request)    override;
+                void VKill()                                    override;
 
             private:
                 std::thread             m_thread;

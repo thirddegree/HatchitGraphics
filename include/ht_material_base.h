@@ -37,7 +37,7 @@ namespace Hatchit {
 
     namespace Graphics {
 
-        class RenderPassBase;
+        class RenderPass;
 
         class HT_API MaterialBase
         {
@@ -57,7 +57,7 @@ namespace Hatchit {
 
             virtual PipelineHandle VGetPipeline() = 0;
         protected:
-            std::vector<Core::Handle<RenderPassBase>> m_renderPasses;
+            std::vector<Core::Handle<RenderPass>> m_renderPasses;
 
             friend class Material;
         };

@@ -19,9 +19,37 @@ namespace Hatchit
 {
     namespace Graphics
     {
-        /*bool GPUResourceThread::IsLocked() const
+        bool GPUResourceThread::Locked() const
         {
-            return m_lock.owns_lock();
-        }*/
+            return m_locked;
+        }
+
+        void GPUResourceThread::Load(GPUResourceRequest* request)
+        {
+            if (!m_alive)
+                VStart();
+
+            m_processed = false;
+
+            m_requests.push(request);
+            std::unique_lock<std::mutex> lock(m_mutex);
+            m_cv.wait(lock, [this]() -> bool { m_locked = true;  return this->m_processed; });
+            m_locked = false;
+        }
+
+        void GPUResourceThread::LoadAsync(GPUResourceRequest* request)
+        {
+            if (!m_alive)
+                VStart();
+
+            m_requests.push(request);
+        }
+
+        void GPUResourceThread::Kill()
+        {
+            m_alive = false;
+            if (m_thread.joinable())
+                m_thread.join();
+        }
     }
 }

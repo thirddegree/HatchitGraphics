@@ -34,8 +34,8 @@ namespace Hatchit
         public:
             virtual ~RenderTargetBase() { };
 
-            virtual Resource::RenderTarget::BlendOp VGetColorBlendOp() const = 0;
-            virtual Resource::RenderTarget::BlendOp VGetAlphaBlendOp() const = 0;
+            Resource::RenderTarget::BlendOp GetColorBlendOp() const;
+            Resource::RenderTarget::BlendOp GetAlphaBlendOp() const;
 
         protected:
             uint32_t m_width;

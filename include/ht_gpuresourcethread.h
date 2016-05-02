@@ -16,6 +16,13 @@
 
 #include <ht_platform.h>
 #include <ht_string.h>
+#include <ht_threadvector.h>
+#include <ht_threadstack.h>
+#include <ht_threadqueue.h>
+#include <atomic>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 namespace Hatchit
 {
@@ -23,15 +30,27 @@ namespace Hatchit
     {
         class GPUResourceRequest;
 
-        class HT_API IGPUResourceThread
+        class HT_API GPUResourceThread
         {
+            using GPURequestQueue = Core::ThreadsafeStack<GPUResourceRequest*>;
+
         public:
-            virtual ~IGPUResourceThread() { };
+            virtual ~GPUResourceThread() { };
             virtual void VStart() = 0;
-            virtual bool VLocked() const = 0;
-            virtual void VLoad(GPUResourceRequest* request) = 0;
-            virtual void VLoadAsync(GPUResourceRequest* request) = 0;
-            virtual void VKill() = 0;
+            bool Locked() const;
+            void Load(GPUResourceRequest* request);
+            void LoadAsync(GPUResourceRequest* request);
+            void Kill();
+
+        protected:
+            std::thread             m_thread;
+            std::atomic_bool        m_alive;
+            std::atomic_bool        m_tfinished;
+            std::atomic_bool        m_locked;
+            mutable std::mutex      m_mutex;
+            std::condition_variable m_cv;
+            std::atomic_bool        m_processed;
+            GPURequestQueue         m_requests;
         };
     }
 }

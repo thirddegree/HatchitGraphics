@@ -20,8 +20,7 @@ namespace Hatchit {
 
         namespace DX
         {
-            D3D12Pipeline::D3D12Pipeline(Core::Guid ID)
-                : Core::RefCounted<D3D12Pipeline>(std::move(ID))
+            D3D12Pipeline::D3D12Pipeline()
             {
                 m_pipelineState = nullptr;
             }

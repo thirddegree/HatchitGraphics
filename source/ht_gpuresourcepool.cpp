@@ -60,7 +60,7 @@ namespace Hatchit
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
 
-            return instance.m_thread->VLocked();
+            return instance.m_thread->Locked();
         }
 
         void GPUResourcePool::RequestTexture(std::string file, void** data)
@@ -72,7 +72,7 @@ namespace Hatchit
             request->type = GPUResourceRequest::Type::Texture;
             request->data = data;
 
-            instance.m_thread->VLoad(request);
+            instance.m_thread->Load(request);
         }
 
         void GPUResourcePool::RequestMaterial(std::string file, void** data)
@@ -84,7 +84,7 @@ namespace Hatchit
             request->type = GPUResourceRequest::Type::Material;
             request->data = data;
 
-            instance.m_thread->VLoad(request);
+            instance.m_thread->Load(request);
         }
 
         void GPUResourcePool::RequestTextureAsync(TextureHandle _default, TextureHandle temporary, std::string file, void** data)
@@ -98,7 +98,7 @@ namespace Hatchit
             request->data = data;
             request->type = GPUResourceRequest::Type::Texture;
 
-            instance.m_thread->VLoadAsync(request);
+            instance.m_thread->LoadAsync(request);
         }
 
         void GPUResourcePool::RequestMaterialAsync(MaterialHandle _default, MaterialHandle temporary, std::string file, void** data)
@@ -112,7 +112,7 @@ namespace Hatchit
             request->data = data;
             request->type = GPUResourceRequest::Type::Material;
 
-            instance.m_thread->VLoadAsync(request);
+            instance.m_thread->LoadAsync(request);
         }
 
      

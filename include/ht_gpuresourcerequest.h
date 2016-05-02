@@ -18,13 +18,13 @@
 #include <ht_string.h>
 #include <ht_refcounted.h>
 
-#include <ht_texture.h>
-#include <ht_material.h>
-
 namespace Hatchit
 {
     namespace Graphics
     {
+        class Texture;
+        class Material;
+
         class GPUResourceRequest
         {
         public:

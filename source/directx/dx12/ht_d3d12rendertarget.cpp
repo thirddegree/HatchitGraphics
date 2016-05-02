@@ -14,6 +14,7 @@
 
 #include <ht_d3d12rendertarget.h>
 #include <ht_d3d12deviceresources.h>
+#include <ht_rendertarget_resource.h>
 
 namespace Hatchit
 {
@@ -21,17 +22,16 @@ namespace Hatchit
     {
         namespace DX
         {
-            D3D12RenderTarget::D3D12RenderTarget(Core::Guid ID)
-                : Core::RefCounted<D3D12RenderTarget>(std::move(ID))
+            D3D12RenderTarget::D3D12RenderTarget()
             {
 
             }
 
-            bool D3D12RenderTarget::Initialize(const std::string& fileName, D3D12DeviceResources* device)
+            bool D3D12RenderTarget::Initialize(const std::string& fileName)
             {
                 using namespace Resource;
 
-                RenderTargetHandle handle = RenderTarget::GetHandleFromFileName(fileName);
+                Resource::RenderTargetHandle handle = Resource::RenderTarget::GetHandleFromFileName(fileName);
                 if (!handle.IsValid())
                 {
                     return false;
@@ -48,10 +48,7 @@ namespace Hatchit
 
                 return true;
             }
-            bool D3D12RenderTarget::VPrepare()
-            {
-                return false;
-            }
+
             DXGI_FORMAT D3D12RenderTarget::TargetFormatFromString(std::string s)
             {
                 if (s == "BGRA")

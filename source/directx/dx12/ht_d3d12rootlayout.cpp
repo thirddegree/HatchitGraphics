@@ -13,6 +13,7 @@
 **/
 
 #include <ht_d3d12rootlayout.h>
+#include <ht_rootlayout_resource.h>
 #include <ht_debug.h>
 
 namespace Hatchit
@@ -21,8 +22,7 @@ namespace Hatchit
     {
         namespace DX
         {
-            D3D12RootLayout::D3D12RootLayout(Core::Guid ID)
-                : Core::RefCounted<D3D12RootLayout>(std::move(ID))
+            D3D12RootLayout::D3D12RootLayout()
             {
                 m_rootSignature = nullptr;
                 m_CBV_SRV_UAV_Heap = nullptr;
@@ -67,7 +67,7 @@ namespace Hatchit
 
                 /*Build RootParameter Collection*/
                 std::vector<D3D12_ROOT_PARAMETER> _RootParameters;
-                std::vector<RootLayout::Parameter> parameters = resource->GetParameters();
+                std::vector<Resource::RootLayout::Parameter> parameters = resource->GetParameters();
                 for (uint32_t i = 0; i < resource->GetParameterCount(); i++)
                 {
                     

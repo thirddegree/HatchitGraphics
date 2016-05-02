@@ -25,8 +25,7 @@ namespace Hatchit
 {
     namespace Graphics
     {
-
-        class IGPUResourceThread;
+        class GPUResourceThread;
 
         class HT_API GPUResourcePool : public Core::Singleton<GPUResourcePool>
         {
@@ -41,7 +40,7 @@ namespace Hatchit
 
 
         private:
-            IGPUResourceThread* m_thread;
+            GPUResourceThread* m_thread;
             IDevice*            m_device;
             
             std::map<std::string, TextureHandle> m_defaultTextures;

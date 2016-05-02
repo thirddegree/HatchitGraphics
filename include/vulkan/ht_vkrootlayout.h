@@ -16,7 +16,7 @@
 
 #include <ht_platform.h>
 #include <ht_vulkan.h>
-#include <ht_rootlayout.h>
+#include <ht_rootlayout_base.h>
 
 namespace Hatchit
 {
@@ -26,10 +26,10 @@ namespace Hatchit
         {
             class VKSampler;
 
-            class HT_API VKRootLayout : public Core::RefCounted<VKRootLayout>, public IRootLayout
+            class HT_API VKRootLayout : public RootLayoutBase
             {
             public:
-                VKRootLayout(Core::Guid ID);
+                VKRootLayout();
 
                 ~VKRootLayout();
 
@@ -47,8 +47,6 @@ namespace Hatchit
                 std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;
                 std::vector<VkPushConstantRange> m_pushConstantRanges;
             };
-
-            using VKRootLayoutHandle = Core::Handle<VKRootLayout>;
         }
     }
 }
