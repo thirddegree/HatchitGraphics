@@ -29,7 +29,7 @@ namespace Hatchit {
             m_renderPass = material->GetRenderPasses()[0];
         }
 
-        void MeshRenderer::SetMesh(IMeshHandle mesh)
+        void MeshRenderer::SetMesh(MeshHandle mesh)
         {
             m_mesh = mesh;
         }

@@ -61,8 +61,6 @@ namespace Hatchit {
 
                 const void BindMaterial(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout) const;
 
-                IPipelineHandle GetPipeline();
-
             private:
                 const VkDevice* m_device;
                 const VkDescriptorPool* m_descriptorPool;
@@ -76,8 +74,6 @@ namespace Hatchit {
                 UniformBlock_vk m_uniformVSBuffer;
                 //UniformBlock m_uniformFSBuffer;
                 std::vector<UniformBlock_vk> m_fragmentTextures;
-
-                VKPipelineHandle m_pipeline;
                 
                 std::vector<LayoutLocation> m_textureLocations;
                 std::vector<TextureHandle> m_textures;
@@ -85,8 +81,6 @@ namespace Hatchit {
                 //std::vector<LayoutLocation> m_shaderVariableLocations;
                 //std::vector<std::map<std::string, Hatchit::Resource::ShaderVariable*>> m_shaderVariables;
             };
-
-            using VKMaterialHandle = Core::Handle<VKMaterial>;
         }
     }
 }

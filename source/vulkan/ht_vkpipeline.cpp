@@ -25,8 +25,7 @@ namespace Hatchit {
 
             using namespace Resource;
 
-            VKPipeline::VKPipeline(Core::Guid ID) :
-                Core::RefCounted<VKPipeline>(std::move(ID))
+            VKPipeline::VKPipeline()
             {
                 m_hasVertexAttribs = false;
                 m_hasIndexAttribs = false;
@@ -69,9 +68,9 @@ namespace Hatchit {
                 VAddShaderVariables(handle->GetShaderVariables());
 
                 //Load all shaders
-                std::map<Pipeline::ShaderSlot, std::string> shaderPaths = handle->GetSPVShaderPaths();
+                std::map<Resource::Pipeline::ShaderSlot, std::string> shaderPaths = handle->GetSPVShaderPaths();
 
-                std::map<Pipeline::ShaderSlot, std::string>::iterator it;
+                std::map<Resource::Pipeline::ShaderSlot, std::string>::iterator it;
                 for (it = shaderPaths.begin(); it != shaderPaths.end(); it++)
                 {
                     //Get the actual shader handle
@@ -305,7 +304,6 @@ namespace Hatchit {
                 Private Methods
             */
 
-
             void VKPipeline::setVertexLayout(const std::vector<Resource::Pipeline::Attribute> vertexLayout) 
             {
                 if (vertexLayout.size() > 0)
@@ -324,7 +322,7 @@ namespace Hatchit {
                 }
             }
 
-            void VKPipeline::setDepthStencilState(const Pipeline::DepthStencilState& depthStencilState)
+            void VKPipeline::setDepthStencilState(const Resource::Pipeline::DepthStencilState& depthStencilState)
             {
                 //Depth and stencil states
                 m_depthStencilState = {};
@@ -342,7 +340,7 @@ namespace Hatchit {
                 m_depthStencilState.front.compareOp = VK_COMPARE_OP_NEVER;
             }
 
-            void VKPipeline::setRasterState(const Pipeline::RasterizerState& rasterState)
+            void VKPipeline::setRasterState(const Resource::Pipeline::RasterizerState& rasterState)
             {
                 VkPolygonMode polyMode;
                 VkCullModeFlagBits cullMode;
@@ -350,10 +348,10 @@ namespace Hatchit {
 
                 switch (rasterState.polygonMode)
                 {
-                case Pipeline::PolygonMode::SOLID:
+                case Resource::Pipeline::PolygonMode::SOLID:
                     polyMode = VK_POLYGON_MODE_FILL;
                     break;
-                case Pipeline::PolygonMode::LINE:
+                case Resource::Pipeline::PolygonMode::LINE:
                     polyMode = VK_POLYGON_MODE_LINE;
                     break;
                 default:
@@ -363,13 +361,13 @@ namespace Hatchit {
 
                 switch (rasterState.cullMode)
                 {
-                case Pipeline::NONE:
+                case Resource::Pipeline::NONE:
                     cullMode = VK_CULL_MODE_NONE;
                     break;
-                case Pipeline::FRONT:
+                case Resource::Pipeline::FRONT:
                     cullMode = VK_CULL_MODE_FRONT_BIT;
                     break;
-                case Pipeline::BACK:
+                case Resource::Pipeline::BACK:
                     cullMode = VK_CULL_MODE_BACK_BIT;
                     break;
                 }
@@ -391,31 +389,31 @@ namespace Hatchit {
                 m_rasterizationState.depthBiasEnable = VK_FALSE;
             }
 
-            void VKPipeline::setMultisampleState(const Pipeline::MultisampleState& multiState)
+            void VKPipeline::setMultisampleState(const Resource::Pipeline::MultisampleState& multiState)
             {
                 VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT;
 
                 switch (multiState.samples)
                 {
-                case Pipeline::SAMPLE_1_BIT:
+                case Resource::Pipeline::SAMPLE_1_BIT:
                     sampleCount = VK_SAMPLE_COUNT_1_BIT;
                     break;
-                case Pipeline::SAMPLE_2_BIT:
+                case Resource::Pipeline::SAMPLE_2_BIT:
                     sampleCount = VK_SAMPLE_COUNT_2_BIT;
                     break;
-                case Pipeline::SAMPLE_4_BIT:
+                case Resource::Pipeline::SAMPLE_4_BIT:
                     sampleCount = VK_SAMPLE_COUNT_4_BIT;
                     break;
-                case Pipeline::SAMPLE_8_BIT:
+                case Resource::Pipeline::SAMPLE_8_BIT:
                     sampleCount = VK_SAMPLE_COUNT_8_BIT;
                     break;
-                case Pipeline::SAMPLE_16_BIT:
+                case Resource::Pipeline::SAMPLE_16_BIT:
                     sampleCount = VK_SAMPLE_COUNT_16_BIT;
                     break;
-                case Pipeline::SAMPLE_32_BIT:
+                case Resource::Pipeline::SAMPLE_32_BIT:
                     sampleCount = VK_SAMPLE_COUNT_32_BIT;
                     break;
-                case Pipeline::SAMPLE_64_BIT:
+                case Resource::Pipeline::SAMPLE_64_BIT:
                     sampleCount = VK_SAMPLE_COUNT_64_BIT;
                     break;
                 }
@@ -429,7 +427,7 @@ namespace Hatchit {
                 m_multisampleState.minSampleShading = multiState.minSamples;
             }
 
-            void VKPipeline::loadShader(Pipeline::ShaderSlot shaderSlot, IShaderHandle shaderHandle)
+            void VKPipeline::loadShader(Resource::Pipeline::ShaderSlot shaderSlot, IShaderHandle shaderHandle)
             {
                 VKShaderHandle shader = shaderHandle.DynamicCastHandle<VKShader>();
                 m_shaderHandles[shaderSlot] = shader;
@@ -440,22 +438,22 @@ namespace Hatchit {
 
                 switch (shaderSlot)
                 {
-                case Pipeline::ShaderSlot::VERTEX:
+                case Resource::Pipeline::ShaderSlot::VERTEX:
                     shaderType = VK_SHADER_STAGE_VERTEX_BIT;
                     break;
-                case Pipeline::ShaderSlot::FRAGMENT:
+                case Resource::Pipeline::ShaderSlot::FRAGMENT:
                     shaderType = VK_SHADER_STAGE_FRAGMENT_BIT;
                     break;
-                case Pipeline::ShaderSlot::GEOMETRY:
+                case Resource::Pipeline::ShaderSlot::GEOMETRY:
                     shaderType = VK_SHADER_STAGE_GEOMETRY_BIT;
                     break;
-                case Pipeline::ShaderSlot::TESS_CONTROL:
+                case Resource::Pipeline::ShaderSlot::TESS_CONTROL:
                     shaderType = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
                     break;
-                case Pipeline::ShaderSlot::TESS_EVAL:
+                case Resource::Pipeline::ShaderSlot::TESS_EVAL:
                     shaderType = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
                     break;
-                case Pipeline::ShaderSlot::COMPUTE:
+                case Resource::Pipeline::ShaderSlot::COMPUTE:
                     shaderType = VK_SHADER_STAGE_COMPUTE_BIT;
                     break;
                 }

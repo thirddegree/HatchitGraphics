@@ -48,7 +48,7 @@ namespace Hatchit {
             /* Set which mesh will be rendered
             * \param mesh A pointer to the mesh you want to render
             */
-            virtual void SetMesh(IMeshHandle mesh);
+            virtual void SetMesh(MeshHandle mesh);
 
             /*Sets the instance data to be used with this particular mesh renderer
             */
@@ -60,9 +60,9 @@ namespace Hatchit {
 
         protected:
             RenderPassBaseHandle    m_renderPass;
-            IPipelineHandle         m_pipeline;
+            PipelineHandle         m_pipeline;
             MaterialHandle         m_material;
-            IMeshHandle             m_mesh;
+            MeshHandle             m_mesh;
             std::vector<Resource::ShaderVariable*> m_instanceData;
         };
     }

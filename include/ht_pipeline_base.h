@@ -14,13 +14,10 @@
 
 #pragma once
 
-
 #include <ht_platform.h>
-#include <ht_string.h>
-#include <ht_math.h>
-#include <ht_texture.h>
-#include <ht_pipeline.h>
-#include <ht_refcounted.h>
+#include <ht_string.h>      //std::string
+#include <ht_math.h>        //Vectors and matricies
+#include <ht_texture.h>     //TextureHandle
 
 namespace Hatchit {
 
@@ -32,34 +29,32 @@ namespace Hatchit {
 
     namespace Resource
     {
-        class Material;
+        class Pipeline;
+        class ShaderVariable;
     }
 
     namespace Graphics {
 
-        class RenderPassBase;
-
-        class HT_API MaterialBase
+        class HT_API PipelineBase
         {
         public:
-            virtual ~MaterialBase() {};
+            virtual ~PipelineBase() {};
+
+            virtual bool VAddShaderVariables(std::map<std::string, Hatchit::Resource::ShaderVariable*> shaderVariables) = 0;
 
             virtual bool VSetInt(std::string name, int data) = 0;
+            virtual bool VSetDouble(std::string name, double data) = 0;
             virtual bool VSetFloat(std::string name, float data) = 0;
+            virtual bool VSetFloat2(std::string name, Math::Vector2 data) = 0;
             virtual bool VSetFloat3(std::string name, Math::Vector3 data) = 0;
             virtual bool VSetFloat4(std::string name, Math::Vector4 data) = 0;
             virtual bool VSetMatrix4(std::string name, Math::Matrix4 data) = 0;
 
-            virtual bool VBindTexture(std::string name, TextureHandle texture) = 0;
-            virtual bool VUnbindTexture(std::string name, TextureHandle texture) = 0;
-
             virtual bool VUpdate() = 0;
-
-            virtual PipelineHandle VGetPipeline() = 0;
         protected:
-            std::vector<Core::Handle<RenderPassBase>> m_renderPasses;
+            std::map<std::string, Resource::ShaderVariable*> m_shaderVariables;
 
-            friend class Material;
+            friend class Pipeline;
         };
     }
 }

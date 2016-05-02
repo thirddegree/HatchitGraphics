@@ -21,6 +21,7 @@
 #include <ht_threadqueue.inl>
 #include <thread>
 #include <atomic>
+#include <ht_vulkan.h>
 
 namespace Hatchit
 {

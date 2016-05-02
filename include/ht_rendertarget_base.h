@@ -16,36 +16,34 @@
 * \class RenderTarget
 * \ingroup HatchitGraphics
 *
-* \brief A wrapper over a RenderTargetBase
+* \brief An abstraction of a RenderTarget class to be implemented by a graphics language
 */
+
 
 #pragma once
 
 #include <ht_platform.h>
 #include <ht_rendertarget_resource.h>
 
-namespace Hatchit {
-
-    namespace Graphics {
-        
-        class RenderTargetBase;
-
-        class HT_API RenderTarget : public Core::RefCounted<RenderTarget>
+namespace Hatchit
+{
+    namespace Graphics 
+    {
+        class HT_API RenderTargetBase
         {
         public:
-            RenderTarget(Core::Guid ID);
-            virtual ~RenderTarget() { };
+            virtual ~RenderTargetBase() { };
 
-            ///Prepare the render target with a graphics language
-            virtual bool VPrepare() = 0;
+            virtual Resource::RenderTarget::BlendOp VGetColorBlendOp() const = 0;
+            virtual Resource::RenderTarget::BlendOp VGetAlphaBlendOp() const = 0;
 
-            Resource::RenderTarget::BlendOp GetColorBlendOp() const;
-            Resource::RenderTarget::BlendOp GetAlphaBlendOp() const;
+        protected:
+            uint32_t m_width;
+            uint32_t m_height;
 
-        private:
-            RenderTargetBase* m_base;
+            Resource::RenderTarget::BlendOp m_colorBlendOp;
+            Resource::RenderTarget::BlendOp m_alphaBlendOp;
         };
 
-        using RenderTargetHandle = Core::Handle<RenderTarget>;
     }
 }

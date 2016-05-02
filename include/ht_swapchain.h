@@ -49,7 +49,7 @@ namespace Hatchit {
 
         protected:
             //For rendering
-            IPipeline* m_pipeline;
+            PipelineBase* m_pipeline;
             uint32_t m_currentBuffer;
             uint32_t m_width;
             uint32_t m_height;

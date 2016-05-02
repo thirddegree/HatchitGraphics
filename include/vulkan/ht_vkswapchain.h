@@ -13,7 +13,7 @@
 **/
 
 /**
-* \class VKSwapchain
+* \class VKSwapChain
 * \ingroup HatchitGraphics
 *
 * \brief A Vulkan based swapchain
@@ -51,11 +51,11 @@ namespace Hatchit {
 
             class VKRenderer;
 
-            class HT_API VKSwapchain : public ISwapchain
+            class HT_API VKSwapChain : public SwapChain
             {
             public:
-                VKSwapchain(VKRenderer* renderer, VkInstance& instance, VkPhysicalDevice& gpu, VkDevice& device, VkCommandPool& commandPool);
-                ~VKSwapchain();
+                VKSwapChain(VKRenderer* renderer, VkInstance& instance, VkPhysicalDevice& gpu, VkDevice& device, VkCommandPool& commandPool);
+                ~VKSwapChain();
                 
                 const VkCommandBuffer&  VKGetCurrentCommand();
                 const VkSurfaceKHR&     VKGetSurface();
@@ -92,7 +92,7 @@ namespace Hatchit {
                 VkColorSpaceKHR m_colorSpace;
 
                 VkRenderPass            m_renderPass;
-                VKPipelineHandle        m_pipeline;
+                VKPipeline              m_pipeline;
                 VkDescriptorSet         m_descriptorSet;
 
                 std::vector<VkCommandBuffer> m_postPresentCommands;

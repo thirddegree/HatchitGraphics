@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include <ht_pipeline.h>
+#include <ht_pipeline_base.h>
 
 #include <ht_vkrenderpass.h>
 #include <ht_vkshader.h>
@@ -39,10 +39,10 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            class HT_API VKPipeline : public Core::RefCounted<VKPipeline>, public IPipeline
+            class HT_API VKPipeline : public PipelineBase
             {
             public:
-                VKPipeline(Core::Guid ID);
+                VKPipeline();
                 ~VKPipeline();
 
                 bool Initialize(const std::string& fileName, VKRenderer* renderer);
@@ -53,7 +53,7 @@ namespace Hatchit {
                 /* Add a map of existing shader variables into this pipeline
                 * \param shaderVariables the map of existing shader variables you want to add
                 */
-                bool VAddShaderVariables(std::map<std::string, Hatchit::Resource::ShaderVariable*> shaderVariables);
+                bool VAddShaderVariables(std::map<std::string, Hatchit::Resource::ShaderVariable*> shaderVariables) override;
 
                 bool VSetInt(std::string name, int data)                        override;
                 bool VSetDouble(std::string name, double data)                  override;
@@ -139,8 +139,6 @@ namespace Hatchit {
 
                 VkBlendOp getVKBlendOpFromResourceBlendOp(Resource::RenderTarget::BlendOp blendOp);
             };
-
-            using VKPipelineHandle = Core::Handle<VKPipeline>;
         }
     }
 }

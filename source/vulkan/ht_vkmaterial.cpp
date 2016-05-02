@@ -42,6 +42,7 @@ namespace Hatchit {
                 }
 
                 //Gather resources and handles
+                
                 m_pipeline = VKPipeline::GetHandle(handle->GetPipelinePath(), handle->GetPipelinePath(), renderer);
 
                 //Get render pass paths and construct handles
@@ -138,9 +139,9 @@ namespace Hatchit {
                 return true;
             }
 
-            IPipelineHandle VKMaterial::GetPipeline()
+            const VKPipelineHandle& VKMaterial::GetVKPipeline() const
             {
-                return m_pipeline.StaticCastHandle<IPipeline>();
+                return m_pipeline;
             }
 
             bool VKMaterial::VUpdate() 

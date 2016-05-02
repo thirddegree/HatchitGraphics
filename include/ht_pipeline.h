@@ -33,37 +33,57 @@
 #include <ht_pipeline_resource.h>
 #include <ht_shader_resource.h>
 
+#ifdef VK_SUPPORT
+#include <ht_vkgpuresourcethread.h>
+#endif
+
+#ifdef DX12_SUPPORT
+#include <ht_d3d12gpuresourcethread.h>
+#endif
+
 #include <map>
     
 namespace Hatchit {
     
    namespace Graphics {
    
-       class HT_API IPipeline
+        class PipelineBase;
+       
+        class HT_API Pipeline : public Core::RefCounted<Pipeline>
         {
-       public:
-            virtual ~IPipeline() {};
+        public:
+            Pipeline(Core::Guid ID);
+            virtual ~Pipeline() {};
            
+            bool Initialize(const std::string& fileName);
+
             /* Add a map of existing shader variables into this pipeline
             * \param shaderVariables the map of existing shader variables you want to add
             */
-            virtual bool VAddShaderVariables(std::map<std::string, Resource::ShaderVariable*> shaderVariables) = 0;
-
-            virtual bool VSetInt(std::string name, int data) = 0;
-            virtual bool VSetDouble(std::string name, double data) = 0;
-            virtual bool VSetFloat(std::string name, float data) = 0;
-            virtual bool VSetFloat2(std::string name, Math::Vector2 data) = 0;
-            virtual bool VSetFloat3(std::string name, Math::Vector3 data) = 0;
-            virtual bool VSetFloat4(std::string name, Math::Vector4 data) = 0;
-            virtual bool VSetMatrix4(std::string name, Math::Matrix4 data) = 0;
+            bool AddShaderVariables(std::map<std::string, Resource::ShaderVariable*> shaderVariables);
+            
+            bool SetInt(std::string name, int data);
+            bool SetDouble(std::string name, double data);
+            bool SetFloat(std::string name, float data);
+            bool SetFloat2(std::string name, Math::Vector2 data);
+            bool SetFloat3(std::string name, Math::Vector3 data);
+            bool SetFloat4(std::string name, Math::Vector4 data);
+            bool SetMatrix4(std::string name, Math::Matrix4 data);
 
             ///Update the pipeline after you've changed the uniform data
-            virtual bool VUpdate() = 0;
+            bool Update();
 
         protected:
-            std::map<std::string, Resource::ShaderVariable*> m_shaderVariables;
+            PipelineBase* m_base;
+
+#ifdef VK_SUPPORT
+            friend class Vulkan::VKGPUResourceThread;
+#endif
+#ifdef DX12_SUPPORT
+            friend class D3D12GPUResourceThread;
+#endif
         };
        
-       using IPipelineHandle = Core::Handle<IPipeline>;
+        using PipelineHandle = Core::Handle<Pipeline>;
     }
 }

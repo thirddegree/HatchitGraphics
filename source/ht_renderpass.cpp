@@ -34,7 +34,7 @@ namespace Hatchit
             m_proj = std::move(proj);
         }
 
-        void RenderPassBase::VScheduleRenderRequest(MaterialHandle material, IMeshHandle mesh, std::vector<Resource::ShaderVariable*> instanceVariables)
+        void RenderPassBase::VScheduleRenderRequest(MaterialHandle material, MeshHandle mesh, std::vector<Resource::ShaderVariable*> instanceVariables)
         {
             RenderRequest renderRequest = {};
 
@@ -92,7 +92,7 @@ namespace Hatchit
             {
                 RenderRequest renderRequest = m_renderRequests[i];
 
-                IPipelineHandle pipeline = renderRequest.pipeline;
+                PipelineHandle pipeline = renderRequest.pipeline;
 
                 m_pipelineList[pipeline].clear();
             }
@@ -102,9 +102,9 @@ namespace Hatchit
             {
                 RenderRequest renderRequest = m_renderRequests[i];
 
-                IPipelineHandle pipeline = renderRequest.pipeline;
+                PipelineHandle pipeline = renderRequest.pipeline;
                 MaterialHandle material = renderRequest.material;
-                IMeshHandle mesh = renderRequest.mesh;
+                MeshHandle mesh = renderRequest.mesh;
 
                 std::vector<RenderableInstances> instances = m_pipelineList[pipeline];
 

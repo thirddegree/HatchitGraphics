@@ -20,8 +20,7 @@ namespace Hatchit {
     namespace Graphics {
         namespace Vulkan {
         
-            VKMesh::VKMesh(Core::Guid ID) :
-                RefCounted<VKMesh>(std::move(ID))
+            VKMesh::VKMesh()
             {}
 
             VKMesh::~VKMesh() 
@@ -90,8 +89,9 @@ namespace Hatchit {
                     return false;
 
                 return true;
-
             }
+
+            uint32_t VKMesh::VGetIndexCount() { return m_indexCount; }
 
             UniformBlock_vk VKMesh::GetVertexBlock() { return m_vertexBlock; }
             UniformBlock_vk VKMesh::GetIndexBlock() { return m_indexBlock; }

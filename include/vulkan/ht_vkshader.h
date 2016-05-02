@@ -37,7 +37,7 @@ namespace Hatchit {
             {
                 friend class IMaterial;
                 friend class VKRenderer;
-                friend class VKSwapchain;
+                friend class VKSwapChain;
             public:
                 VKShader(Core::Guid ID);
                 VKShader(VKShader&&) = default;

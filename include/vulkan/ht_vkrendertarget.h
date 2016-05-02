@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include <ht_rendertarget.h>
+#include <ht_rendertarget_base.h>
 #include <ht_vulkan.h>
 
 namespace Hatchit {
@@ -35,17 +35,14 @@ namespace Hatchit {
 
             class VKRenderer;
 
-            class HT_API VKRenderTarget : public Core::RefCounted<VKRenderTarget>, public RenderTargetBase
+            class HT_API VKRenderTarget : public RenderTargetBase
             {
             public:
-                VKRenderTarget(Core::Guid ID);
+                VKRenderTarget();
                 ~VKRenderTarget();
 
                 //Required function from RefCounted classes
                 bool Initialize(const std::string& fileName, VKRenderer* renderer);
-
-                ///Prepare the render target with Vulkan
-                bool VPrepare() override;
 
                 bool Blit(VkCommandBuffer commandBuffer, const Image_vk& image);
 

@@ -56,8 +56,7 @@ namespace Hatchit {
         {
         public:
             Material(Core::Guid ID);
-
-            ~Material();
+            virtual ~Material();
 
             bool Initialize(const std::string& fileName);
             bool InitializeAsync(Core::Handle<Material> handle);
@@ -73,9 +72,8 @@ namespace Hatchit {
 
             bool Update();
 
-            IPipelineHandle GetPipeline();
-
             const std::vector<Core::Handle<RenderPassBase>>& GetRenderPasses() const;
+            const PipelineHandle& GetPipeline() const;
 
         protected:
             MaterialBase* m_base;
@@ -84,7 +82,7 @@ namespace Hatchit {
             friend class Vulkan::VKGPUResourceThread;
 #endif
 #ifdef DX12_SUPPORT
-            friend class D3D12GPUResourceThread;
+            friend class DX::D3D12GPUResourceThread;
 #endif
         };
 

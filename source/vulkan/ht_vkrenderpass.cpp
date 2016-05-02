@@ -227,7 +227,7 @@ namespace Hatchit {
                 vkCmdSetViewport(m_commandBuffer, 0, 1, &viewport);
                 vkCmdSetScissor(m_commandBuffer, 0, 1, &scissor);
 
-                std::map<IPipelineHandle, std::vector<RenderableInstances>>::iterator iterator;
+                std::map<PipelineHandle, std::vector<RenderableInstances>>::iterator iterator;
 
                 for (iterator = m_pipelineList.begin(); iterator != m_pipelineList.end(); iterator++)
                 {
@@ -265,7 +265,7 @@ namespace Hatchit {
                         Renderable renderable = renderables[i].renderable;
                         uint32_t count = renderables[i].count;
 
-                        VKMaterialHandle material = renderable.material.DynamicCastHandle<VKMaterial>();
+                        MaterialHandle material = renderable.material;
                         VKMeshHandle     mesh = renderable.mesh.DynamicCastHandle<VKMesh>();
                     
                         material->BindMaterial(m_commandBuffer, vkPipelineLayout);
@@ -276,7 +276,7 @@ namespace Hatchit {
 
                         UniformBlock_vk vertBlock = mesh->GetVertexBlock();
                         UniformBlock_vk indexBlock = mesh->GetIndexBlock();
-                        uint32_t indexCount = mesh->GetIndexCount();
+                        uint32_t indexCount = mesh->VGetIndexCount();
 
                         vkCmdBindVertexBuffers(m_commandBuffer, 0, 1, &vertBlock.buffer, offsets);
                         vkCmdBindIndexBuffer(m_commandBuffer, indexBlock.buffer, 0, VK_INDEX_TYPE_UINT32);

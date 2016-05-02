@@ -114,10 +114,6 @@ namespace Hatchit {
             return m_base->VUpdate();
         }
 
-        IPipelineHandle Material::GetPipeline() {
-            return IPipelineHandle();
-        }
-
     }
 
 }

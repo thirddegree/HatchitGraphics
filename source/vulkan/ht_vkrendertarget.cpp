@@ -35,8 +35,7 @@ namespace Hatchit {
 
             using namespace Resource;
 
-            VKRenderTarget::VKRenderTarget(Core::Guid ID) :
-                Core::RefCounted<VKRenderTarget>(std::move(ID))
+            VKRenderTarget::VKRenderTarget()
             {
                 m_width = 0;
                 m_height = 0;
@@ -60,7 +59,7 @@ namespace Hatchit {
                 m_renderer = renderer;
                 m_device = &(renderer->GetVKDevice()).GetVKDevices()[0];
 
-                Resource::RenderTargetHandle handle = RenderTarget::GetHandleFromFileName(fileName);
+                Resource::RenderTargetHandle handle = Resource::RenderTarget::GetHandleFromFileName(fileName);
 
                 if (!handle.IsValid())
                 {
@@ -112,16 +111,6 @@ namespace Hatchit {
                     m_colorFormat = m_renderer->GetPreferredImageFormat();
                 }
 
-                if (!VPrepare())
-                {
-                    HT_DEBUG_PRINTF("Error: VKRenderTarget did not prepare properly");
-                    return false;
-                }
-                return true;
-            }
-
-            bool VKRenderTarget::VPrepare()
-            {
                 if (m_width == 0)
                     m_width = m_renderer->GetWidth();
                 if (m_height == 0)

@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -12,24 +12,35 @@
 **
 **/
 
-/**
-* \class MeshBase
-* \ingroup HatchitGraphics
-*
-* \brief An abstraction of a mesh that exists on the GPU
-*
-* You must pass this interface a Resource::Mesh which is a collection
-* of data that you want buffered onto the graphics card
-*/
+#pragma once
 
-#include <ht_mesh.h>
-#include <ht_mesh_base.h>
-#include <cstdint>
+#include <ht_platform.h>
 
 namespace Hatchit {
+
+    namespace Core
+    {
+        template<typename VarType>
+        class Handle;
+    }
+
+    namespace Resource
+    {
+        class Mesh;
+        class Model;
+    }
+
     namespace Graphics {
 
-        uint32_t Mesh::GetIndexCount() { return m_base->VGetIndexCount(); }
+        class HT_API MeshBase
+        {
+        public:
+            virtual ~MeshBase();
 
+            virtual uint32_t VGetIndexCount() = 0;
+
+        protected:
+            uint32_t m_indexCount;
+        };
     }
 }

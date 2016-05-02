@@ -13,18 +13,15 @@
 **/
 
 /**
-* \class IMesh
+* \class VKMesh
 * \ingroup HatchitGraphics
 *
-* \brief An interface to a mesh that exists on the GPU
-*
-* You must pass this interface a Resource::Mesh which is a collection
-* of data that you want buffered onto the graphics card
+* \brief A Mesh existing on the GPU via Vulkan
 */
 
 #pragma once
 
-#include <ht_mesh.h>
+#include <ht_mesh_base.h>
 #include <ht_vulkan.h>
 
 namespace Hatchit {
@@ -34,13 +31,15 @@ namespace Hatchit {
         namespace Vulkan {
 
             class VKRenderer;
-            class HT_API VKMesh : public Core::RefCounted<VKMesh>, public IMesh
+            class HT_API VKMesh : public MeshBase
             {
             public:
-                VKMesh(Core::Guid ID);
+                VKMesh();
                 ~VKMesh();
 
                 bool Initialize(Hatchit::Resource::Mesh* mesh, VKRenderer* renderer);
+
+                uint32_t VGetIndexCount() override;
 
                 UniformBlock_vk GetVertexBlock();
                 UniformBlock_vk GetIndexBlock();

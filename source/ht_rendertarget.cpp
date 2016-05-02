@@ -13,18 +13,25 @@
 **/
 
 #include <ht_rendertarget.h>
+#include <ht_rendertarget_base.h>
 
 namespace Hatchit
 {
     namespace Graphics
     {
-        Resource::RenderTarget::BlendOp RenderTargetBase::GetColorBlendOp() const
+        RenderTarget::RenderTarget(Core::Guid ID) :
+            Core::RefCounted<RenderTarget>(std::move(ID))
         {
-            return m_colorBlendOp;
+            m_base = nullptr;
         }
-        Resource::RenderTarget::BlendOp RenderTargetBase::GetAlphaBlendOp() const
+
+        Resource::RenderTarget::BlendOp RenderTarget::GetColorBlendOp() const
         {
-            return m_alphaBlendOp;
+            return m_base->VGetColorBlendOp();
+        }
+        Resource::RenderTarget::BlendOp RenderTarget::GetAlphaBlendOp() const
+        {
+            return m_base->VGetAlphaBlendOp();
         }
 
     }

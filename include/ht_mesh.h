@@ -31,6 +31,8 @@
 namespace Hatchit {
     namespace Graphics {
 
+        class MeshBase;
+
         struct Vertex
         {
             aiVector3D pos;
@@ -38,17 +40,18 @@ namespace Hatchit {
             aiVector2D uv;
         };
 
-        class HT_API IMesh 
+        class HT_API Mesh : public Core::RefCounted<Mesh>
         {
         public:
-            virtual ~IMesh() {};
+            Mesh(Core::Guid ID);
+            virtual ~Mesh() {};
 
             uint32_t GetIndexCount();
 
         protected:
-            uint32_t m_indexCount;
+            MeshBase* m_base;
         };
 
-        using IMeshHandle = Core::Handle<IMesh>;
+        using MeshHandle = Core::Handle<Mesh>;
     }
 }

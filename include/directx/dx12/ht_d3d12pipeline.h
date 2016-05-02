@@ -16,7 +16,8 @@
 #pragma once
 
 #include <ht_platform.h>
-#include <ht_pipeline.h>
+#include <ht_pipeline_base.h>
+#include <ht_pipeline_resource.h>
 #include <ht_directx.h>
 #include <ht_d3d12shader.h>
 #include <ht_refcounted.h>
@@ -27,10 +28,10 @@ namespace Hatchit {
 
         namespace DX
         {
-            class HT_API D3D12Pipeline : public Core::RefCounted<D3D12Pipeline>, public IPipeline
+            class HT_API D3D12Pipeline : public PipelineBase
             {
             public:
-                D3D12Pipeline(Core::Guid ID);
+                D3D12Pipeline();
 
                 ~D3D12Pipeline();
 
