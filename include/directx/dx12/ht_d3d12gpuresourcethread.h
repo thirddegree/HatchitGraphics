@@ -38,6 +38,9 @@ namespace Hatchit
 
                 void VStart()   override;
 
+                void VCreateTexture(std::string file, void** data)  override;
+                void VCreateMaterial(std::string file, void** data) override;
+
             private:
                 D3D12Device*            m_device;
 

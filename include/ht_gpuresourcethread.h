@@ -37,10 +37,14 @@ namespace Hatchit
         public:
             virtual ~GPUResourceThread() { };
             virtual void VStart() = 0;
+
             bool Locked() const;
             void Load(GPUResourceRequest* request);
             void LoadAsync(GPUResourceRequest* request);
             void Kill();
+
+            virtual void VCreateTexture(std::string file, void** data) = 0;
+            virtual void VCreateMaterial(std::string file, void** data) = 0;
 
         protected:
             std::thread             m_thread;
@@ -51,6 +55,7 @@ namespace Hatchit
             std::condition_variable m_cv;
             std::atomic_bool        m_processed;
             GPURequestQueue         m_requests;
+
         };
     }
 }

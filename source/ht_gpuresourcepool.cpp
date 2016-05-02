@@ -115,6 +115,19 @@ namespace Hatchit
             instance.m_thread->LoadAsync(request);
         }
 
+        void GPUResourcePool::CreateTexture(std::string file, void** data)
+        {
+            GPUResourcePool& instance = GPUResourcePool::instance();
+
+            instance.m_thread->VCreateTexture(file, data);
+        }
+
+        void GPUResourcePool::CreateMaterial(std::string file, void** data)
+        {
+            GPUResourcePool& instance = GPUResourcePool::instance();
+
+            instance.m_thread->VCreateMaterial(file, data);
+        }
      
     }
 }
