@@ -44,6 +44,13 @@ namespace Hatchit
 
                 auto device = _device->GetDevice();
 
+                m_width = handle->GetWidth();
+                m_height = handle->GetHeight();
+                m_bpp = handle->GetBPP();
+                m_channels = handle->GetChannels();
+                m_data = handle->GetData();
+                m_mipLevels = handle->GetMIPLevels();
+
                 /*Descibe and create a Texture2D*/
                 m_desc = {};
                 m_desc.MipLevels = 1;

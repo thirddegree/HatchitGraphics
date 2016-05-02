@@ -23,6 +23,7 @@
 #ifdef VK_SUPPORT
 #endif
 
+
 namespace Hatchit {
 
     namespace Graphics {

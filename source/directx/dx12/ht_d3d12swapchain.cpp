@@ -137,6 +137,7 @@ namespace Hatchit
 
             void D3D12SwapChain::VClear(float* color)
             {
+                m_commandAllocators[m_currentBuffer]->Reset();
                 m_commandList->Reset(m_commandAllocators[m_currentBuffer], nullptr);
                 m_commandList->ClearRenderTargetView(GetRenderTargetView(), color, 0, nullptr);
                 m_commandList->ClearDepthStencilView(GetDepthStencilView(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);

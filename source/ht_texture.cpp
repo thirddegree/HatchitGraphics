@@ -48,14 +48,19 @@ namespace Hatchit {
             //Request texture immediately for main thread of execution
             //This call will block the active thread while the GPUResourcePool
             //allocated the memory
-            TextureHandle handle = GPUResourcePool::RequestTexture(file);
+            GPUResourcePool::RequestTexture(file, reinterpret_cast<void**>(&m_base));
 
             return true;
         }
 
         bool Texture::InitializeAsync(Core::Handle<Texture> tempHandle, Core::Handle<Texture> defaultHandle, const std::string & file)
         {
-            GPUResourcePool::RequestTextureAsync(defaultHandle, tempHandle, file);
+            //Request texture asynchronously. This will keep the current default alive,
+            //while it is loading the resource on the GPUResourceThread. Once
+            //loading is finished, the handle for this texture should contain
+            //the internal data pointer to the requested resource
+            GPUResourcePool::RequestTextureAsync(defaultHandle, tempHandle, file,
+                reinterpret_cast<void**>(&m_base));
 
             return true;
         }

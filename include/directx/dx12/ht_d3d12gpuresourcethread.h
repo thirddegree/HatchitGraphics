@@ -17,6 +17,7 @@
 
 #include <ht_platform.h>
 #include <ht_gpuresourcethread.h>
+#include <ht_gpuresourcerequest.h>
 #include <ht_threadvector.h>
 #include <ht_threadstack.h>
 #include <ht_threadqueue.h>
@@ -57,6 +58,8 @@ namespace Hatchit
                 std::condition_variable m_cv;
                 std::atomic_bool        m_processed;
 
+                void ProcessTextureRequest(TextureRequest* request);
+                void ProcessMaterialRequest(MaterialRequest* request);
 
                 void thread_main();
             };

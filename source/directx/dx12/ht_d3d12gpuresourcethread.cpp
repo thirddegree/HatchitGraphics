@@ -15,6 +15,8 @@
 #include <ht_d3d12gpuresourcethread.h>
 #include <ht_device.h>
 #include <ht_d3d12device.h>
+#include <ht_d3d12texture.h>
+#include <ht_d3d12material.h>
 #include <ht_debug.h>
 #include <ht_gpuresourcerequest.h>
 #include <ht_texture_resource.h>
@@ -100,14 +102,13 @@ namespace Hatchit
                     {
                         case GPUResourceRequest::Type::Texture:
                         {
-                            auto textureRequest = static_cast<TextureRequest*>(*request);
+                            auto tRequest = static_cast<TextureRequest*>(*request);
                             
-                            if (!m_lock.owns_lock())
-                            {
-                                std::cout << "Async load." << std::endl;
-                            }
+                        } break;
+                        
+                        case GPUResourceRequest::Type::Material:
+                        {
 
-                            
                         } break;
 
                     }
@@ -118,6 +119,57 @@ namespace Hatchit
 
                 ReleaseCOM(_allocator);
             }
+
+             
+            void D3D12GPUResourceThread::ProcessTextureRequest(TextureRequest * request)
+            {
+                Resource::TextureHandle handle = Resource::Texture::GetHandle(request->file, request->file);
+                if (!m_lock.owns_lock())
+                {
+                    HT_DEBUG_PRINTF("Async load.\n");
+                    
+                }
+                else
+                {
+                    HT_DEBUG_PRINTF("Non-Async load.\n");
+
+                    D3D12Texture** base = reinterpret_cast<D3D12Texture**>(request->data);
+                    if (!*base)
+                    {
+                        *base = new D3D12Texture;
+                        if (!(*base)->Initialize(handle, m_device))
+                        {
+                            HT_DEBUG_PRINTF("Failed to initialize GPU Texture Resource.\n");
+                        }
+                    }
+                }
+            }
+
+            void D3D12GPUResourceThread::ProcessMaterialRequest(MaterialRequest * request)
+            {
+                Resource::MaterialHandle handle = Resource::Material::GetHandle(request->file, request->file);
+                if (!m_lock.owns_lock())
+                {
+                    HT_DEBUG_PRINTF("Async load.\n");
+
+                }
+                else
+                {
+                    HT_DEBUG_PRINTF("Non-Async load.\n");
+
+                    D3D12Material** base = reinterpret_cast<D3D12Material**>(request->data);
+                    if (!*base)
+                    {
+                        *base = new D3D12Material;
+                        if (!(*base)->Initialize(handle, m_device))
+                        {
+                            HT_DEBUG_PRINTF("Failed to initialize GPU Material Resource.\n");
+                        }
+                    }
+                }
+            }
+
+                
         }
     }
 }

@@ -36,13 +36,15 @@ namespace Hatchit
 
                 void Upload(ID3D12CommandList* commandList, uint32_t descriptorOffset);
 
-                bool Initialize(Resource::TextureHandle handle, D3D12Device* _device);
 
             private:
+                bool Initialize(Resource::TextureHandle handle, D3D12Device* _device);
+
                 D3D12_RESOURCE_DESC         m_desc;
                 ID3D12Resource*             m_texture;
                 ID3D12Resource*             m_uploadHeap;
-                Resource::TextureHandle     m_handle;
+
+                friend class D3D12GPUResourceThread;
             };
         }
     }

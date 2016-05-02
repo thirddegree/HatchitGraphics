@@ -56,20 +56,31 @@ namespace Hatchit
             delete instance.m_thread;
         }
 
-        TextureHandle GPUResourcePool::RequestTexture(std::string file)
+        void GPUResourcePool::RequestTexture(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
 
             TextureRequest* request = new TextureRequest;
             request->file = file;
             request->type = GPUResourceRequest::Type::Texture;
+            request->data = data;
 
             instance.m_thread->VLoad(request);
-
-            return TextureHandle();
         }
 
-        void GPUResourcePool::RequestTextureAsync(TextureHandle _default, TextureHandle temporary, std::string file)
+        void GPUResourcePool::RequestMaterial(std::string file, void** data)
+        {
+            GPUResourcePool& instance = GPUResourcePool::instance();
+
+            MaterialRequest* request = new MaterialRequest;
+            request->file = file;
+            request->type = GPUResourceRequest::Type::Material;
+            request->data = data;
+
+            instance.m_thread->VLoad(request);
+        }
+
+        void GPUResourcePool::RequestTextureAsync(TextureHandle _default, TextureHandle temporary, std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
 
@@ -77,14 +88,24 @@ namespace Hatchit
             request->file = file;
             request->defaultHandle = _default;
             request->tempHandle = temporary;
+            request->data = data;
             request->type = GPUResourceRequest::Type::Texture;
 
             instance.m_thread->VLoadAsync(request);
         }
 
-        void GPUResourcePool::RequestMaterialAsync(MaterialHandle _default, MaterialHandle temporary, std::string file)
+        void GPUResourcePool::RequestMaterialAsync(MaterialHandle _default, MaterialHandle temporary, std::string file, void** data)
         {
+            GPUResourcePool& instance = GPUResourcePool::instance();
 
+            MaterialRequest* request = new MaterialRequest;
+            request->file = file;
+            request->defaultHandle = _default;
+            request->tempHandle = temporary;
+            request->data = data;
+            request->type = GPUResourceRequest::Type::Material;
+
+            instance.m_thread->VLoadAsync(request);
         }
 
      

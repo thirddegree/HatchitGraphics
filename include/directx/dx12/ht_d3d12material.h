@@ -44,19 +44,19 @@ namespace Hatchit {
             public:
                 D3D12Material();
 
-                virtual bool VSetInt(std::string name, int data) override;
-                virtual bool VSetFloat(std::string name, float data) override;
-                virtual bool VSetFloat3(std::string name, Math::Vector3 data) override;
-                virtual bool VSetFloat4(std::string name, Math::Vector4 data) override;
-                virtual bool VSetMatrix4(std::string name, Math::Matrix4 data) override;
-                virtual bool VBindTexture(std::string name, TextureHandle texture) override;
-                virtual bool VUnbindTexture(std::string name, TextureHandle texture) override;
-                virtual bool VUpdate() override;
+                bool VSetInt(std::string name, int data)                        override;
+                bool VSetFloat(std::string name, float data)                    override;
+                bool VSetFloat3(std::string name, Math::Vector3 data)           override;
+                bool VSetFloat4(std::string name, Math::Vector4 data)           override;
+                bool VSetMatrix4(std::string name, Math::Matrix4 data)          override;
+                bool VBindTexture(std::string name, TextureHandle texture)      override;
+                bool VUnbindTexture(std::string name, TextureHandle texture)    override;
+                bool VUpdate()                                                  override;
+
             private:
                 bool Initialize(Resource::MaterialHandle handle, D3D12Device* device);
 
-
-                friend class Material;
+                friend class D3D12GPUResourceThread;
             };
         }
     }

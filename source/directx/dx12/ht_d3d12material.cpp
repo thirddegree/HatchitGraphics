@@ -38,10 +38,12 @@ namespace Hatchit {
                 auto texturePaths = handle->GetTexturePaths();
                 for (auto path : texturePaths)
                 {
-                    TextureHandle h = Texture::GetHandle(path.path, path.path);
-/*
-                    GPUResourcePool::CreateTexture(path.path);*/
+                    //TextureHandle h = Texture::GetHandle(path.path, path.path);
+
+
                 }
+
+                
 
                 return true;
             }
