@@ -56,6 +56,13 @@ namespace Hatchit
             delete instance.m_thread;
         }
 
+        bool GPUResourcePool::IsLocked()
+        {
+            GPUResourcePool& instance = GPUResourcePool::instance();
+
+            return instance.m_thread->VLocked();
+        }
+
         void GPUResourcePool::RequestTexture(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();

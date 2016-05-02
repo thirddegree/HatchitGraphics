@@ -38,7 +38,7 @@ namespace Hatchit {
                 auto texturePaths = handle->GetTexturePaths();
                 for (auto path : texturePaths)
                 {
-                    //TextureHandle h = Texture::GetHandle(path.path, path.path);
+                    TextureHandle h = Texture::GetHandle(path.path, path.path);
 
 
                 }

@@ -1,3 +1,4 @@
+
 /**
 **    Hatchit Engine
 **    Copyright(c) 2015-2016 Third-Degree
@@ -12,26 +13,15 @@
 **
 **/
 
-#pragma once
-
-#include <ht_platform.h>
-#include <ht_string.h>
+#include <ht_gpuresourcethread.h>
 
 namespace Hatchit
 {
     namespace Graphics
     {
-        class GPUResourceRequest;
-
-        class HT_API IGPUResourceThread
+        /*bool GPUResourceThread::IsLocked() const
         {
-        public:
-            virtual ~IGPUResourceThread() { };
-            virtual void VStart() = 0;
-            virtual bool VLocked() const = 0;
-            virtual void VLoad(GPUResourceRequest* request) = 0;
-            virtual void VLoadAsync(GPUResourceRequest* request) = 0;
-            virtual void VKill() = 0;
-        };
+            return m_lock.owns_lock();
+        }*/
     }
 }
