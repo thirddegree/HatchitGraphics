@@ -31,5 +31,10 @@ namespace Hatchit {
 
         uint32_t Mesh::GetIndexCount() { return m_base->VGetIndexCount(); }
 
+        MeshBase* const Mesh::GetBase() const
+        {
+            return m_base;
+        }
+
     }
 }

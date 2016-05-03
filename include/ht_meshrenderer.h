@@ -60,7 +60,7 @@ namespace Hatchit {
 
         protected:
             RenderPassHandle        m_renderPass;
-            PipelineHandle          m_pipeline;
+            PipelineHandle           m_pipeline;
             MaterialHandle          m_material;
             MeshHandle              m_mesh;
             std::vector<Resource::ShaderVariable*> m_instanceData;

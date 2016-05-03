@@ -55,6 +55,8 @@ namespace Hatchit {
 
             virtual bool VUpdate() = 0;
 
+            virtual PipelineHandle const VGetPipeline() const = 0;
+
         protected:
             std::vector<Core::Handle<RenderPass>> m_renderPasses;
 

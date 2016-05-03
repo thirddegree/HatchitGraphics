@@ -12,10 +12,10 @@
 **
 **/
 
-#include <ht_VKSwapChain.h>
-#include <ht_vkrenderer.h>
+#include <ht_vkswapchain.h>
 #include <ht_vkrootlayout.h>
 #include <ht_rootlayout.h>
+#include <ht_vktools.h>
 
 namespace Hatchit {
 
@@ -25,7 +25,7 @@ namespace Hatchit {
 
             using namespace Resource;
 
-            VKSwapChain::VKSwapChain(const RendererParams& rendererParams, VKDevice* device)
+            VKSwapChain::VKSwapChain(const RendererParams& rendererParams, VKDevice* device, VKQueue* queue)
             {
                 m_swapchain = VK_NULL_HANDLE;
 
@@ -33,8 +33,16 @@ namespace Hatchit {
                 m_instance = device->GetVKInstance();
                 m_gpu = device->GetVKPhysicalDevices()[0];
 
-                if (!prepareSurface(rendererParams))
-                    HT_DEBUG_PRINTF("VKSwapChain(): Failed to prepare surface");
+                //TODO: Worry about different queue types
+                if (queue->GetQueueType() != QueueType::GRAPHICS)
+                    HT_ERROR_PRINTF("Providing a non-graphics queue to the swapchain is currently undefined");
+                m_queue = queue->GetVKQueue();
+
+                Color clearColor = rendererParams.clearColor;
+                m_clearColor.color = { clearColor.r, clearColor.g, clearColor.b, clearColor.a };
+
+                m_window = rendererParams.window;
+                m_display = rendererParams.display;
             }
 
             VKSwapChain::~VKSwapChain()
@@ -54,29 +62,49 @@ namespace Hatchit {
                 destroySurface();
             }
 
-            const VkCommandBuffer& VKSwapChain::VKGetCurrentCommand()
+            void VKSwapChain::VClear(float* color) 
+            {
+                m_clearColor.color = { color[0], color[1], color[2], color[3] };
+            }
+            bool VKSwapChain::VInitialize(uint32_t width, uint32_t height)
+            {
+                if (!prepareSurface())
+                    HT_DEBUG_PRINTF("VKSwapChain(): Failed to prepare surface");
+
+                if (!vkPrepare())
+                    HT_ERROR_PRINTF("VKSwapChain(): Failed to prepare subsystems");
+
+                if (!vkPrepareResources())
+                    HT_ERROR_PRINTF("VKSwapChain(): Failed to prepare necessary resources");
+
+                return true;
+            }
+            void VKSwapChain::VResize(uint32_t width, uint32_t height) 
+            {
+                
+            }
+            void VKSwapChain::VPresent() {}
+
+            const VkCommandBuffer& VKSwapChain::GetVKCurrentCommand() const
             {
                 return m_swapchainBuffers[m_currentBuffer].command;
             }
 
-            const VkSurfaceKHR& VKSwapChain::VKGetSurface()
+            const VkSurfaceKHR& VKSwapChain::GetVKSurface() const
             {
                 return m_surface;
             }
-            const uint32_t& VKSwapChain::VKGetGraphicsQueueIndex()
+            const uint32_t& VKSwapChain::GetVKGraphicsQueueIndex() const
             {
                 return m_graphicsQueueNodeIndex;
             }
-            const VkFormat& VKSwapChain::VKGetPreferredColorFormat()
+
+            const VkClearValue& VKSwapChain::GetVKClearColor() const
             {
-                return m_preferredColorFormat;
-            }
-            const VkFormat& VKSwapChain::VKGetPreferredDepthFormat()
-            {
-                return m_preferredDepthFormat;
+                return m_clearColor;
             }
 
-            bool VKSwapChain::VKPrepare()
+            bool VKSwapChain::vkPrepare()
             {
                 VkResult err;
 
@@ -160,6 +188,8 @@ namespace Hatchit {
                     preTransform = surfCaps.currentTransform;
                 }
 
+                VKTools::CreateSetupCommandBuffer();
+
                 /*
                     Prepare Color
                 */
@@ -185,10 +215,12 @@ namespace Hatchit {
                 if (!prepareFramebuffers(swapchainExtent))
                     return false;
 
+                VKTools::FlushSetupCommandBuffer();
+
                 return true;
             }
 
-            bool VKSwapChain::VKPrepareResources()
+            bool VKSwapChain::vkPrepareResources()
             {
                 VkResult err;
 
@@ -256,7 +288,7 @@ namespace Hatchit {
 
                 //Buffer 3 blank points
                 float blank[9] = { 0,0,0,0,0,0,0,0,0 };
-                if (!CreateUniformBuffer(m_device, 9, blank, &m_vertexBuffer))
+                if (!VKTools::CreateUniformBuffer(9, blank, &m_vertexBuffer))
                     return false;
 
                 m_vertexBuffer.descriptor.offset = 0;
@@ -458,7 +490,7 @@ namespace Hatchit {
                 return fpQueuePresentKHR(queue, &present);
             }
 
-            void VKSwapChain::VKSetIncomingRenderPass(VKRenderPassHandle renderPass)
+            void VKSwapChain::VKSetIncomingRenderPass(VKRenderPass* renderPass)
             {
                 std::vector<RenderTargetHandle> incomingRenderTargets = renderPass->GetOutputRenderTargets();
                 for (size_t i = 0; i < incomingRenderTargets.size(); i++)
@@ -506,14 +538,14 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKSwapChain::prepareSurface(const RendererParams& rendererParams) 
+            bool VKSwapChain::prepareSurface() 
             {
                 VkResult err;
 
                 //Hook into the window
 #ifdef HT_SYS_WINDOWS
                 //Get HINSTANCE from HWND
-                HWND window = (HWND)rendererParams.window;
+                HWND window = (HWND)m_window;
                 HINSTANCE instance;
                 instance = (HINSTANCE)GetWindowLongPtr(window, GWLP_HINSTANCE);
 
@@ -538,8 +570,8 @@ namespace Hatchit {
                 creationInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
                 creationInfo.pNext = nullptr;
                 creationInfo.flags = 0;
-                creationInfo.connection = (xcb_connection_t*)params.display;
-                creationInfo.window = *(uint32_t*)params.window;
+                creationInfo.connection = (xcb_connection_t*)m_display;
+                creationInfo.window = *(uint32_t*)m_window;
 
                 err = vkCreateXcbSurfaceKHR(m_instance, &creationInfo, nullptr, &m_surface);
 
@@ -833,8 +865,7 @@ namespace Hatchit {
 
                     //Render loop will expect image to have been used before
                     //Init image ot the VK_IMAGE_ASPECT_COLOR_BIT state
-                    VkCommandBuffer setupCommand = renderer->GetSetupCommandBuffer();
-                    renderer->SetImageLayout(setupCommand, buffer.image, VK_IMAGE_ASPECT_COLOR_BIT,
+                    VKTools::SetImageLayout(buffer.image, VK_IMAGE_ASPECT_COLOR_BIT,
                         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
                     colorImageView.image = buffer.image;
@@ -929,7 +960,7 @@ namespace Hatchit {
                 m_depthBuffer.memAllocInfo.memoryTypeIndex = 0;
 
                 //No requirements
-                pass = renderer->MemoryTypeFromProperties(memoryRequirements.memoryTypeBits, 0, &m_depthBuffer.memAllocInfo.memoryTypeIndex);
+                pass = VKTools::MemoryTypeFromProperties(memoryRequirements.memoryTypeBits, 0, &m_depthBuffer.memAllocInfo.memoryTypeIndex);
                 assert(pass);
                 if (!pass)
                 {
@@ -955,8 +986,7 @@ namespace Hatchit {
                     return false;
                 }
 
-                VkCommandBuffer setupCommand = renderer->GetSetupCommandBuffer();
-                renderer->SetImageLayout(setupCommand, m_depthBuffer.image, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+                VKTools::SetImageLayout(m_depthBuffer.image, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
                 //Create image view

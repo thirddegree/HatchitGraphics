@@ -21,6 +21,7 @@
 
 #pragma once
 
+#include <ht_mesh_resource.h>
 #include <ht_mesh_base.h>
 #include <ht_vulkan.h>
 
@@ -37,7 +38,7 @@ namespace Hatchit {
                 VKMesh();
                 ~VKMesh();
 
-                bool Initialize(Hatchit::Resource::Mesh* mesh, const VKDevice& device);
+                bool Initialize(Hatchit::Resource::Mesh* mesh, const VkDevice& device);
 
                 uint32_t VGetIndexCount() override;
 

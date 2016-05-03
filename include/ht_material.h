@@ -75,7 +75,7 @@ namespace Hatchit {
             bool Update();
 
             const std::vector<Core::Handle<RenderPass>>& GetRenderPasses() const;
-            const PipelineHandle& GetPipeline() const;
+            PipelineHandle const GetPipeline() const;
 
             MaterialBase* const GetBase() const;
 

@@ -33,7 +33,7 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            class VKRenderer;
+            class VKSwapChain;
 
             class HT_API VKRenderTarget : public RenderTargetBase
             {
@@ -42,7 +42,7 @@ namespace Hatchit {
                 ~VKRenderTarget();
 
                 //Required function from RefCounted classes
-                bool Initialize(const std::string& fileName, VKRenderer* renderer);
+                bool Initialize(const Resource::RenderTargetHandle& handle, const VkDevice& device, const VkPhysicalDevice& gpu, const VKSwapChain& swapchain);
 
                 bool Blit(VkCommandBuffer commandBuffer, const Image_vk& image);
 
@@ -54,8 +54,8 @@ namespace Hatchit {
                 const VkClearValue* GetClearColor() const;
 
             protected:
-                VKRenderer* m_renderer;
-                const VkDevice* m_device;
+                VkDevice m_device;
+                VkPhysicalDevice m_gpu;
 
                 VkClearValue* m_clearColor;
 

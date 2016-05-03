@@ -20,6 +20,12 @@ namespace Hatchit
     {
         namespace Vulkan
         {
+            VkCommandPool                    VKTools::m_setupCommandPool;
+            VkCommandBuffer                  VKTools::m_setupCommandBuffer;
+            VkDevice                         VKTools::m_device;
+            VkQueue                          VKTools::m_queue;
+            VkPhysicalDeviceMemoryProperties VKTools::m_gpuMemoryProps;
+
             bool VKTools::Initialize(const VKDevice* device, const VKQueue* queue) 
             {
                 m_device = device->GetVKDevices()[0];
@@ -65,11 +71,195 @@ namespace Hatchit
                 vkDestroyCommandPool(m_device, m_setupCommandPool, nullptr);
             }
 
-            bool VKTools::CreateUniformBuffer(size_t dataSize, void* data, UniformBlock_vk* uniformBlock) { }
-            bool VKTools::CreateTexelBuffer(size_t dataSize, void* data, TexelBlock_vk* texelBlock) {}
+            bool VKTools::CreateUniformBuffer(size_t dataSize, void* data, UniformBlock_vk* uniformBlock) 
+            {
+                VkResult err;
 
-            void VKTools::DeleteUniformBuffer(UniformBlock_vk& uniformBlock) {}
-            void VKTools::DeleteTexelBuffer(TexelBlock_vk& texelBlock) {}
+                //Setup Buffer
+
+                VkBufferCreateInfo bufferCreateInfo = {};
+                bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+                bufferCreateInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+                bufferCreateInfo.size = dataSize;
+
+                err = vkCreateBuffer(m_device, &bufferCreateInfo, nullptr, &uniformBlock->buffer);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+                    HT_DEBUG_PRINTF("VKMesh::createBuffer(): Failed to create buffer\n");
+                    return false;
+                }
+
+                //Setup buffer requirements
+                VkMemoryRequirements memReqs;
+                vkGetBufferMemoryRequirements(m_device, uniformBlock->buffer, &memReqs);
+
+                VkMemoryAllocateInfo memAllocInfo = {};
+                memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+                memAllocInfo.pNext = nullptr;
+                memAllocInfo.allocationSize = memReqs.size;
+                memAllocInfo.memoryTypeIndex = 0;
+
+                bool okay = MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memAllocInfo.memoryTypeIndex);
+                assert(okay);
+                if (!okay)
+                {
+                    HT_DEBUG_PRINTF("VKMesh::createBuffer(): Failed to get memory type\n");
+                    return false;
+                }
+
+                //Allocate and fill memory
+                void* pData;
+
+                err = vkAllocateMemory(m_device, &memAllocInfo, nullptr, &uniformBlock->memory);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+                    HT_DEBUG_PRINTF("VKMesh::createBuffer(): Failed to allocate memory\n");
+                    return false;
+                }
+
+                //We may not ask for a buffer that has anything in it
+                if (data != nullptr)
+                {
+                    err = vkMapMemory(m_device, uniformBlock->memory, 0, dataSize, 0, &pData);
+                    assert(!err);
+                    if (err != VK_SUCCESS)
+                    {
+                        HT_DEBUG_PRINTF("VKMesh::createBuffer(): Failed to map memory\n");
+                        return false;
+                    }
+
+                    //Actually copy data into location
+                    memcpy(pData, data, dataSize);
+
+                    //Unmap memory and then bind to the uniform
+                    vkUnmapMemory(m_device, uniformBlock->memory);
+                }
+
+                err = vkBindBufferMemory(m_device, uniformBlock->buffer, uniformBlock->memory, 0);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+                    HT_DEBUG_PRINTF("VKMesh::VBuffer(): Failed to bind memory\n");
+                    return false;
+                }
+
+                uniformBlock->descriptor.buffer = uniformBlock->buffer;
+                uniformBlock->descriptor.offset = 0;
+                uniformBlock->descriptor.range = dataSize;
+
+                return true;
+            }
+            bool VKTools::CreateTexelBuffer(size_t dataSize, void* data, TexelBlock_vk* texelBlock) 
+            {
+                VkResult err;
+
+                //Setup Buffer
+
+                VkBufferCreateInfo bufferCreateInfo = {};
+                bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+                bufferCreateInfo.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+                bufferCreateInfo.size = dataSize;
+
+                err = vkCreateBuffer(m_device, &bufferCreateInfo, nullptr, &texelBlock->buffer);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+                    HT_DEBUG_PRINTF("VKMesh::createBuffer(): Failed to create buffer\n");
+                    return false;
+                }
+
+                //Setup buffer requirements
+                VkMemoryRequirements memReqs;
+                vkGetBufferMemoryRequirements(m_device, texelBlock->buffer, &memReqs);
+
+                VkMemoryAllocateInfo memAllocInfo = {};
+                memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+                memAllocInfo.pNext = nullptr;
+                memAllocInfo.allocationSize = memReqs.size;
+                memAllocInfo.memoryTypeIndex = 0;
+
+                bool okay = MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memAllocInfo.memoryTypeIndex);
+                assert(okay);
+                if (!okay)
+                {
+                    HT_DEBUG_PRINTF("VKMesh::createBuffer(): Failed to get memory type\n");
+                    return false;
+                }
+
+                //Allocate and fill memory
+                void* pData;
+
+                err = vkAllocateMemory(m_device, &memAllocInfo, nullptr, &texelBlock->memory);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+                    HT_DEBUG_PRINTF("VKMesh::createBuffer(): Failed to allocate memory\n");
+                    return false;
+                }
+
+                //We may not ask for a buffer that has anything in it
+                if (data != nullptr)
+                {
+                    err = vkMapMemory(m_device, texelBlock->memory, 0, dataSize, 0, &pData);
+                    assert(!err);
+                    if (err != VK_SUCCESS)
+                    {
+                        HT_DEBUG_PRINTF("VKMesh::createBuffer(): Failed to map memory\n");
+                        return false;
+                    }
+
+                    //Actually copy data into location
+                    memcpy(pData, data, dataSize);
+
+                    //Unmap memory and then bind to the uniform
+                    vkUnmapMemory(m_device, texelBlock->memory);
+                }
+
+                err = vkBindBufferMemory(m_device, texelBlock->buffer, texelBlock->memory, 0);
+                assert(!err);
+                if (err != VK_SUCCESS)
+                {
+                    HT_DEBUG_PRINTF("VKMesh::VBuffer(): Failed to bind memory\n");
+                    return false;
+                }
+
+                //Create a buffer view
+                VkBufferViewCreateInfo viewInfo = {};
+                viewInfo.sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO;
+                viewInfo.pNext = nullptr;
+                viewInfo.flags = 0;
+                viewInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+                viewInfo.offset = 0;
+                viewInfo.range = dataSize;
+                viewInfo.buffer = texelBlock->buffer;
+
+                vkCreateBufferView(m_device, &viewInfo, nullptr, &texelBlock->view);
+
+                return true;
+            }
+
+            void VKTools::DeleteUniformBuffer(UniformBlock_vk& uniformBlock) 
+            {
+                vkDestroyBuffer(m_device, uniformBlock.buffer, nullptr);
+                vkFreeMemory(m_device, uniformBlock.memory, nullptr);
+            }
+            void VKTools::DeleteTexelBuffer(TexelBlock_vk& texelBlock) 
+            {
+                vkDestroyBufferView(m_device, texelBlock.view, nullptr);
+                vkDestroyBuffer(m_device, texelBlock.buffer, nullptr);
+                vkFreeMemory(m_device, texelBlock.memory, nullptr);
+            }
+
+            VkFormat VKTools::GetPreferredColorFormat()
+            {
+                return VK_FORMAT_R8G8B8A8_UNORM;
+            }
+            VkFormat VKTools::GetPreferredDepthFormat()
+            {
+                return VK_FORMAT_D32_SFLOAT;
+            }
 
             void VKTools::CreateSetupCommandBuffer() 
             {

@@ -23,6 +23,7 @@
 #ifdef VK_SUPPORT
 #include <ht_vkdevice.h>
 #include <ht_vkswapchain.h>
+#include <ht_vkqueue.h>
 #endif
 
 
@@ -31,6 +32,7 @@ namespace Hatchit {
     namespace Graphics {
 
         IDevice*        Renderer::_Device = nullptr;
+        GPUQueue*       Renderer::_Queue = nullptr;
         RendererType    Renderer::_Type = UNKNOWN;
 
         void Renderer::RegisterRenderPass(RenderPassHandle pass)
@@ -100,12 +102,13 @@ namespace Hatchit {
                     if (!_Device)
                     {
                         _Device = new Vulkan::VKDevice;
+                        _Queue = new Vulkan::VKQueue(QueueType::GRAPHICS);
                         if (!_Device->VInitialize())
                             return false;
                         _Type = RendererType::VULKAN;
                     }
 
-                    m_swapChain = new Vulkan::VKSwapChain();
+                    m_swapChain = new Vulkan::VKSwapChain(params, static_cast<Vulkan::VKDevice*>(_Device), static_cast<Vulkan::VKQueue*>(_Queue));
                     if (!m_swapChain->VInitialize(params.viewportWidth, params.viewportHeight))
                         return false;
                 } break;

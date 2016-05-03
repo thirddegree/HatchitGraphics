@@ -27,7 +27,7 @@ namespace Hatchit {
             return m_base->m_renderPasses;
         }
 
-        const PipelineHandle& Material::GetPipeline() const
+        PipelineHandle const Material::GetPipeline() const
         {
             return m_base->VGetPipeline();
         }
@@ -103,6 +103,11 @@ namespace Hatchit {
         bool Material::Update()
         {
             return m_base->VUpdate();
+        }
+
+        MaterialBase* const Material::GetBase() const 
+        {
+            return m_base;
         }
 
     }

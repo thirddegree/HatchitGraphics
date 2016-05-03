@@ -15,7 +15,7 @@
 #include <ht_vkmaterial.h>
 #include <ht_vkshader.h>
 #include <ht_vktexture.h>
-#include <ht_vkrenderer.h>
+#include <ht_renderpass.h>
 #include <ht_vkpipeline.h>
 
 #include <cassert>
@@ -44,8 +44,8 @@ namespace Hatchit {
                 //Gather resources and handles
                 std::string pipelinePath = handle->GetPipelinePath();
 
-                PipelineHandle pipelineHandle = Pipeline::GetHandle(pipelinePath, pipelinePath);
-                m_pipeline = static_cast<VKPipeline*>(pipelineHandle->GetBase());
+                m_pipelineHandle = Pipeline::GetHandle(pipelinePath, pipelinePath);
+                m_pipeline = static_cast<VKPipeline*>(m_pipelineHandle->GetBase());
 
                 //Get render pass paths and construct handles
                 std::vector<std::string> renderPassPaths = handle->GetRenderPassPaths();
@@ -61,7 +61,7 @@ namespace Hatchit {
                 
                 //Get root layout from first render pass
                 VKRenderPass* renderPass = static_cast<VKRenderPass*>(m_renderPasses[0]->GetBase());
-                VKRootLayout* rootLayout = renderPass->GetVKRootLayout();
+                const VKRootLayout* rootLayout = renderPass->GetVKRootLayout();
 
                 m_descriptorSetLayouts = rootLayout->VKGetDescriptorSetLayouts();
 
@@ -141,6 +141,11 @@ namespace Hatchit {
             {
                 //m_textures.erase(name);
                 return true;
+            }
+
+            PipelineHandle const VKMaterial::VGetPipeline() const 
+            {
+                return m_pipelineHandle;
             }
 
             const VKPipeline* VKMaterial::GetVKPipeline() const

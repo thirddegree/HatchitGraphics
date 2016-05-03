@@ -36,6 +36,7 @@
 #include <ht_renderpass.h>
 #include <ht_camera.h>
 #include <ht_device.h>
+#include <ht_gpuqueue.h>
 
 namespace Hatchit {
 
@@ -108,6 +109,7 @@ namespace Hatchit {
 
         protected:
             static IDevice*     _Device;
+            static GPUQueue*    _Queue;
             static RendererType _Type;
 
             //A collection of renderpass layers. Each layer may contain multiple render passes.

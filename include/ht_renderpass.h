@@ -43,6 +43,8 @@ namespace Hatchit {
             RenderPass(Core::Guid ID);
             virtual ~RenderPass() { };
 
+            bool Initialize(const std::string& file);
+
             bool BuildCommandList();
 
             void SetView(Math::Matrix4 view);

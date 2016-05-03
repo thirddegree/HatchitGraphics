@@ -45,7 +45,7 @@ namespace Hatchit
                 queueProps.resize(queueCount);
                 vkGetPhysicalDeviceQueueFamilyProperties(gpu, &queueCount, queueProps.data());
 
-                for (int32_t i = 0; i < queueCount; i++)
+                for (uint32_t i = 0; i < queueCount; i++)
                 {
                     if (queueProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT &&
                         m_queueType == QueueType::GRAPHICS)
@@ -67,10 +67,12 @@ namespace Hatchit
                     }
                 }
                 assert(graphicsQueueIndex >= 0);
-                assert(graphicsQueueIndex < queueCount);
+                assert(graphicsQueueIndex < static_cast<int32_t>(queueCount));
 
                 // Get the graphics queue
                 vkGetDeviceQueue(device, graphicsQueueIndex, 0, &m_queue);
+
+                return true;
             }
 
             const VkQueue& VKQueue::GetVKQueue() const { return m_queue; }

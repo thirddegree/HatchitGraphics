@@ -13,8 +13,8 @@
 **/
 
 #include <ht_vkpipeline.h>
-#include <ht_vkrenderer.h>
 #include <ht_rootlayout.h>
+#include <ht_renderpass.h>
 #include <ht_vktools.h>
 
 #include <cassert>
@@ -36,29 +36,27 @@ namespace Hatchit {
             VKPipeline::~VKPipeline() 
             {
                 //Destroy buffer
-                vkUnmapMemory(*m_device, m_uniformVSBuffer.memory);
+                vkUnmapMemory(m_device, m_uniformVSBuffer.memory);
                 VKTools::DeleteUniformBuffer(m_uniformVSBuffer);
 
                 //Destroy descriptor sets
-                vkFreeDescriptorSets(*m_device, *m_descriptorPool, 1, &m_descriptorSet);
+                vkFreeDescriptorSets(m_device, m_descriptorPool, 1, &m_descriptorSet);
 
                 //Destroy Pipeline
-                vkDestroyPipelineCache(*m_device, m_pipelineCache, nullptr);
-                vkDestroyPipeline(*m_device, m_pipeline, nullptr);
+                vkDestroyPipelineCache(m_device, m_pipelineCache, nullptr);
+                vkDestroyPipeline(m_device, m_pipeline, nullptr);
             }
 
-            bool VKPipeline::Initialize(const std::string& fileName, VKRenderer* renderer)
+            bool VKPipeline::Initialize(const Resource::PipelineHandle& handle, const VkDevice& device, const VkDescriptorPool& descriptorPool)
             {
-                m_renderer = renderer;
-                m_device = m_device = &(renderer->GetVKDevice()).GetVKDevices()[0];
-                m_descriptorPool = &(renderer->GetVKDescriptorPool());
-
-                Resource::PipelineHandle handle = Resource::Pipeline::GetHandleFromFileName(fileName);
                 if (!handle.IsValid())
                 {
                     return false;
                     HT_DEBUG_PRINTF("VKPipeline::VInitialize() ERROR: Handle was invalid");
                 }
+
+                m_device = device;
+                m_descriptorPool = descriptorPool;
 
                 setVertexLayout(handle->GetVertexLayout());
                 setInstanceLayout(handle->GetInstanceLayout());
@@ -86,7 +84,7 @@ namespace Hatchit {
                 RenderPassHandle renderPassHandle = RenderPass::GetHandle(renderPassPath, renderPassPath);
                 m_renderPass = static_cast<VKRenderPass*>(renderPassHandle->GetBase());
 
-                if (!preparePipeline(*m_renderer))
+                if (!preparePipeline())
                     return false;
 
                 if (!prepareDescriptorSet())
@@ -470,7 +468,7 @@ namespace Hatchit {
                 m_shaderStages.push_back(shaderStage);
             }
 
-            bool VKPipeline::preparePipeline(VKRenderer& renderer)
+            bool VKPipeline::preparePipeline()
             {
                 VkResult err;
 
@@ -592,8 +590,8 @@ namespace Hatchit {
 
                 //Get pipeline layout
                 RootLayoutHandle rootLayoutHandle = Graphics::RootLayout::GetHandle("TestRootDescriptor.json", "TestRootDescriptor.json");
-                VKRootLayout* rootLayout = static_cast<VKRootLayout*>(rootLayoutHandle->GetBase());
-                m_pipelineLayout = rootLayout->VKGetPipelineLayout();
+                m_rootLayout = static_cast<VKRootLayout*>(rootLayoutHandle->GetBase());
+                m_pipelineLayout = m_rootLayout->VKGetPipelineLayout();
 
                 //Finalize pipeline
                 VkGraphicsPipelineCreateInfo pipelineInfo = {};
@@ -614,7 +612,7 @@ namespace Hatchit {
                 VkPipelineCacheCreateInfo pipelineCacheInfo = {};
                 pipelineCacheInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
 
-                err = vkCreatePipelineCache(*m_device, &pipelineCacheInfo, nullptr, &m_pipelineCache);
+                err = vkCreatePipelineCache(m_device, &pipelineCacheInfo, nullptr, &m_pipelineCache);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -622,7 +620,7 @@ namespace Hatchit {
                     return false;
                 }
 
-                err = vkCreateGraphicsPipelines(*m_device, m_pipelineCache, 1, &pipelineInfo, nullptr, &m_pipeline);
+                err = vkCreateGraphicsPipelines(m_device, m_pipelineCache, 1, &pipelineInfo, nullptr, &m_pipeline);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -643,16 +641,16 @@ namespace Hatchit {
                 m_uniformVSBuffer.descriptor.offset = 0;
                 m_uniformVSBuffer.descriptor.range = bufferSize;
 
-                VkDescriptorSetLayout layout = m_renderer->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts()[1]; //Hack as fuck
+                VkDescriptorSetLayout layout = m_rootLayout->VKGetDescriptorSetLayouts()[1]; //Hack as fuck
 
                 VkDescriptorSetAllocateInfo allocInfo = {};
                 allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
                 allocInfo.pNext = nullptr;
-                allocInfo.descriptorPool = *m_descriptorPool;
+                allocInfo.descriptorPool = m_descriptorPool;
                 allocInfo.descriptorSetCount = 1;
                 allocInfo.pSetLayouts = &layout;
 
-                err = vkAllocateDescriptorSets(*m_device, &allocInfo, &m_descriptorSet);
+                err = vkAllocateDescriptorSets(m_device, &allocInfo, &m_descriptorSet);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -672,10 +670,10 @@ namespace Hatchit {
 
                 descSetWrites.push_back(uniformVSWrite);
 
-                vkUpdateDescriptorSets(*m_device, static_cast<uint32_t>(descSetWrites.size()), descSetWrites.data(), 0, nullptr);
+                vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(descSetWrites.size()), descSetWrites.data(), 0, nullptr);
 
                 //Map memory to bind point once; will unmap on shutdown
-                err = vkMapMemory(*m_device, m_uniformVSBuffer.memory, 0, bufferSize, 0, (void**)&m_uniformBindPoint);
+                err = vkMapMemory(m_device, m_uniformVSBuffer.memory, 0, bufferSize, 0, (void**)&m_uniformBindPoint);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {

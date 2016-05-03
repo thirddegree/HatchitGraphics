@@ -13,6 +13,7 @@
 **/
 
 #include <ht_d3d12material.h>
+#include <ht_d3d12pipeline.h>
 #include <ht_material_resource.h>
 #include <ht_renderpass.h>
 #include <ht_gpuresourcepool.h>
@@ -93,7 +94,7 @@ namespace Hatchit {
                 return false;
             }
 
-            PipelineHandle D3D12Material::VGetPipeline()
+            const PipelineHandle D3D12Material::VGetPipeline() const
             {
                 return PipelineHandle();
             }

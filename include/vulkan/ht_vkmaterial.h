@@ -60,6 +60,8 @@ namespace Hatchit {
                 bool VUpdate()                                              override;
 
                 const void BindMaterial(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout) const;
+                
+                PipelineHandle const VGetPipeline() const override;
                 const VKPipeline* GetVKPipeline() const;
 
             private:
@@ -68,6 +70,7 @@ namespace Hatchit {
 
                 bool setupDescriptorSet();
 
+                PipelineHandle m_pipelineHandle;
                 VKPipeline* m_pipeline;
 
                 std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;

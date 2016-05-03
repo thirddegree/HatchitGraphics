@@ -18,12 +18,12 @@ namespace Hatchit {
 
     namespace Graphics {
 
-        uint32_t SwapChain::GetWidth()
+        uint32_t SwapChain::GetWidth() const
         { 
             return m_width; 
         }
 
-        uint32_t SwapChain::GetHeight()
+        uint32_t SwapChain::GetHeight() const
         { 
             return m_height;
         }

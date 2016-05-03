@@ -51,8 +51,6 @@ namespace Hatchit
 
             void VKGPUResourceThread::thread_main()
             {
-                VkResult err;
-
                 auto device = m_device->GetVKDevices()[0];
 
                 /*Create thread specific resources*/

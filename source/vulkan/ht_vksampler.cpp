@@ -14,7 +14,6 @@
 
 #pragma once
 
-#include <ht_vkrenderer.h>
 #include <ht_vksampler.h>
 #include <ht_debug.h>
 #include <cassert>
@@ -28,7 +27,7 @@ namespace Hatchit {
             VKSampler::VKSampler()
             {}
 
-            bool VKSampler::InitFromResource(const Resource::Sampler& sampler, const VkDevice* device)
+            bool VKSampler::InitFromResource(const Resource::Sampler& sampler, const VkDevice& device)
             {
                 m_device = device;
                 m_sampler = nullptr;
@@ -55,7 +54,7 @@ namespace Hatchit {
                 samplerInfo.anisotropyEnable = VK_TRUE;
                 samplerInfo.borderColor = VKBorderColorFromType(sampler.GetBorderColor());
 
-                err = vkCreateSampler(*m_device, &samplerInfo, nullptr, &m_sampler);
+                err = vkCreateSampler(m_device, &samplerInfo, nullptr, &m_sampler);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -68,7 +67,7 @@ namespace Hatchit {
 
             VKSampler::~VKSampler() 
             {
-                vkDestroySampler(*m_device, m_sampler, nullptr);
+                vkDestroySampler(m_device, m_sampler, nullptr);
             }
 
             VkSampler VKSampler::GetVkSampler()

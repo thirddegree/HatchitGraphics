@@ -26,6 +26,7 @@
 
 #include <ht_vulkan.h>
 #include <ht_shader.h>
+#include <ht_shader_resource.h>
 
 namespace Hatchit {
 
@@ -37,17 +38,17 @@ namespace Hatchit {
             {
                 friend class VKSwapChain;
             public:
-                VKShader(Core::Guid ID);
+                VKShader();
                 VKShader(VKShader&&) = default;
                 ~VKShader();
 
                 //Required function for RefCounted classes
-                bool Initialize(const std::string& fileName, VKRenderer* renderer);
+                bool Initialize(Resource::ShaderHandle handle, const VkDevice& device);
 
                 VkShaderModule GetShaderModule();
 
             private:
-                const VkDevice* m_device;
+                VkDevice m_device;
                 VkShaderModule m_shader;
             };
 

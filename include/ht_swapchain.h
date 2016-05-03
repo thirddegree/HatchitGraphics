@@ -39,8 +39,8 @@ namespace Hatchit {
         public:
             virtual ~SwapChain() {}
 
-            uint32_t GetWidth();
-            uint32_t GetHeight();
+            uint32_t GetWidth()  const;
+            uint32_t GetHeight() const;
 
             virtual void VClear(float* color) = 0;
             virtual bool VInitialize(uint32_t width, uint32_t height) = 0;

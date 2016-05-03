@@ -25,6 +25,11 @@ namespace Hatchit
             m_base = nullptr;
         }
 
+        bool RenderTarget::Initialize(const std::string& file)
+        {
+            return true;
+        }
+
         Resource::RenderTarget::BlendOp RenderTarget::GetColorBlendOp() const
         {
             return m_base->GetColorBlendOp();
@@ -32,6 +37,11 @@ namespace Hatchit
         Resource::RenderTarget::BlendOp RenderTarget::GetAlphaBlendOp() const
         {
             return m_base->GetAlphaBlendOp();
+        }
+
+        RenderTargetBase* const RenderTarget::GetBase() const
+        {
+            return m_base;
         }
 
     }

@@ -13,7 +13,6 @@
 **/
 
 #include <ht_vktexture.h>
-#include <ht_vkrenderer.h>
 #include <ht_vktools.h>
 
 namespace Hatchit {
@@ -48,7 +47,7 @@ namespace Hatchit {
                 return VKBufferImage();
             }
 
-            bool VKTexture::Initialize(const VkDevice& device, const BYTE* data, size_t width, size_t height, uint32_t channelCount, uint32_t mipLevels)
+            bool VKTexture::Initialize(const VkDevice& device, const BYTE* data, uint32_t width, uint32_t height, uint32_t channelCount, uint32_t mipLevels)
             {
                 m_device = device;
 

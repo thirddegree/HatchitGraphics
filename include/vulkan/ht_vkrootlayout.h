@@ -17,6 +17,7 @@
 #include <ht_platform.h>
 #include <ht_vulkan.h>
 #include <ht_rootlayout_base.h>
+#include <ht_rootlayout_resource.h>
 
 namespace Hatchit
 {
@@ -33,14 +34,14 @@ namespace Hatchit
 
                 ~VKRootLayout();
 
-                bool Initialize(const std::string& fileName, const VkDevice* device);
+                bool Initialize(const Resource::RootLayoutHandle& handle, const VkDevice& device);
 
                 const VkPipelineLayout& VKGetPipelineLayout() const;
                 std::vector<VkDescriptorSetLayout> VKGetDescriptorSetLayouts() const;
                 std::vector<VkPushConstantRange> VKGetPushConstantRanges() const;
 
             private:
-                const VkDevice* m_device;
+                VkDevice m_device;
 
                 std::vector<VKSampler*> m_samplers; //So we can delete them later
                 VkPipelineLayout m_pipelineLayout;

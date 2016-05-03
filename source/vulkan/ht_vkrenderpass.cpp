@@ -12,8 +12,7 @@
 **
 **/
 
-#include <ht_vkrenderpass.h>
-#include <ht_vkrenderer.h>
+#include <ht_vkswapchain.h>
 #include <ht_vkrendertarget.h>
 #include <ht_vkpipeline.h>
 #include <ht_vkmaterial.h>
@@ -77,11 +76,14 @@ namespace Hatchit {
                 vkDestroyRenderPass(m_device, m_renderPass, nullptr);
             }
 
-            bool VKRenderPass::Initialize(const Resource::RenderPassHandle& handle, VKDevice* device, const VkCommandPool& commandPool, const VkDescriptorPool& descriptorPool)
+            bool VKRenderPass::Initialize(const Resource::RenderPassHandle& handle, VKDevice* device, 
+                const VkCommandPool& commandPool, const VkDescriptorPool& descriptorPool, const VKSwapChain* swapchain)
             {
                 m_device = device->GetVKDevices()[0];
                 m_commandPool = commandPool;
                 m_descriptorPool = descriptorPool;
+
+                m_swapchain = swapchain;
 
                 ////Load resources
 
@@ -174,7 +176,7 @@ namespace Hatchit {
                 beginInfo.pInheritanceInfo = &inheritanceInfo;
 
                 //Get the current clear color from the renderer
-                VkClearValue clearColor = m_renderer->GetClearColor();
+                VkClearValue clearColor = m_swapchain->GetVKClearColor();
 
                 std::vector<VkClearValue> clearValues;
                 for (size_t i = 0; i < m_outputRenderTargets.size(); i++)
@@ -253,7 +255,7 @@ namespace Hatchit {
                     pipeline->VUpdate();
 
                     VkPipeline vkPipeline = pipeline->GetVKPipeline();
-                    VkPipelineLayout vkPipelineLayout = m_renderer->GetVKRootLayoutHandle()->VKGetPipelineLayout();
+                    VkPipelineLayout vkPipelineLayout = m_rootLayout->VKGetPipelineLayout();
 
                     pipeline->BindPipeline(m_commandBuffer, vkPipelineLayout);
 
@@ -432,9 +434,9 @@ namespace Hatchit {
 
                 //If width and height were not set, lets use the size of the screen that the renderer reports
                 if (m_width == 0)
-                    m_width = m_renderer->GetWidth();
+                    m_width = m_swapchain->GetWidth();
                 if (m_height == 0)
-                    m_height = m_renderer->GetHeight();
+                    m_height = m_swapchain->GetHeight();
 
                 //Create an image for every output texture
                 for (size_t i = 0; i < m_outputRenderTargets.size(); i++)

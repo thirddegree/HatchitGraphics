@@ -54,7 +54,7 @@ namespace Hatchit {
                 bool VBindTexture(std::string name, TextureHandle texture)      override;
                 bool VUnbindTexture(std::string name, TextureHandle texture)    override;
                 bool VUpdate()                                                  override;
-                PipelineHandle VGetPipeline()                                   override;
+                const PipelineHandle VGetPipeline() const                       override;
 
             private:
                 bool Initialize(Resource::MaterialHandle handle, D3D12Device* device);

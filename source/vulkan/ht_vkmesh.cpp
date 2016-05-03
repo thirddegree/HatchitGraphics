@@ -12,8 +12,10 @@
 **
 **/
 
+#include <ht_mesh.h>
 #include <ht_vkmesh.h>
-#include <ht_vkrenderer.h>
+#include <ht_vkdevice.h>
+#include <ht_vktools.h>
 #include <ht_debug.h>
 
 namespace Hatchit {
@@ -32,9 +34,9 @@ namespace Hatchit {
                 vkFreeMemory(m_device, m_indexBlock.memory, nullptr);
             }
 
-            bool VKMesh::Initialize(Resource::Mesh* mesh, const VKDevice& device)
+            bool VKMesh::Initialize(Resource::Mesh* mesh, const VkDevice& device)
             {
-                m_device = device.GetVKDevices()[0];
+                m_device = device;
 
                 //Generate Vertex Buffer
                 std::vector<Vertex> vertexBuffer; 
@@ -77,10 +79,10 @@ namespace Hatchit {
                 m_indexCount = static_cast<uint32_t>(indexBuffer.size());
                 size_t indexBufferSize = m_indexCount * sizeof(uint32_t);
 
-                if (!CreateUniformBuffer(m_device, vertexBufferSize, vertexBuffer.data(), &m_vertexBlock))
+                if (!VKTools::CreateUniformBuffer(vertexBufferSize, vertexBuffer.data(), &m_vertexBlock))
                     return false;
 
-                if (!CreateUniformBuffer(m_device, indexBufferSize, indexBuffer.data(), &m_indexBlock))
+                if (!VKTools::CreateUniformBuffer(indexBufferSize, indexBuffer.data(), &m_indexBlock))
                     return false;
 
                 return true;

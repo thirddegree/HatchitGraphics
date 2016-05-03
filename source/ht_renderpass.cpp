@@ -25,6 +25,11 @@ namespace Hatchit
         {
         }
 
+        bool RenderPass::Initialize(const std::string& file)
+        {
+            return true;
+        }
+
         bool RenderPass::BuildCommandList() { return true; }
 
         void RenderPass::SetView(Math::Matrix4 view)
@@ -44,6 +49,11 @@ namespace Hatchit
         uint64_t RenderPass::GetLayerFlags()
         {
             return m_base->GetLayerFlags();
+        }
+
+        RenderPassBase* const RenderPass::GetBase() const
+        {
+            return m_base;
         }
 
     }

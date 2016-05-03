@@ -39,10 +39,10 @@ namespace Hatchit
 
                     //Destroy descriptor set layouts
                     for (size_t i = 0; i < m_descriptorSetLayouts.size(); i++)
-                        vkDestroyDescriptorSetLayout(*m_device, m_descriptorSetLayouts[i], nullptr);
+                        vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayouts[i], nullptr);
 
                     //Destroy pipeline layout
-                    vkDestroyPipelineLayout(*m_device, m_pipelineLayout, nullptr);
+                    vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
                 }
                 else 
                 {
@@ -50,18 +50,16 @@ namespace Hatchit
                 }
             }
 
-            bool VKRootLayout::Initialize(const std::string& fileName, const VkDevice* device) 
+            bool VKRootLayout::Initialize(const Resource::RootLayoutHandle& handle, const VkDevice& device)
             {
                 using namespace Resource;
 
-                m_device = device; //Save device for destruction later
-
-                Resource::RootLayoutHandle handle = Resource::RootLayout::GetHandleFromFileName(fileName);
-
-                VkResult err;
-
                 if (!handle.IsValid())
                     return false;
+
+                m_device = device; //Save device for destruction later
+
+                VkResult err;
 
                 //The first entry in m_descriptorSetLayouts will be this descriptor set layout
                 //It will contain all immutable samplers
@@ -100,7 +98,7 @@ namespace Hatchit
 
                 VkDescriptorSetLayout immutableSamplersSetLayout;
 
-                err = vkCreateDescriptorSetLayout(*device, &immutableSamplersSetLayoutCreateInfo, nullptr, &immutableSamplersSetLayout);
+                err = vkCreateDescriptorSetLayout(device, &immutableSamplersSetLayoutCreateInfo, nullptr, &immutableSamplersSetLayout);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -193,7 +191,7 @@ namespace Hatchit
                             descriptorSetLayoutInfo.pBindings = descriptorSetLayoutBindings.data();
 
                             VkDescriptorSetLayout descriptorSetLayout;
-                            err = vkCreateDescriptorSetLayout(*device, &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout);
+                            err = vkCreateDescriptorSetLayout(device, &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout);
                             assert(!err);
                             if (err != VK_SUCCESS)
                             {
@@ -239,7 +237,7 @@ namespace Hatchit
                 pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(m_pushConstantRanges.size());
                 pipelineLayoutInfo.pPushConstantRanges = m_pushConstantRanges.data();
                 
-                err = vkCreatePipelineLayout(*device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout);
+                err = vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {

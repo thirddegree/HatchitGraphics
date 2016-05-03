@@ -36,8 +36,7 @@ namespace Hatchit {
             RenderTarget(Core::Guid ID);
             virtual ~RenderTarget() { };
 
-            ///Prepare the render target with a graphics language
-            virtual bool VPrepare() = 0;
+            bool Initialize(const std::string& file);
 
             Resource::RenderTarget::BlendOp GetColorBlendOp() const;
             Resource::RenderTarget::BlendOp GetAlphaBlendOp() const;

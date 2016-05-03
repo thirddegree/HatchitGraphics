@@ -18,7 +18,7 @@
 #include <ht_vulkan.h>
 #include <ht_renderer.h>
 #include <ht_vkrenderpass.h>
-#include <ht_vkswapchain.h>
+#include <ht_VKSwapChain.h>
 #include <ht_vkmaterial.h>
 #include <ht_vkrootlayout.h>
 #include <ht_vkdevice.h>
@@ -81,7 +81,7 @@ namespace Hatchit {
                 */
                 const VkDescriptorPool& GetVKDescriptorPool() const;
 
-                const VKRootLayoutHandle& GetVKRootLayoutHandle() const;
+                VKRootLayout* const GetVKRootLayoutHandle() const;
 
                 const VkCommandBuffer& GetSetupCommandBuffer() const;
 
@@ -113,7 +113,7 @@ namespace Hatchit {
                 VkQueue                                 m_queue;
                 VkPhysicalDeviceMemoryProperties        m_memoryProps;
                 
-                VKSwapchain*                            m_swapchain;
+                VKSwapChain*                            m_swapchain;
 
                 VkCommandBuffer                         m_setupCommandBuffer;
 
@@ -130,19 +130,19 @@ namespace Hatchit {
                 VKRootLayoutHandle m_rootLayout;
                 MaterialHandle m_material;
                 TextureHandle m_texture;
-                IPipelineHandle m_pipeline;
-                IMeshHandle m_meshHandle;
+                PipelineHandle m_pipeline;
+                MeshHandle m_meshHandle;
                 VKRenderPassHandle m_renderPass;
 
                 VKRenderPassHandle m_lightingPass;
-                IPipelineHandle m_pointLightingPipeline;
+                PipelineHandle m_pointLightingPipeline;
                 MaterialHandle m_pointLightMaterial;
-                IMeshHandle m_pointLightMeshHandle;
+                MeshHandle m_pointLightMeshHandle;
 
                 VKRenderPassHandle m_compositionPass;
-                IPipelineHandle m_compositionPipeline;
+                PipelineHandle m_compositionPipeline;
                 MaterialHandle m_compositionMaterial;
-                IMeshHandle m_compositionMeshHandle;
+                MeshHandle m_compositionMeshHandle;
 
                 float m_angle = 0;
 
