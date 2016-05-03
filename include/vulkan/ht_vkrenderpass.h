@@ -28,6 +28,7 @@
 #include <ht_vulkan.h>
 #include <ht_vktexture.h>
 #include <ht_vkrendertarget.h>
+#include <ht_vkrootlayout.h>
 
 namespace Hatchit {
 
@@ -42,7 +43,7 @@ namespace Hatchit {
                 ~VKRenderPass();
 
                 //Required function for RefCounted classes
-                bool Initialize(const std::string& fileName, VKRenderer* renderer);
+                bool Initialize(const Resource::RenderPassHandle& handle, VKDevice* device, const VkCommandPool& commandPool, const VkDescriptorPool& descriptorPool);
 
                 //Will this be sent the Objects that it needs to render?
                 ///Render the scene
@@ -52,6 +53,7 @@ namespace Hatchit {
 
                 const VkRenderPass& GetVkRenderPass() const;
                 const VkCommandBuffer& GetVkCommandBuffer() const;
+                const VKRootLayout* GetVKRootLayout() const;
 
                 const std::vector<RenderTargetHandle>& GetOutputRenderTargets() const;
 
@@ -68,13 +70,14 @@ namespace Hatchit {
                 //Mapping set index to maps of binding indicies and render targets
                 bool setupDescriptorSets(std::map < uint32_t, std::map < uint32_t, VKRenderTarget* >> inputTargets);
 
-                VKRenderer* m_renderer;
-                const VkDevice* m_device;
-                const VkCommandPool* m_commandPool;
-                const VkDescriptorPool* m_descriptorPool;
+                VkDevice m_device;
+                VkCommandPool m_commandPool;
+                VkDescriptorPool m_descriptorPool;
 
                 VkRenderPass m_renderPass;
                 VkCommandBuffer m_commandBuffer;
+                
+                VKRootLayout* m_rootLayout;
 
                 //For instance data
                 UniformBlock_vk m_instanceBlock;
@@ -83,10 +86,7 @@ namespace Hatchit {
                 Image_vk m_depthImage;
 
                 VkFramebuffer m_framebuffer;
-
             };
-
-            using VKRenderPassHandle = Core::Handle<VKRenderPass>;
         }
     }
 }

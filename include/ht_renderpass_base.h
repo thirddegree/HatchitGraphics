@@ -92,8 +92,6 @@ namespace Hatchit
 
             Math::Matrix4 m_view;
             Math::Matrix4 m_proj;
-
-            Resource::RenderPassHandle m_renderPassResourceHandle;
         };
     }
 }

@@ -18,6 +18,8 @@
 #include <ht_vkpipeline.h>
 #include <ht_vkmaterial.h>
 #include <ht_vkmesh.h>
+#include <ht_vktools.h>
+#include <ht_rootlayout.h>
 
 namespace Hatchit {
 
@@ -47,52 +49,54 @@ namespace Hatchit {
             VKRenderPass::~VKRenderPass() 
             {
                 //Free input descriptor sets
-                vkFreeDescriptorSets(*m_device, *m_descriptorPool, static_cast<uint32_t>(m_inputTargetDescriptorSets.size()), m_inputTargetDescriptorSets.data());
+                vkFreeDescriptorSets(m_device, m_descriptorPool, static_cast<uint32_t>(m_inputTargetDescriptorSets.size()), m_inputTargetDescriptorSets.data());
 
                 //Destroy framebuffer images
                 for (size_t i = 0; i < m_colorImages.size(); i++)
                 {
                     Image_vk image = m_colorImages[i];
 
-                    vkDestroyImageView(*m_device, image.view, nullptr);
-                    vkDestroyImage(*m_device, image.image, nullptr);
-                    vkFreeMemory(*m_device, image.memory, nullptr);
+                    vkDestroyImageView(m_device, image.view, nullptr);
+                    vkDestroyImage(m_device, image.image, nullptr);
+                    vkFreeMemory(m_device, image.memory, nullptr);
                 }
 
                 //Destroy depth image
-                vkDestroyImageView(*m_device, m_depthImage.view, nullptr);
-                vkDestroyImage(*m_device, m_depthImage.image, nullptr);
-                vkFreeMemory(*m_device, m_depthImage.memory, nullptr);
+                vkDestroyImageView(m_device, m_depthImage.view, nullptr);
+                vkDestroyImage(m_device, m_depthImage.image, nullptr);
+                vkFreeMemory(m_device, m_depthImage.memory, nullptr);
                 
                 //Free instance texel buffers
                 if(m_instanceBlock.buffer != VK_NULL_HANDLE)
-                    DeleteUniformBuffer(*m_device, m_instanceBlock);
+                    VKTools::DeleteUniformBuffer(m_instanceBlock);
 
                 //Destroy framebuffer
-                vkDestroyFramebuffer(*m_device, m_framebuffer, nullptr);
+                vkDestroyFramebuffer(m_device, m_framebuffer, nullptr);
 
                 //Destroy the render pass
-                vkDestroyRenderPass(*m_device, m_renderPass, nullptr);
+                vkDestroyRenderPass(m_device, m_renderPass, nullptr);
             }
 
-            bool VKRenderPass::Initialize(const std::string& fileName, VKRenderer* renderer)
+            bool VKRenderPass::Initialize(const Resource::RenderPassHandle& handle, VKDevice* device, const VkCommandPool& commandPool, const VkDescriptorPool& descriptorPool)
             {
-                m_renderer = renderer;
-                m_device = &(renderer->GetVKDevice()).GetVKDevices()[0];
-                m_commandPool = &(renderer->GetVKCommandPool());
-                m_descriptorPool = &(renderer->GetVKDescriptorPool());
+                m_device = device->GetVKDevices()[0];
+                m_commandPool = commandPool;
+                m_descriptorPool = descriptorPool;
 
                 ////Load resources
-                m_renderPassResourceHandle = Resource::RenderPass::GetHandleFromFileName(fileName);
 
-                if (!m_renderPassResourceHandle.IsValid())
+                if (!handle.IsValid())
                 {
                     HT_DEBUG_PRINTF("Error: Tried to load VKRenderPass but the resource handle was invalid!\n");
                     return false;
                 }
                 
-                std::vector<Resource::RenderPass::InputTarget> inputTargets = m_renderPassResourceHandle->GetInputTargets();
-                std::vector<std::string> outputPaths = m_renderPassResourceHandle->GetOutputPaths();
+                std::vector<Resource::RenderPass::InputTarget> inputTargets = handle->GetInputTargets();
+                std::vector<std::string> outputPaths = handle->GetOutputPaths();
+
+                std::string rootLayoutPath = handle->GetRootLayoutPath();
+                RootLayoutHandle rootLayoutHandle = RootLayout::GetHandle(rootLayoutPath, rootLayoutPath);
+                m_rootLayout = static_cast<VKRootLayout*>(rootLayoutHandle->GetBase());
 
                 //Create a structure to map set index to maps of binding indicies and render target handles
                 std::map<uint32_t, std::map<uint32_t, VKRenderTarget*>> mappedInputTargets;
@@ -139,12 +143,12 @@ namespace Hatchit {
                     return false;
 
                 if (m_instanceBlock.buffer != VK_NULL_HANDLE)
-                    DeleteUniformBuffer(*m_device, m_instanceBlock);
+                    VKTools::DeleteUniformBuffer(m_instanceBlock);
 
                 //Create block of data for instance variables
                 if (m_instanceDataSize > 0)
                 {
-                    if (!CreateUniformBuffer(*m_renderer, *m_device, m_instanceDataSize, m_instanceData, &m_instanceBlock))
+                    if (!VKTools::CreateUniformBuffer(m_instanceDataSize, m_instanceData, &m_instanceBlock))
                         return false;
                 }
 
@@ -325,6 +329,8 @@ namespace Hatchit {
 
             const VkCommandBuffer& VKRenderPass::GetVkCommandBuffer() const { return m_commandBuffer; }
 
+            const VKRootLayout* VKRenderPass::GetVKRootLayout() const { return m_rootLayout; }
+
             const std::vector<RenderTargetHandle>& VKRenderPass::GetOutputRenderTargets() const { return m_outputRenderTargets; }
 
             /*
@@ -364,7 +370,7 @@ namespace Hatchit {
 
                 VkAttachmentDescription depthAttachment;
 
-                depthAttachment.format = m_renderer->GetPreferredDepthFormat();
+                depthAttachment.format = VKTools::GetPreferredDepthFormat();
                 depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
                 depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
                 depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -405,7 +411,7 @@ namespace Hatchit {
 
                 VkResult err;
 
-                err = vkCreateRenderPass(*m_device, &renderPassInfo, nullptr, &m_renderPass);
+                err = vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -418,9 +424,9 @@ namespace Hatchit {
 
             bool VKRenderPass::setupAttachmentImages() 
             {
-                VkFormat depthFormat = m_renderer->GetPreferredDepthFormat();
-                m_renderer->CreateSetupCommandBuffer();
-                VkCommandBuffer setupCommand = m_renderer->GetSetupCommandBuffer();
+                VkFormat depthFormat = VKTools::GetPreferredDepthFormat();
+                VKTools::CreateSetupCommandBuffer();
+                VkCommandBuffer setupCommand = VKTools::GetSetupCommandBuffer();
 
                 VkResult err;
 
@@ -465,34 +471,34 @@ namespace Hatchit {
 
                     VkMemoryRequirements memReqs;
 
-                    err = vkCreateImage(*m_device, &imageInfo, nullptr, &colorImage.image);
+                    err = vkCreateImage(m_device, &imageInfo, nullptr, &colorImage.image);
                     assert(!err);
                     if (err != VK_SUCCESS)
                     {
-                        HT_DEBUG_PRINTF("VKRenderTarget::VPrepare(): Error creating color image!\n");
+                        HT_ERROR_PRINTF("VKRenderPass::setupAttachmentImages(): Could not create color image!\n");
                         return false;
                     }
 
-                    vkGetImageMemoryRequirements(*m_device, colorImage.image, &memReqs);
+                    vkGetImageMemoryRequirements(m_device, colorImage.image, &memReqs);
                     memAllocInfo.allocationSize = memReqs.size;
-                    m_renderer->MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memAllocInfo.memoryTypeIndex);
+                    VKTools::MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memAllocInfo.memoryTypeIndex);
 
-                    err = vkAllocateMemory(*m_device, &memAllocInfo, nullptr, &colorImage.memory);
+                    err = vkAllocateMemory(m_device, &memAllocInfo, nullptr, &colorImage.memory);
                     assert(!err);
                     if (err != VK_SUCCESS)
                     {
-                        HT_DEBUG_PRINTF("VKRenderTarget::VPrepare(): Error allocating color image memory!\n");
+                        HT_ERROR_PRINTF("VKRenderPass::setupAttachmentImages(): Could not allocate color image memory!\n");
                         return false;
                     }
 
-                    err = vkBindImageMemory(*m_device, colorImage.image, colorImage.memory, 0);
+                    err = vkBindImageMemory(m_device, colorImage.image, colorImage.memory, 0);
                     if (err != VK_SUCCESS)
                     {
-                        HT_DEBUG_PRINTF("VKRenderTarget::VPrepare(): Error binding color image memory!\n");
+                        HT_ERROR_PRINTF("VKRenderPass::setupAttachmentImages(): Could not bind color image memory!\n");
                         return false;
                     }
 
-                    m_renderer->SetImageLayout(setupCommand, colorImage.image, VK_IMAGE_ASPECT_COLOR_BIT,
+                    VKTools::SetImageLayout(setupCommand, colorImage.image, VK_IMAGE_ASPECT_COLOR_BIT,
                         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
                     VkImageViewCreateInfo viewInfo = {};
@@ -509,7 +515,7 @@ namespace Hatchit {
                     viewInfo.subresourceRange.layerCount = 1;
                     viewInfo.image = colorImage.image;
 
-                    err = vkCreateImageView(*m_device, &viewInfo, nullptr, &colorImage.view);
+                    err = vkCreateImageView(m_device, &viewInfo, nullptr, &colorImage.view);
                     if (err != VK_SUCCESS)
                     {
                         HT_DEBUG_PRINTF("VKRenderTarget::VPrepare(): Error creating color image view!\n");
@@ -538,7 +544,7 @@ namespace Hatchit {
 
                 VkMemoryRequirements memReqs;
 
-                err = vkCreateImage(*m_device, &imageInfo, nullptr, &m_depthImage.image);
+                err = vkCreateImage(m_device, &imageInfo, nullptr, &m_depthImage.image);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -546,11 +552,11 @@ namespace Hatchit {
                     return false;
                 }
 
-                vkGetImageMemoryRequirements(*m_device, m_depthImage.image, &memReqs);
+                vkGetImageMemoryRequirements(m_device, m_depthImage.image, &memReqs);
                 memAllocInfo.allocationSize = memReqs.size;
-                m_renderer->MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memAllocInfo.memoryTypeIndex);
+                VKTools::MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memAllocInfo.memoryTypeIndex);
 
-                err = vkAllocateMemory(*m_device, &memAllocInfo, nullptr, &m_depthImage.memory);
+                err = vkAllocateMemory(m_device, &memAllocInfo, nullptr, &m_depthImage.memory);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -558,14 +564,14 @@ namespace Hatchit {
                     return false;
                 }
 
-                err = vkBindImageMemory(*m_device, m_depthImage.image, m_depthImage.memory, 0);
+                err = vkBindImageMemory(m_device, m_depthImage.image, m_depthImage.memory, 0);
                 if (err != VK_SUCCESS)
                 {
                     HT_DEBUG_PRINTF("VKRenderTarget::VPrepare(): Error binding color image memory!\n");
                     return false;
                 }
 
-                m_renderer->SetImageLayout(setupCommand, m_depthImage.image, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+                VKTools::SetImageLayout(setupCommand, m_depthImage.image, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
                     VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
                 VkImageViewCreateInfo viewInfo = {};
@@ -582,14 +588,14 @@ namespace Hatchit {
                 viewInfo.subresourceRange.layerCount = 1;
                 viewInfo.image = m_depthImage.image;
 
-                err = vkCreateImageView(*m_device, &viewInfo, nullptr, &m_depthImage.view);
+                err = vkCreateImageView(m_device, &viewInfo, nullptr, &m_depthImage.view);
                 if (err != VK_SUCCESS)
                 {
                     HT_DEBUG_PRINTF("VKRenderTarget::VPrepare(): Error creating color image view!\n");
                     return false;
                 }
 
-                m_renderer->FlushSetupCommandBuffer();
+                VKTools::FlushSetupCommandBuffer();
 
                 return true;
             }
@@ -615,7 +621,7 @@ namespace Hatchit {
                 framebufferInfo.height = m_height;
                 framebufferInfo.layers = 1;
 
-                err = vkCreateFramebuffer(*m_device, &framebufferInfo, nullptr, &m_framebuffer);
+                err = vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_framebuffer);
                 if (err != VK_SUCCESS)
                 {
                     HT_DEBUG_PRINTF("VKRenderTarget::VPrepare(): Error creating framebuffer!\n");
@@ -635,11 +641,11 @@ namespace Hatchit {
                 //Create internal command buffer
                 VkCommandBufferAllocateInfo cmdBufferAllocInfo = {};
                 cmdBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-                cmdBufferAllocInfo.commandPool = *m_commandPool;
+                cmdBufferAllocInfo.commandPool = m_commandPool;
                 cmdBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
                 cmdBufferAllocInfo.commandBufferCount = 1;
 
-                err = vkAllocateCommandBuffers(*m_device, &cmdBufferAllocInfo, &m_commandBuffer);
+                err = vkAllocateCommandBuffers(m_device, &cmdBufferAllocInfo, &m_commandBuffer);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -658,7 +664,7 @@ namespace Hatchit {
                 VkResult err;
 
                 //Get the root layout so that we can determine which set layouts we'll need
-                std::vector<VkDescriptorSetLayout> allDescriptorSetLayouts = m_renderer->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts();
+                std::vector<VkDescriptorSetLayout> allDescriptorSetLayouts = m_rootLayout->VKGetDescriptorSetLayouts();
 
                 //Collect every descriptor set layout that will show up
                 bool recordedFirstSetIndex = false;
@@ -679,12 +685,12 @@ namespace Hatchit {
                 //Allocate space for every descriptor set at once; each entry in the top level map (inputTargets) is a set
                 VkDescriptorSetAllocateInfo allocInfo = {};
                 allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-                allocInfo.descriptorPool = *m_descriptorPool;
+                allocInfo.descriptorPool = m_descriptorPool;
                 allocInfo.descriptorSetCount = static_cast<uint32_t>(inputTargets.size());
                 allocInfo.pSetLayouts = usedDescriptorSetLayouts.data();
 
                 m_inputTargetDescriptorSets.resize(inputTargets.size());
-                err = vkAllocateDescriptorSets(*m_device, &allocInfo, m_inputTargetDescriptorSets.data());
+                err = vkAllocateDescriptorSets(m_device, &allocInfo, m_inputTargetDescriptorSets.data());
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -736,7 +742,7 @@ namespace Hatchit {
                     index++;
                 }
 
-                vkUpdateDescriptorSets(*m_device, static_cast<uint32_t>(descSetWrites.size()), descSetWrites.data(), 0, nullptr);
+                vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(descSetWrites.size()), descSetWrites.data(), 0, nullptr);
 
                 return true;
             }

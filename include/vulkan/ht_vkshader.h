@@ -33,10 +33,8 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            class HT_API VKShader : public Core::RefCounted<VKShader>, public IShader
+            class HT_API VKShader : public ShaderBase
             {
-                friend class IMaterial;
-                friend class VKRenderer;
                 friend class VKSwapChain;
             public:
                 VKShader(Core::Guid ID);
@@ -53,7 +51,6 @@ namespace Hatchit {
                 VkShaderModule m_shader;
             };
 
-            using VKShaderHandle = Core::Handle<VKShader>;
         }
     }
 }

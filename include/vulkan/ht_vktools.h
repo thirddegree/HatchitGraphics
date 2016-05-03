@@ -48,6 +48,9 @@ namespace Hatchit {
                 static void DeleteUniformBuffer(UniformBlock_vk& uniformBlock);
                 static void DeleteTexelBuffer(TexelBlock_vk& texelBlock);
 
+                static VkFormat GetPreferredColorFormat();
+                static VkFormat GetPreferredDepthFormat();
+
                 static void CreateSetupCommandBuffer();
                 static void FlushSetupCommandBuffer();
                 static VkCommandBuffer GetSetupCommandBuffer();

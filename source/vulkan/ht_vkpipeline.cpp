@@ -14,6 +14,8 @@
 
 #include <ht_vkpipeline.h>
 #include <ht_vkrenderer.h>
+#include <ht_rootlayout.h>
+#include <ht_vktools.h>
 
 #include <cassert>
 
@@ -35,7 +37,7 @@ namespace Hatchit {
             {
                 //Destroy buffer
                 vkUnmapMemory(*m_device, m_uniformVSBuffer.memory);
-                DeleteUniformBuffer(*m_device, m_uniformVSBuffer);
+                VKTools::DeleteUniformBuffer(m_uniformVSBuffer);
 
                 //Destroy descriptor sets
                 vkFreeDescriptorSets(*m_device, *m_descriptorPool, 1, &m_descriptorSet);
@@ -74,9 +76,9 @@ namespace Hatchit {
                 for (it = shaderPaths.begin(); it != shaderPaths.end(); it++)
                 {
                     //Get the actual shader handle
-                    VKShaderHandle shaderHandle = VKShader::GetHandle(it->second, it->second, renderer);
+                    ShaderHandle shaderHandle = Shader::GetHandle(it->second, it->second);
 
-                    loadShader(it->first, shaderHandle.StaticCastHandle<IShader>());
+                    loadShader(it->first, shaderHandle);
                 }
 
                 //Get a handle to a compatible render pass
@@ -428,9 +430,9 @@ namespace Hatchit {
                 m_multisampleState.minSampleShading = multiState.minSamples;
             }
 
-            void VKPipeline::loadShader(Resource::Pipeline::ShaderSlot shaderSlot, IShaderHandle shaderHandle)
+            void VKPipeline::loadShader(Resource::Pipeline::ShaderSlot shaderSlot, Graphics::ShaderHandle shaderHandle)
             {
-                VKShaderHandle shader = shaderHandle.DynamicCastHandle<VKShader>();
+                VKShader* shader = static_cast<VKShader*>(shaderHandle->GetBase());
                 m_shaderHandles[shaderSlot] = shader;
 
                 VkShaderModule shaderModule = shader->GetShaderModule();
@@ -589,8 +591,9 @@ namespace Hatchit {
                 dynamicState.dynamicStateCount = 2;
 
                 //Get pipeline layout
-                VKRootLayoutHandle rootLayoutHandle = renderer.GetVKRootLayoutHandle();
-                m_pipelineLayout = rootLayoutHandle->VKGetPipelineLayout();
+                RootLayoutHandle rootLayoutHandle = Graphics::RootLayout::GetHandle("TestRootDescriptor.json", "TestRootDescriptor.json");
+                VKRootLayout* rootLayout = static_cast<VKRootLayout*>(rootLayoutHandle->GetBase());
+                m_pipelineLayout = rootLayout->VKGetPipelineLayout();
 
                 //Finalize pipeline
                 VkGraphicsPipelineCreateInfo pipelineInfo = {};
@@ -635,7 +638,7 @@ namespace Hatchit {
                 VkResult err;
 
                 size_t bufferSize = 128;
-                CreateUniformBuffer(*m_renderer, *m_device, bufferSize, nullptr, &m_uniformVSBuffer);
+                VKTools::CreateUniformBuffer(bufferSize, nullptr, &m_uniformVSBuffer);
 
                 m_uniformVSBuffer.descriptor.offset = 0;
                 m_uniformVSBuffer.descriptor.range = bufferSize;

@@ -14,6 +14,7 @@
 
 #include <ht_vktexture.h>
 #include <ht_vkrenderer.h>
+#include <ht_vktools.h>
 
 namespace Hatchit {
 
@@ -31,9 +32,9 @@ namespace Hatchit {
                 vkFreeMemory(m_device, m_deviceMemory, nullptr);
             }
 
-            bool VKTexture::Initialize(Resource::TextureHandle handle, VKDevice* device)
+            bool VKTexture::Initialize(Resource::TextureHandle handle, const VkDevice& device)
             {
-                m_device = device->GetVKDevices()[0];
+                m_device = device;
                 if (!handle.IsValid())
                     return false;
 
@@ -47,9 +48,9 @@ namespace Hatchit {
                 return VKBufferImage();
             }
 
-            bool VKTexture::Initialize(VKDevice* device, const BYTE* data, size_t width, size_t height, uint32_t channelCount, uint32_t mipLevels)
+            bool VKTexture::Initialize(const VkDevice& device, const BYTE* data, size_t width, size_t height, uint32_t channelCount, uint32_t mipLevels)
             {
-                m_device = device->GetVKDevices()[0];
+                m_device = device;
 
                 m_data = data;
 
@@ -80,7 +81,7 @@ namespace Hatchit {
                 else
                 {
                     HT_DEBUG_PRINTF("VKTexture::VKBufferImage(): Warning: could not determine texture format from channel count; using preferred image format");
-                    format = renderer.GetPreferredImageFormat();
+                    format = VKTools::GetPreferredColorFormat();
 
                     //HT_DEBUG_PRINTF("VKTexture::VKBufferImage() Error; could not determine format for texture");
                     //return false;
@@ -115,18 +116,18 @@ namespace Hatchit {
                     return false;
                 }
 
-                renderer.CreateSetupCommandBuffer();
+                VKTools::CreateSetupCommandBuffer();
 
                 //Set the image to be GENERAL before binding so it can map properly
-                renderer.SetImageLayout(renderer.GetSetupCommandBuffer(), m_image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+                VKTools::SetImageLayout(m_image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 
-                renderer.FlushSetupCommandBuffer();
+                VKTools::FlushSetupCommandBuffer();
 
                 //Get memory requirements
                 vkGetImageMemoryRequirements(m_device, m_image, &memReqs);
                 memAllocInfo.allocationSize = memReqs.size;
                 
-                bool success = renderer.MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memAllocInfo.memoryTypeIndex);
+                bool success = VKTools::MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memAllocInfo.memoryTypeIndex);
                 assert(success);
                 if (!success)
                 {
@@ -174,12 +175,12 @@ namespace Hatchit {
                 vkUnmapMemory(m_device, m_deviceMemory);
 
                 //Set the image to be shader read only
-                renderer.CreateSetupCommandBuffer();
+                VKTools::CreateSetupCommandBuffer();
 
                 m_imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                renderer.SetImageLayout(renderer.GetSetupCommandBuffer(), m_image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL, m_imageLayout);
+                VKTools::SetImageLayout(m_image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL, m_imageLayout);
 
-                renderer.FlushSetupCommandBuffer();
+                VKTools::FlushSetupCommandBuffer();
 
                 //Setup the image view
                 VkImageViewCreateInfo viewInfo = {};

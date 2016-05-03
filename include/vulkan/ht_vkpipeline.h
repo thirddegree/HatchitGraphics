@@ -68,7 +68,7 @@ namespace Hatchit {
                 void BindPipeline(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout);
 
             protected:
-                std::map<Resource::Pipeline::ShaderSlot, VKShaderHandle> m_shaderHandles;
+                std::map<Resource::Pipeline::ShaderSlot, VKShader*> m_shaderHandles;
 
                 //Input
                 VKRenderer* m_renderer;
@@ -127,7 +127,7 @@ namespace Hatchit {
                 * \param shaderSlot The slot that you want the shader in; vertex, fragment etc.
                 * \param shader A pointer to the shader that you want to load to the given shader slot
                 */
-                void loadShader(Hatchit::Resource::Pipeline::ShaderSlot shaderSlot, IShaderHandle shader);
+                void loadShader(Hatchit::Resource::Pipeline::ShaderSlot shaderSlot, Graphics::ShaderHandle shader);
 
                 bool preparePipeline(VKRenderer& renderer);
 

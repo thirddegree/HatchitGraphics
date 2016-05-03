@@ -46,7 +46,7 @@ namespace Hatchit {
                 ~VKMaterial();
 
                 //Required function for RefCounted class
-                bool Initialize(Resource::MaterialHandle handle, const VkDevice& device, const VkDescriptorPool& descriptorPool, const VKRootLayout* rootLayout);
+                bool Initialize(Resource::MaterialHandle handle, const VkDevice& device, const VkDescriptorPool& descriptorPool);
 
                 bool VSetInt(std::string name, int data)                    override;
                 bool VSetFloat(std::string name, float data)                override;

@@ -15,6 +15,7 @@
 #pragma once
 
 #include <ht_platform.h>
+#include <ht_gpuresourcerequest.h>
 #include <ht_gpuresourcethread.h>
 #include <ht_threadvector.h>
 #include <ht_threadstack.h>
@@ -22,6 +23,8 @@
 #include <thread>
 #include <atomic>
 #include <ht_vulkan.h>
+#include <ht_material_resource.h>
+#include <ht_texture_resource.h>
 
 namespace Hatchit
 {

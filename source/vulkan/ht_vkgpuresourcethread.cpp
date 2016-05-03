@@ -12,6 +12,7 @@
 **
 **/
 
+#include <ht_gpuresourcerequest.h>
 #include <ht_vkgpuresourcethread.h>
 #include <ht_device.h>
 #include <ht_vkdevice.h>
@@ -21,6 +22,7 @@
 #include <ht_material_resource.h>
 #include <ht_material.h>
 #include <ht_vkmaterial.h>
+#include <ht_vkrootlayout.h>
 
 namespace Hatchit
 {
@@ -138,7 +140,7 @@ namespace Hatchit
                 if (!*_base)
                 {
                     *_base = new VKTexture;
-                    if (!(*_base)->Initialize(handle, m_device))
+                    if (!(*_base)->Initialize(handle, m_device->GetVKDevices()[0]))
                     {
                         HT_DEBUG_PRINTF("Failed to initialize GPU Texture Resource.\n");
                     }
@@ -147,11 +149,12 @@ namespace Hatchit
 
             void VKGPUResourceThread::CreateMaterialBase(Resource::MaterialHandle handle, void ** base)
             {
-                VKTexture** _base = reinterpret_cast<VKTexture**>(base);
+                VKMaterial** _base = reinterpret_cast<VKMaterial**>(base);
                 if (!*_base)
                 {
-                    *_base = new VKTexture;
-                    if (!(*_base)->Initialize(handle, m_device))
+                    *_base = new VKMaterial;
+
+                    if (!(*_base)->Initialize(handle, m_device->GetVKDevices()[0], m_descriptorPool))
                     {
                         HT_DEBUG_PRINTF("Failed to initialize GPU Material Resource.\n");
                     }

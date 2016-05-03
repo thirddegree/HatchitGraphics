@@ -30,7 +30,7 @@ namespace Hatchit {
 
             VKMaterial::VKMaterial() {}
 
-            bool VKMaterial::Initialize(Resource::MaterialHandle handle, const VkDevice& device, const VkDescriptorPool& descriptorPool, const VKRootLayout* rootLayout)
+            bool VKMaterial::Initialize(Resource::MaterialHandle handle, const VkDevice& device, const VkDescriptorPool& descriptorPool)
             {
                 m_device = &device;
                 m_descriptorPool = &descriptorPool;
@@ -53,12 +53,15 @@ namespace Hatchit {
                 {
                     std::string renderPassPath = renderPassPaths[i];
                     RenderPassHandle renderPassHandle = RenderPass::GetHandle(renderPassPath, renderPassPath);
-                    m_renderPasses.push_back(renderPassHandle->GetBase());
+                    m_renderPasses.push_back(renderPassHandle);
                 }
 
                 //Get shader vars
-               // m_shaderVariables = handle->GetShaderVariables();
-
+                // m_shaderVariables = handle->GetShaderVariables();
+                
+                //Get root layout from first render pass
+                VKRenderPass* renderPass = static_cast<VKRenderPass*>(m_renderPasses[0]->GetBase());
+                VKRootLayout* rootLayout = renderPass->GetVKRootLayout();
 
                 m_descriptorSetLayouts = rootLayout->VKGetDescriptorSetLayouts();
 
