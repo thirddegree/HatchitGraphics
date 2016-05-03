@@ -18,6 +18,7 @@
 #include <ht_platform.h>
 #include <ht_texture_resource.h>
 #include <ht_material_resource.h>
+#include <ht_rootlayout_resource.h>
 #include <ht_gpuresourcethread.h>
 #include <ht_gpuresourcerequest.h>
 
@@ -38,17 +39,26 @@ namespace Hatchit
 
                 void VStart()   override;
 
-                void VCreateTexture(std::string file, void** data)  override;
-                void VCreateMaterial(std::string file, void** data) override;
+                void VCreateTexture(std::string file, void** data)      override;
+                void VCreateMaterial(std::string file, void** data)     override;
+                void VCreateRootLayout(std::string file, void** data)   override;
+                void VCreatePipeline(std::string file, void** data)     override;
+                void VCreateShader(std::string file, void** data)       override;
 
             private:
                 D3D12Device*            m_device;
 
                 void ProcessTextureRequest(TextureRequest* request);
                 void ProcessMaterialRequest(MaterialRequest* request);
+                void ProcessRootLayoutRequest(RootLayoutRequest* request);
+                void ProcessPipelineRequest(PipelineRequest* request);
+                void ProcessShaderRequest(ShaderRequest* request);
 
                 void CreateTextureBase(Resource::TextureHandle handle, void** base);
                 void CreateMaterialBase(Resource::MaterialHandle handle, void** base);
+                void CreateRootLayoutBase(Resource::RootLayoutHandle handle, void** base);
+                void CreatePipelineBase(Resource::PipelineHandle handle, void** base);
+                void CreateShaderBase(Resource::ShaderHandle handle, void** base);
 
                 void thread_main();
             };

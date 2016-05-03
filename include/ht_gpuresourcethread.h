@@ -45,6 +45,9 @@ namespace Hatchit
 
             virtual void VCreateTexture(std::string file, void** data) = 0;
             virtual void VCreateMaterial(std::string file, void** data) = 0;
+            virtual void VCreateRootLayout(std::string file, void** data) = 0;
+            virtual void VCreatePipeline(std::string file, void** data) = 0;
+            virtual void VCreateShader(std::string file, void** data) = 0;
 
         protected:
             std::thread             m_thread;

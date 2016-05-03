@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015-2016 ThirdDegree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -20,10 +20,14 @@ namespace Hatchit
 {
     namespace Graphics
     {
-        class HT_API RootLayoutBase
+        class HT_API ShaderBase
         {
         public:
-            virtual ~RootLayoutBase() = default;
+            virtual ~ShaderBase() = default;
+
+        protected:
+
+            friend class Shader;
         };
     }
 }

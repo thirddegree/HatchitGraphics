@@ -18,6 +18,7 @@
 #include <ht_platform.h>
 #include <ht_pipeline_base.h>
 #include <ht_pipeline_resource.h>
+#include <ht_shader.h>
 #include <ht_directx.h>
 #include <ht_d3d12shader.h>
 #include <ht_refcounted.h>
@@ -37,7 +38,7 @@ namespace Hatchit {
 
                 ID3D12PipelineState* GetPipeline();
 
-                bool Initialize(const std::string& fileName, ID3D12Device* device, ID3D12RootSignature* root);
+                bool Initialize(Resource::PipelineHandle handle, ID3D12Device* device);
 
                 virtual bool VInitialize(const Resource::PipelineHandle handle);
                 virtual bool VUpdate() override;
@@ -55,15 +56,15 @@ namespace Hatchit {
             private:
                 D3D12_GRAPHICS_PIPELINE_STATE_DESC m_description;
                 ID3D12PipelineState*               m_pipelineState;
-                D3D12ShaderHandle                  m_shaders[Resource::Pipeline::MAX_SHADERS];
 
+                std::map<Resource::Pipeline::ShaderSlot, ShaderHandle> m_shaders;
 
                 D3D12_RASTERIZER_DESC   RasterDescFromHandle(const Resource::PipelineHandle& handle);
                 D3D12_SHADER_BYTECODE   ShaderBytecodeFromHandle(Resource::Pipeline::ShaderSlot slot, const Resource::PipelineHandle& handle);
                 D3D12_INPUT_LAYOUT_DESC InputLayoutDescFromHandle(const Resource::PipelineHandle& handle);
                 DXGI_FORMAT             InputFormatFromElement(const Resource::ShaderVariable::Type& element);
             };
-            using D3D12PipelineHandle = Core::Handle<D3D12Pipeline>;
+
         }
     }
 }

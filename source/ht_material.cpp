@@ -51,7 +51,7 @@ namespace Hatchit {
                 HT_DEBUG_PRINTF("In GPU Resource Thread.\n");
 
                 //Currenty, we are already in the GPU Resource Thread.
-                //So instead of submitting a request to fill the texture base,
+                //So instead of submitting a request to fill the material base,
                 //we should just immediately have the thread fill it for us.
                 GPUResourcePool::CreateMaterial(file, reinterpret_cast<void**>(&m_base));
             }

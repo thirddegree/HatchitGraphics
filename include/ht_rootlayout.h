@@ -27,9 +27,12 @@ namespace Hatchit
         {
         public:
             RootLayout(Core::Guid ID);
-            virtual ~RootLayout() { };
+            
+            ~RootLayout();
 
             RootLayoutBase* const GetBase() const;
+
+            bool Initialize(const std::string& file);
             
         private:
             RootLayoutBase* m_base;
