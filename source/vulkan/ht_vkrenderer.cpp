@@ -30,8 +30,7 @@
 #endif
 
 #ifdef HT_SYS_LINUX
-#include <xcb/xcb.h>
-#include <xcb/xproto.h>
+#include <X11/Xlib.h>
 #endif
 
 //#define NO_VALIDATION
@@ -680,10 +679,10 @@ namespace Hatchit {
                             m_enabledExtensionNames.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
                         }
 #elif defined(HT_SYS_LINUX)
-                        if (!strcmp(VK_KHR_XCB_SURFACE_EXTENSION_NAME, instanceExtensions[i].extensionName))
+                        if (!strcmp(VK_KHR_XLIB_SURFACE_EXTENSION_NAME, instanceExtensions[i].extensionName))
                         {
                             platformSurfaceExtFound = 1;
-                            m_enabledExtensionNames.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
+                            m_enabledExtensionNames.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
                         }
 #endif
                         if (m_enableValidation)

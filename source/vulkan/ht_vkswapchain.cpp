@@ -496,18 +496,18 @@ namespace Hatchit {
 #endif
 
 #ifdef HT_SYS_LINUX
-                VkXcbSurfaceCreateInfoKHR creationInfo;
-                creationInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+                VkXlibSurfaceCreateInfoKHR creationInfo;
+                creationInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
                 creationInfo.pNext = nullptr;
                 creationInfo.flags = 0;
-                creationInfo.connection = (xcb_connection_t*)rendererParams.display;
-                creationInfo.window = *(uint32_t*)rendererParams.window;
+                creationInfo.dpy = (Display*)rendererParams.display;
+                creationInfo.window = (Window)rendererParams.window;
 
-                err = vkCreateXcbSurfaceKHR(m_instance, &creationInfo, nullptr, &m_surface);
+                err = vkCreateXlibSurfaceKHR(m_instance, &creationInfo, nullptr, &m_surface);
 
                 if (err != VK_SUCCESS)
                 {
-                    HT_DEBUG_PRINTF("VKSwapchain::prepareSurface(): Error creating VkSurface for Xcb window");
+                    HT_DEBUG_PRINTF("VKSwapchain::prepareSurface(): Error creating VkSurface for XLib window");
 
                     return false;
                 }

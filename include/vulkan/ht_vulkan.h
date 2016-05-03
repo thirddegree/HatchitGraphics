@@ -21,7 +21,7 @@
 #endif
 
 #ifdef HT_SYS_LINUX
-#define VK_USE_PLATFORM_XCB_KHR 1
+#define VK_USE_PLATFORM_XLIB_KHR 1
 #endif
 
 #include <vulkan/vulkan.h>
