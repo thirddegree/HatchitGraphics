@@ -29,6 +29,11 @@ namespace Hatchit {
 
             }
 
+            D3D12Material::~D3D12Material()
+            {
+
+            }
+
             bool D3D12Material::Initialize(Resource::MaterialHandle handle, D3D12Device * device)
             {
                 if (!handle.IsValid())

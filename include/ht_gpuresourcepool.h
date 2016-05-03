@@ -20,6 +20,7 @@
 #include <ht_device.h>
 #include <ht_material.h>
 #include <ht_pipeline.h>
+#include <ht_rootlayout.h>
 
 namespace Hatchit
 {
@@ -33,20 +34,29 @@ namespace Hatchit
             static bool             Initialize(IDevice* device);
             static void             DeInitialize();
             static bool             IsLocked();
+
             static void             RequestTexture(std::string file, void** data);
             static void             RequestMaterial(std::string file, void** data);
+            static void             RequestRootLayout(std::string file, void** data);
+            static void             RequestPipeline(std::string file, void** data);
+            static void             RequestShader(std::string file, void** data);
+
             static void             RequestTextureAsync(TextureHandle _default, TextureHandle temporary, std::string file, void** data);
             static void             RequestMaterialAsync(MaterialHandle _default, MaterialHandle temporary, std::string file, void** data);
+            static void             RequestRootLayoutAsync(RootLayoutHandle _default, RootLayoutHandle temporary, std::string file, void** data);
+            static void             RequestPipelineAsync(PipelineHandle _default, PipelineHandle temporary, std::string file, void** data);
+            static void             RequestShaderAsync(ShaderHandle _default, ShaderHandle temporary, std::string file, void** data);
 
             static void             CreateTexture(std::string file, void** data);
             static void             CreateMaterial(std::string file, void** data);
+            static void             CreateRootLayout(std::string file, void** data);
+            static void             CreatePipeline(std::string file, void** data);
+            static void             CreateShader(std::string file, void** data);
 
         private:
-            GPUResourceThread* m_thread;
+            GPUResourceThread*  m_thread;
             IDevice*            m_device;
             
-            std::map<std::string, TextureHandle> m_defaultTextures;
-
         };
     }
 }

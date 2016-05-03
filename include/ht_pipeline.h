@@ -53,9 +53,10 @@ namespace Hatchit {
         {
         public:
             Pipeline(Core::Guid ID);
-            virtual ~Pipeline() {};
+            
+            ~Pipeline();
            
-            bool Initialize(const std::string& fileName);
+            bool Initialize(const std::string& file);
 
             /* Add a map of existing shader variables into this pipeline
             * \param shaderVariables the map of existing shader variables you want to add
@@ -78,12 +79,8 @@ namespace Hatchit {
         protected:
             PipelineBase* m_base;
 
-#ifdef VK_SUPPORT
-            friend class Vulkan::VKGPUResourceThread;
-#endif
-#ifdef DX12_SUPPORT
+            friend class VKGPUResourceThread;
             friend class D3D12GPUResourceThread;
-#endif
         };
        
         using PipelineHandle = Core::Handle<Pipeline>;

@@ -87,6 +87,42 @@ namespace Hatchit
             instance.m_thread->Load(request);
         }
 
+        void GPUResourcePool::RequestRootLayout(std::string file, void** data)
+        {
+            GPUResourcePool& instance = GPUResourcePool::instance();
+            
+            RootLayoutRequest* request = new RootLayoutRequest;
+            request->file = file;
+            request->type = GPUResourceRequest::Type::RootLayout;
+            request->data = data;
+
+            instance.m_thread->Load(request);
+        }
+
+        void GPUResourcePool::RequestPipeline(std::string file, void** data)
+        {
+            GPUResourcePool& instance = GPUResourcePool::instance();
+
+            PipelineRequest* request = new PipelineRequest;
+            request->file = file;
+            request->type = GPUResourceRequest::Type::Pipeline;
+            request->data = data;
+
+            instance.m_thread->Load(request);
+        }
+
+        void GPUResourcePool::RequestShader(std::string file, void** data)
+        {
+            GPUResourcePool& instance = GPUResourcePool::instance();
+
+            ShaderRequest* request = new ShaderRequest;
+            request->file = file;
+            request->type = GPUResourceRequest::Type::Shader;
+            request->data = data;
+
+            instance.m_thread->Load(request);
+        }
+
         void GPUResourcePool::RequestTextureAsync(TextureHandle _default, TextureHandle temporary, std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -115,6 +151,48 @@ namespace Hatchit
             instance.m_thread->LoadAsync(request);
         }
 
+        void GPUResourcePool::RequestRootLayoutAsync(RootLayoutHandle _default, RootLayoutHandle temporary, std::string file, void** data)
+        {
+            GPUResourcePool& instance = GPUResourcePool::instance();
+
+            RootLayoutRequest* request = new RootLayoutRequest;
+            request->file = file;
+            request->defaultHandle = _default;
+            request->tempHandle = temporary;
+            request->data = data;
+            request->type = GPUResourceRequest::Type::RootLayout;
+
+            instance.m_thread->LoadAsync(request);
+        }
+
+        void GPUResourcePool::RequestPipelineAsync(PipelineHandle _default, PipelineHandle temporary, std::string file, void** data)
+        {
+            GPUResourcePool& instance = GPUResourcePool::instance();
+
+            PipelineRequest* request = new PipelineRequest;
+            request->file = file;
+            request->defaultHandle = _default;
+            request->tempHandle = temporary;
+            request->type = GPUResourceRequest::Type::Pipeline;
+            request->data = data;
+
+            instance.m_thread->LoadAsync(request);
+        }
+
+        void GPUResourcePool::RequestShaderAsync(ShaderHandle _default, ShaderHandle temporary, std::string file, void** data)
+        {
+            GPUResourcePool& instance = GPUResourcePool::instance();
+
+            ShaderRequest* request = new ShaderRequest;
+            request->file = file;
+            request->defaultHandle = _default;
+            request->tempHandle = temporary;
+            request->type = GPUResourceRequest::Type::Shader;
+            request->data = data;
+
+            instance.m_thread->LoadAsync(request);
+        }
+
         void GPUResourcePool::CreateTexture(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -128,6 +206,28 @@ namespace Hatchit
 
             instance.m_thread->VCreateMaterial(file, data);
         }
+
+        void GPUResourcePool::CreateRootLayout(std::string file, void** data)
+        {
+            GPUResourcePool& instance = GPUResourcePool::instance();
+
+            instance.m_thread->VCreateRootLayout(file, data);
+        }
+        
+        void GPUResourcePool::CreatePipeline(std::string file, void** data)
+        {
+            GPUResourcePool& instance = GPUResourcePool::instance();
+
+            instance.m_thread->VCreatePipeline(file, data);
+        }
+
+        void GPUResourcePool::CreateShader(std::string file, void** data)
+        {
+            GPUResourcePool& instance = GPUResourcePool::instance();
+
+            instance.m_thread->VCreateShader(file, data);
+        }
+        
      
     }
 }

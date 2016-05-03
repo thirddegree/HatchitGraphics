@@ -26,6 +26,7 @@
 
 #include <ht_platform.h>
 #include <ht_shader.h>
+#include <ht_texture.h>
 #include <ht_shadervariable.h>
 #include <ht_math.h>
 #include <ht_debug.h>
@@ -56,7 +57,8 @@ namespace Hatchit {
         {
         public:
             Material(Core::Guid ID);
-            virtual ~Material();
+
+            ~Material();
 
             bool Initialize(const std::string& file);
             bool InitializeAsync(Core::Handle<Material> handle);

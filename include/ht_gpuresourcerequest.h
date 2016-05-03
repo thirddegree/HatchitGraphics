@@ -24,6 +24,9 @@ namespace Hatchit
     {
         class Texture;
         class Material;
+        class RootLayout;
+        class Pipeline;
+        class Shader;
 
         class GPUResourceRequest
         {
@@ -33,7 +36,10 @@ namespace Hatchit
             enum class Type
             {
                 Texture,
-                Material
+                Material,
+                RootLayout,
+                Pipeline,
+                Shader
             };
 
             Type type;
@@ -51,5 +57,8 @@ namespace Hatchit
 
         using TextureRequest = GPURequest<Texture>;
         using MaterialRequest = GPURequest<Material>;
+        using RootLayoutRequest = GPURequest<RootLayout>;
+        using PipelineRequest = GPURequest<Pipeline>;
+        using ShaderRequest = GPURequest<Shader>;
     }
 }

@@ -13,7 +13,6 @@
 **/
 
 #include <ht_d3d12rendertarget.h>
-#include <ht_d3d12deviceresources.h>
 #include <ht_rendertarget_resource.h>
 
 namespace Hatchit
