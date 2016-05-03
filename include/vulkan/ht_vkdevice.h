@@ -38,15 +38,18 @@ namespace Hatchit
 
                 void SetValidation(bool validate);
 
-                const std::vector<VkDevice>&            GetVKDevices() const;
-                const std::vector<VkPhysicalDevice>&    GetVKPhysicalDevices() const;
-                const VkInstance&                       GetVKInstance() const;
+                const std::vector<VkDevice>&                            GetVKDevices() const;
+                const std::vector<VkPhysicalDevice>&                    GetVKPhysicalDevices() const;
+                const std::vector<VkPhysicalDeviceFeatures>&            GetVKPhysicalDeviceFeatures() const;
+                const std::vector<VkPhysicalDeviceMemoryProperties>&    GetVKPhysicalDeviceMemoryProperties() const;
+                const VkInstance&                                       GetVKInstance() const;
 
             private:
-                std::vector<VkDevice>                   m_devices;
-                std::vector<VkPhysicalDevice>           m_gpus;
-                std::vector<VkPhysicalDeviceFeatures>   m_gpuFeatures;
-                VkInstance                              m_instance;
+                std::vector<VkDevice>                           m_devices;
+                std::vector<VkPhysicalDevice>                   m_gpus;
+                std::vector<VkPhysicalDeviceFeatures>           m_gpuFeatures;
+                std::vector<VkPhysicalDeviceMemoryProperties>   m_gpuMemoryProps;
+                VkInstance                                      m_instance;
 
                 bool    m_initialized;
                 bool    m_validate;

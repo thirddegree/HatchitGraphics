@@ -37,7 +37,7 @@ namespace Hatchit
 
             VKGPUResourceThread::~VKGPUResourceThread()
             {
-                VKill();
+                Kill();
             }
 
             void VKGPUResourceThread::VStart()
@@ -45,26 +45,6 @@ namespace Hatchit
                 m_alive = true;
 
                 m_thread = std::thread(&VKGPUResourceThread::thread_main, this);
-            }
-
-            void VKGPUResourceThread::VLoad(GPUResourceRequest* request)
-            {
-                if (!m_alive)
-                    VStart();
-
-                m_processed = false;
-
-                m_requests.push(request);
-                std::unique_lock<std::mutex> lock(m_mutex);
-                m_cv.wait(lock, [this]() -> bool { m_locked = true;  return this->m_processed; });
-                m_locked = false;
-            }
-
-            void VKGPUResourceThread::VKill()
-            {
-                m_alive = false;
-                if (m_thread.joinable())
-                    m_thread.join();
             }
 
             void VKGPUResourceThread::thread_main()
@@ -77,76 +57,105 @@ namespace Hatchit
                 if (!createCommandPool(device))
                 {
                     HT_ERROR_PRINTF("VKGPUResourceThread::thread_main: Failed to create command pool in thread.\n");
-                    VKill();
+                    Kill();
                 }
 
                 if (!createDescriptorPool(device))
                 {
                     HT_ERROR_PRINTF("VKGPUResourceThread::thread_main: Failed to create descriptor pool in thread.\n");
-                    VKill();
+                    Kill();
                 }
 
                 while (m_alive)
                 {
-                    /*Load any resource requests*/
-
+                    /*Load any resource requests asynchrounsly*/
                     if (m_requests.empty())
                         continue;
 
                     auto request = m_requests.pop();
-                    HT_DEBUG_PRINTF("GPU Resource Request\n");
-
-                    switch (request->type)
+                    switch ((*request)->type)
                     {
                     case GPUResourceRequest::Type::Texture:
                     {
-                        HT_DEBUG_PRINTF("\tType: Texture\n");
+                        auto tRequest = static_cast<TextureRequest*>(*request);
 
-                        try
-                        {
-                            Resource::TextureHandle handle = Resource::Texture::GetHandleFromFileName(request->file);
-                            if (!handle.IsValid())
-                            {
-                                HT_DEBUG_PRINTF("\tFailed to load resource handle.\n");
-                            }
-                        }
-                        catch (std::exception& e)
-                        {
-                            HT_ERROR_PRINTF("%s", e.what());
-                        }
+                        ProcessTextureRequest(tRequest);
 
                     } break;
+
                     case GPUResourceRequest::Type::Material:
                     {
-                        HT_DEBUG_PRINTF("\tType: Material\n");
+                        auto mRequest = static_cast<MaterialRequest*>(*request);
 
-                        try
-                        {
-                            std::string filename = request->file;
-
-                            Resource::MaterialHandle resourceHandle = Resource::Material::GetHandleFromFileName(filename);
-
-                            MaterialHandle handle = Material::GetHandle(filename, filename);
-                            auto base = static_cast<VKMaterial*>(handle->m_base);
-                            base->Initialize(resourceHandle, device, m_descriptorPool);
-
-                            if (!resourceHandle.IsValid())
-                                HT_DEBUG_PRINTF("\tFailed to load resource handle.\n");
-                            if (!handle.IsValid())
-                                HT_DEBUG_PRINTF("\tFailed to load gpu resource handle.\n");
-                        }
-                        catch (std::exception& e)
-                        {
-                            HT_ERROR_PRINTF("%s", e.what());
-                        }
-
+                        ProcessMaterialRequest(mRequest);
                     } break;
+
                     }
 
+                    m_processed = true;
+                    m_cv.notify_one();
                 }
 
                 vkDestroyCommandPool(device, m_commandPool, nullptr);
                 vkDestroyDescriptorPool(device, m_descriptorPool, nullptr);
+            }
+
+            void VKGPUResourceThread::ProcessTextureRequest(TextureRequest * request)
+            {
+                Resource::TextureHandle handle = Resource::Texture::GetHandle(request->file, request->file);
+                if (!m_locked)
+                {
+                    HT_DEBUG_PRINTF("Async load.\n");
+
+                }
+                else
+                {
+                    HT_DEBUG_PRINTF("Non-Async load.\n");
+
+                    CreateTextureBase(handle, request->data);
+                }
+            }
+
+            void VKGPUResourceThread::ProcessMaterialRequest(MaterialRequest * request)
+            {
+                Resource::MaterialHandle handle = Resource::Material::GetHandle(request->file, request->file);
+                if (!m_locked)
+                {
+                    HT_DEBUG_PRINTF("Async load.\n");
+
+                }
+                else
+                {
+                    HT_DEBUG_PRINTF("Non-Async load.\n");
+
+                    CreateMaterialBase(handle, request->data);
+                }
+            }
+
+            void VKGPUResourceThread::CreateTextureBase(Resource::TextureHandle handle, void ** base)
+            {
+                VKTexture** _base = reinterpret_cast<VKTexture**>(base);
+                if (!*_base)
+                {
+                    *_base = new VKTexture;
+                    if (!(*_base)->Initialize(handle, m_device))
+                    {
+                        HT_DEBUG_PRINTF("Failed to initialize GPU Texture Resource.\n");
+                    }
+                }
+            }
+
+            void VKGPUResourceThread::CreateMaterialBase(Resource::MaterialHandle handle, void ** base)
+            {
+                VKTexture** _base = reinterpret_cast<VKTexture**>(base);
+                if (!*_base)
+                {
+                    *_base = new VKTexture;
+                    if (!(*_base)->Initialize(handle, m_device))
+                    {
+                        HT_DEBUG_PRINTF("Failed to initialize GPU Material Resource.\n");
+                    }
+                }
             }
 
             bool VKGPUResourceThread::createCommandPool(const VkDevice& device) 

@@ -59,9 +59,11 @@ namespace Hatchit
 
             void VKDevice::SetValidation(bool validate) { m_validate = validate; }
 
-            const std::vector<VkDevice>& VKDevice::GetVKDevices() const { return m_devices; }
-            const std::vector<VkPhysicalDevice>& VKDevice::GetVKPhysicalDevices() const { return m_gpus; }
-            const VkInstance& VKDevice::GetVKInstance() const { return m_instance; }
+            const std::vector<VkDevice>&                            VKDevice::GetVKDevices() const { return m_devices; }
+            const std::vector<VkPhysicalDevice>&                    VKDevice::GetVKPhysicalDevices() const { return m_gpus; }
+            const std::vector<VkPhysicalDeviceFeatures>&            VKDevice::GetVKPhysicalDeviceFeatures() const { return m_gpuFeatures; }
+            const std::vector<VkPhysicalDeviceMemoryProperties>&    VKDevice::GetVKPhysicalDeviceMemoryProperties() const { return m_gpuMemoryProps; }
+            const VkInstance&                                       VKDevice::GetVKInstance() const { return m_instance; }
 
             /*
                 Private methods
@@ -152,6 +154,9 @@ namespace Hatchit
 
             bool VKDevice::queryDeviceCapabilities() 
             {
+                //Get physical device memory props
+                m_gpuMemoryProps.resize(m_gpus.size());
+
                 for (size_t i = 0; i < m_gpus.size(); i++)
                 {
                     VkPhysicalDevice gpu = m_gpus[i];
@@ -160,6 +165,8 @@ namespace Hatchit
                     //  features based on this query
                     VkPhysicalDeviceFeatures gpuFeatures;
                     vkGetPhysicalDeviceFeatures(gpu, &gpuFeatures);
+
+                    vkGetPhysicalDeviceMemoryProperties(gpu, &m_gpuMemoryProps[i]);
 
                     m_gpuFeatures.push_back(gpuFeatures);
                 }

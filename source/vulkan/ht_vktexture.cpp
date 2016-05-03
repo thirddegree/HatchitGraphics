@@ -24,32 +24,33 @@ namespace Hatchit {
             VKTexture::VKTexture()
             {}
 
-            VKTexture::~VKTexture() 
+            VKTexture::~VKTexture()
             {
-                vkDestroyImageView(*m_device, m_view, nullptr);
-                vkDestroyImage(*m_device, m_image, nullptr);
-                vkFreeMemory(*m_device, m_deviceMemory, nullptr);
+                vkDestroyImageView(m_device, m_view, nullptr);
+                vkDestroyImage(m_device, m_image, nullptr);
+                vkFreeMemory(m_device, m_deviceMemory, nullptr);
             }
 
-            bool VKTexture::Initialize(const std::string& fileName, VKRenderer* renderer)
+            bool VKTexture::Initialize(Resource::TextureHandle handle, VKDevice* device)
             {
-                m_device = m_device = &(renderer->GetVKDevice()).GetVKDevices()[0];
-                Resource::TextureHandle resource = Resource::Texture::GetHandleFromFileName(fileName);
-                if (!resource.IsValid())
+                m_device = device->GetVKDevices()[0];
+                if (!handle.IsValid())
                     return false;
 
-                m_data = resource->GetData();
+                m_data = handle->GetData();
 
-                m_width = resource->GetWidth();
-                m_height = resource->GetHeight();
-                m_channels = resource->GetChannels();
-                m_mipLevels = resource->GetMIPLevels();
+                m_width = handle->GetWidth();
+                m_height = handle->GetHeight();
+                m_channels = handle->GetChannels();
+                m_mipLevels = handle->GetMIPLevels();
 
-                return VKBufferImage(*renderer);
+                return VKBufferImage();
             }
 
-            bool VKTexture::Initialize(VKRenderer& renderer, const BYTE* data, size_t width, size_t height, uint32_t channelCount, uint32_t mipLevels)
+            bool VKTexture::Initialize(VKDevice* device, const BYTE* data, size_t width, size_t height, uint32_t channelCount, uint32_t mipLevels)
             {
+                m_device = device->GetVKDevices()[0];
+
                 m_data = data;
 
                 m_width = width;
@@ -57,13 +58,13 @@ namespace Hatchit {
                 m_channels = channelCount;
                 m_mipLevels = mipLevels;
 
-                return VKBufferImage(renderer);
+                return VKBufferImage();
             }
 
             VkImageView VKTexture::GetView() { return m_view; }
 
 
-            bool VKTexture::VKBufferImage(VKRenderer& renderer)
+            bool VKTexture::VKBufferImage()
             {
                 VkResult err;
 
@@ -106,7 +107,7 @@ namespace Hatchit {
                 VkMemoryRequirements memReqs;
 
                 //Create Image
-                err = vkCreateImage(*m_device, &imageCreateInfo, nullptr, &m_image);
+                err = vkCreateImage(m_device, &imageCreateInfo, nullptr, &m_image);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -122,7 +123,7 @@ namespace Hatchit {
                 renderer.FlushSetupCommandBuffer();
 
                 //Get memory requirements
-                vkGetImageMemoryRequirements(*m_device, m_image, &memReqs);
+                vkGetImageMemoryRequirements(m_device, m_image, &memReqs);
                 memAllocInfo.allocationSize = memReqs.size;
                 
                 bool success = renderer.MemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memAllocInfo.memoryTypeIndex);
@@ -134,7 +135,7 @@ namespace Hatchit {
                 }
 
                 //Allocate host memory
-                err = vkAllocateMemory(*m_device, &memAllocInfo, nullptr, &m_deviceMemory);
+                err = vkAllocateMemory(m_device, &memAllocInfo, nullptr, &m_deviceMemory);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -143,7 +144,7 @@ namespace Hatchit {
                 }
 
                 //Bind allocated image
-                err = vkBindImageMemory(*m_device, m_image, m_deviceMemory, 0);
+                err = vkBindImageMemory(m_device, m_image, m_deviceMemory, 0);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
@@ -157,10 +158,10 @@ namespace Hatchit {
                 VkSubresourceLayout subResLayout;
                 void* pData;
 
-                vkGetImageSubresourceLayout(*m_device, m_image, &subRes, &subResLayout);
+                vkGetImageSubresourceLayout(m_device, m_image, &subRes, &subResLayout);
                 
                 //Map memory
-                err = vkMapMemory(*m_device, m_deviceMemory, 0, memReqs.size, 0, &pData);
+                err = vkMapMemory(m_device, m_deviceMemory, 0, memReqs.size, 0, &pData);
                 if (err != VK_SUCCESS)
                 {
                     HT_DEBUG_PRINTF("VKTexture::VBufferImage(): Failed to map memory!\n");
@@ -170,7 +171,7 @@ namespace Hatchit {
                 //Copy image data
                 memcpy(pData, m_data, m_width * m_height * m_channels);
 
-                vkUnmapMemory(*m_device, m_deviceMemory);
+                vkUnmapMemory(m_device, m_deviceMemory);
 
                 //Set the image to be shader read only
                 renderer.CreateSetupCommandBuffer();
@@ -193,7 +194,7 @@ namespace Hatchit {
                 viewInfo.subresourceRange.layerCount = 1;
                 viewInfo.subresourceRange.levelCount = m_mipLevels;
                 viewInfo.image = m_image;
-                err = vkCreateImageView(*m_device, &viewInfo, nullptr, &m_view);
+                err = vkCreateImageView(m_device, &viewInfo, nullptr, &m_view);
                 assert(!err);
 
                 return true;

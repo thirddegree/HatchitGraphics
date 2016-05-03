@@ -67,12 +67,6 @@ namespace Hatchit {
                 uint32_t mipLevels;
             };
 
-            bool CreateUniformBuffer(VKRenderer& renderer, const VkDevice& device, size_t dataSize, void* data, UniformBlock_vk* uniformBlock);
-            bool CreateTexelBuffer(VKRenderer& renderer, const VkDevice& device, size_t dataSize, void* data, TexelBlock_vk* texelBlock);
-
-            void DeleteUniformBuffer(const VkDevice& device, UniformBlock_vk& uniformBlock);
-            void DeleteTexelBuffer(const VkDevice& device, TexelBlock_vk& texelBlock);
-
             extern PFN_vkGetPhysicalDeviceSurfaceSupportKHR
                 fpGetPhysicalDeviceSurfaceSupportKHR;
             extern PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR

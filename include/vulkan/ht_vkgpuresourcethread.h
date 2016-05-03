@@ -31,7 +31,7 @@ namespace Hatchit
         {
             class VKDevice;
 
-            class HT_API VKGPUResourceThread : public IGPUResourceThread
+            class HT_API VKGPUResourceThread : public GPUResourceThread
             {
                 using GPURequestQueue = Core::ThreadsafeQueue<GPUResourceRequest>;
             public:
@@ -40,20 +40,18 @@ namespace Hatchit
                 ~VKGPUResourceThread();
 
                 void VStart()                                   override;
-                bool VLocked() const                            override;
-                void VLoad(GPUResourceRequest* request)         override;
-                void VLoadAsync(GPUResourceRequest* request)    override;
-                void VKill()                                    override;
 
             private:
-                std::thread             m_thread;
-                std::atomic_bool        m_alive;
-                std::atomic_bool        m_tfinished;
                 VKDevice*               m_device;
-                GPURequestQueue         m_requests;
 
                 VkCommandPool m_commandPool;
                 VkDescriptorPool m_descriptorPool;
+
+                void ProcessTextureRequest(TextureRequest* request);
+                void ProcessMaterialRequest(MaterialRequest* request);
+
+                void CreateTextureBase(Resource::TextureHandle handle, void** base);
+                void CreateMaterialBase(Resource::MaterialHandle handle, void** base);
 
                 void thread_main();
 
