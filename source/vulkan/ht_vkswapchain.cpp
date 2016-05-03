@@ -500,8 +500,8 @@ namespace Hatchit {
                 creationInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
                 creationInfo.pNext = nullptr;
                 creationInfo.flags = 0;
-                creationInfo.connection = (xcb_connection_t*)params.display;
-                creationInfo.window = *(uint32_t*)params.window;
+                creationInfo.connection = (xcb_connection_t*)rendererParams.display;
+                creationInfo.window = *(uint32_t*)rendererParams.window;
 
                 err = vkCreateXcbSurfaceKHR(m_instance, &creationInfo, nullptr, &m_surface);
 
