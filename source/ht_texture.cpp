@@ -21,7 +21,7 @@
 
 #include <ht_gpuresourcepool.h>
 
-#ifdef HT_SYS_WINDOWS
+#ifdef DX12_SUPPORT
 #include <ht_d3d12device.h>
 #include <ht_d3d12texture.h>
 #else
