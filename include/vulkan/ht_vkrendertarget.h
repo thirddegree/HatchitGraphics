@@ -42,7 +42,7 @@ namespace Hatchit {
                 ~VKRenderTarget();
 
                 //Required function from RefCounted classes
-                bool Initialize(const Resource::RenderTargetHandle& handle, const VkDevice& device, const VkPhysicalDevice& gpu, const VKSwapChain& swapchain);
+                bool Initialize(const Resource::RenderTargetHandle& handle, const VkDevice& device, const VkPhysicalDevice& gpu, const VKSwapChain* swapchain);
 
                 bool Blit(VkCommandBuffer commandBuffer, const Image_vk& image);
 

@@ -27,6 +27,9 @@ namespace Hatchit
         class RootLayout;
         class Pipeline;
         class Shader;
+        class RenderPass;
+        class RenderTarget;
+        class Mesh;
 
         class GPUResourceRequest
         {
@@ -39,7 +42,10 @@ namespace Hatchit
                 Material,
                 RootLayout,
                 Pipeline,
-                Shader
+                Shader,
+                RenderPass,
+                RenderTarget,
+                Mesh
             };
 
             Type type;
@@ -60,5 +66,8 @@ namespace Hatchit
         using RootLayoutRequest = GPURequest<RootLayout>;
         using PipelineRequest = GPURequest<Pipeline>;
         using ShaderRequest = GPURequest<Shader>;
+        using RenderPassRequest = GPURequest<RenderPass>;
+        using RenderTargetRequest = GPURequest<RenderTarget>;
+        using MeshRequest = GPURequest<Mesh>;
     }
 }

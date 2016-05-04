@@ -33,14 +33,6 @@
 #include <ht_pipeline_resource.h>
 #include <ht_shader_resource.h>
 
-#ifdef VK_SUPPORT
-#include <ht_vkgpuresourcethread.h>
-#endif
-
-#ifdef DX12_SUPPORT
-#include <ht_d3d12gpuresourcethread.h>
-#endif
-
 #include <map>
     
 namespace Hatchit {
@@ -78,9 +70,6 @@ namespace Hatchit {
 
         protected:
             PipelineBase* m_base;
-
-            friend class VKGPUResourceThread;
-            friend class D3D12GPUResourceThread;
         };
        
         using PipelineHandle = Core::Handle<Pipeline>;

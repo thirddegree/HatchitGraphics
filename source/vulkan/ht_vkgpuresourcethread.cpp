@@ -23,6 +23,9 @@
 #include <ht_material.h>
 #include <ht_vkmaterial.h>
 #include <ht_vkrootlayout.h>
+#include <ht_vkrenderpass.h>
+#include <ht_vkrendertarget.h>
+#include <ht_vkmesh.h>
 
 namespace Hatchit
 {
@@ -30,11 +33,13 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            VKGPUResourceThread::VKGPUResourceThread(VKDevice* device)
+            VKGPUResourceThread::VKGPUResourceThread(VKDevice* device, VKSwapChain* swapchain)
             {
                 m_alive = false;
                 m_tfinished = false;
+                m_locked = false;
                 m_device = device;
+                m_swapchain = swapchain;
             }
 
             VKGPUResourceThread::~VKGPUResourceThread()
@@ -75,21 +80,40 @@ namespace Hatchit
                     auto request = m_requests.pop();
                     switch ((*request)->type)
                     {
-                    case GPUResourceRequest::Type::Texture:
-                    {
-                        auto tRequest = static_cast<TextureRequest*>(*request);
+                        case GPUResourceRequest::Type::Texture:
+                        {
+                            auto tRequest = static_cast<TextureRequest*>(*request);
 
-                        ProcessTextureRequest(tRequest);
+                            ProcessTextureRequest(tRequest);
+                        } break;
 
-                    } break;
+                        case GPUResourceRequest::Type::Material:
+                        {
+                            auto mRequest = static_cast<MaterialRequest*>(*request);
 
-                    case GPUResourceRequest::Type::Material:
-                    {
-                        auto mRequest = static_cast<MaterialRequest*>(*request);
+                            ProcessMaterialRequest(mRequest);
+                        } break;
 
-                        ProcessMaterialRequest(mRequest);
-                    } break;
+                        case GPUResourceRequest::Type::RootLayout:
+                        {
+                            auto rRequest = static_cast<RootLayoutRequest*>(*request);
 
+                            ProcessRootLayoutRequest(rRequest);
+                        } break;
+
+                        case GPUResourceRequest::Type::Pipeline:
+                        {
+                            auto pRequest = static_cast<PipelineRequest*>(*request);
+
+                            ProcessPipelineRequest(pRequest);
+                        } break;
+
+                        case GPUResourceRequest::Type::Shader:
+                        {
+                            auto sRequest = static_cast<ShaderRequest*>(*request);
+
+                            ProcessShaderRequest(sRequest);
+                        } break;
                     }
 
                     m_processed = true;
@@ -100,39 +124,7 @@ namespace Hatchit
                 vkDestroyDescriptorPool(device, m_descriptorPool, nullptr);
             }
 
-            void VKGPUResourceThread::ProcessTextureRequest(TextureRequest * request)
-            {
-                Resource::TextureHandle handle = Resource::Texture::GetHandle(request->file, request->file);
-                if (!m_locked)
-                {
-                    HT_DEBUG_PRINTF("Async load.\n");
-
-                }
-                else
-                {
-                    HT_DEBUG_PRINTF("Non-Async load.\n");
-
-                    CreateTextureBase(handle, request->data);
-                }
-            }
-
-            void VKGPUResourceThread::ProcessMaterialRequest(MaterialRequest * request)
-            {
-                Resource::MaterialHandle handle = Resource::Material::GetHandle(request->file, request->file);
-                if (!m_locked)
-                {
-                    HT_DEBUG_PRINTF("Async load.\n");
-
-                }
-                else
-                {
-                    HT_DEBUG_PRINTF("Non-Async load.\n");
-
-                    CreateMaterialBase(handle, request->data);
-                }
-            }
-
-            void VKGPUResourceThread::CreateTextureBase(Resource::TextureHandle handle, void ** base)
+            void VKGPUResourceThread::VCreateTextureBase(Resource::TextureHandle handle, void ** base)
             {
                 VKTexture** _base = reinterpret_cast<VKTexture**>(base);
                 if (!*_base)
@@ -145,16 +137,93 @@ namespace Hatchit
                 }
             }
 
-            void VKGPUResourceThread::CreateMaterialBase(Resource::MaterialHandle handle, void ** base)
+            void VKGPUResourceThread::VCreateMaterialBase(Resource::MaterialHandle handle, void ** base)
             {
                 VKMaterial** _base = reinterpret_cast<VKMaterial**>(base);
                 if (!*_base)
                 {
                     *_base = new VKMaterial;
-
                     if (!(*_base)->Initialize(handle, m_device->GetVKDevices()[0], m_descriptorPool))
                     {
                         HT_DEBUG_PRINTF("Failed to initialize GPU Material Resource.\n");
+                    }
+                }
+            }
+
+            void VKGPUResourceThread::VCreateRootLayoutBase(Resource::RootLayoutHandle handle, void ** base)
+            {
+                VKRootLayout** _base = reinterpret_cast<VKRootLayout**>(base);
+                if (!*_base)
+                {
+                    *_base = new VKRootLayout;
+                    if (!(*_base)->Initialize(handle, m_device->GetVKDevices()[0]))
+                    {
+                        HT_DEBUG_PRINTF("Failed to initialize GPU RootLayout Resource.\n");
+                    }
+                }
+            }
+
+            void VKGPUResourceThread::VCreatePipelineBase(Resource::PipelineHandle handle, void ** base)
+            {
+                VKPipeline** _base = reinterpret_cast<VKPipeline**>(base);
+                if (!*_base)
+                {
+                    *_base = new VKPipeline;
+                    if (!(*_base)->Initialize(handle, m_device->GetVKDevices()[0], m_descriptorPool))
+                    {
+                        HT_DEBUG_PRINTF("Failed to initialize GPU Pipeline Resource.\n");
+                    }
+                }
+            }
+
+            void VKGPUResourceThread::VCreateShaderBase(Resource::ShaderHandle handle, void ** base)
+            {
+                VKShader** _base = reinterpret_cast<VKShader**>(base);
+                if (!*_base)
+                {
+                    *_base = new VKShader;
+                    if (!(*_base)->Initialize(handle, m_device->GetVKDevices()[0]))
+                    {
+                        HT_DEBUG_PRINTF("Failed to initialize GPU Shader.\n");
+                    }
+                }
+            }
+
+            void VKGPUResourceThread::VCreateRenderPassBase(Resource::RenderPassHandle handle, void ** base)
+            {
+                VKRenderPass** _base = reinterpret_cast<VKRenderPass**>(base);
+                if (!*_base)
+                {
+                    *_base = new VKRenderPass;
+                    if (!(*_base)->Initialize(handle, m_device->GetVKDevices()[0], m_commandPool, m_descriptorPool, m_swapchain))
+                    {
+                        HT_DEBUG_PRINTF("Failed to initialize GPU Render Pass.\n");
+                    }
+                }
+            }
+
+            void VKGPUResourceThread::VCreateRenderTargetBase(Resource::RenderTargetHandle handle, void ** base)
+            {
+                VKRenderTarget** _base = reinterpret_cast<VKRenderTarget**>(base);
+                if (!*_base)
+                {
+                    *_base = new VKRenderTarget;
+                    if (!(*_base)->Initialize(handle, m_device->GetVKDevices()[0], m_device->GetVKPhysicalDevices()[0], m_swapchain))
+                    {
+                        HT_DEBUG_PRINTF("Failed to initialize GPU Render Target.\n");
+                    }
+                }
+            }
+
+            void VKGPUResourceThread::VCreateMeshBase(Resource::ModelHandle handle, void ** base)
+            {
+                VKMesh** _base = reinterpret_cast<VKMesh**>(base);
+                if (!*_base)
+                {
+                    *_base = new VKMesh;
+                    if (!(*_base)->Initialize(handle->GetMeshes()[0], m_device->GetVKDevices()[0]))
+                    {
+                        HT_DEBUG_PRINTF("Failed to initialize GPU Mesh.\n");
                     }
                 }
             }

@@ -33,8 +33,11 @@ namespace Hatchit
                 //Don't need to destroy the queue; it goes out with the device
             }
 
-            bool VKQueue::Initialize(const VkDevice& device, const VkPhysicalDevice& gpu) 
+            bool VKQueue::Initialize(const VKDevice* dev)
             {
+                VkDevice device = dev->GetVKDevices()[0];
+                VkPhysicalDevice gpu = dev->GetVKPhysicalDevices()[0];
+
                 // Find a queue that supports graphics operations
                 int32_t graphicsQueueIndex = -1;
                 uint32_t queueCount;

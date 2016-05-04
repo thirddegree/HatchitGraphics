@@ -27,12 +27,13 @@
 
 #include <ht_platform.h>
 #include <ht_rendertarget.h>
-#include <ht_pipeline.h>
 #include <ht_renderer.h>
 
 namespace Hatchit {
 
     namespace Graphics {
+
+        class PipelineBase;
 
         class HT_API SwapChain
         {

@@ -76,10 +76,10 @@ namespace Hatchit {
                 vkDestroyRenderPass(m_device, m_renderPass, nullptr);
             }
 
-            bool VKRenderPass::Initialize(const Resource::RenderPassHandle& handle, VKDevice* device, 
+            bool VKRenderPass::Initialize(const Resource::RenderPassHandle& handle, const VkDevice& device, 
                 const VkCommandPool& commandPool, const VkDescriptorPool& descriptorPool, const VKSwapChain* swapchain)
             {
-                m_device = device->GetVKDevices()[0];
+                m_device = device;
                 m_commandPool = commandPool;
                 m_descriptorPool = descriptorPool;
 

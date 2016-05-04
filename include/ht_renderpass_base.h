@@ -57,12 +57,11 @@ namespace Hatchit
         {
         public:
             virtual ~RenderPassBase() { };
-            virtual bool VInitFromResource(const Resource::RenderPassHandle& handle) = 0;
 
             virtual void VUpdate() = 0;
 
-            virtual void VSetView(Math::Matrix4 view) = 0;
-            virtual void VSetProj(Math::Matrix4 proj) = 0;
+            void SetView(Math::Matrix4 view);
+            void SetProj(Math::Matrix4 proj);
 
             virtual bool VBuildCommandList() = 0;
 

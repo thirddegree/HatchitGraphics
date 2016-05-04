@@ -31,7 +31,7 @@ namespace Hatchit
                 D3D12RenderPass();
                 ~D3D12RenderPass() {};
 
-                bool Initialize(const std::string& fileName);
+                bool Initialize(const Resource::RenderPassHandle& handle);
 
                 // Inherited via RenderPassBase
                 virtual void VUpdate() override;

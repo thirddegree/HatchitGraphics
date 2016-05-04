@@ -25,9 +25,38 @@
 #include <ht_mesh.h>
 #include <ht_mesh_base.h>
 #include <cstdint>
+#include <ht_gpuresourcepool.h>
 
-namespace Hatchit {
-    namespace Graphics {
+namespace Hatchit 
+{
+    namespace Graphics 
+    {
+
+        Mesh::Mesh(Core::Guid ID) 
+        {
+        }
+
+        bool Mesh::Initialize(const std::string& file)
+        {
+            if (GPUResourcePool::IsLocked())
+            {
+                HT_DEBUG_PRINTF("In GPU Resource Thread.\n");
+
+                //Currenty, we are already in the GPU Resource Thread.
+                //So instead of submitting a request to fill the pipeline base,
+                //we should just immediately have the thread fill it for us.
+                GPUResourcePool::CreateMesh(file, reinterpret_cast<void**>(&m_base));
+            }
+            else
+            {
+                //Request pipeline immediately for main thread of execution
+                //This call will block the active thread while the GPUResourcePool
+                //allocated the memory
+                GPUResourcePool::RequestMesh(file, reinterpret_cast<void**>(&m_base));
+            }
+
+            return true;
+        }
 
         uint32_t Mesh::GetIndexCount() { return m_base->VGetIndexCount(); }
 

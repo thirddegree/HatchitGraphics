@@ -27,11 +27,10 @@ namespace Hatchit
 
             }
 
-            bool D3D12RenderPass::Initialize(const std::string & fileName)
+            bool D3D12RenderPass::Initialize(const Resource::RenderPassHandle& handle)
             {
                 using namespace Resource;
 
-                Resource::RenderPassHandle handle = Resource::RenderPass::GetHandleFromFileName(fileName);
                 if (!handle.IsValid())
                 {
                     HT_DEBUG_PRINTF("Error: Tried to load D3D12RenderPass but the resource handle was invalid!\n");

@@ -24,6 +24,7 @@
 #include <ht_vkdevice.h>
 #include <ht_vkswapchain.h>
 #include <ht_vkqueue.h>
+#include <ht_vktools.h>
 #endif
 
 
@@ -91,6 +92,10 @@ namespace Hatchit {
                     }
 
                     m_swapChain = new DX::D3D12SwapChain((HWND)params.window);
+
+                    /*Initialize GPU Resource Pool*/
+                    GPUResourcePool::Initialize(_Device, m_swapChain);
+
                     if (!m_swapChain->VInitialize(params.viewportWidth, params.viewportHeight))
                         return false;
 
@@ -99,16 +104,29 @@ namespace Hatchit {
 #ifdef VK_SUPPORT
                 case RendererType::VULKAN:
                 {
+
                     if (!_Device)
                     {
-                        _Device = new Vulkan::VKDevice;
-                        _Queue = new Vulkan::VKQueue(QueueType::GRAPHICS);
-                        if (!_Device->VInitialize())
+                        Vulkan::VKDevice* Device = new Vulkan::VKDevice;
+                        Vulkan::VKQueue* Queue = new Vulkan::VKQueue(QueueType::GRAPHICS);
+                        if (!Device->VInitialize())
                             return false;
+                        if (!Queue->Initialize(Device))
+                            return false;
+
+                        _Device = static_cast<IDevice*>(Device);
+                        _Queue = static_cast<GPUQueue*>(Queue);
                         _Type = RendererType::VULKAN;
+
+                        if (!Vulkan::VKTools::Initialize(Device, Queue))
+                            return false;
                     }
 
                     m_swapChain = new Vulkan::VKSwapChain(params, static_cast<Vulkan::VKDevice*>(_Device), static_cast<Vulkan::VKQueue*>(_Queue));
+
+                    /*Initialize GPU Resource Pool*/
+                    GPUResourcePool::Initialize(_Device, m_swapChain);
+
                     if (!m_swapChain->VInitialize(params.viewportWidth, params.viewportHeight))
                         return false;
                 } break;

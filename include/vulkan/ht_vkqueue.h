@@ -28,6 +28,7 @@
 #include <ht_platform.h>    //HT_API
 #include <ht_vulkan.h>      //General Vulkan
 #include <ht_gpuqueue.h>    //Extending this class
+#include <ht_vkdevice.h>    //VKDevice that is required for init
 
 namespace Hatchit
 {
@@ -41,7 +42,7 @@ namespace Hatchit
                 VKQueue(QueueType queueType);
                 ~VKQueue();
 
-                bool Initialize(const VkDevice& device, const VkPhysicalDevice& gpu);
+                bool Initialize(const VKDevice* device);
 
                 const VkQueue& GetVKQueue() const;
 

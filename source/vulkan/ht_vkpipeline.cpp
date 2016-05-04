@@ -82,6 +82,12 @@ namespace Hatchit {
                 //Get a handle to a compatible render pass
                 std::string renderPassPath = handle->GetRenderPassPath();
                 RenderPassHandle renderPassHandle = RenderPass::GetHandle(renderPassPath, renderPassPath);
+                if (!renderPassHandle.IsValid())
+                {
+                    HT_ERROR_PRINTF("Failed to initialize pipeline; could not get valid render pass handle.\n");
+                    return false;
+                }
+
                 m_renderPass = static_cast<VKRenderPass*>(renderPassHandle->GetBase());
 
                 if (!preparePipeline())

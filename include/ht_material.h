@@ -82,8 +82,6 @@ namespace Hatchit {
         protected:
             MaterialBase* m_base;
 
-            friend class VKGPUResourceThread;
-            friend class D3D12GPUResourceThread;
         };
 
         using MaterialHandle = Core::Handle<Material>;

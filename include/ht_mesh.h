@@ -46,6 +46,8 @@ namespace Hatchit {
             Mesh(Core::Guid ID);
             virtual ~Mesh() {};
 
+            bool Initialize(const std::string& file);
+
             uint32_t GetIndexCount();
 
             MeshBase* const GetBase() const;

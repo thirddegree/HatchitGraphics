@@ -26,11 +26,10 @@ namespace Hatchit
 
             }
 
-            bool D3D12RenderTarget::Initialize(const std::string& fileName)
+            bool D3D12RenderTarget::Initialize(const Resource::RenderTargetHandle& handle)
             {
                 using namespace Resource;
 
-                Resource::RenderTargetHandle handle = Resource::RenderTarget::GetHandleFromFileName(fileName);
                 if (!handle.IsValid())
                 {
                     return false;

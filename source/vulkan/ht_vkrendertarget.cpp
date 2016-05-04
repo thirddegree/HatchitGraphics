@@ -55,7 +55,7 @@ namespace Hatchit {
                 vkDestroySampler(m_device, m_texture.sampler, nullptr);
             }
             
-            bool VKRenderTarget::Initialize(const Resource::RenderTargetHandle& handle, const VkDevice& device, const VkPhysicalDevice& gpu, const VKSwapChain& swapchain)
+            bool VKRenderTarget::Initialize(const Resource::RenderTargetHandle& handle, const VkDevice& device, const VkPhysicalDevice& gpu, const VKSwapChain* swapchain)
             {
                 m_device = device;
                 m_gpu = gpu;
@@ -111,9 +111,9 @@ namespace Hatchit {
                 }
 
                 if (m_width == 0)
-                    m_width = swapchain.GetWidth();
+                    m_width = swapchain->GetWidth();
                 if (m_height == 0)
-                    m_height = swapchain.GetHeight();
+                    m_height = swapchain->GetHeight();
 
                 if (!setupTargetTexture())
                     return false;

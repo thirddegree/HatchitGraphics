@@ -43,7 +43,7 @@ namespace Hatchit {
                 ~VKRenderPass();
 
                 //Required function for RefCounted classes
-                bool Initialize(const Resource::RenderPassHandle& handle, VKDevice* device, 
+                bool Initialize(const Resource::RenderPassHandle& handle, const VkDevice& device,
                     const VkCommandPool& commandPool, const VkDescriptorPool& descriptorPool, const VKSwapChain* swapchain);
 
                 //Will this be sent the Objects that it needs to render?

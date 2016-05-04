@@ -17,15 +17,18 @@
 #include <ht_gpuresourcerequest.h>
 
 #ifdef VK_SUPPORT
-//#include <ht_vkgpuresourcethread.h>
+#include <ht_vkgpuresourcethread.h>
+#include <ht_vkdevice.h>
 #endif
 
 #ifdef DX12_SUPPORT
 #include <ht_d3d12gpuresourcethread.h>
 #include <ht_d3d12device.h>
+#include <ht_d3d12texture.h>
 #endif
 
-#include <ht_d3d12texture.h>
+#include <ht_renderer.h>
+#include <ht_swapchain.h>
 
 namespace Hatchit
 {
@@ -36,14 +39,30 @@ namespace Hatchit
     {
         using namespace DX;
 
-        bool GPUResourcePool::Initialize(IDevice* device)
+        bool GPUResourcePool::Initialize(IDevice* device, SwapChain* swapchain)
         {
             if (!device)
                 return false;
 
             GPUResourcePool& instance = GPUResourcePool::instance();
 
-            instance.m_thread = new DX::D3D12GPUResourceThread(static_cast<DX::D3D12Device*>(device));
+            RendererType rendererType = Renderer::GetType();
+            
+            switch (rendererType)
+            {
+#ifdef DX12_SUPPORT
+                case RendererType::DIRECTX12:
+                    instance.m_thread = new DX::D3D12GPUResourceThread(static_cast<DX::D3D12Device*>(device));
+                    break;
+#endif
+#ifdef VK_SUPPORT
+                case RendererType::VULKAN:
+                    instance.m_thread = new Vulkan::VKGPUResourceThread(static_cast<Vulkan::VKDevice*>(device), static_cast<Vulkan::VKSwapChain*>(swapchain));
+                    break;
+#endif
+            }
+
+
             instance.m_device = device;
             
             return true;
@@ -123,6 +142,42 @@ namespace Hatchit
             instance.m_thread->Load(request);
         }
 
+        void GPUResourcePool::RequestRenderPass(std::string file, void** data)
+        {
+            GPUResourcePool& instance = GPUResourcePool::instance();
+
+            RenderPassRequest* request = new RenderPassRequest;
+            request->file = file;
+            request->type = GPUResourceRequest::Type::RenderPass;
+            request->data = data;
+
+            instance.m_thread->Load(request);
+        }
+
+        void GPUResourcePool::RequestRenderTarget(std::string file, void** data)
+        {
+            GPUResourcePool& instance = GPUResourcePool::instance();
+
+            RenderTargetRequest* request = new RenderTargetRequest;
+            request->file = file;
+            request->type = GPUResourceRequest::Type::RenderTarget;
+            request->data = data;
+
+            instance.m_thread->Load(request);
+        }
+
+        void GPUResourcePool::RequestMesh(std::string file, void** data)
+        {
+            GPUResourcePool& instance = GPUResourcePool::instance();
+
+            MeshRequest* request = new MeshRequest;
+            request->file = file;
+            request->type = GPUResourceRequest::Type::Mesh;
+            request->data = data;
+
+            instance.m_thread->Load(request);
+        }
+
         void GPUResourcePool::RequestTextureAsync(TextureHandle _default, TextureHandle temporary, std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -193,39 +248,102 @@ namespace Hatchit
             instance.m_thread->LoadAsync(request);
         }
 
+        void GPUResourcePool::RequestRenderPassAsync(RenderPassHandle _default, RenderPassHandle temporary, std::string file, void** data)
+        {
+            GPUResourcePool& instance = GPUResourcePool::instance();
+
+            RenderPassRequest* request = new RenderPassRequest;
+            request->file = file;
+            request->defaultHandle = _default;
+            request->tempHandle = temporary;
+            request->type = GPUResourceRequest::Type::RenderPass;
+            request->data = data;
+
+            instance.m_thread->LoadAsync(request);
+        }
+
+        void GPUResourcePool::RequestRenderTargetAsync(RenderTargetHandle _default, RenderTargetHandle temporary, std::string file, void** data)
+        {
+            GPUResourcePool& instance = GPUResourcePool::instance();
+
+            RenderTargetRequest* request = new RenderTargetRequest;
+            request->file = file;
+            request->defaultHandle = _default;
+            request->tempHandle = temporary;
+            request->type = GPUResourceRequest::Type::RenderTarget;
+            request->data = data;
+
+            instance.m_thread->LoadAsync(request);
+        }
+
+        void GPUResourcePool::RequestMeshAsync(MeshHandle _default, MeshHandle temporary, std::string file, void** data)
+        {
+            GPUResourcePool& instance = GPUResourcePool::instance();
+
+            MeshRequest* request = new MeshRequest;
+            request->file = file;
+            request->defaultHandle = _default;
+            request->tempHandle = temporary;
+            request->type = GPUResourceRequest::Type::Mesh;
+            request->data = data;
+
+            instance.m_thread->LoadAsync(request);
+        }
+
         void GPUResourcePool::CreateTexture(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
 
-            instance.m_thread->VCreateTexture(file, data);
+            instance.m_thread->CreateTexture(file, data);
         }
 
         void GPUResourcePool::CreateMaterial(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
 
-            instance.m_thread->VCreateMaterial(file, data);
+            instance.m_thread->CreateMaterial(file, data);
         }
 
         void GPUResourcePool::CreateRootLayout(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
 
-            instance.m_thread->VCreateRootLayout(file, data);
+            instance.m_thread->CreateRootLayout(file, data);
         }
         
         void GPUResourcePool::CreatePipeline(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
 
-            instance.m_thread->VCreatePipeline(file, data);
+            instance.m_thread->CreatePipeline(file, data);
         }
 
         void GPUResourcePool::CreateShader(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
 
-            instance.m_thread->VCreateShader(file, data);
+            instance.m_thread->CreateShader(file, data);
+        }
+
+        void GPUResourcePool::CreateRenderPass(std::string file, void** data)
+        {
+            GPUResourcePool& instance = GPUResourcePool::instance();
+
+            instance.m_thread->CreateRenderPass(file, data);
+        }
+
+        void GPUResourcePool::CreateRenderTarget(std::string file, void** data)
+        {
+            GPUResourcePool& instance = GPUResourcePool::instance();
+
+            instance.m_thread->CreateRenderTarget(file, data);
+        }
+
+        void GPUResourcePool::CreateMesh(std::string file, void** data)
+        {
+            GPUResourcePool& instance = GPUResourcePool::instance();
+
+            instance.m_thread->CreateMesh(file, data);
         }
         
      

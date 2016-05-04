@@ -21,17 +21,21 @@
 #include <ht_material.h>
 #include <ht_pipeline.h>
 #include <ht_rootlayout.h>
+#include <ht_rendertarget.h>
+#include <ht_renderpass.h>
+#include <ht_mesh.h>
 
 namespace Hatchit
 {
     namespace Graphics
     {
         class GPUResourceThread;
+        class SwapChain;
 
         class HT_API GPUResourcePool : public Core::Singleton<GPUResourcePool>
         {
         public:
-            static bool             Initialize(IDevice* device);
+            static bool             Initialize(IDevice* device, SwapChain* swapchain);
             static void             DeInitialize();
             static bool             IsLocked();
 
@@ -40,18 +44,27 @@ namespace Hatchit
             static void             RequestRootLayout(std::string file, void** data);
             static void             RequestPipeline(std::string file, void** data);
             static void             RequestShader(std::string file, void** data);
+            static void             RequestRenderPass(std::string file, void** data);
+            static void             RequestRenderTarget(std::string file, void** data);
+            static void             RequestMesh(std::string file, void** data);
 
             static void             RequestTextureAsync(TextureHandle _default, TextureHandle temporary, std::string file, void** data);
             static void             RequestMaterialAsync(MaterialHandle _default, MaterialHandle temporary, std::string file, void** data);
             static void             RequestRootLayoutAsync(RootLayoutHandle _default, RootLayoutHandle temporary, std::string file, void** data);
             static void             RequestPipelineAsync(PipelineHandle _default, PipelineHandle temporary, std::string file, void** data);
             static void             RequestShaderAsync(ShaderHandle _default, ShaderHandle temporary, std::string file, void** data);
+            static void             RequestRenderPassAsync(RenderPassHandle _default, RenderPassHandle temporary, std::string file, void** data);
+            static void             RequestRenderTargetAsync(RenderTargetHandle _default, RenderTargetHandle temporary, std::string file, void** data);
+            static void             RequestMeshAsync(MeshHandle _default, MeshHandle temporary, std::string file, void** data);
 
             static void             CreateTexture(std::string file, void** data);
             static void             CreateMaterial(std::string file, void** data);
             static void             CreateRootLayout(std::string file, void** data);
             static void             CreatePipeline(std::string file, void** data);
             static void             CreateShader(std::string file, void** data);
+            static void             CreateRenderPass(std::string file, void** data);
+            static void             CreateRenderTarget(std::string file, void** data);
+            static void             CreateMesh(std::string file, void** data);
 
         private:
             GPUResourceThread*  m_thread;

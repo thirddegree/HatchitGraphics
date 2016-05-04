@@ -23,6 +23,17 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <ht_gpuresourcerequest.h>
+
+#include <ht_texture_resource.h>
+#include <ht_material_resource.h>
+#include <ht_rootlayout_resource.h>
+#include <ht_pipeline_resource.h>
+#include <ht_shader_resource.h>
+#include <ht_renderpass_resource.h>
+#include <ht_rendertarget_resource.h>
+#include <ht_mesh_resource.h>
+#include <ht_model.h>
 
 namespace Hatchit
 {
@@ -43,11 +54,14 @@ namespace Hatchit
             void LoadAsync(GPUResourceRequest* request);
             void Kill();
 
-            virtual void VCreateTexture(std::string file, void** data) = 0;
-            virtual void VCreateMaterial(std::string file, void** data) = 0;
-            virtual void VCreateRootLayout(std::string file, void** data) = 0;
-            virtual void VCreatePipeline(std::string file, void** data) = 0;
-            virtual void VCreateShader(std::string file, void** data) = 0;
+            void CreateTexture(std::string file, void** data);
+            void CreateMaterial(std::string file, void** data);
+            void CreateRootLayout(std::string file, void** data);
+            void CreatePipeline(std::string file, void** data);
+            void CreateShader(std::string file, void** data);
+            void CreateRenderPass(std::string file, void** data);
+            void CreateRenderTarget(std::string file, void** data);
+            void CreateMesh(std::string file, void** data);
 
         protected:
             std::thread             m_thread;
@@ -59,6 +73,23 @@ namespace Hatchit
             std::atomic_bool        m_processed;
             GPURequestQueue         m_requests;
 
+            void ProcessTextureRequest(TextureRequest* request);
+            void ProcessMaterialRequest(MaterialRequest* request);
+            void ProcessRootLayoutRequest(RootLayoutRequest* request);
+            void ProcessPipelineRequest(PipelineRequest* request);
+            void ProcessShaderRequest(ShaderRequest* request);
+            void ProcessRenderPassRequest(RenderPassRequest* request);
+            void ProcessRenderTargetRequest(RenderTargetRequest* request);
+            void ProcessMeshRequest(MeshRequest* request);
+
+            virtual void VCreateTextureBase(Resource::TextureHandle handle, void** base) = 0;
+            virtual void VCreateMaterialBase(Resource::MaterialHandle handle, void** base) = 0;
+            virtual void VCreateRootLayoutBase(Resource::RootLayoutHandle handle, void** base) = 0;
+            virtual void VCreatePipelineBase(Resource::PipelineHandle handle, void** base) = 0;
+            virtual void VCreateShaderBase(Resource::ShaderHandle handle, void** base) = 0;
+            virtual void VCreateRenderPassBase(Resource::RenderPassHandle handle, void** base) = 0;
+            virtual void VCreateRenderTargetBase(Resource::RenderTargetHandle handle, void** base) = 0;
+            virtual void VCreateMeshBase(Resource::ModelHandle handle, void** base) = 0;
         };
     }
 }

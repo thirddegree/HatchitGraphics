@@ -49,6 +49,9 @@ namespace Hatchit
                 if (!queryDeviceCapabilities())
                     return false;
 
+                if (!setupDevices())
+                    return false;
+
                 if (!setupProcAddresses())
                     return false;
 
@@ -174,8 +177,71 @@ namespace Hatchit
                 return true;
             }
 
+            bool VKDevice::setupDevices() 
+            {
+                VkResult err;
+                bool success = true;
+
+                m_devices.resize(m_gpus.size());
+
+                for (size_t i = 0; i < m_gpus.size(); i++)
+                {
+                    VkPhysicalDevice gpu = m_gpus[i];
+
+                    success = true;
+
+                    success = checkDeviceLayers(gpu);
+                    assert(success);
+                    if (!success)
+                        return false;
+
+                    success = checkDeviceExtensions(gpu);
+                    assert(success);
+                    if (!success)
+                        return false;
+
+                    float queuePriorities[1] = { 0.0f };
+
+                    VkDeviceQueueCreateInfo queue;
+                    queue.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+                    queue.pNext = nullptr;
+                    queue.queueFamilyIndex = 0; //TODO: Grab this index from the swapchain
+                    queue.queueCount = 1;
+                    queue.pQueuePriorities = queuePriorities;
+
+                    VkDeviceCreateInfo device;
+                    device.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+                    device.pNext = nullptr;
+                    device.queueCreateInfoCount = 1;
+                    device.pQueueCreateInfos = &queue;
+                    device.enabledLayerCount = static_cast<uint32_t>(m_enabledLayerNames.size());
+                    device.ppEnabledLayerNames = m_enabledLayerNames.data();
+                    device.enabledExtensionCount = static_cast<uint32_t>(m_enabledExtensionNames.size());
+                    device.ppEnabledExtensionNames = m_enabledExtensionNames.data();
+                    device.pEnabledFeatures = nullptr; //Request specific features here
+
+                    err = vkCreateDevice(gpu, &device, nullptr, &m_devices[i]);
+                    if (err != VK_SUCCESS)
+                    {
+                        HT_DEBUG_PRINTF("Failed to create device. \n");
+                        return false;
+                    }
+                }
+            }
+
             bool VKDevice::setupProcAddresses()
             {
+                //Pointer to function to get function pointers from device
+                PFN_vkGetDeviceProcAddr g_gdpa = (PFN_vkGetDeviceProcAddr)
+                    vkGetInstanceProcAddr(m_instance, "vkGetDeviceProcAddr");
+
+                //Set these up just to the first device
+                fpCreateSwapchainKHR = (PFN_vkCreateSwapchainKHR)g_gdpa(m_devices[0], "vkCreateSwapchainKHR");
+                fpDestroySwapchainKHR = (PFN_vkDestroySwapchainKHR)g_gdpa(m_devices[0], "vkDestroySwapchainKHR");
+                fpGetSwapchainImagesKHR = (PFN_vkGetSwapchainImagesKHR)g_gdpa(m_devices[0], "vkGetSwapchainImagesKHR");
+                fpAcquireNextImageKHR = (PFN_vkAcquireNextImageKHR)g_gdpa(m_devices[0], "vkAcquireNextImageKHR");
+                fpQueuePresentKHR = (PFN_vkQueuePresentKHR)g_gdpa(m_devices[0], "vkQueuePresentKHR");
+
                 fpGetPhysicalDeviceSurfaceSupportKHR = (PFN_vkGetPhysicalDeviceSurfaceSupportKHR)
                     vkGetInstanceProcAddr(m_instance, "vkGetPhysicalDeviceSurfaceSupportKHR");
                 if (fpGetPhysicalDeviceSurfaceSupportKHR == nullptr)

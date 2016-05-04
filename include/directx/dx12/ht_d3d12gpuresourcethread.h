@@ -39,26 +39,17 @@ namespace Hatchit
 
                 void VStart()   override;
 
-                void VCreateTexture(std::string file, void** data)      override;
-                void VCreateMaterial(std::string file, void** data)     override;
-                void VCreateRootLayout(std::string file, void** data)   override;
-                void VCreatePipeline(std::string file, void** data)     override;
-                void VCreateShader(std::string file, void** data)       override;
-
             private:
                 D3D12Device*            m_device;
 
-                void ProcessTextureRequest(TextureRequest* request);
-                void ProcessMaterialRequest(MaterialRequest* request);
-                void ProcessRootLayoutRequest(RootLayoutRequest* request);
-                void ProcessPipelineRequest(PipelineRequest* request);
-                void ProcessShaderRequest(ShaderRequest* request);
-
-                void CreateTextureBase(Resource::TextureHandle handle, void** base);
-                void CreateMaterialBase(Resource::MaterialHandle handle, void** base);
-                void CreateRootLayoutBase(Resource::RootLayoutHandle handle, void** base);
-                void CreatePipelineBase(Resource::PipelineHandle handle, void** base);
-                void CreateShaderBase(Resource::ShaderHandle handle, void** base);
+                void VCreateTextureBase(Resource::TextureHandle handle, void** base)            override;
+                void VCreateMaterialBase(Resource::MaterialHandle handle, void** base)          override;
+                void VCreateRootLayoutBase(Resource::RootLayoutHandle handle, void** base)      override;
+                void VCreatePipelineBase(Resource::PipelineHandle handle, void** base)          override;
+                void VCreateShaderBase(Resource::ShaderHandle handle, void** base)              override;
+                void VCreateRenderPassBase(Resource::RenderPassHandle handle, void** base)      override;
+                void VCreateRenderTargetBase(Resource::RenderTargetHandle handle, void** base)  override;
+                void VCreateMeshBase(Resource::ModelHandle handle, void** base)                 override;
 
                 void thread_main();
             };

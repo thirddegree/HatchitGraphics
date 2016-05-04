@@ -23,8 +23,10 @@
 #include <thread>
 #include <atomic>
 #include <ht_vulkan.h>
+#include <ht_vkswapchain.h>
 #include <ht_material_resource.h>
 #include <ht_texture_resource.h>
+#include <ht_model.h>
 
 namespace Hatchit
 {
@@ -38,23 +40,27 @@ namespace Hatchit
             {
                 using GPURequestQueue = Core::ThreadsafeQueue<GPUResourceRequest>;
             public:
-                VKGPUResourceThread(VKDevice* device);
+                VKGPUResourceThread(VKDevice* device, VKSwapChain* swapchain);
 
                 ~VKGPUResourceThread();
 
                 void VStart()                                   override;
 
             private:
-                VKDevice*               m_device;
+                VKDevice*   m_device;
+                VKSwapChain* m_swapchain;
 
-                VkCommandPool m_commandPool;
-                VkDescriptorPool m_descriptorPool;
+                VkCommandPool       m_commandPool;
+                VkDescriptorPool    m_descriptorPool;
 
-                void ProcessTextureRequest(TextureRequest* request);
-                void ProcessMaterialRequest(MaterialRequest* request);
-
-                void CreateTextureBase(Resource::TextureHandle handle, void** base);
-                void CreateMaterialBase(Resource::MaterialHandle handle, void** base);
+                void VCreateTextureBase(Resource::TextureHandle handle, void** base)            override;
+                void VCreateMaterialBase(Resource::MaterialHandle handle, void** base)          override;
+                void VCreateRootLayoutBase(Resource::RootLayoutHandle handle, void** base)      override;
+                void VCreatePipelineBase(Resource::PipelineHandle handle, void** base)          override;
+                void VCreateShaderBase(Resource::ShaderHandle handle, void** base)              override;
+                void VCreateRenderPassBase(Resource::RenderPassHandle handle, void** base)      override;
+                void VCreateRenderTargetBase(Resource::RenderTargetHandle handle, void** base)  override;
+                void VCreateMeshBase(Resource::ModelHandle handle, void** base)                 override;
 
                 void thread_main();
 

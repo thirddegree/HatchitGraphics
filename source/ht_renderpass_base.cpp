@@ -18,6 +18,9 @@ namespace Hatchit
 {
     namespace Graphics 
     {
+        void RenderPassBase::SetView(Math::Matrix4 view) { m_view = view; }
+        void RenderPassBase::SetProj(Math::Matrix4 proj) { m_proj = proj; }
+
         void RenderPassBase::ScheduleRenderRequest(MaterialHandle material, MeshHandle mesh, std::vector<Resource::ShaderVariable*> instanceVariables)
         {
             RenderRequest renderRequest = {};

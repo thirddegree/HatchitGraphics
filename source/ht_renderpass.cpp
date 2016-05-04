@@ -15,6 +15,7 @@
 #include <ht_renderpass.h>
 #include <ht_renderpass_base.h>
 #include <ht_renderer.h>
+#include <ht_gpuresourcepool.h>
 
 namespace Hatchit
 {
@@ -23,10 +24,30 @@ namespace Hatchit
         RenderPass::RenderPass(Core::Guid ID):
             Core::RefCounted<RenderPass>(std::move(ID))
         {
+            m_base = nullptr;
         }
 
         bool RenderPass::Initialize(const std::string& file)
         {
+            if (GPUResourcePool::IsLocked())
+            {
+                HT_DEBUG_PRINTF("In GPU Resource Thread.\n");
+
+                //Currenty, we are already in the GPU Resource Thread.
+                //So instead of submitting a request to fill the pipeline base,
+                //we should just immediately have the thread fill it for us.
+                GPUResourcePool::CreateRenderPass(file, reinterpret_cast<void**>(&m_base));
+            }
+            else
+            {
+                //Request pipeline immediately for main thread of execution
+                //This call will block the active thread while the GPUResourcePool
+                //allocated the memory
+                GPUResourcePool::RequestRenderPass(file, reinterpret_cast<void**>(&m_base));
+            }
+
+            return true;
+
             return true;
         }
 
@@ -34,11 +55,11 @@ namespace Hatchit
 
         void RenderPass::SetView(Math::Matrix4 view)
         {
-            m_base->VSetView(view);
+            m_base->SetView(view);
         }
         void RenderPass::SetProj(Math::Matrix4 proj)
         {
-            m_base->VSetProj(proj);
+            m_base->SetProj(proj);
         }
 
         void RenderPass::ScheduleRenderRequest(MaterialHandle material, MeshHandle mesh, std::vector<Resource::ShaderVariable*> instanceVariables) 

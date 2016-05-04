@@ -60,6 +60,7 @@ namespace Hatchit
                 bool setupInstance();
                 bool enumeratePhysicalDevices();
                 bool queryDeviceCapabilities();
+                bool setupDevices();
                 bool setupProcAddresses();
 
                 bool checkInstanceLayers();

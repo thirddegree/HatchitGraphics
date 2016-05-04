@@ -14,6 +14,7 @@
 
 #include <ht_rendertarget.h>
 #include <ht_rendertarget_base.h>
+#include <ht_gpuresourcepool.h>
 
 namespace Hatchit
 {
@@ -27,6 +28,23 @@ namespace Hatchit
 
         bool RenderTarget::Initialize(const std::string& file)
         {
+            if (GPUResourcePool::IsLocked())
+            {
+                HT_DEBUG_PRINTF("In GPU Resource Thread.\n");
+
+                //Currenty, we are already in the GPU Resource Thread.
+                //So instead of submitting a request to fill the pipeline base,
+                //we should just immediately have the thread fill it for us.
+                GPUResourcePool::CreateRenderTarget(file, reinterpret_cast<void**>(&m_base));
+            }
+            else
+            {
+                //Request pipeline immediately for main thread of execution
+                //This call will block the active thread while the GPUResourcePool
+                //allocated the memory
+                GPUResourcePool::RequestRenderTarget(file, reinterpret_cast<void**>(&m_base));
+            }
+
             return true;
         }
 

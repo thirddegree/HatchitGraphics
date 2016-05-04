@@ -20,11 +20,12 @@
 #include <ht_d3d12rootlayout.h>
 #include <ht_d3d12pipeline.h>
 #include <ht_d3d12shader.h>
+#include <ht_d3d12renderpass.h>
+#include <ht_d3d12rendertarget.h>
+//#include <ht_d3d12mesh.h>
 
 #include <ht_debug.h>
 #include <ht_gpuresourcerequest.h>
-#include <ht_texture_resource.h>
-#include <ht_rootlayout_resource.h>
 
 namespace Hatchit
 {
@@ -50,41 +51,6 @@ namespace Hatchit
                 m_alive = true;
 
                 m_thread = std::thread(&D3D12GPUResourceThread::thread_main, this);
-            }
-
-            void D3D12GPUResourceThread::VCreateTexture(std::string file, void ** data)
-            {
-                Resource::TextureHandle handle = Resource::Texture::GetHandle(file, file);
-
-                CreateTextureBase(handle, data);
-            }
-
-            void D3D12GPUResourceThread::VCreateMaterial(std::string file, void ** data)
-            {
-                Resource::MaterialHandle handle = Resource::Material::GetHandle(file, file);
-
-                CreateMaterialBase(handle, data);
-            }
-
-            void D3D12GPUResourceThread::VCreateRootLayout(std::string file, void ** data)
-            {
-                Resource::RootLayoutHandle handle = Resource::RootLayout::GetHandle(file, file);
-
-                CreateRootLayoutBase(handle, data);
-            }
-
-            void D3D12GPUResourceThread::VCreatePipeline(std::string file, void ** data)
-            {
-                Resource::PipelineHandle handle = Resource::Pipeline::GetHandle(file, file);
-
-                CreatePipelineBase(handle, data);
-            }
-
-            void D3D12GPUResourceThread::VCreateShader(std::string file, void ** data)
-            {
-                Resource::ShaderHandle handle = Resource::Shader::GetHandle(file, file);
-
-                CreateShaderBase(handle, data);
             }
 
             void D3D12GPUResourceThread::thread_main()
@@ -119,7 +85,6 @@ namespace Hatchit
                             auto tRequest = static_cast<TextureRequest*>(*request);
 
                             ProcessTextureRequest(tRequest);
-
                         } break;
                         
                         case GPUResourceRequest::Type::Material:
@@ -150,6 +115,27 @@ namespace Hatchit
                             ProcessShaderRequest(sRequest);
                         } break;
 
+                        case GPUResourceRequest::Type::RenderPass:
+                        {
+                            auto sRequest = static_cast<RenderPassRequest*>(*request);
+
+                            ProcessRenderPassRequest(sRequest);
+                        } break;
+
+                        case GPUResourceRequest::Type::RenderTarget:
+                        {
+                            auto sRequest = static_cast<RenderTargetRequest*>(*request);
+
+                            ProcessRenderTargetRequest(sRequest);
+                        } break;
+
+                        case GPUResourceRequest::Type::Mesh:
+                        {
+                            auto sRequest = static_cast<MeshRequest*>(*request);
+
+                            ProcessMeshRequest(sRequest);
+                        } break;
+
                     }
 
                     m_processed = true;
@@ -160,85 +146,7 @@ namespace Hatchit
                 ReleaseCOM(_allocator);
             }
 
-             
-            void D3D12GPUResourceThread::ProcessTextureRequest(TextureRequest * request)
-            {
-                Resource::TextureHandle handle = Resource::Texture::GetHandle(request->file, request->file);
-                if (!m_locked)
-                {
-                    HT_DEBUG_PRINTF("Async texture load.\n");
-                    
-                }
-                else
-                {
-                    HT_DEBUG_PRINTF("Non-Async texture load.\n");
-
-                    CreateTextureBase(handle, request->data);
-                }
-            }
-
-            void D3D12GPUResourceThread::ProcessMaterialRequest(MaterialRequest * request)
-            {
-                Resource::MaterialHandle handle = Resource::Material::GetHandle(request->file, request->file);
-                if (!m_locked)
-                {
-                    HT_DEBUG_PRINTF("Async material load.\n");
-
-                }
-                else
-                {
-                    HT_DEBUG_PRINTF("Non-Async material load.\n");
-
-                    CreateMaterialBase(handle, request->data);
-                }
-            }
-
-            void D3D12GPUResourceThread::ProcessRootLayoutRequest(RootLayoutRequest * request)
-            {
-                Resource::RootLayoutHandle handle = Resource::RootLayout::GetHandle(request->file, request->file);
-                if (!m_locked)
-                {
-                    HT_DEBUG_PRINTF("Async rootlayout load.\n");
-                }
-                else
-                {
-                    HT_DEBUG_PRINTF("Non-async rootlayout load.\n");
-
-                    CreateRootLayoutBase(handle, request->data);
-                }
-            }
-
-            void D3D12GPUResourceThread::ProcessPipelineRequest(PipelineRequest * request)
-            {
-                Resource::PipelineHandle handle = Resource::Pipeline::GetHandle(request->file, request->file);
-                if (!m_locked)
-                {
-                    HT_DEBUG_PRINTF("Async pipeline load.\n");
-                }
-                else
-                {
-                    HT_DEBUG_PRINTF("Non-async pipeline load.\n");
-                    
-                    CreatePipelineBase(handle, request->data);
-                }
-            }
-
-            void D3D12GPUResourceThread::ProcessShaderRequest(ShaderRequest * request)
-            {
-                Resource::ShaderHandle handle = Resource::Shader::GetHandle(request->file, request->file);
-                if (!m_locked)
-                {
-                    HT_DEBUG_PRINTF("Async shader load.\n");
-                }
-                else
-                {
-                    HT_DEBUG_PRINTF("Non-async shader load.\n");
-
-                    CreateShaderBase(handle, request->data);
-                }
-            }
-
-            void D3D12GPUResourceThread::CreateTextureBase(Resource::TextureHandle handle, void ** base)
+            void D3D12GPUResourceThread::VCreateTextureBase(Resource::TextureHandle handle, void ** base)
             {
                 D3D12Texture** _base = reinterpret_cast<D3D12Texture**>(base);
                 if (!*_base)
@@ -251,7 +159,7 @@ namespace Hatchit
                 }
             }
 
-            void D3D12GPUResourceThread::CreateMaterialBase(Resource::MaterialHandle handle, void ** base)
+            void D3D12GPUResourceThread::VCreateMaterialBase(Resource::MaterialHandle handle, void ** base)
             {
                 D3D12Material** _base = reinterpret_cast<D3D12Material**>(base);
                 if (!*_base)
@@ -264,7 +172,7 @@ namespace Hatchit
                 }
             }
 
-            void D3D12GPUResourceThread::CreateRootLayoutBase(Resource::RootLayoutHandle handle, void ** base)
+            void D3D12GPUResourceThread::VCreateRootLayoutBase(Resource::RootLayoutHandle handle, void ** base)
             {
                 D3D12RootLayout** _base = reinterpret_cast<D3D12RootLayout**>(base);
                 if (!*_base)
@@ -277,7 +185,7 @@ namespace Hatchit
                 }
             }
 
-            void D3D12GPUResourceThread::CreatePipelineBase(Resource::PipelineHandle handle, void ** base)
+            void D3D12GPUResourceThread::VCreatePipelineBase(Resource::PipelineHandle handle, void ** base)
             {
                 D3D12Pipeline** _base = reinterpret_cast<D3D12Pipeline**>(base);
                 if (!*_base)
@@ -290,7 +198,7 @@ namespace Hatchit
                 }
             }
 
-            void D3D12GPUResourceThread::CreateShaderBase(Resource::ShaderHandle handle, void ** base)
+            void D3D12GPUResourceThread::VCreateShaderBase(Resource::ShaderHandle handle, void ** base)
             {
                 D3D12Shader** _base = reinterpret_cast<D3D12Shader**>(base);
                 if (!*_base)
@@ -303,8 +211,45 @@ namespace Hatchit
                 }
             }
 
+            void D3D12GPUResourceThread::VCreateRenderPassBase(Resource::RenderPassHandle handle, void** base) 
+            {
+                D3D12RenderPass** _base = reinterpret_cast<D3D12RenderPass**>(base);
+                if (!*_base)
+                {
+                    *_base = new D3D12RenderPass;
+                    if (!(*_base)->Initialize(handle))
+                    {
+                        HT_DEBUG_PRINTF("Failed to initialize GPU Render Pass.\n");
+                    }
+                }
+            }
 
-                
+            void D3D12GPUResourceThread::VCreateRenderTargetBase(Resource::RenderTargetHandle handle, void** base) 
+            {
+                D3D12RenderTarget** _base = reinterpret_cast<D3D12RenderTarget**>(base);
+                if (!*_base)
+                {
+                    *_base = new D3D12RenderTarget;
+                    if (!(*_base)->Initialize(handle))
+                    {
+                        HT_DEBUG_PRINTF("Failed to initialize GPU Render Target.\n");
+                    }
+                }
+            }
+
+            void D3D12GPUResourceThread::VCreateMeshBase(Resource::ModelHandle handle, void** base) 
+            {
+                //D3D12Mesh** _base = reinterpret_cast<D3D12Mesh**>(base);
+                //if (!*_base)
+                //{
+                //    *_base = new D3D12Mesh;
+                //    if (!(*_base)->Initialize(handle))
+                //    {
+                //        HT_DEBUG_PRINTF("Failed to initialize GPU Mesh.\n");
+                //    }
+                //}
+            }
+
         }
     }
 }

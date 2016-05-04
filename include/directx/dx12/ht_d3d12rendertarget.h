@@ -33,7 +33,7 @@ namespace Hatchit
             public:
                 D3D12RenderTarget();
 
-                bool Initialize(const std::string& fileName);
+                bool Initialize(const Resource::RenderTargetHandle& handle);
 
             private:
                 ID3D12Resource*                 m_resource;
