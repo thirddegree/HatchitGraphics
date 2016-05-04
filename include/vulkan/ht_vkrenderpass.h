@@ -29,6 +29,7 @@
 #include <ht_vktexture.h>
 #include <ht_vkrendertarget.h>
 #include <ht_vkrootlayout.h>
+#include <ht_rootlayout.h>      //RootLayoutHandle
 
 namespace Hatchit {
 
@@ -80,8 +81,9 @@ namespace Hatchit {
                 VkRenderPass m_renderPass;
                 VkCommandBuffer m_commandBuffer;
                 
+                Graphics::RootLayoutHandle m_rootLayoutHandle; //To keep this referenced
                 VKRootLayout* m_rootLayout;
-
+                
                 //For instance data
                 UniformBlock_vk m_instanceBlock;
 

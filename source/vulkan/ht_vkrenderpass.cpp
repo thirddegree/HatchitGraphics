@@ -12,6 +12,7 @@
 **
 **/
 
+#include <ht_vkrenderpass.h>
 #include <ht_vkswapchain.h>
 #include <ht_vkrendertarget.h>
 #include <ht_vkpipeline.h>
@@ -97,8 +98,8 @@ namespace Hatchit {
                 std::vector<std::string> outputPaths = handle->GetOutputPaths();
 
                 std::string rootLayoutPath = handle->GetRootLayoutPath();
-                RootLayoutHandle rootLayoutHandle = RootLayout::GetHandle(rootLayoutPath, rootLayoutPath);
-                m_rootLayout = static_cast<VKRootLayout*>(rootLayoutHandle->GetBase());
+                m_rootLayoutHandle = RootLayout::GetHandle(rootLayoutPath, rootLayoutPath);
+                m_rootLayout = static_cast<VKRootLayout*>(m_rootLayoutHandle->GetBase());
 
                 //Create a structure to map set index to maps of binding indicies and render target handles
                 std::map<uint32_t, std::map<uint32_t, VKRenderTarget*>> mappedInputTargets;

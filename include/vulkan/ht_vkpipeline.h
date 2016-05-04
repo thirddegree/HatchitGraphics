@@ -55,13 +55,13 @@ namespace Hatchit {
                 */
                 bool VAddShaderVariables(std::map<std::string, Hatchit::Resource::ShaderVariable*> shaderVariables) override;
 
-                bool VSetInt(std::string name, int data)                        override;
-                bool VSetDouble(std::string name, double data)                  override;
-                bool VSetFloat(std::string name, float data)                    override;
-                bool VSetFloat2(std::string name, Math::Vector2 data)           override;
-                bool VSetFloat3(std::string name, Math::Vector3 data)           override;
-                bool VSetFloat4(std::string name, Math::Vector4 data)           override;
-                bool VSetMatrix4(std::string name, Math::Matrix4 data)          override;
+                bool VSetInt(std::string name, int data)                override;
+                bool VSetDouble(std::string name, double data)          override;
+                bool VSetFloat(std::string name, float data)            override;
+                bool VSetFloat2(std::string name, Math::Vector2 data)   override;
+                bool VSetFloat3(std::string name, Math::Vector3 data)   override;
+                bool VSetFloat4(std::string name, Math::Vector4 data)   override;
+                bool VSetMatrix4(std::string name, Math::Matrix4 data)  override;
 
                 VkPipeline                          GetVKPipeline();
                 
@@ -85,9 +85,9 @@ namespace Hatchit {
                 VkPipelineMultisampleStateCreateInfo m_multisampleState;
                 std::vector<VkPipelineShaderStageCreateInfo> m_shaderStages;
 
-                VkPipelineCache m_pipelineCache;
-                VkPipelineLayout m_pipelineLayout; //Given by the root layout
-                VkPipeline      m_pipeline;
+                VkPipelineCache     m_pipelineCache;
+                VkPipelineLayout    m_pipelineLayout; //Given by the root layout
+                VkPipeline          m_pipeline;
 
                 std::vector<BYTE> m_pushData;
                 std::vector<BYTE> m_descriptorData;

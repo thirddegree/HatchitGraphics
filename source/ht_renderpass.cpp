@@ -47,8 +47,6 @@ namespace Hatchit
             }
 
             return true;
-
-            return true;
         }
 
         bool RenderPass::BuildCommandList() { return true; }
