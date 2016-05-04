@@ -78,6 +78,7 @@ namespace Hatchit {
                     std::string filePath = texturePath.path;
 
                     TextureHandle textureHandle = Texture::GetHandle(filePath, filePath);
+                    m_textureHandles[filePath] = textureHandle; //Store handle so it doesn't de-ref and get deleted
                     VKTexture* texture = static_cast<VKTexture*>(textureHandle->GetBase());
 
                     m_textureLocations.push_back(location);

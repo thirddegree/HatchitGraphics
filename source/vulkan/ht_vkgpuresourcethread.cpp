@@ -40,6 +40,26 @@ namespace Hatchit
                 m_locked = false;
                 m_device = device;
                 m_swapchain = swapchain;
+
+                //auto _device = m_device->GetVKDevices()[0];
+                //
+                ///*Create thread specific resources*/
+                //if (!createCommandPool(_device))
+                //{
+                //    HT_ERROR_PRINTF("VKGPUResourceThread::thread_main: Failed to create command pool in thread.\n");
+                //    Kill();
+                //}
+                //
+                //if (!createDescriptorPool(_device))
+                //{
+                //    HT_ERROR_PRINTF("VKGPUResourceThread::thread_main: Failed to create descriptor pool in thread.\n");
+                //    Kill();
+                //}
+                //
+                //Resource::PipelineHandle handle = Resource::Pipeline::GetHandleFromFileName("SwapchainPipeline.json");
+                //VKPipeline* pipeline = new VKPipeline();
+                //pipeline->Initialize(handle, _device, m_descriptorPool);
+
             }
 
             VKGPUResourceThread::~VKGPUResourceThread()

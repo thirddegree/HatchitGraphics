@@ -77,6 +77,8 @@ namespace Hatchit {
                 std::vector<VkDescriptorSetLayout> m_materialLayouts;
                 std::vector<VkDescriptorSet> m_materialSets;
 
+                std::map<std::string, Graphics::TextureHandle> m_textureHandles;
+
                 UniformBlock_vk m_uniformVSBuffer;
                 //UniformBlock m_uniformFSBuffer;
                 std::vector<UniformBlock_vk> m_fragmentTextures;

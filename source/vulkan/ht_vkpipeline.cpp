@@ -29,6 +29,7 @@ namespace Hatchit {
 
             VKPipeline::VKPipeline()
             {
+                m_pipeline = VK_NULL_HANDLE;
                 m_hasVertexAttribs = false;
                 m_hasIndexAttribs = false;
             }
@@ -437,7 +438,7 @@ namespace Hatchit {
             void VKPipeline::loadShader(Resource::Pipeline::ShaderSlot shaderSlot, Graphics::ShaderHandle shaderHandle)
             {
                 VKShader* shader = static_cast<VKShader*>(shaderHandle->GetBase());
-                m_shaderHandles[shaderSlot] = shader;
+                m_shaderHandles[shaderSlot] = shaderHandle;
 
                 VkShaderModule shaderModule = shader->GetShaderModule();
 

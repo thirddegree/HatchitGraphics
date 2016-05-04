@@ -68,8 +68,6 @@ namespace Hatchit {
                 void BindPipeline(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout);
 
             protected:
-                std::map<Resource::Pipeline::ShaderSlot, VKShader*> m_shaderHandles;
-
                 //Input
                 VkDevice m_device;
                 VkDescriptorPool m_descriptorPool;
@@ -83,7 +81,9 @@ namespace Hatchit {
                 VkPipelineDepthStencilStateCreateInfo m_depthStencilState;
                 VkPipelineRasterizationStateCreateInfo m_rasterizationState;
                 VkPipelineMultisampleStateCreateInfo m_multisampleState;
+                
                 std::vector<VkPipelineShaderStageCreateInfo> m_shaderStages;
+                std::map<Resource::Pipeline::ShaderSlot, Graphics::ShaderHandle> m_shaderHandles;
 
                 VkPipelineCache     m_pipelineCache;
                 VkPipelineLayout    m_pipelineLayout; //Given by the root layout
