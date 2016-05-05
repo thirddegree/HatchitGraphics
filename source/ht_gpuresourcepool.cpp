@@ -32,12 +32,10 @@
 
 namespace Hatchit
 {
-
     using namespace Core;
 
     namespace Graphics
     {
-        using namespace DX;
 
         bool GPUResourcePool::Initialize(IDevice* device, SwapChain* swapchain)
         {
