@@ -65,6 +65,14 @@ namespace Hatchit {
             m_projection = projection;
         }
 
+        /* Sets the layer flags of the camera
+        *\flags A 64 bit integer containing the flags that this camera is a part of
+        */
+        void Camera::SetLayerFlags(uint64_t flags) 
+        {
+            m_layerflags = flags;
+        }
+
         //Register this camera to the renderer based on its layer flags
         void Camera::RegisterCamera(Renderer& renderer)
         {

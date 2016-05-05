@@ -58,10 +58,12 @@ namespace Hatchit {
                 VKSwapChain(const RendererParams& rendererParams, VKDevice* device, VKQueue* queue);
                 ~VKSwapChain();
                 
-                void VClear(float* color)                           override;
-                bool VInitialize(uint32_t width, uint32_t height)   override;
-                void VResize(uint32_t width, uint32_t height)       override;
-                void VPresent()                                     override;
+                void VClear(float* color)                                   override;
+                bool VInitialize(uint32_t width, uint32_t height)           override;
+                void VResize(uint32_t width, uint32_t height)               override;
+                void VExecute(std::vector<RenderPassHandle> renderPasses)   override;
+                void VSetInput(RenderPassHandle handle)                     override;
+                void VPresent()                                             override;
 
                 const VkCommandBuffer&  GetVKCurrentCommand() const;
                 const VkSurfaceKHR&     GetVKSurface() const;

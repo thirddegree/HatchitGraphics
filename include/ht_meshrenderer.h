@@ -29,14 +29,16 @@
 #include <ht_material.h>
 #include <ht_mesh.h>
 #include <ht_model.h>
+#include <ht_renderer.h>
 
-namespace Hatchit {
-
-    namespace Graphics {
-
+namespace Hatchit 
+{
+    namespace Graphics
+    {
         class HT_API MeshRenderer : public IObjectRenderer
         {
         public:
+            MeshRenderer(Renderer* renderer);
             virtual ~MeshRenderer();
 
             /* Set which material you want to render with
@@ -59,8 +61,9 @@ namespace Hatchit {
 
 
         protected:
+            Renderer*               m_renderer;
             RenderPassHandle        m_renderPass;
-            PipelineHandle           m_pipeline;
+            PipelineHandle          m_pipeline;
             MaterialHandle          m_material;
             MeshHandle              m_mesh;
             std::vector<Resource::ShaderVariable*> m_instanceData;

@@ -34,6 +34,12 @@ namespace Hatchit
 
         Mesh::Mesh(Core::Guid ID) 
         {
+            m_base = nullptr;
+        }
+
+        Mesh::~Mesh() 
+        {
+            delete m_base;
         }
 
         bool Mesh::Initialize(const std::string& file)

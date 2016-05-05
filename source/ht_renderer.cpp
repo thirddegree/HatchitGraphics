@@ -36,8 +36,21 @@ namespace Hatchit {
         GPUQueue*       Renderer::_Queue = nullptr;
         RendererType    Renderer::_Type = UNKNOWN;
 
-        void Renderer::RegisterRenderPass(RenderPassHandle pass)
+        void Renderer::RegisterRenderRequest(RenderPassHandle pass, MaterialHandle material, MeshHandle mesh, std::vector<Resource::ShaderVariable*> instanceVariables)
         {
+            pass->ScheduleRenderRequest(material, mesh, instanceVariables);
+
+            //Check if the pass already exists
+            for (size_t i = 0; i < m_renderPassLayers.size(); i++)
+            {
+                std::vector<RenderPassHandle> layer = m_renderPassLayers[i];
+                for (size_t j = 0; j < layer.size(); j++)
+                {
+                    if (layer[j] == pass)
+                        return;
+                }
+            }
+
             uint64_t flags = pass->GetLayerFlags();
             for (int j = 0; flags != 0; j++)
             {
@@ -65,6 +78,8 @@ namespace Hatchit {
         Renderer::Renderer()
         {
             m_swapChain = nullptr;
+            m_locked = false;
+            m_processed = false;
         }
 
         Renderer::~Renderer()
@@ -136,6 +151,8 @@ namespace Hatchit {
                     return false;
             }
 
+            //initThreads();
+
             return true;
         }
 
@@ -149,6 +166,11 @@ namespace Hatchit {
 
         void Renderer::Render()
         {
+            //Tell the swapchain which render pass to put on screen
+            std::vector<RenderPassHandle> lastLayer = m_renderPassLayers[0];
+            RenderPassHandle lastRenderPass = lastLayer[lastLayer.size() - 1];
+            m_swapChain->VSetInput(lastRenderPass);
+
             //Step 01: Clear the buffer
             //Not exactly sure how this will work, as the clear command
             //need to be recorded as part of a command list
@@ -163,20 +185,36 @@ namespace Hatchit {
                 for (size_t j = 0; j < renderPasses.size(); j++)
                 {
                     RenderPassHandle passHandle = renderPasses[j];
-                    assert(passHandle->BuildCommandList()); //This needs to succeed
+                    passHandle->BuildCommandList();
+                    //m_threadQueue.push(passHandle);
                 }
             }
+
+            //Wait for all threads to finish
+            //std::unique_lock<std::mutex> lock(m_mutex);
+            //m_cv.wait(lock, [this]() -> bool { m_locked = true;  return this->m_threadQueue.empty(); });
+            //m_locked = false;
 
             //Step 03: Execute the recorded command lists
             //This is a complicated step as we must execute command lists potentially
             //while others are still being generated. The pass threads must signal they have completed
             //to the renderer for it to then collect and execute them
+            for (size_t i = 0; i < m_renderPassLayers.size(); i++)
+            {
+                m_swapChain->VExecute(m_renderPassLayers[i]);
+            }
 
             //Step 04: Present to the screen
             //The previous step and this are quite related.
             //The execution of the previous command lists may also include,
             //the commands for presenting to the buffer.
             m_swapChain->VPresent();
+
+            //Clear out cameras
+            for (size_t i = 0; i < m_renderPassCameras.size(); i++)
+            {
+                m_renderPassCameras[i].clear();
+            }
         }
 
         void Renderer::Present()
@@ -192,6 +230,34 @@ namespace Hatchit {
         RendererType Renderer::GetType()
         {
             return Renderer::_Type;
+        }
+
+        /*
+            Protected Methods
+        */
+
+        void Renderer::initThreads() 
+        {
+            uint32_t threadCount = std::thread::hardware_concurrency();
+            for (uint32_t i = 0; i < threadCount; i++)
+            {
+                std::thread* thread = new std::thread(&Renderer::thread_main, this);
+                m_threads.push_back(thread);
+                thread->detach();
+            }
+        }
+
+        void Renderer::thread_main() 
+        {
+            while (true)
+            {
+                if (m_threadQueue.empty())
+                    continue;
+
+                std::shared_ptr<RenderPassHandle> renderPass = m_threadQueue.pop();
+
+                (*renderPass)->BuildCommandList();
+            }
         }
     }
 }

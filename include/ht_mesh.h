@@ -44,7 +44,7 @@ namespace Hatchit {
         {
         public:
             Mesh(Core::Guid ID);
-            virtual ~Mesh() {};
+            ~Mesh();
 
             bool Initialize(const std::string& file);
 

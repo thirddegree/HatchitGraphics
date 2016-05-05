@@ -196,11 +196,11 @@ namespace Hatchit
             Resource::RenderPassHandle handle = Resource::RenderPass::GetHandle(request->file, request->file);
             if (!m_locked)
             {
-                HT_DEBUG_PRINTF("Async shader load.\n");
+                HT_DEBUG_PRINTF("Async render pass load.\n");
             }
             else
             {
-                HT_DEBUG_PRINTF("Non-async shader load.\n");
+                HT_DEBUG_PRINTF("Non-async render pass load.\n");
 
                 VCreateRenderPassBase(handle, request->data);
             }
@@ -210,11 +210,11 @@ namespace Hatchit
             Resource::RenderTargetHandle handle = Resource::RenderTarget::GetHandle(request->file, request->file);
             if (!m_locked)
             {
-                HT_DEBUG_PRINTF("Async shader load.\n");
+                HT_DEBUG_PRINTF("Async render target load.\n");
             }
             else
             {
-                HT_DEBUG_PRINTF("Non-async shader load.\n");
+                HT_DEBUG_PRINTF("Non-async render target load.\n");
 
                 VCreateRenderTargetBase(handle, request->data);
             }
@@ -224,11 +224,11 @@ namespace Hatchit
             Resource::ModelHandle handle = Resource::Model::GetHandle(request->file, request->file);
             if (!m_locked)
             {
-                HT_DEBUG_PRINTF("Async shader load.\n");
+                HT_DEBUG_PRINTF("Async mesh load.\n");
             }
             else
             {
-                HT_DEBUG_PRINTF("Non-async shader load.\n");
+                HT_DEBUG_PRINTF("Non-async mesh load.\n");
 
                 VCreateMeshBase(handle, request->data);
             }

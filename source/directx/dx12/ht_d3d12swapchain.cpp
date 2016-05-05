@@ -147,6 +147,15 @@ namespace Hatchit
             {
             }
 
+            void D3D12SwapChain::VExecute(std::vector<RenderPassHandle> renderPasses)
+            {
+            }
+
+            void D3D12SwapChain::VSetInput(RenderPassHandle handle)
+            {
+            
+            }
+
             void D3D12SwapChain::VPresent()
             {
                 HRESULT hr = S_OK;
