@@ -55,6 +55,7 @@ namespace Hatchit {
             std::map<std::string, BYTE*> m_variables;
 
             BYTE*           m_byteData;
+            std::size_t     m_byteDataSize;
 
         };
     }
