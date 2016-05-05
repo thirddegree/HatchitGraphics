@@ -349,37 +349,6 @@ namespace Hatchit {
                     return false;
                 }
 
-                std::vector<VkDescriptorImageInfo> textureDescriptors;
-                std::vector<VkWriteDescriptorSet> descriptorWrites;
-
-                for (size_t i = 0; i < m_inputTextures.size(); i++)
-                {
-                    Texture_vk inputTexture = m_inputTextures[i];
-
-                    // Image descriptor for the color map texture
-                    VkDescriptorImageInfo texDescriptor = {};
-                    texDescriptor.sampler = inputTexture.sampler;
-                    texDescriptor.imageView = inputTexture.image.view;
-                    texDescriptor.imageLayout = inputTexture.layout;
-
-                    textureDescriptors.push_back(texDescriptor);
-                }
-
-                for (size_t i = 0; i < m_inputTextures.size(); i++)
-                {
-                    VkWriteDescriptorSet uniformTexure2DWrite = {};
-                    uniformTexure2DWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                    uniformTexure2DWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-                    uniformTexure2DWrite.dstSet = m_descriptorSet;
-                    uniformTexure2DWrite.dstBinding = static_cast<uint32_t>(i);
-                    uniformTexure2DWrite.pImageInfo = &textureDescriptors[i];
-                    uniformTexure2DWrite.descriptorCount = 1;
-
-                    descriptorWrites.push_back(uniformTexure2DWrite);
-                }
-
-                vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-
                 //Buffer 3 blank points
                 float blank[9] = { 0,0,0,0,0,0,0,0,0 };
                 if (!VKTools::CreateUniformBuffer(9, blank, &m_vertexBuffer))
@@ -598,6 +567,41 @@ namespace Hatchit {
                 {
                     VKRenderTarget* vkRenderTarget = static_cast<VKRenderTarget*>(incomingRenderTargets[i]->GetBase());
                     m_inputTextures.push_back(vkRenderTarget->GetVKTexture());
+                }
+
+                //Send input textures into descriptor set
+                if (m_inputTextures.size() > 0)
+                {
+                    std::vector<VkDescriptorImageInfo> textureDescriptors;
+                    std::vector<VkWriteDescriptorSet> descriptorWrites;
+
+                    for (size_t i = 0; i < m_inputTextures.size(); i++)
+                    {
+                        Texture_vk inputTexture = m_inputTextures[i];
+
+                        // Image descriptor for the color map texture
+                        VkDescriptorImageInfo texDescriptor = {};
+                        texDescriptor.sampler = inputTexture.sampler;
+                        texDescriptor.imageView = inputTexture.image.view;
+                        texDescriptor.imageLayout = inputTexture.layout;
+
+                        textureDescriptors.push_back(texDescriptor);
+                    }
+
+                    for (size_t i = 0; i < 1; i++)
+                    {
+                        VkWriteDescriptorSet uniformTexure2DWrite = {};
+                        uniformTexure2DWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                        uniformTexure2DWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+                        uniformTexure2DWrite.dstSet = m_descriptorSet;
+                        uniformTexure2DWrite.dstBinding = static_cast<uint32_t>(i);
+                        uniformTexure2DWrite.pImageInfo = &textureDescriptors[i];
+                        uniformTexure2DWrite.descriptorCount = 1;
+
+                        descriptorWrites.push_back(uniformTexure2DWrite);
+                    }
+
+                    vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
                 }
             }
 
