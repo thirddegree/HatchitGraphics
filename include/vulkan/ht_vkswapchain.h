@@ -101,6 +101,7 @@ namespace Hatchit {
                 void* m_display;
 
                 VkRenderPass            m_renderPass;
+                PipelineHandle          m_pipelineHandle; //Hold this so it doesn't deref and destroy the pipeline
                 VKPipeline*             m_pipeline;
                 VkDescriptorSet         m_descriptorSet;
 

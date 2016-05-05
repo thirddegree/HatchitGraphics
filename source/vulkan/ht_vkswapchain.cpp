@@ -33,6 +33,8 @@ namespace Hatchit {
                 m_instance = device->GetVKInstance();
                 m_gpu = device->GetVKPhysicalDevices()[0];
 
+                m_currentBuffer = 0;
+
                 //TODO: Worry about different queue types
                 if (queue->GetQueueType() != QueueType::GRAPHICS)
                     HT_ERROR_PRINTF("Providing a non-graphics queue to the swapchain is currently undefined");
@@ -83,7 +85,29 @@ namespace Hatchit {
             {
                 
             }
-            void VKSwapChain::VPresent() {}
+            void VKSwapChain::VPresent() 
+            {
+                VkResult err;
+
+                BuildSwapchainCommands(m_clearColor);
+
+                //Submit swapchain command
+                VkSubmitInfo swapChainSubmit = {};
+                swapChainSubmit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+                swapChainSubmit.pNext = nullptr;
+                swapChainSubmit.waitSemaphoreCount = 0;
+                swapChainSubmit.pWaitSemaphores = nullptr;
+                swapChainSubmit.pWaitDstStageMask = nullptr;
+                swapChainSubmit.commandBufferCount = 1;
+                swapChainSubmit.pCommandBuffers = &m_swapchainBuffers[m_currentBuffer].command;
+                swapChainSubmit.signalSemaphoreCount = 0;
+                swapChainSubmit.pSignalSemaphores = nullptr;
+
+                vkQueueSubmit(m_queue, 1, &swapChainSubmit, VK_NULL_HANDLE);
+
+                err = VKPresent(m_queue, VK_NULL_HANDLE);
+                assert(!err);
+            }
 
             const VkCommandBuffer& VKSwapChain::GetVKCurrentCommand() const
             {
@@ -233,8 +257,8 @@ namespace Hatchit {
                 multisampleState.minSamples = 0;
                 multisampleState.samples = Resource::Pipeline::SAMPLE_1_BIT;
 
-                PipelineHandle pipelineHandle = Pipeline::GetHandle("SwapchainPipeline.json", "SwapchainPipeline.json");
-                m_pipeline = static_cast<VKPipeline*>(pipelineHandle->GetBase());
+                m_pipelineHandle = Pipeline::GetHandle("SwapchainPipeline.json", "SwapchainPipeline.json");
+                m_pipeline = static_cast<VKPipeline*>(m_pipelineHandle->GetBase());
 
                 //Setup the descriptor sets
                 Graphics::RootLayoutHandle rootLayoutHandle = Graphics::RootLayout::GetHandle("TestRootDescriptor.json", "TestRootDescriptor.json");

@@ -153,9 +153,18 @@ namespace Hatchit {
             //need to be recorded as part of a command list
             m_swapChain->VClear(reinterpret_cast<float*>(&m_params.clearColor));
 
-            //Step 02: Render each renderpass in a pass thread
+            //Step 02: Record each renderpass's command list in a pass thread
             //We will need to *SMARTLY* spawn enough threads to handle
             //the command generation or each render layer.
+            for (size_t i = 0; i < m_renderPassLayers.size(); i++)
+            {
+                std::vector<RenderPassHandle> renderPasses = m_renderPassLayers[i];
+                for (size_t j = 0; j < renderPasses.size(); j++)
+                {
+                    RenderPassHandle passHandle = renderPasses[j];
+                    assert(passHandle->BuildCommandList()); //This needs to succeed
+                }
+            }
 
             //Step 03: Execute the recorded command lists
             //This is a complicated step as we must execute command lists potentially
