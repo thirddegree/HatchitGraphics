@@ -34,9 +34,20 @@ namespace Hatchit
                 m_validate = false;
 
                 m_instance = VK_NULL_HANDLE;
+
+                m_debugReportCallback = VK_NULL_HANDLE;
             }
 
-            VKDevice::~VKDevice() {}
+            VKDevice::~VKDevice() 
+            {
+                if (m_instance != VK_NULL_HANDLE)
+                {
+                    if (m_debugReportCallback != VK_NULL_HANDLE)
+                        fpDestroyDebugReportCallback(m_instance, m_debugReportCallback, nullptr);
+
+                    vkDestroyInstance(m_instance, nullptr);
+                }
+            }
 
             bool VKDevice::VInitialize() 
             {
@@ -53,6 +64,9 @@ namespace Hatchit
                     return false;
 
                 if (!setupProcAddresses())
+                    return false;
+
+                if (m_validate && !setupDebugCallback())
                     return false;
 
                 return true;
@@ -279,6 +293,58 @@ namespace Hatchit
                 return true;
             }
 
+            bool VKDevice::setupDebugCallback()
+            {
+                VkResult err;
+
+                //Get debug callback function pointers
+                fpCreateDebugReportCallback =
+                    (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(m_instance, "vkCreateDebugReportCallbackEXT");
+                fpDestroyDebugReportCallback =
+                    (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(m_instance, "vkDestroyDebugReportCallbackEXT");
+
+                if (!fpCreateDebugReportCallback)
+                {
+                    HT_DEBUG_PRINTF("GetProcAddr: Unable to find vkCreateDebugReportCallbackEXT\n");
+                    return false;
+                }
+                if (!fpDestroyDebugReportCallback) {
+                    HT_DEBUG_PRINTF("GetProcAddr: Unable to find vkDestroyDebugReportCallbackEXT\n");
+                    return false;
+                }
+
+                fpDebugReportMessage =
+                    (PFN_vkDebugReportMessageEXT)vkGetInstanceProcAddr(m_instance, "vkDebugReportMessageEXT");
+                if (!fpDebugReportMessage) {
+                    HT_DEBUG_PRINTF("GetProcAddr: Unable to find vkDebugReportMessageEXT\n");
+                    return false;
+                }
+
+                PFN_vkDebugReportCallbackEXT callback;
+                callback = VKDevice::debugFunction;
+
+                VkDebugReportCallbackCreateInfoEXT dbgCreateInfo;
+                dbgCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
+                dbgCreateInfo.pNext = NULL;
+                dbgCreateInfo.pfnCallback = callback;
+                dbgCreateInfo.pUserData = NULL;
+                dbgCreateInfo.flags =
+                    VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
+                err = fpCreateDebugReportCallback(m_instance, &dbgCreateInfo, NULL, &m_debugReportCallback);
+                switch (err) {
+                case VK_SUCCESS:
+                    break;
+                case VK_ERROR_OUT_OF_HOST_MEMORY:
+                    HT_DEBUG_PRINTF("ERROR: Out of host memory!\n");
+                    return false;
+                default:
+                    HT_DEBUG_PRINTF("ERROR: An unknown error occured!\n");
+                    return false;
+                }
+
+                return true;
+            }
+
             bool VKDevice::checkInstanceLayers()
             {
                 VkResult err;
@@ -464,6 +530,40 @@ namespace Hatchit
                 }
 
                 return validated;
+            }
+
+            VKAPI_ATTR VkBool32 VKAPI_CALL VKDevice::debugFunction(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType,
+                uint64_t srcObject, size_t location, int32_t msgCode,
+                const char *pLayerPrefix, const char *pMsg, void *pUserData)
+            {
+                if (msgFlags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
+                {
+                    HT_ERROR_PRINTF("ERROR: [%s] Code %d : %s\n", pLayerPrefix, msgCode, pMsg);
+                }
+                else if (msgFlags & VK_DEBUG_REPORT_WARNING_BIT_EXT)
+                {
+                    // We know that we're submitting queues without fences, ignore this
+                    // warning
+                    if (strstr(pMsg,
+                        "vkQueueSubmit parameter, VkFence fence, is null pointer"))
+                    {
+                        return false;
+                    }
+
+                    HT_WARNING_PRINTF("WARNING: [%s] Code %d : %s\n", pLayerPrefix, msgCode, pMsg);
+                }
+                else {
+                    return false;
+                }
+
+                /*
+                * false indicates that layer should not bail-out of an
+                * API call that had validation failures. This may mean that the
+                * app dies inside the driver due to invalid parameter(s).
+                * That's what would happen without validation layers, so we'll
+                * keep that behavior here.
+                */
+                return false;
             }
 
         }

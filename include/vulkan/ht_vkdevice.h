@@ -54,6 +54,8 @@ namespace Hatchit
                 bool    m_initialized;
                 bool    m_validate;
 
+                VkDebugReportCallbackEXT m_debugReportCallback;
+
                 std::vector<const char*> m_enabledExtensionNames;
                 std::vector<const char*> m_enabledLayerNames;
 
@@ -62,6 +64,7 @@ namespace Hatchit
                 bool queryDeviceCapabilities();
                 bool setupDevices();
                 bool setupProcAddresses();
+                bool setupDebugCallback();
 
                 bool checkInstanceLayers();
                 bool checkInstanceExtensions();
@@ -70,6 +73,9 @@ namespace Hatchit
 
                 bool checkLayers(std::vector<const char*> layerNames, std::vector <VkLayerProperties> layers);
 
+                static VKAPI_ATTR VkBool32 VKAPI_CALL debugFunction(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType,
+                    uint64_t srcObject, size_t location, int32_t msgCode,
+                    const char *pLayerPrefix, const char *pMsg, void *pUserData);
             };
         }
     }

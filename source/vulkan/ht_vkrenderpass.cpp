@@ -574,7 +574,7 @@ namespace Hatchit {
                     return false;
                 }
 
-                VKTools::SetImageLayout(setupCommand, m_depthImage.image, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+                VKTools::SetImageLayout(setupCommand, m_depthImage.image, VK_IMAGE_ASPECT_DEPTH_BIT,
                     VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
                 VkImageViewCreateInfo viewInfo = {};
@@ -584,7 +584,7 @@ namespace Hatchit {
                 viewInfo.format = depthFormat;
                 viewInfo.flags = 0;
                 viewInfo.subresourceRange = {};
-                viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+                viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
                 viewInfo.subresourceRange.baseMipLevel = 0;
                 viewInfo.subresourceRange.levelCount = 1;
                 viewInfo.subresourceRange.baseArrayLayer = 0;

@@ -31,6 +31,13 @@ namespace Hatchit
             PFN_vkGetPhysicalDeviceSurfacePresentModesKHR
                 fpGetPhysicalDeviceSurfacePresentModesKHR;
 
+            PFN_vkCreateDebugReportCallbackEXT
+                fpCreateDebugReportCallback;
+            PFN_vkDestroyDebugReportCallbackEXT
+                fpDestroyDebugReportCallback;
+            PFN_vkDebugReportMessageEXT
+                fpDebugReportMessage;
+
             PFN_vkCreateSwapchainKHR
                 fpCreateSwapchainKHR;
             PFN_vkDestroySwapchainKHR

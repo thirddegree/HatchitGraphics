@@ -108,6 +108,7 @@ namespace Hatchit {
                     if (!_Device)
                     {
                         Vulkan::VKDevice* Device = new Vulkan::VKDevice;
+                        Device->SetValidation(params.validate);
                         Vulkan::VKQueue* Queue = new Vulkan::VKQueue(QueueType::GRAPHICS);
                         if (!Device->VInitialize())
                             return false;

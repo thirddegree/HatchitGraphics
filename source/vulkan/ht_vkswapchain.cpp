@@ -45,6 +45,12 @@ namespace Hatchit {
 
                 m_window = rendererParams.window;
                 m_display = rendererParams.display;
+
+                m_presentSemaphore = VK_NULL_HANDLE;
+                m_renderSemaphore = VK_NULL_HANDLE;
+                m_submitInfo = {};
+
+                m_dirty = true;
             }
 
             VKSwapChain::~VKSwapChain()
@@ -67,6 +73,10 @@ namespace Hatchit {
             void VKSwapChain::VClear(float* color) 
             {
                 m_clearColor.color = { color[0], color[1], color[2], color[3] };
+
+                assert(BuildSwapchainCommands(m_clearColor));
+
+                assert(VKPostPresentBarrier(m_queue));
             }
             bool VKSwapChain::VInitialize(uint32_t width, uint32_t height)
             {
@@ -83,29 +93,36 @@ namespace Hatchit {
             }
             void VKSwapChain::VResize(uint32_t width, uint32_t height) 
             {
-                
+                m_dirty = true;
             }
             void VKSwapChain::VPresent() 
             {
                 VkResult err;
 
-                BuildSwapchainCommands(m_clearColor);
+                err = VKGetNextImage(m_presentSemaphore);
+                assert(!err);
 
                 //Submit swapchain command
                 VkSubmitInfo swapChainSubmit = {};
                 swapChainSubmit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
                 swapChainSubmit.pNext = nullptr;
-                swapChainSubmit.waitSemaphoreCount = 0;
-                swapChainSubmit.pWaitSemaphores = nullptr;
-                swapChainSubmit.pWaitDstStageMask = nullptr;
+                swapChainSubmit.waitSemaphoreCount = 1;
+                swapChainSubmit.pWaitSemaphores = &m_presentSemaphore;
+                swapChainSubmit.pWaitDstStageMask = m_submitInfo.pWaitDstStageMask;
                 swapChainSubmit.commandBufferCount = 1;
                 swapChainSubmit.pCommandBuffers = &m_swapchainBuffers[m_currentBuffer].command;
                 swapChainSubmit.signalSemaphoreCount = 0;
                 swapChainSubmit.pSignalSemaphores = nullptr;
 
-                vkQueueSubmit(m_queue, 1, &swapChainSubmit, VK_NULL_HANDLE);
+                err = vkQueueSubmit(m_queue, 1, &swapChainSubmit, VK_NULL_HANDLE);
+                assert(!err);
+
+                assert(VKPrePresentBarrier(m_queue));
 
                 err = VKPresent(m_queue, VK_NULL_HANDLE);
+                assert(!err);
+
+                err = vkQueueWaitIdle(m_queue);
                 assert(!err);
             }
 
@@ -239,6 +256,28 @@ namespace Hatchit {
                 if (!prepareFramebuffers(swapchainExtent))
                     return false;
 
+                //Setup semaphores and submission info
+                VkSemaphoreCreateInfo semaphoreCreateInfo = {};
+                semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+                semaphoreCreateInfo.pNext = nullptr;
+                semaphoreCreateInfo.flags = 0;
+
+                err = vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_presentSemaphore);
+                assert(!err);
+
+                err = vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_renderSemaphore);
+                assert(!err);
+
+                VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+
+                m_submitInfo = {};
+                m_submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+                m_submitInfo.pWaitDstStageMask = &stageFlags;
+                m_submitInfo.waitSemaphoreCount = 1;
+                m_submitInfo.pWaitSemaphores = &m_presentSemaphore;
+                m_submitInfo.signalSemaphoreCount = 1;
+                m_submitInfo.pSignalSemaphores = &m_renderSemaphore;
+
                 VKTools::FlushSetupCommandBuffer();
 
                 return true;
@@ -323,6 +362,9 @@ namespace Hatchit {
 
             bool VKSwapChain::BuildSwapchainCommands(VkClearValue clearColor)
             {
+                if (!m_dirty)
+                    return true;
+
                 /*
                     Allocate space for the swapchain command buffers
                 */
@@ -478,6 +520,8 @@ namespace Hatchit {
 
                 }
 
+                m_dirty = false;
+
                 return true;
             }
 
@@ -516,6 +560,8 @@ namespace Hatchit {
 
             void VKSwapChain::VKSetIncomingRenderPass(VKRenderPass* renderPass)
             {
+                m_dirty = true;
+
                 std::vector<RenderTargetHandle> incomingRenderTargets = renderPass->GetOutputRenderTargets();
                 for (size_t i = 0; i < incomingRenderTargets.size(); i++)
                 {
