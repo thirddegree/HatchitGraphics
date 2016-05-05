@@ -23,97 +23,77 @@ namespace Hatchit
         */
         ShaderVariableChunk::ShaderVariableChunk(std::map<std::string, Resource::ShaderVariable*> variables)
         {
-            m_variables = variables;
-
-
-            //also need to allocate byte array based on size here
+            //count byte size of data passed in
             m_byteDataSize = 0;
-
             std::map<std::string, Resource::ShaderVariable*>::iterator itr;
-            for (itr = m_variables.begin(); itr != m_variables.end(); itr++)
+            for (itr = variables.begin(); itr != variables.end(); itr++)
             {
+                //increment size counter
                 Resource::ShaderVariable::Type type = itr->second->GetType();
-                //size of the object being added
                 m_byteDataSize += Resource::ShaderVariable::SizeFromType(type);
             }
-
-
+            //now that we've counted the bytes, allocate enough space
             m_byteData = new BYTE[m_byteDataSize];
 
 
-            m_dirty = true;
+            //restart, this time adding the data to the array
+            m_byteDataSize = 0;
+            for (itr = variables.begin(); itr != variables.end(); itr++)
+            {
+                Resource::ShaderVariable::Type type = itr->second->GetType();
+                size_t offset = Resource::ShaderVariable::SizeFromType(type);
+                //new pointer to that location in the byte data
+                m_variables.emplace(itr->first, m_byteData + m_byteDataSize);
+                //add the data again for real this time
+                memcpy(m_byteData + m_byteDataSize, itr->second->GetData(), offset);
+                //increment size counter
+                m_byteDataSize += offset;
+            }
         };
 
         ShaderVariableChunk::~ShaderVariableChunk()
         {
-            std::map<std::string, Resource::ShaderVariable*>::iterator itr;
-            for (itr = m_variables.begin(); itr != m_variables.end(); itr++)
-            {
-                delete itr->second;
-            }
             delete[] m_byteData;
         };
 
 
-        bool ShaderVariableChunk::SetInt(std::string name, int data)
+        bool ShaderVariableChunk::SetInt(std::string name, uint32_t data)
         {
-            static_cast<Resource::IntVariable*>(m_variables[name])->SetData(data);
-            m_dirty = true;
+            BYTE* location = m_variables.at(name);
+            assert(location + sizeof(uint32_t) >= m_byteData + m_byteDataSize);
+            memcpy(location, &data, sizeof(uint32_t));
             return true;
         }
 
         bool ShaderVariableChunk::SetFloat(std::string name, float data)
         {
-            static_cast<Resource::FloatVariable*>(m_variables[name])->SetData(data);
-            m_dirty = true;
+            BYTE* location = m_variables.at(name);
+            assert(location + sizeof(float) >= m_byteData + m_byteDataSize);
+            memcpy(location, &data, sizeof(float));
             return true;
         }
 
         bool ShaderVariableChunk::SetFloat3(std::string name, Math::Vector3 data)
         {
-            static_cast<Resource::Float3Variable*>(m_variables[name])->SetData(data);
-            m_dirty = true;
+            BYTE* location = m_variables.at(name);
+            assert(location + sizeof(float) * 3 >= m_byteData + m_byteDataSize);
+            memcpy(location, &data, sizeof(float) * 3);
             return true;
         }
 
         bool ShaderVariableChunk::SetFloat4(std::string name, Math::Vector4 data)
         {
-            static_cast<Resource::Float4Variable*>(m_variables[name])->SetData(data);
-            m_dirty = true;
+            BYTE* location = m_variables.at(name);
+            assert(location + sizeof(float) * 4 >= m_byteData + m_byteDataSize);
+            memcpy(location, &data, sizeof(float) * 4);
             return true;
         }
 
         bool ShaderVariableChunk::SetMatrix4(std::string name, Math::Matrix4 data)
         {
-            static_cast<Resource::Matrix4Variable*>(m_variables[name])->SetData(data);
-            m_dirty = true;
-            return true;
-        }
-
-        //rebuilds the shadervariable chunk if it's changed
-        bool ShaderVariableChunk::BuildByteData()
-        {
-            if (!m_dirty) return true;
-            //actually construct the byte data
-
-            //number of bytes into the data we have filled so far
-            size_t offset = 0;
-
-            std::map<std::string, Resource::ShaderVariable*>::iterator itr;
-            for (itr = m_variables.begin(); itr != m_variables.end(); itr++)
-            {
-                Resource::ShaderVariable::Type type = itr->second->GetType();
-                //size of the object being added
-                size_t size = Resource::ShaderVariable::SizeFromType(type);
-                //copy (size) bytes of data from shadervariable to our byte blob
-                assert(offset + size <= m_byteDataSize);
-                memcpy(m_byteData + offset, itr->second->GetData(), size);
-                offset += size;
-            }
-
-
-            //done filling data
-            m_dirty = false;
+            BYTE* location = m_variables.at(name);
+            assert(location + sizeof(float) * 16 >= m_byteData + m_byteDataSize);
+            memcpy(location, &data, sizeof(float) * 16);
             return true;
         }
 

@@ -41,23 +41,20 @@ namespace Hatchit {
             ShaderVariableChunk(std::map<std::string, Resource::ShaderVariable*> variables);
             ~ShaderVariableChunk();
 
-            bool SetInt(std::string name, int data);
+            bool SetInt(std::string name, uint32_t data);
             bool SetFloat(std::string name, float data);
             bool SetFloat3(std::string name, Math::Vector3 data);
             bool SetFloat4(std::string name, Math::Vector4 data);
             bool SetMatrix4(std::string name, Math::Matrix4 data);
 
-            bool BuildByteData();
             const BYTE* GetByteData();
             size_t GetSize();
 
         private:
-            
-            std::map<std::string, Resource::ShaderVariable*> m_variables;
+            //a map to the location of each variable
+            std::map<std::string, BYTE*> m_variables;
 
-            bool            m_dirty;
             BYTE*           m_byteData;
-            std::size_t     m_byteDataSize;
 
         };
     }
