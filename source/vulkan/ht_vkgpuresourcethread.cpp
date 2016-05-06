@@ -177,7 +177,7 @@ namespace Hatchit
                 if (!*_base)
                 {
                     *_base = new VKRootLayout;
-                    if (!(*_base)->Initialize(handle, m_device->GetVKDevices()[0]))
+                    if (!(*_base)->Initialize(handle, m_device->GetVKDevices()[0], m_descriptorPool))
                     {
                         HT_DEBUG_PRINTF("Failed to initialize GPU RootLayout Resource.\n");
                     }
@@ -279,11 +279,11 @@ namespace Hatchit
 
                 VkDescriptorPoolSize uniformSize = {};
                 uniformSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                uniformSize.descriptorCount = 10;
+                uniformSize.descriptorCount = 4;
 
                 VkDescriptorPoolSize imageSize = {};
                 imageSize.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-                imageSize.descriptorCount = 10;
+                imageSize.descriptorCount = 16;
 
                 VkDescriptorPoolSize samplerSize = {};
                 samplerSize.type = VK_DESCRIPTOR_TYPE_SAMPLER;

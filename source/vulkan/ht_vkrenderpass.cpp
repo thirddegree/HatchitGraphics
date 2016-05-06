@@ -237,6 +237,11 @@ namespace Hatchit {
 
                 std::map<PipelineHandle, std::vector<RenderableInstances>>::iterator iterator;
 
+                //Bind sampler set from root layout
+                VkPipelineLayout vkPipelineLayout = m_rootLayout->VKGetPipelineLayout();
+
+                vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 1, &m_rootLayout->VKGetSamplerSet(), 0, nullptr);
+
                 for (iterator = m_pipelineList.begin(); iterator != m_pipelineList.end(); iterator++)
                 {
                     PipelineHandle pipelineHandle = iterator->first;
@@ -256,8 +261,6 @@ namespace Hatchit {
                     pipeline->VUpdate();
 
                     VkPipeline vkPipeline = pipeline->GetVKPipeline();
-                    VkPipelineLayout vkPipelineLayout = m_rootLayout->VKGetPipelineLayout();
-
                     pipeline->BindPipeline(m_commandBuffer, vkPipelineLayout);
 
                     //Bind input textures
