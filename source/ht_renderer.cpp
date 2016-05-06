@@ -182,9 +182,15 @@ namespace Hatchit {
             for (size_t i = 0; i < m_renderPassLayers.size(); i++)
             {
                 std::vector<RenderPassHandle> renderPasses = m_renderPassLayers[i];
+                std::vector<Camera> cameras = m_renderPassCameras[i];
                 for (size_t j = 0; j < renderPasses.size(); j++)
                 {
                     RenderPassHandle passHandle = renderPasses[j];
+                    Camera camera = cameras[0];
+
+                    passHandle->SetView(camera.GetView());
+                    passHandle->SetProj(camera.GetProjection());
+
                     passHandle->BuildCommandList();
                     //m_threadQueue.push(passHandle);
                 }

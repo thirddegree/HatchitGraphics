@@ -651,6 +651,8 @@ namespace Hatchit {
                 cmdBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
                 cmdBufferAllocInfo.commandBufferCount = 1;
 
+                vkDeviceWaitIdle(m_device);
+
                 err = vkAllocateCommandBuffers(m_device, &cmdBufferAllocInfo, &m_commandBuffer);
                 assert(!err);
                 if (err != VK_SUCCESS)
