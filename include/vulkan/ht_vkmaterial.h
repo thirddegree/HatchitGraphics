@@ -48,12 +48,6 @@ namespace Hatchit {
                 //Required function for RefCounted class
                 bool Initialize(Resource::MaterialHandle handle, const VkDevice& device, const VkDescriptorPool& descriptorPool);
 
-                bool VSetInt(std::string name, int data)                    override;
-                bool VSetFloat(std::string name, float data)                override;
-                bool VSetFloat3(std::string name, Math::Vector3 data)       override;
-                bool VSetFloat4(std::string name, Math::Vector4 data)       override;
-                bool VSetMatrix4(std::string name, Math::Matrix4 data)      override;
-
                 bool VBindTexture(std::string name, TextureHandle texture)      override;
                 bool VUnbindTexture(std::string name, TextureHandle texture)    override;
 
@@ -85,9 +79,6 @@ namespace Hatchit {
                 
                 std::vector<LayoutLocation> m_textureLocations;
                 std::vector<VKTexture*> m_textures;
-
-                //std::vector<LayoutLocation> m_shaderVariableLocations;
-                //std::vector<std::map<std::string, Hatchit::Resource::ShaderVariable*>> m_shaderVariables;
             };
         }
     }

@@ -48,6 +48,11 @@ namespace Hatchit {
         class Material;
     }
 
+            struct LayoutLocation {
+                uint32_t set;
+                uint32_t binding;
+            };
+
     namespace Graphics {
 
         class RenderPass;
@@ -63,11 +68,11 @@ namespace Hatchit {
             bool Initialize(const std::string& file);
             bool InitializeAsync(Core::Handle<Material> handle);
 
-            bool SetInt(std::string name, int data);
-            bool SetFloat(std::string name, float data);
-            bool SetFloat3(std::string name, Math::Vector3 data);
-            bool SetFloat4(std::string name, Math::Vector4 data);
-            bool SetMatrix4(std::string name, Math::Matrix4 data);
+            bool SetInt(size_t chunk, std::string name, int data);
+            bool SetFloat(size_t chunk, std::string name, float data);
+            bool SetFloat3(size_t chunk, std::string name, Math::Vector3 data);
+            bool SetFloat4(size_t chunk, std::string name, Math::Vector4 data);
+            bool SetMatrix4(size_t chunk, std::string name, Math::Matrix4 data);
 
             bool BindTexture(std::string name, TextureHandle texture);
             bool UnbindTexture(std::string name, TextureHandle texture);
@@ -76,7 +81,6 @@ namespace Hatchit {
 
             const std::vector<Core::Handle<RenderPass>>& GetRenderPasses() const;
             PipelineHandle const GetPipeline() const;
-
             MaterialBase* const GetBase() const;
 
         protected:

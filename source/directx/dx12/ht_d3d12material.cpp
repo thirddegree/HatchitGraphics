@@ -54,31 +54,6 @@ namespace Hatchit {
                 return true;
             }
 
-            bool D3D12Material::VSetInt(std::string name, int data)
-            {
-                return false;
-            }
-
-            bool D3D12Material::VSetFloat(std::string name, float data)
-            {
-                return false;
-            }
-
-            bool D3D12Material::VSetFloat3(std::string name, Math::Vector3 data)
-            {
-                return false;
-            }
-
-            bool D3D12Material::VSetFloat4(std::string name, Math::Vector4 data)
-            {
-                return false;
-            }
-
-            bool D3D12Material::VSetMatrix4(std::string name, Math::Matrix4 data)
-            {
-                return false;
-            }
-
             bool D3D12Material::VBindTexture(std::string name, TextureHandle texture)
             {
                 return false;

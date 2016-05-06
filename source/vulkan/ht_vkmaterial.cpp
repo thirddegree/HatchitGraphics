@@ -17,7 +17,6 @@
 #include <ht_vktexture.h>
 #include <ht_renderpass.h>
 #include <ht_vkpipeline.h>
-
 #include <cassert>
 
 namespace Hatchit {
@@ -57,7 +56,17 @@ namespace Hatchit {
                 }
 
                 //Get shader vars
-                // m_shaderVariables = handle->GetShaderVariables();
+                std::vector<Resource::Material::ShaderVariableBinding> bindings = handle->GetShaderVariables();
+                for (size_t i = 0; i < bindings.size(); i++)
+                {
+                    //create a layout location for the variable chunk
+                    LayoutLocation location;
+                    location.set = bindings[i].set;
+                    location.binding = bindings[i].binding;
+                    m_shaderVariableLocations.push_back(location);
+                    //turn the variable map into a variable chunk
+                    m_shaderVariables.push_back(ShaderVariableChunk(bindings[i].shaderVariables));
+                }
                 
                 //Get root layout from first render pass
                 VKRenderPass* renderPass = static_cast<VKRenderPass*>(m_renderPasses[0]->GetBase());
@@ -106,32 +115,6 @@ namespace Hatchit {
                 //vkDestroyBuffer(*m_device, m_uniformVSBuffer.buffer, nullptr);
             }
 
-            bool VKMaterial::VSetInt(std::string name, int data)
-            {
-                //static_cast<IntVariable*>(m_shaderVariables[name])->SetData(data);
-                return true;
-            }
-            bool VKMaterial::VSetFloat(std::string name, float data)
-            {
-                //static_cast<FloatVariable*>(m_shaderVariables[name])->SetData(data);
-                return true;
-            }
-            bool VKMaterial::VSetFloat3(std::string name, Math::Vector3 data)
-            {
-                //static_cast<Float3Variable*>(m_shaderVariables[name])->SetData(data);
-                return true;
-            }
-            bool VKMaterial::VSetFloat4(std::string name, Math::Vector4 data) 
-            {
-                //static_cast<Float4Variable*>(m_shaderVariables[name])->SetData(data);
-                return true;
-            }
-            bool VKMaterial::VSetMatrix4(std::string name, Math::Matrix4 data) 
-            {
-                //Matrix4Variable* var = static_cast<Matrix4Variable*>(m_shaderVariables[name]);
-                //var->SetData(data);
-                return true;
-            }
 
             bool VKMaterial::VBindTexture(std::string name, TextureHandle texture) 
             {

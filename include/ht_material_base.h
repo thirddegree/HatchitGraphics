@@ -18,9 +18,12 @@
 #include <ht_platform.h>
 #include <ht_string.h>
 #include <ht_math.h>
+#include <ht_shadervariable.h>
+#include <ht_shadervariablechunk.h>
 #include <ht_texture.h>
 #include <ht_pipeline.h>
 #include <ht_refcounted.h>
+#include <map>
 
 namespace Hatchit {
 
@@ -37,18 +40,25 @@ namespace Hatchit {
 
     namespace Graphics {
 
+
+        struct LayoutLocation {
+            uint32_t set;
+            uint32_t binding;
+        };
+
         class RenderPass;
 
         class HT_API MaterialBase
         {
         public:
+            MaterialBase();
             virtual ~MaterialBase() {};
 
-            virtual bool VSetInt(std::string name, int data) = 0;
-            virtual bool VSetFloat(std::string name, float data) = 0;
-            virtual bool VSetFloat3(std::string name, Math::Vector3 data) = 0;
-            virtual bool VSetFloat4(std::string name, Math::Vector4 data) = 0;
-            virtual bool VSetMatrix4(std::string name, Math::Matrix4 data) = 0;
+            bool SetInt(size_t chunk, std::string name, int data);
+            bool SetFloat(size_t chunk, std::string name, float data);
+            bool SetFloat3(size_t chunk, std::string name, Math::Vector3 data);
+            bool SetFloat4(size_t chunk, std::string name, Math::Vector4 data);
+            bool SetMatrix4(size_t chunk, std::string name, Math::Matrix4 data);
 
             virtual bool VBindTexture(std::string name, TextureHandle texture) = 0;
             virtual bool VUnbindTexture(std::string name, TextureHandle texture) = 0;
@@ -59,6 +69,9 @@ namespace Hatchit {
 
         protected:
             std::vector<Core::Handle<RenderPass>> m_renderPasses;
+
+            std::vector<LayoutLocation> m_shaderVariableLocations;
+            std::vector<ShaderVariableChunk> m_shaderVariables;
 
             friend class Material;
         };

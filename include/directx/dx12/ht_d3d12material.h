@@ -46,11 +46,6 @@ namespace Hatchit {
 
                 ~D3D12Material();
 
-                bool VSetInt(std::string name, int data)                        override;
-                bool VSetFloat(std::string name, float data)                    override;
-                bool VSetFloat3(std::string name, Math::Vector3 data)           override;
-                bool VSetFloat4(std::string name, Math::Vector4 data)           override;
-                bool VSetMatrix4(std::string name, Math::Matrix4 data)          override;
                 bool VBindTexture(std::string name, TextureHandle texture)      override;
                 bool VUnbindTexture(std::string name, TextureHandle texture)    override;
                 bool VUpdate()                                                  override;
