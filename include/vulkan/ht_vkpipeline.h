@@ -43,7 +43,7 @@ namespace Hatchit {
             {
             public:
                 VKPipeline();
-                ~VKPipeline();
+                virtual ~VKPipeline();
 
                 bool Initialize(const Resource::PipelineHandle& handle, const VkDevice& device, const VkDescriptorPool& descriptorPool);
 

@@ -34,7 +34,7 @@ namespace Hatchit {
         {
         public:
             RenderTarget(Core::Guid ID);
-            virtual ~RenderTarget() { };
+            ~RenderTarget();
 
             bool Initialize(const std::string& file);
 

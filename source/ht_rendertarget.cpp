@@ -26,6 +26,11 @@ namespace Hatchit
             m_base = nullptr;
         }
 
+        RenderTarget::~RenderTarget() 
+        {
+            delete m_base;
+        }
+
         bool RenderTarget::Initialize(const std::string& file)
         {
             if (GPUResourcePool::IsLocked())

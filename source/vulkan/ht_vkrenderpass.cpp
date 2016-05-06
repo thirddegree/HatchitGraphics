@@ -111,6 +111,7 @@ namespace Hatchit {
                     uint32_t targetBindingIndex = inputTargets[i].binding;
 
                     RenderTargetHandle renderTargetHandle = RenderTarget::GetHandle(targetPath, targetPath);
+                    m_renderTargets.push_back(renderTargetHandle); //Save so it doesn't deref
                     VKRenderTarget* inputTarget = static_cast<VKRenderTarget*>(renderTargetHandle->GetBase());
 
                     mappedInputTargets[targetSetIndex][targetBindingIndex] = inputTarget;
@@ -119,6 +120,7 @@ namespace Hatchit {
                 for (size_t i = 0; i < outputPaths.size(); i++)
                 {
                     RenderTargetHandle outputTargetHandle = RenderTarget::GetHandle(outputPaths[i], outputPaths[i]);
+                    m_renderTargets.push_back(outputTargetHandle);
                     m_outputRenderTargets.push_back(outputTargetHandle);
                 }
 
