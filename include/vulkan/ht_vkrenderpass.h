@@ -64,6 +64,8 @@ namespace Hatchit {
                 uint32_t m_firstInputTargetSetIndex;
                 std::vector<VkDescriptorSet> m_inputTargetDescriptorSets;
 
+                std::vector<RenderTargetHandle> m_renderTargets;
+
                 const VKSwapChain* m_swapchain;
 
                 bool setupRenderPass();

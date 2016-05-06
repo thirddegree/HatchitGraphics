@@ -111,6 +111,7 @@ namespace Hatchit {
                     uint32_t targetBindingIndex = inputTargets[i].binding;
 
                     RenderTargetHandle renderTargetHandle = RenderTarget::GetHandle(targetPath, targetPath);
+                    m_renderTargets.push_back(renderTargetHandle); //Save so it doesn't deref
                     VKRenderTarget* inputTarget = static_cast<VKRenderTarget*>(renderTargetHandle->GetBase());
 
                     mappedInputTargets[targetSetIndex][targetBindingIndex] = inputTarget;
@@ -119,6 +120,7 @@ namespace Hatchit {
                 for (size_t i = 0; i < outputPaths.size(); i++)
                 {
                     RenderTargetHandle outputTargetHandle = RenderTarget::GetHandle(outputPaths[i], outputPaths[i]);
+                    m_renderTargets.push_back(outputTargetHandle);
                     m_outputRenderTargets.push_back(outputTargetHandle);
                 }
 
@@ -237,6 +239,11 @@ namespace Hatchit {
 
                 std::map<PipelineHandle, std::vector<RenderableInstances>>::iterator iterator;
 
+                //Bind sampler set from root layout
+                VkPipelineLayout vkPipelineLayout = m_rootLayout->VKGetPipelineLayout();
+
+                vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 1, &m_rootLayout->VKGetSamplerSet(), 0, nullptr);
+
                 for (iterator = m_pipelineList.begin(); iterator != m_pipelineList.end(); iterator++)
                 {
                     PipelineHandle pipelineHandle = iterator->first;
@@ -256,8 +263,6 @@ namespace Hatchit {
                     pipeline->VUpdate();
 
                     VkPipeline vkPipeline = pipeline->GetVKPipeline();
-                    VkPipelineLayout vkPipelineLayout = m_rootLayout->VKGetPipelineLayout();
-
                     pipeline->BindPipeline(m_commandBuffer, vkPipelineLayout);
 
                     //Bind input textures
@@ -647,6 +652,8 @@ namespace Hatchit {
                 cmdBufferAllocInfo.commandPool = m_commandPool;
                 cmdBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
                 cmdBufferAllocInfo.commandBufferCount = 1;
+
+                vkDeviceWaitIdle(m_device);
 
                 err = vkAllocateCommandBuffers(m_device, &cmdBufferAllocInfo, &m_commandBuffer);
                 assert(!err);

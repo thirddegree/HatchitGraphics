@@ -107,12 +107,15 @@ namespace Hatchit {
 
             static IDevice* const GetDevice();
 
+            static SwapChain* const GetSwapChain();
+
             static RendererType GetType();
 
         protected:
             static IDevice*     _Device;
             static GPUQueue*    _Queue;
             static RendererType _Type;
+            static SwapChain*   _SwapChain;
 
             //A collection of renderpass layers. Each layer may contain multiple render passes.
             std::vector<std::vector<RenderPassHandle>> m_renderPassLayers = std::vector<std::vector<RenderPassHandle>>(64);
@@ -129,8 +132,7 @@ namespace Hatchit {
             Core::ThreadsafeQueue<RenderPassHandle> m_threadQueue;
 
             RendererParams  m_params;
-            SwapChain*      m_swapChain;
-
+            
             TextureHandle test;
 
             void initThreads();

@@ -75,8 +75,6 @@ namespace Hatchit {
                 m_clearColor.color = { color[0], color[1], color[2], color[3] };
 
                 assert(BuildSwapchainCommands(m_clearColor));
-
-                assert(VKPostPresentBarrier(m_queue));
             }
             bool VKSwapChain::VInitialize(uint32_t width, uint32_t height)
             {
@@ -137,6 +135,8 @@ namespace Hatchit {
 
                 err = VKGetNextImage(m_presentSemaphore);
                 assert(!err);
+
+                assert(VKPostPresentBarrier(m_queue));
 
                 //Submit swapchain command
                 VkSubmitInfo swapChainSubmit = m_submitInfo;
@@ -362,8 +362,8 @@ namespace Hatchit {
 
             bool VKSwapChain::BuildSwapchainCommands(VkClearValue clearColor)
             {
-                //if (!m_dirty)
-                //    return true;
+                if (!m_dirty)
+                    return true;
 
                 /*
                     Allocate space for the swapchain command buffers
@@ -437,6 +437,9 @@ namespace Hatchit {
 
                     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
                     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+                    //Bind sampler set from root layout
+                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &rootLayout->VKGetSamplerSet(), 0, nullptr);
 
                     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
                         3, 1, &m_descriptorSet, 0, nullptr);

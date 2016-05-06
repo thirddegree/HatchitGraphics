@@ -35,6 +35,7 @@ namespace Hatchit {
         IDevice*        Renderer::_Device = nullptr;
         GPUQueue*       Renderer::_Queue = nullptr;
         RendererType    Renderer::_Type = UNKNOWN;
+        SwapChain*      Renderer::_SwapChain = nullptr;
 
         void Renderer::RegisterRenderRequest(RenderPassHandle pass, MaterialHandle material, MeshHandle mesh, std::vector<Resource::ShaderVariable*> instanceVariables)
         {
@@ -77,7 +78,7 @@ namespace Hatchit {
 
         Renderer::Renderer()
         {
-            m_swapChain = nullptr;
+            _SwapChain = nullptr;
             m_locked = false;
             m_processed = false;
         }
@@ -85,7 +86,8 @@ namespace Hatchit {
         Renderer::~Renderer()
         {
             delete _Device;
-            delete m_swapChain;
+            delete _Queue;
+            delete _SwapChain;
         }
 
         bool Renderer::Initialize(const RendererParams& params)
@@ -106,12 +108,12 @@ namespace Hatchit {
                         _Type = RendererType::DIRECTX12;
                     }
 
-                    m_swapChain = new DX::D3D12SwapChain((HWND)params.window);
+                    _SwapChain = new DX::D3D12SwapChain((HWND)params.window);
 
                     /*Initialize GPU Resource Pool*/
-                    GPUResourcePool::Initialize(_Device, m_swapChain);
+                    GPUResourcePool::Initialize(_Device, _SwapChain);
 
-                    if (!m_swapChain->VInitialize(params.viewportWidth, params.viewportHeight))
+                    if (!_SwapChain->VInitialize(params.viewportWidth, params.viewportHeight))
                         return false;
 
                 } break;
@@ -138,12 +140,12 @@ namespace Hatchit {
                             return false;
                     }
 
-                    m_swapChain = new Vulkan::VKSwapChain(params, static_cast<Vulkan::VKDevice*>(_Device), static_cast<Vulkan::VKQueue*>(_Queue));
+                    _SwapChain = new Vulkan::VKSwapChain(params, static_cast<Vulkan::VKDevice*>(_Device), static_cast<Vulkan::VKQueue*>(_Queue));
 
                     /*Initialize GPU Resource Pool*/
-                    GPUResourcePool::Initialize(_Device, m_swapChain);
+                    GPUResourcePool::Initialize(_Device, _SwapChain);
 
-                    if (!m_swapChain->VInitialize(params.viewportWidth, params.viewportHeight))
+                    if (!_SwapChain->VInitialize(params.viewportWidth, params.viewportHeight))
                         return false;
                 } break;
 #endif
@@ -158,10 +160,10 @@ namespace Hatchit {
 
         void Renderer::ResizeBuffers(uint32_t width, uint32_t height)
         {
-            if (!m_swapChain)
+            if (!_SwapChain)
                 return;
 
-            m_swapChain->VResize(width, height);
+            _SwapChain->VResize(width, height);
         }
 
         void Renderer::Render()
@@ -169,12 +171,12 @@ namespace Hatchit {
             //Tell the swapchain which render pass to put on screen
             std::vector<RenderPassHandle> lastLayer = m_renderPassLayers[0];
             RenderPassHandle lastRenderPass = lastLayer[lastLayer.size() - 1];
-            m_swapChain->VSetInput(lastRenderPass);
+            _SwapChain->VSetInput(lastRenderPass);
 
             //Step 01: Clear the buffer
             //Not exactly sure how this will work, as the clear command
             //need to be recorded as part of a command list
-            m_swapChain->VClear(reinterpret_cast<float*>(&m_params.clearColor));
+            _SwapChain->VClear(reinterpret_cast<float*>(&m_params.clearColor));
 
             //Step 02: Record each renderpass's command list in a pass thread
             //We will need to *SMARTLY* spawn enough threads to handle
@@ -182,9 +184,15 @@ namespace Hatchit {
             for (size_t i = 0; i < m_renderPassLayers.size(); i++)
             {
                 std::vector<RenderPassHandle> renderPasses = m_renderPassLayers[i];
+                std::vector<Camera> cameras = m_renderPassCameras[i];
                 for (size_t j = 0; j < renderPasses.size(); j++)
                 {
                     RenderPassHandle passHandle = renderPasses[j];
+                    Camera camera = cameras[0];
+
+                    passHandle->SetView(camera.GetView());
+                    passHandle->SetProj(camera.GetProjection());
+
                     passHandle->BuildCommandList();
                     //m_threadQueue.push(passHandle);
                 }
@@ -201,14 +209,14 @@ namespace Hatchit {
             //to the renderer for it to then collect and execute them
             for (size_t i = 0; i < m_renderPassLayers.size(); i++)
             {
-                m_swapChain->VExecute(m_renderPassLayers[i]);
+                _SwapChain->VExecute(m_renderPassLayers[i]);
             }
 
             //Step 04: Present to the screen
             //The previous step and this are quite related.
             //The execution of the previous command lists may also include,
             //the commands for presenting to the buffer.
-            m_swapChain->VPresent();
+            _SwapChain->VPresent();
 
             //Clear out cameras
             for (size_t i = 0; i < m_renderPassCameras.size(); i++)
@@ -227,6 +235,11 @@ namespace Hatchit {
             return Renderer::_Device;
         }
         
+        SwapChain* const Renderer::GetSwapChain()
+        {
+            return Renderer::_SwapChain;
+        }
+
         RendererType Renderer::GetType()
         {
             return Renderer::_Type;
