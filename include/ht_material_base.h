@@ -52,7 +52,7 @@ namespace Hatchit {
         {
         public:
             MaterialBase();
-            virtual ~MaterialBase() {};
+            ~MaterialBase();
 
             bool SetInt(size_t chunk, std::string name, int data);
             bool SetFloat(size_t chunk, std::string name, float data);
@@ -71,7 +71,7 @@ namespace Hatchit {
             std::vector<Core::Handle<RenderPass>> m_renderPasses;
 
             std::vector<LayoutLocation> m_shaderVariableLocations;
-            std::vector<ShaderVariableChunk> m_shaderVariables;
+            std::vector<ShaderVariableChunk*> m_shaderVariables;
 
             friend class Material;
         };

@@ -65,7 +65,7 @@ namespace Hatchit {
                     location.binding = bindings[i].binding;
                     m_shaderVariableLocations.push_back(location);
                     //turn the variable map into a variable chunk
-                    m_shaderVariables.push_back(ShaderVariableChunk(bindings[i].shaderVariables));
+                    m_shaderVariables.push_back(new ShaderVariableChunk(bindings[i].shaderVariables));
                 }
                 
                 //Get root layout from first render pass
@@ -140,25 +140,26 @@ namespace Hatchit {
             bool VKMaterial::VUpdate() 
             {
                 //TODO: Figure out what data is going into what buffers
-                //if (m_shaderVariables.size() == 0)
-                //    return true;
+                /*if (m_shaderVariables.size() == 0)
+                    return true;
 
-                //uint8_t* pData;
-                //
-                //std::vector<Math::Matrix4> variableList;
-                //
-                //std::map <std::string, ShaderVariable*>::iterator it;
-                //for (it = m_shaderVariables.begin(); it != m_shaderVariables.end(); it++)
-                //    variableList.push_back(*(Math::Matrix4*)(it->second->GetData()));
-                //
-                //VkResult err = vkMapMemory(m_device, m_uniformVSBuffer.memory, 0, sizeof(m_shaderVariables), 0, (void**)&pData);
-                //assert(!err);
-                //
-                //memcpy(pData, variableList.data(), sizeof(Math::Matrix4));
-                //
-                //vkUnmapMemory(m_device, m_uniformVSBuffer.memory);
+                uint8_t* pData;
+                std::vector<Math::Matrix4> variableList;
 
-                return true;
+                for (size_t i = 0; i < m_shaderVariables.size(); i++)
+                {
+                    m_shaderVariables[i]->GetByteData();
+                    m_shaderVariables[i]->GetSize();
+                }
+
+                VkResult err = vkMapMemory(*m_device, m_uniformVSBuffer.memory, 0, sizeof(m_shaderVariables), 0, (void**)&pData);
+                assert(!err);
+                
+                memcpy(pData, variableList.data(), size);
+                
+                vkUnmapMemory(*m_device, m_uniformVSBuffer.memory);
+
+                return true;*/
             }
 
             const void VKMaterial::BindMaterial(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout) const
