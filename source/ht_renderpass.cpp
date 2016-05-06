@@ -49,7 +49,10 @@ namespace Hatchit
             return true;
         }
 
-        bool RenderPass::BuildCommandList() { return true; }
+        bool RenderPass::BuildCommandList() 
+        {
+            return m_base->VBuildCommandList();
+        }
 
         void RenderPass::SetView(Math::Matrix4 view)
         {

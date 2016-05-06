@@ -47,6 +47,7 @@ namespace Hatchit {
 
             void SetView(Math::Matrix4 view);
             void SetProjection(Math::Matrix4 projection);
+            void SetLayerFlags(uint64_t flags);
 
             void RegisterCamera(Renderer& renderer);
 

@@ -46,6 +46,8 @@ namespace Hatchit {
             virtual void VClear(float* color) = 0;
             virtual bool VInitialize(uint32_t width, uint32_t height) = 0;
             virtual void VResize(uint32_t width, uint32_t height) = 0;
+            virtual void VExecute(std::vector<RenderPassHandle> renderPasses) = 0;
+            virtual void VSetInput(RenderPassHandle handle) = 0;
             virtual void VPresent() = 0;
 
         protected:

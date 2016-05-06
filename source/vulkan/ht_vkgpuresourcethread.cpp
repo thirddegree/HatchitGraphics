@@ -114,6 +114,27 @@ namespace Hatchit
 
                             ProcessShaderRequest(sRequest);
                         } break;
+
+                        case GPUResourceRequest::Type::RenderPass:
+                        {
+                            auto sRequest = static_cast<RenderPassRequest*>(*request);
+
+                            ProcessRenderPassRequest(sRequest);
+                        } break;
+
+                        case GPUResourceRequest::Type::RenderTarget:
+                        {
+                            auto sRequest = static_cast<RenderTargetRequest*>(*request);
+
+                            ProcessRenderTargetRequest(sRequest);
+                        } break;
+
+                        case GPUResourceRequest::Type::Mesh:
+                        {
+                            auto sRequest = static_cast<MeshRequest*>(*request);
+
+                            ProcessMeshRequest(sRequest);
+                        } break;
                     }
 
                     m_processed = true;

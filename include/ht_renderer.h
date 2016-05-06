@@ -37,6 +37,8 @@
 #include <ht_camera.h>
 #include <ht_device.h>
 #include <ht_gpuqueue.h>
+#include <ht_threadqueue.h>
+#include <ht_shadervariable.h>
 
 namespace Hatchit {
 
@@ -99,7 +101,7 @@ namespace Hatchit {
             ///Present a frame to the screen via a backbuffer
             void Present();
 
-            void RegisterRenderPass(RenderPassHandle pass);
+            void RegisterRenderRequest(RenderPassHandle pass, MaterialHandle material, MeshHandle mesh, std::vector<Resource::ShaderVariable*> instanceVariables);
 
             void RegisterCamera(Camera camera);
 
@@ -117,10 +119,23 @@ namespace Hatchit {
             //A collection of cameras sorted by renderpass layer. Repopulated each frame.
             std::vector<std::vector<Graphics::Camera>> m_renderPassCameras = std::vector<std::vector<Graphics::Camera>>(64);
             
+            std::vector<std::thread*> m_threads;
+            std::mutex m_mutex;
+            std::unique_lock<std::mutex> m_lock;
+            std::condition_variable m_cv;
+            bool m_locked;
+            bool m_processed;
+
+            Core::ThreadsafeQueue<RenderPassHandle> m_threadQueue;
+
             RendererParams  m_params;
             SwapChain*      m_swapChain;
 
             TextureHandle test;
+
+            void initThreads();
+
+            void thread_main();
         };
 
     }

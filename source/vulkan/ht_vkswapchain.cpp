@@ -91,10 +91,46 @@ namespace Hatchit {
 
                 return true;
             }
+
             void VKSwapChain::VResize(uint32_t width, uint32_t height) 
             {
                 m_dirty = true;
             }
+
+            void VKSwapChain::VExecute(std::vector<RenderPassHandle> renderPasses)
+            {
+                if (renderPasses.size() <= 0)
+                    return;
+
+                std::vector<VkCommandBuffer> commandBuffers;
+
+                for (uint32_t i = 0; i < renderPasses.size(); i++)
+                {
+                    VKRenderPass* vkpass = static_cast<VKRenderPass*>(renderPasses[i]->GetBase());
+                    commandBuffers.push_back(vkpass->GetVkCommandBuffer());
+                }
+
+                VkResult err;
+
+                //Submit swapchain command
+                VkSubmitInfo submitInfo = m_submitInfo;
+                submitInfo.waitSemaphoreCount = 0;
+                submitInfo.pWaitSemaphores = nullptr;
+                submitInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
+                submitInfo.pCommandBuffers = commandBuffers.data();
+                submitInfo.signalSemaphoreCount = 0;
+                submitInfo.pSignalSemaphores = nullptr;
+
+                err = vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE);
+                assert(!err);
+            }
+
+            void VKSwapChain::VSetInput(RenderPassHandle handle)
+            {
+                VKRenderPass* pass = static_cast<VKRenderPass*>(handle->GetBase());
+                VKSetIncomingRenderPass(pass);
+            }
+
             void VKSwapChain::VPresent() 
             {
                 VkResult err;
@@ -103,12 +139,7 @@ namespace Hatchit {
                 assert(!err);
 
                 //Submit swapchain command
-                VkSubmitInfo swapChainSubmit = {};
-                swapChainSubmit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-                swapChainSubmit.pNext = nullptr;
-                swapChainSubmit.waitSemaphoreCount = 1;
-                swapChainSubmit.pWaitSemaphores = &m_presentSemaphore;
-                swapChainSubmit.pWaitDstStageMask = m_submitInfo.pWaitDstStageMask;
+                VkSubmitInfo swapChainSubmit = m_submitInfo;
                 swapChainSubmit.commandBufferCount = 1;
                 swapChainSubmit.pCommandBuffers = &m_swapchainBuffers[m_currentBuffer].command;
                 swapChainSubmit.signalSemaphoreCount = 0;
@@ -318,37 +349,6 @@ namespace Hatchit {
                     return false;
                 }
 
-                std::vector<VkDescriptorImageInfo> textureDescriptors;
-                std::vector<VkWriteDescriptorSet> descriptorWrites;
-
-                for (size_t i = 0; i < m_inputTextures.size(); i++)
-                {
-                    Texture_vk inputTexture = m_inputTextures[i];
-
-                    // Image descriptor for the color map texture
-                    VkDescriptorImageInfo texDescriptor = {};
-                    texDescriptor.sampler = inputTexture.sampler;
-                    texDescriptor.imageView = inputTexture.image.view;
-                    texDescriptor.imageLayout = inputTexture.layout;
-
-                    textureDescriptors.push_back(texDescriptor);
-                }
-
-                for (size_t i = 0; i < m_inputTextures.size(); i++)
-                {
-                    VkWriteDescriptorSet uniformTexure2DWrite = {};
-                    uniformTexure2DWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                    uniformTexure2DWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-                    uniformTexure2DWrite.dstSet = m_descriptorSet;
-                    uniformTexure2DWrite.dstBinding = static_cast<uint32_t>(i);
-                    uniformTexure2DWrite.pImageInfo = &textureDescriptors[i];
-                    uniformTexure2DWrite.descriptorCount = 1;
-
-                    descriptorWrites.push_back(uniformTexure2DWrite);
-                }
-
-                vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-
                 //Buffer 3 blank points
                 float blank[9] = { 0,0,0,0,0,0,0,0,0 };
                 if (!VKTools::CreateUniformBuffer(9, blank, &m_vertexBuffer))
@@ -362,8 +362,8 @@ namespace Hatchit {
 
             bool VKSwapChain::BuildSwapchainCommands(VkClearValue clearColor)
             {
-                if (!m_dirty)
-                    return true;
+                //if (!m_dirty)
+                //    return true;
 
                 /*
                     Allocate space for the swapchain command buffers
@@ -567,6 +567,41 @@ namespace Hatchit {
                 {
                     VKRenderTarget* vkRenderTarget = static_cast<VKRenderTarget*>(incomingRenderTargets[i]->GetBase());
                     m_inputTextures.push_back(vkRenderTarget->GetVKTexture());
+                }
+
+                //Send input textures into descriptor set
+                if (m_inputTextures.size() > 0)
+                {
+                    std::vector<VkDescriptorImageInfo> textureDescriptors;
+                    std::vector<VkWriteDescriptorSet> descriptorWrites;
+
+                    for (size_t i = 0; i < m_inputTextures.size(); i++)
+                    {
+                        Texture_vk inputTexture = m_inputTextures[i];
+
+                        // Image descriptor for the color map texture
+                        VkDescriptorImageInfo texDescriptor = {};
+                        texDescriptor.sampler = inputTexture.sampler;
+                        texDescriptor.imageView = inputTexture.image.view;
+                        texDescriptor.imageLayout = inputTexture.layout;
+
+                        textureDescriptors.push_back(texDescriptor);
+                    }
+
+                    for (size_t i = 0; i < 1; i++)
+                    {
+                        VkWriteDescriptorSet uniformTexure2DWrite = {};
+                        uniformTexure2DWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                        uniformTexure2DWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+                        uniformTexure2DWrite.dstSet = m_descriptorSet;
+                        uniformTexure2DWrite.dstBinding = static_cast<uint32_t>(i);
+                        uniformTexure2DWrite.pImageInfo = &textureDescriptors[i];
+                        uniformTexure2DWrite.descriptorCount = 1;
+
+                        descriptorWrites.push_back(uniformTexure2DWrite);
+                    }
+
+                    vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
                 }
             }
 
@@ -1177,6 +1212,9 @@ namespace Hatchit {
             bool VKSwapChain::allocateCommandBuffers() 
             {
                 VkResult err;
+
+                err = vkResetCommandPool(m_device, m_commandPool, VK_COMMAND_POOL_RESET_FLAG_BITS_MAX_ENUM);
+                assert(!err);
 
                 VkCommandBufferAllocateInfo allocateInfo;
                 allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;

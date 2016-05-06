@@ -19,6 +19,11 @@ namespace Hatchit {
 
     namespace Graphics {
 
+        MeshRenderer::MeshRenderer(Renderer* renderer)
+        {
+            m_renderer = renderer;
+        }
+
         MeshRenderer::~MeshRenderer()
         {
         }
@@ -42,7 +47,7 @@ namespace Hatchit {
 
         void MeshRenderer::Render()
         {          
-            //m_renderPass->VScheduleRenderRequest(m_material, m_mesh, m_instanceData);
+            m_renderer->RegisterRenderRequest(m_renderPass, m_material, m_mesh, m_instanceData);
         }
     }
 }

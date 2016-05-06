@@ -19,7 +19,6 @@
 #include <ht_gpuresourcethread.h>
 #include <ht_threadvector.h>
 #include <ht_threadstack.h>
-#include <ht_threadqueue.inl>
 #include <ht_vulkan.h>
 #include <thread>
 #include <atomic>

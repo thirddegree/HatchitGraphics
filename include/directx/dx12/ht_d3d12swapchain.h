@@ -38,6 +38,10 @@ namespace Hatchit
 
                 void VResize(uint32_t width, uint32_t height) override;
 
+                void VExecute(std::vector<RenderPassHandle> renderPasses) override;
+
+                void VSetInput(RenderPassHandle handle) override;
+
                 void VPresent()     override;
 
                 CD3DX12_CPU_DESCRIPTOR_HANDLE GetRenderTargetView();
