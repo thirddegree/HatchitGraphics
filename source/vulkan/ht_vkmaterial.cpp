@@ -158,8 +158,8 @@ namespace Hatchit {
                 memcpy(pData, variableList.data(), size);
                 
                 vkUnmapMemory(*m_device, m_uniformVSBuffer.memory);
-
-                return true;*/
+                */
+                return true;
             }
 
             const void VKMaterial::BindMaterial(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout) const
