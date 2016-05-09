@@ -565,6 +565,8 @@ namespace Hatchit {
             {
                 m_dirty = true;
 
+                m_inputTextures.clear();
+
                 std::vector<RenderTargetHandle> incomingRenderTargets = renderPass->GetOutputRenderTargets();
                 for (size_t i = 0; i < incomingRenderTargets.size(); i++)
                 {
