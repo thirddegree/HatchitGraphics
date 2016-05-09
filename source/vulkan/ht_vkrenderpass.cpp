@@ -250,14 +250,16 @@ namespace Hatchit {
                     VKPipeline* pipeline = static_cast<VKPipeline*>(pipelineHandle->GetBase());
 
                     //Calculate inverse view
-                    Math::Matrix4 invView = Math::MMMatrixTranspose(Math::MMMatrixInverse(m_view));
+                    Math::Matrix4 invViewProj = Math::MMMatrixTranspose(Math::MMMatrixInverse(m_proj * m_view));
 
                     m_view = Math::MMMatrixTranspose(m_view);
                     m_proj = Math::MMMatrixTranspose(m_proj);
 
+                    //The numbers in these names are here to make sure that the variables are ordered properly in the map; 
+                    //An unordered map SHOULD relieve this problem
                     pipeline->VSetMatrix4("pass.0proj", m_proj);
                     pipeline->VSetMatrix4("pass.1view", m_view);
-                    pipeline->VSetMatrix4("pass.2invView", invView);
+                    pipeline->VSetMatrix4("pass.2invViewProj", invViewProj);
                     pipeline->VSetInt("pass.3width", m_width);
                     pipeline->VSetInt("pass.4height", m_height);
                     pipeline->VUpdate();
