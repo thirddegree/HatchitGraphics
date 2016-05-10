@@ -58,13 +58,6 @@ namespace Hatchit
             {
                 auto device = m_device->GetVKDevices()[0];
 
-                /*Create thread specific resources*/
-                if (!createCommandPool(device))
-                {
-                    HT_ERROR_PRINTF("VKGPUResourceThread::thread_main: Failed to create command pool in thread.\n");
-                    Kill();
-                }
-
                 if (!createDescriptorPool(device))
                 {
                     HT_ERROR_PRINTF("VKGPUResourceThread::thread_main: Failed to create descriptor pool in thread.\n");
@@ -141,7 +134,6 @@ namespace Hatchit
                     m_cv.notify_one();
                 }
 
-                vkDestroyCommandPool(device, m_commandPool, nullptr);
                 vkDestroyDescriptorPool(device, m_descriptorPool, nullptr);
             }
 
@@ -216,7 +208,7 @@ namespace Hatchit
                 if (!*_base)
                 {
                     *_base = new VKRenderPass;
-                    if (!(*_base)->Initialize(handle, m_device->GetVKDevices()[0], m_commandPool, m_descriptorPool, m_swapchain))
+                    if (!(*_base)->Initialize(handle, m_device->GetVKDevices()[0], m_descriptorPool, m_swapchain))
                     {
                         HT_DEBUG_PRINTF("Failed to initialize GPU Render Pass.\n");
                     }
@@ -249,27 +241,6 @@ namespace Hatchit
                 }
             }
 
-            bool VKGPUResourceThread::createCommandPool(const VkDevice& device) 
-            {
-                VkResult err;
-
-                //Create the command pool
-                VkCommandPoolCreateInfo commandPoolInfo;
-                commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-                commandPoolInfo.pNext = nullptr;
-                commandPoolInfo.queueFamilyIndex = 0;
-                commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-
-                err = vkCreateCommandPool(device, &commandPoolInfo, nullptr, &m_commandPool);
-
-                if (err != VK_SUCCESS)
-                {
-                    HT_DEBUG_PRINTF("VKRenderer::setupCommandPool: Error creating command pool.\n");
-                    return false;
-                }
-
-                return true;
-            }
             bool VKGPUResourceThread::createDescriptorPool(const VkDevice& device)
             {
                 VkResult err;

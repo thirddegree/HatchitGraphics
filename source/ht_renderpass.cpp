@@ -16,6 +16,7 @@
 #include <ht_renderpass_base.h>
 #include <ht_renderer.h>
 #include <ht_gpuresourcepool.h>
+#include <ht_commandpool.h>     //ICommandPool
 
 namespace Hatchit
 {
@@ -49,9 +50,9 @@ namespace Hatchit
             return true;
         }
 
-        bool RenderPass::BuildCommandList() 
+        bool RenderPass::BuildCommandList(const ICommandPool* commandPool) 
         {
-            return m_base->VBuildCommandList();
+            return m_base->VBuildCommandList(commandPool);
         }
 
         void RenderPass::SetView(Math::Matrix4 view)

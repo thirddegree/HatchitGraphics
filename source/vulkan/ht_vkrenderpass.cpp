@@ -77,11 +77,10 @@ namespace Hatchit {
                 vkDestroyRenderPass(m_device, m_renderPass, nullptr);
             }
 
-            bool VKRenderPass::Initialize(const Resource::RenderPassHandle& handle, const VkDevice& device, 
-                const VkCommandPool& commandPool, const VkDescriptorPool& descriptorPool, const VKSwapChain* swapchain)
+            bool VKRenderPass::Initialize(const Resource::RenderPassHandle& handle, const VkDevice& device,
+                const VkDescriptorPool& descriptorPool, const VKSwapChain* swapchain)
             {
                 m_device = device;
-                m_commandPool = commandPool;
                 m_descriptorPool = descriptorPool;
 
                 m_swapchain = swapchain;
@@ -142,9 +141,9 @@ namespace Hatchit {
                 
             }
 
-            bool VKRenderPass::VBuildCommandList() 
+            bool VKRenderPass::VBuildCommandList(const ICommandPool* commandPool) 
             {
-                if (!allocateCommandBuffer())
+                if (!allocateCommandBuffer(static_cast<const VKCommandPool*>(commandPool)))
                     return false;
 
                 if (m_instanceBlock.buffer != VK_NULL_HANDLE)
@@ -641,7 +640,7 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKRenderPass::allocateCommandBuffer()
+            bool VKRenderPass::allocateCommandBuffer(const VKCommandPool* commandPool)
             {
                 VkResult err;
 
@@ -651,7 +650,7 @@ namespace Hatchit {
                 //Create internal command buffer
                 VkCommandBufferAllocateInfo cmdBufferAllocInfo = {};
                 cmdBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-                cmdBufferAllocInfo.commandPool = m_commandPool;
+                cmdBufferAllocInfo.commandPool = (commandPool->GetVKCommandPool());
                 cmdBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
                 cmdBufferAllocInfo.commandBufferCount = 1;
 

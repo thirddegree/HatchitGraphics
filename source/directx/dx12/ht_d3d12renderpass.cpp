@@ -53,7 +53,7 @@ namespace Hatchit
 
             }
 
-            bool D3D12RenderPass::VBuildCommandList()
+            bool D3D12RenderPass::VBuildCommandList(const ICommandPool* commandPool)
             {
                 return false;
             }

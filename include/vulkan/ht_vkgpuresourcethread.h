@@ -49,7 +49,6 @@ namespace Hatchit
                 VKDevice*   m_device;
                 VKSwapChain* m_swapchain;
 
-                VkCommandPool       m_commandPool;
                 VkDescriptorPool    m_descriptorPool;
 
                 void VCreateTextureBase(Resource::TextureHandle handle, void** base)            override;
@@ -63,7 +62,6 @@ namespace Hatchit
 
                 void thread_main();
 
-                bool createCommandPool(const VkDevice& device);
                 bool createDescriptorPool(const VkDevice& device);
             };
         }
