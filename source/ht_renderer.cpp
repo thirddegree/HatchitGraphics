@@ -26,6 +26,7 @@
 #include <ht_vkswapchain.h>
 #include <ht_vkqueue.h>
 #include <ht_vktools.h>
+#include <ht_vkrenderthread.h>
 #endif
 
 
@@ -154,7 +155,7 @@ namespace Hatchit {
                     return false;
             }
 
-            //initThreads();
+            initThreads();
 
             return true;
         }
@@ -193,16 +194,31 @@ namespace Hatchit {
 
                     passHandle->SetView(camera.GetView());
                     passHandle->SetProj(camera.GetProjection());
-
-                    passHandle->BuildCommandList();
-                    //m_threadQueue.push(passHandle);
+                    
+                    //Add work for the render threads
+                    m_threadQueue.push(passHandle);
                 }
             }
 
+            //Tell all threads that they can work
+            for (size_t i = 0; i < this->m_threads.size(); i++)
+                m_threads[i]->Notify();
+            
             //Wait for all threads to finish
-            //std::unique_lock<std::mutex> lock(m_mutex);
-            //m_cv.wait(lock, [this]() -> bool { m_locked = true;  return this->m_threadQueue.empty(); });
-            //m_locked = false;
+            std::unique_lock<std::mutex> lock(m_mutex);
+            m_cv.wait(lock, [this]() -> bool 
+            {
+                m_locked = true;  
+                
+                for (size_t i = 0; i < this->m_threads.size(); i++)
+                {
+                    if (!m_threads[i]->Processed())
+                        return false;
+                }
+
+                return true; 
+            });
+            m_locked = false;
 
             //Step 03: Execute the recorded command lists
             //This is a complicated step as we must execute command lists potentially
@@ -255,22 +271,18 @@ namespace Hatchit {
             uint32_t threadCount = std::thread::hardware_concurrency();
             for (uint32_t i = 0; i < threadCount; i++)
             {
-                std::thread* thread = new std::thread(&Renderer::thread_main, this);
-                m_threads.push_back(thread);
-                thread->detach();
-            }
-        }
+                RenderThread* renderThread;
 
-        void Renderer::thread_main() 
-        {
-            while (true)
-            {
-                if (m_threadQueue.empty())
-                    continue;
+#ifdef DX12_SUPPORT
+#endif
 
-                std::shared_ptr<RenderPassHandle> renderPass = m_threadQueue.pop();
+#ifdef VK_SUPPORT
+                renderThread = new Vulkan::VKRenderThread(static_cast<Vulkan::VKDevice*>(_Device));
+#endif
 
-                (*renderPass)->BuildCommandList();
+                renderThread->VStart(&m_cv, &m_threadQueue);
+
+                m_threads.push_back(renderThread);
             }
         }
     }

@@ -105,7 +105,9 @@ namespace Hatchit {
                 for (uint32_t i = 0; i < renderPasses.size(); i++)
                 {
                     VKRenderPass* vkpass = static_cast<VKRenderPass*>(renderPasses[i]->GetBase());
-                    commandBuffers.push_back(vkpass->GetVkCommandBuffer());
+                    VkCommandBuffer command = vkpass->GetVkCommandBuffer();
+
+                    commandBuffers.push_back(command);
                 }
 
                 VkResult err;

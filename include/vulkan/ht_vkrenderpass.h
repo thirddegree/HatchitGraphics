@@ -30,6 +30,7 @@
 #include <ht_vkrendertarget.h>
 #include <ht_vkrootlayout.h>
 #include <ht_rootlayout.h>      //RootLayoutHandle
+#include <ht_vkcommandpool.h>   //VKCommandPool
 
 namespace Hatchit {
 
@@ -45,13 +46,13 @@ namespace Hatchit {
 
                 //Required function for RefCounted classes
                 bool Initialize(const Resource::RenderPassHandle& handle, const VkDevice& device,
-                    const VkCommandPool& commandPool, const VkDescriptorPool& descriptorPool, const VKSwapChain* swapchain);
+                    const VkDescriptorPool& descriptorPool, const VKSwapChain* swapchain);
 
                 //Will this be sent the Objects that it needs to render?
                 ///Render the scene
                 void VUpdate() override;
 
-                bool VBuildCommandList() override;
+                bool VBuildCommandList(const ICommandPool* commandPool) override;
 
                 const VkRenderPass& GetVkRenderPass() const;
                 const VkCommandBuffer& GetVkCommandBuffer() const;
@@ -72,12 +73,11 @@ namespace Hatchit {
                 bool setupAttachmentImages();
                 bool setupFramebuffer();
 
-                bool allocateCommandBuffer();
+                bool allocateCommandBuffer(const VKCommandPool* commandPool);
                 //Mapping set index to maps of binding indicies and render targets
                 bool setupDescriptorSets(std::map < uint32_t, std::map < uint32_t, VKRenderTarget* >> inputTargets);
 
                 VkDevice m_device;
-                VkCommandPool m_commandPool;
                 VkDescriptorPool m_descriptorPool;
 
                 VkRenderPass m_renderPass;

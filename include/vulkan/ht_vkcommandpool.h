@@ -12,35 +12,39 @@
 **
 **/
 
+/**
+* \class VKCommandPool
+* \ingroup HatchitGraphics
+*
+* \brief A wrapper around a VkCommandPool object that other 
+* Hatchit objects can understand abstracted from graphics languages
+*/
 
 #pragma once
 
-#include <ht_platform.h>
-#include <ht_refcounted.h>
-#include <ht_renderpass_base.h>
 #include <ht_commandpool.h>
+#include <ht_vulkan.h>      //VkCommandPool (the original object from the VK API)
+#include <ht_vkdevice.h>    //Need a VKDevice to create a pool
 
 namespace Hatchit
 {
     namespace Graphics
     {
-        namespace DX
+        namespace Vulkan
         {
-            class HT_API D3D12RenderPass : public RenderPassBase
+            class HT_API VKCommandPool : public ICommandPool 
             {
             public:
-                D3D12RenderPass();
-                ~D3D12RenderPass() {};
+                VKCommandPool(VkDevice device);
+                ~VKCommandPool();
 
-                bool Initialize(const Resource::RenderPassHandle& handle);
+                bool VInitialize() override;
 
-                // Inherited via RenderPassBase
-                virtual void VUpdate() override;
-
-                virtual bool VBuildCommandList(const ICommandPool* commandPool) override;
+                VkCommandPool GetVKCommandPool() const;
 
             private:
-
+                VkDevice m_device;
+                VkCommandPool m_commandPool;
             };
         }
     }

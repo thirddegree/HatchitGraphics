@@ -30,6 +30,7 @@
 #include <ht_material.h>            //MaterialHandle
 #include <ht_mesh.h>                //MeshHandle
 #include <ht_rendertarget.h>        //RenderTargetHandle
+#include <ht_commandpool.h>         //ICommandPool
 
 namespace Hatchit
 {
@@ -64,7 +65,7 @@ namespace Hatchit
             void SetView(Math::Matrix4 view);
             void SetProj(Math::Matrix4 proj);
 
-            virtual bool VBuildCommandList() = 0;
+            virtual bool VBuildCommandList(const ICommandPool* commandPool) = 0;
 
             virtual void ScheduleRenderRequest(MaterialHandle material, MeshHandle mesh, ShaderVariableChunk* instanceVariables);
 
