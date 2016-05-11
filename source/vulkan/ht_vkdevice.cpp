@@ -23,13 +23,40 @@ namespace Hatchit
 
             VKDevice::VKDevice() 
             {
-                m_enabledLayerNames = {
-                    "VK_LAYER_GOOGLE_threading",      "VK_LAYER_LUNARG_core_validation",
-                    "VK_LAYER_LUNARG_object_tracker", "VK_LAYER_LUNARG_parameter_validation",
+                m_layerNames1011 = {
+                    "VK_LAYER_GOOGLE_threading",            "VK_LAYER_LUNARG_core_validation",
+                    "VK_LAYER_LUNARG_object_tracker",       "VK_LAYER_LUNARG_parameter_validation",
                     "VK_LAYER_LUNARG_standard_validation",  "VK_LAYER_LUNARG_swapchain",
-                    "VK_LAYER_LUNARG_device_limits",  "VK_LAYER_LUNARG_image",
+                    "VK_LAYER_LUNARG_device_limits",        "VK_LAYER_LUNARG_image",
                     "VK_LAYER_GOOGLE_unique_objects",
                 };
+
+                m_layerNames108 = {
+                    "VK_LAYER_GOOGLE_threading",            "VK_LAYER_LUNARG_core_validation",
+                    "VK_LAYER_LUNARG_object_tracker",       "VK_LAYER_LUNARG_parameter_validation",
+                    "VK_LAYER_LUNARG_standard_validation",  "VK_LAYER_LUNARG_swapchain",
+                    "VK_LAYER_LUNARG_device_limits",        "VK_LAYER_LUNARG_image",
+                    "VK_LAYER_GOOGLE_unique_objects",
+                };
+
+                m_layerNames105 = {
+                    "VK_LAYER_GOOGLE_threading",        "VK_LAYER_LUNARG_mem_tracker",
+                    "VK_LAYER_LUNARG_object_tracker",   "VK_LAYER_LUNARG_draw_state",
+                    "VK_LAYER_LUNARG_param_checker",    "VK_LAYER_LUNARG_swapchain",
+                    "VK_LAYER_LUNARG_device_limits",    "VK_LAYER_LUNARG_image"
+                };
+
+                m_layerNames103 = {
+                    "VK_LAYER_LUNARG_threading",        "VK_LAYER_LUNARG_mem_tracker",
+                    "VK_LAYER_LUNARG_object_tracker",   "VK_LAYER_LUNARG_draw_state",
+                    "VK_LAYER_LUNARG_param_checker",    "VK_LAYER_LUNARG_swapchain",
+                    "VK_LAYER_LUNARG_device_limits",    "VK_LAYER_LUNARG_image"
+                };
+
+                m_layerNamesCollection.push_back(m_layerNames1011);
+                m_layerNamesCollection.push_back(m_layerNames108);
+                m_layerNamesCollection.push_back(m_layerNames105);
+                m_layerNamesCollection.push_back(m_layerNames103);
 
                 m_validate = false;
 
@@ -110,40 +137,47 @@ namespace Hatchit
                 appInfo.engineVersion = 0;
                 appInfo.apiVersion = VK_MAKE_VERSION(1, 0, 11);
 
-                VkInstanceCreateInfo instanceInfo;
-                instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-                instanceInfo.pNext = nullptr;
-                instanceInfo.flags = 0;
-                instanceInfo.pApplicationInfo = &appInfo;
-                instanceInfo.enabledLayerCount = static_cast<uint32_t>(m_enabledLayerNames.size());
-                instanceInfo.ppEnabledLayerNames = m_enabledLayerNames.data();
-                instanceInfo.enabledExtensionCount = static_cast<uint32_t>(m_enabledExtensionNames.size());
-                instanceInfo.ppEnabledExtensionNames = m_enabledExtensionNames.data();
-
-                err = vkCreateInstance(&instanceInfo, nullptr, &m_instance);
-                switch (err)
+                //Keep trying to make an instance until we find one with layers that works
+                //If we exhaust all layer names then we've failed
+                success = false;                
+ 
+                for(size_t i =0; i < m_layerNamesCollection.size(); i++)
                 {
-                case VK_SUCCESS:
-                    break;
+                    m_enabledLayerNames = m_layerNamesCollection[i];
 
-                case VK_ERROR_INCOMPATIBLE_DRIVER:
+                    VkInstanceCreateInfo instanceInfo;
+                    instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+                    instanceInfo.pNext = nullptr;
+                    instanceInfo.flags = 0;
+                    instanceInfo.pApplicationInfo = &appInfo;
+                    instanceInfo.enabledLayerCount = static_cast<uint32_t>(m_enabledLayerNames.size());
+                    instanceInfo.ppEnabledLayerNames = m_enabledLayerNames.data();
+                    instanceInfo.enabledExtensionCount = static_cast<uint32_t>(m_enabledExtensionNames.size());
+                    instanceInfo.ppEnabledExtensionNames = m_enabledExtensionNames.data();
+
+                    err = vkCreateInstance(&instanceInfo, nullptr, &m_instance);
+                    switch (err)
+                    {
+                    case VK_SUCCESS:
+                        success = true;  
+                        break;
+                    default:
+                        break;
+                    }
+
+                    if(success == true)
+                        break;
+                }
+
+                if(!success)
                 {
                     HT_ERROR_PRINTF("VKDevice::setupInstance: Cannot find a compatible Vulkan installable client driver"
                         "(ICD).\n\nPlease look at the Getting Started guide for "
                         "additional information.\n"
                         "vkCreateInstance Failure\n");
-                } return false;
+                }   
 
-                case VK_ERROR_EXTENSION_NOT_PRESENT:
-                {
-                    //TODO: print something
-                } return false;
-
-                default:
-                    return false;
-                }
-
-                return true;
+                return success;
             }
 
             bool VKDevice::enumeratePhysicalDevices()

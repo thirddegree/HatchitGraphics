@@ -56,6 +56,16 @@ namespace Hatchit
 
                 VkDebugReportCallbackEXT m_debugReportCallback;
 
+                //The various known layer names for different SDK versions
+                std::vector<const char*> m_layerNames1011;
+                std::vector<const char*> m_layerNames108;
+                std::vector<const char*> m_layerNames105;
+                std::vector<const char*> m_layerNames103;
+
+                //Collection of possible name collections
+                std::vector<std::vector<const char*>> m_layerNamesCollection;
+
+                //The actual extension and layer names to check 
                 std::vector<const char*> m_enabledExtensionNames;
                 std::vector<const char*> m_enabledLayerNames;
 
