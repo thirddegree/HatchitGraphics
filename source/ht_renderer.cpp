@@ -205,20 +205,18 @@ namespace Hatchit {
                 m_threads[i]->Notify();
             
             //Wait for all threads to finish
-            std::unique_lock<std::mutex> lock(m_mutex);
-            m_cv.wait(lock, [this]() -> bool 
+            while (true)
             {
-                m_locked = true;  
-                
+                int processed = 0;
                 for (size_t i = 0; i < this->m_threads.size(); i++)
                 {
-                    if (!m_threads[i]->Processed())
-                        return false;
+                    if (m_threads[i]->Processed())
+                        processed++;
                 }
 
-                return true; 
-            });
-            m_locked = false;
+                if (processed == this->m_threads.size())
+                    break;
+            }
 
             //Step 03: Execute the recorded command lists
             //This is a complicated step as we must execute command lists potentially

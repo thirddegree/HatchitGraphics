@@ -64,7 +64,7 @@ namespace Hatchit
                     //m_waitLock.wait(lock, [this] {return !m_jobQueue->empty(); });
 
                     //This will block if the queue is empty
-                    std::shared_ptr<RenderPassHandle> pass = m_jobQueue->pop();
+                    std::shared_ptr<RenderPassHandle> pass = m_jobQueue->wait_pop();
                     m_processing = true;
                     (*pass)->BuildCommandList(&commandPool);
                     m_processing = false;
