@@ -29,7 +29,7 @@
 #include <ht_material.h>
 #include <ht_math.h>
 #include <ht_color.h>
-#include <ht_shadervariable.h>
+#include <ht_shadervariablechunk.h>
 
 namespace Hatchit {
 
@@ -50,7 +50,7 @@ namespace Hatchit {
             void SetView(Math::Matrix4 view);
             void SetProj(Math::Matrix4 proj);
 
-            void ScheduleRenderRequest(MaterialHandle material, MeshHandle mesh, std::vector<Resource::ShaderVariable*> instanceVariables);
+            void ScheduleRenderRequest(MaterialHandle material, MeshHandle mesh, ShaderVariableChunk* instanceVariables);
 
             uint64_t GetLayerFlags();
 

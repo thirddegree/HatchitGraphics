@@ -66,29 +66,29 @@ namespace Hatchit {
             return true;
         }
 
-        bool Material::SetInt(size_t chunk, std::string name, int data)
+        bool Material::SetInt(size_t chunk, size_t offset, int data)
         {
-            return m_base->SetInt(chunk, name, data);
+            return m_base->SetInt(chunk, offset, data);
         }
 
-        bool Material::SetFloat(size_t chunk, std::string name, float data)
+        bool Material::SetFloat(size_t chunk, size_t offset, float data)
         {
-            return m_base->SetFloat(chunk, name, data);
+            return m_base->SetFloat(chunk, offset, data);
         }
 
-        bool Material::SetFloat3(size_t chunk, std::string name, Math::Vector3 data)
+        bool Material::SetFloat3(size_t chunk, size_t offset, Math::Vector3 data)
         {
-            return m_base->SetFloat3(chunk, name, data);
+            return m_base->SetFloat3(chunk, offset, data);
         }
 
-        bool Material::SetFloat4(size_t chunk, std::string name, Math::Vector4 data)
+        bool Material::SetFloat4(size_t chunk, size_t offset, Math::Vector4 data)
         {
-            return m_base->SetFloat4(chunk, name, data);
+            return m_base->SetFloat4(chunk, offset, data);
         }
 
-        bool Material::SetMatrix4(size_t chunk, std::string name, Math::Matrix4 data)
+        bool Material::SetMatrix4(size_t chunk, size_t offset, Math::Matrix4 data)
         {
-            return m_base->SetMatrix4(chunk, name, data);
+            return m_base->SetMatrix4(chunk, offset, data);
         }
 
         bool Material::BindTexture(std::string name, TextureHandle texture)

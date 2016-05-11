@@ -28,33 +28,33 @@ namespace Hatchit {
             }
         };
 
-        bool MaterialBase::SetInt(size_t chunk, std::string name, int data)
+        bool MaterialBase::SetInt(size_t chunk, size_t offset, int data)
         {
-            m_shaderVariables[chunk]->SetInt(name, data);
+            m_shaderVariables[chunk]->SetInt(offset, data);
             return true;
         }
 
-        bool MaterialBase::SetFloat(size_t chunk, std::string name, float data)
+        bool MaterialBase::SetFloat(size_t chunk, size_t offset, float data)
         {
-            m_shaderVariables[chunk]->SetFloat(name, data);
+            m_shaderVariables[chunk]->SetFloat(offset, data);
             return true;
         }
 
-        bool MaterialBase::SetFloat3(size_t chunk, std::string name, Math::Vector3 data)
+        bool MaterialBase::SetFloat3(size_t chunk, size_t offset, Math::Vector3 data)
         {
-            m_shaderVariables[chunk]->SetFloat3(name, data);
+            m_shaderVariables[chunk]->SetFloat3(offset, data);
             return true;
         }
 
-        bool MaterialBase::SetFloat4(size_t chunk, std::string name, Math::Vector4 data)
+        bool MaterialBase::SetFloat4(size_t chunk, size_t offset, Math::Vector4 data)
         {
-            m_shaderVariables[chunk]->SetFloat4(name, data);
+            m_shaderVariables[chunk]->SetFloat4(offset, data);
             return true;
         }
 
-        bool MaterialBase::SetMatrix4(size_t chunk, std::string name, Math::Matrix4 data)
+        bool MaterialBase::SetMatrix4(size_t chunk, size_t offset, Math::Matrix4 data)
         {
-            m_shaderVariables[chunk]->SetMatrix4(name, data);
+            m_shaderVariables[chunk]->SetMatrix4(offset, data);
             return true;
         }
     }

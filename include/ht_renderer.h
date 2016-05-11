@@ -38,7 +38,6 @@
 #include <ht_device.h>
 #include <ht_gpuqueue.h>
 #include <ht_threadqueue.h>
-#include <ht_shadervariable.h>
 
 namespace Hatchit {
 
@@ -101,7 +100,7 @@ namespace Hatchit {
             ///Present a frame to the screen via a backbuffer
             void Present();
 
-            void RegisterRenderRequest(RenderPassHandle pass, MaterialHandle material, MeshHandle mesh, std::vector<Resource::ShaderVariable*> instanceVariables);
+            void RegisterRenderRequest(RenderPassHandle pass, MaterialHandle material, MeshHandle mesh, ShaderVariableChunk* instanceVariables);
 
             void RegisterCamera(Camera camera);
 

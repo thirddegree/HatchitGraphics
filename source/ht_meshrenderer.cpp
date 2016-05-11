@@ -40,7 +40,7 @@ namespace Hatchit {
             m_mesh = mesh;
         }
 
-        void MeshRenderer::SetInstanceData(std::vector<Resource::ShaderVariable*> data)
+        void MeshRenderer::SetInstanceData(ShaderVariableChunk* data)
         {
             m_instanceData = data;
         }

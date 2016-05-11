@@ -54,11 +54,11 @@ namespace Hatchit {
             MaterialBase();
             ~MaterialBase();
 
-            bool SetInt(size_t chunk, std::string name, int data);
-            bool SetFloat(size_t chunk, std::string name, float data);
-            bool SetFloat3(size_t chunk, std::string name, Math::Vector3 data);
-            bool SetFloat4(size_t chunk, std::string name, Math::Vector4 data);
-            bool SetMatrix4(size_t chunk, std::string name, Math::Matrix4 data);
+            bool SetInt(size_t chunk, size_t offset, int data);
+            bool SetFloat(size_t chunk, size_t offset, float data);
+            bool SetFloat3(size_t chunk, size_t offset, Math::Vector3 data);
+            bool SetFloat4(size_t chunk, size_t offset, Math::Vector4 data);
+            bool SetMatrix4(size_t chunk, size_t offset, Math::Matrix4 data);
 
             virtual bool VBindTexture(std::string name, TextureHandle texture) = 0;
             virtual bool VUnbindTexture(std::string name, TextureHandle texture) = 0;

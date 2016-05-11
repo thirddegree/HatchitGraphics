@@ -23,7 +23,7 @@
 #pragma once
 #include <ht_shadervariable.h>
 #include <ht_math.h>
-#include <map>
+#include <unordered_map>
 
 namespace Hatchit {
 
@@ -38,22 +38,19 @@ namespace Hatchit {
         class HT_API ShaderVariableChunk
         {
         public:
-            ShaderVariableChunk(std::map<std::string, Resource::ShaderVariable*> variables);
+            ShaderVariableChunk(std::vector<Resource::ShaderVariable*> variables);
             ~ShaderVariableChunk();
 
-            bool SetInt(std::string name, uint32_t data);
-            bool SetFloat(std::string name, float data);
-            bool SetFloat3(std::string name, Math::Vector3 data);
-            bool SetFloat4(std::string name, Math::Vector4 data);
-            bool SetMatrix4(std::string name, Math::Matrix4 data);
+            bool SetInt(size_t offset, uint32_t data);
+            bool SetFloat(size_t offset, float data);
+            bool SetFloat3(size_t offset, Math::Vector3 data);
+            bool SetFloat4(size_t offset, Math::Vector4 data);
+            bool SetMatrix4(size_t offset, Math::Matrix4 data);
 
             const BYTE* GetByteData();
             size_t GetSize();
 
         private:
-            //a map to the location of each variable
-            std::map<std::string, BYTE*> m_variables;
-
             BYTE*           m_byteData;
             std::size_t     m_byteDataSize;
 

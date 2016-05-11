@@ -14,6 +14,7 @@
 
 #include <ht_renderer.h>
 #include <ht_gpuresourcepool.h>
+#include <ht_shadervariablechunk.h>
 
 #ifdef DX12_SUPPORT
 #include <ht_d3d12device.h>
@@ -37,7 +38,7 @@ namespace Hatchit {
         RendererType    Renderer::_Type = UNKNOWN;
         SwapChain*      Renderer::_SwapChain = nullptr;
 
-        void Renderer::RegisterRenderRequest(RenderPassHandle pass, MaterialHandle material, MeshHandle mesh, std::vector<Resource::ShaderVariable*> instanceVariables)
+        void Renderer::RegisterRenderRequest(RenderPassHandle pass, MaterialHandle material, MeshHandle mesh, ShaderVariableChunk* instanceVariables)
         {
             pass->ScheduleRenderRequest(material, mesh, instanceVariables);
 

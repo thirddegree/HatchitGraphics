@@ -25,6 +25,7 @@
 #include <ht_platform.h>
 #include <ht_math.h>                //Math::Matrix4
 #include <ht_renderpass_resource.h> //Resource::RenderPass
+#include <ht_shadervariablechunk.h>
 
 #include <ht_material.h>            //MaterialHandle
 #include <ht_mesh.h>                //MeshHandle
@@ -65,7 +66,7 @@ namespace Hatchit
 
             virtual bool VBuildCommandList() = 0;
 
-            virtual void ScheduleRenderRequest(MaterialHandle material, MeshHandle mesh, std::vector<Resource::ShaderVariable*> instanceVariables);
+            virtual void ScheduleRenderRequest(MaterialHandle material, MeshHandle mesh, ShaderVariableChunk* instanceVariables);
 
             virtual uint64_t GetLayerFlags();
 

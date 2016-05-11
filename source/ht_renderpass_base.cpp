@@ -21,7 +21,7 @@ namespace Hatchit
         void RenderPassBase::SetView(Math::Matrix4 view) { m_view = view; }
         void RenderPassBase::SetProj(Math::Matrix4 proj) { m_proj = proj; }
 
-        void RenderPassBase::ScheduleRenderRequest(MaterialHandle material, MeshHandle mesh, std::vector<Resource::ShaderVariable*> instanceVariables)
+        void RenderPassBase::ScheduleRenderRequest(MaterialHandle material, MeshHandle mesh, ShaderVariableChunk* instanceVariables)
         {
             RenderRequest renderRequest = {};
 
@@ -34,13 +34,7 @@ namespace Hatchit
             //Append instance variables to the array of bytes
 
             //Determine how much we need to append to the array
-            size_t newSize = m_instanceDataSize;
-            m_instanceChunkSize = 0;
-            for (size_t i = 0; i < instanceVariables.size(); i++)
-            {
-                m_instanceChunkSize += Resource::ShaderVariable::SizeFromType(instanceVariables[i]->GetType());
-                newSize += m_instanceChunkSize;
-            }
+            size_t newSize = m_instanceDataSize + instanceVariables->GetSize();
 
             //Make an array of the new size and replace the existing one
             BYTE* newArray = new BYTE[newSize];
@@ -55,14 +49,8 @@ namespace Hatchit
 
             //Copy data to new array
             m_currentInstanceDataOffset = m_instanceDataSize;
-            for (size_t i = 0; i < instanceVariables.size(); i++)
-            {
-                size_t size = Resource::ShaderVariable::SizeFromType(instanceVariables[i]->GetType());
-                memcpy(m_instanceData + m_currentInstanceDataOffset, instanceVariables[i]->GetData(), size);
-                m_currentInstanceDataOffset += size;
-            }
-
-            m_instanceDataSize = m_currentInstanceDataOffset;
+            memcpy(m_instanceData + m_currentInstanceDataOffset, instanceVariables->GetByteData(), instanceVariables->GetSize());
+            m_instanceDataSize = newSize;
         }
 
         uint64_t RenderPassBase::GetLayerFlags()

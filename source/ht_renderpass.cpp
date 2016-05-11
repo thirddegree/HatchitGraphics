@@ -63,7 +63,7 @@ namespace Hatchit
             m_base->SetProj(proj);
         }
 
-        void RenderPass::ScheduleRenderRequest(MaterialHandle material, MeshHandle mesh, std::vector<Resource::ShaderVariable*> instanceVariables) 
+        void RenderPass::ScheduleRenderRequest(MaterialHandle material, MeshHandle mesh, ShaderVariableChunk* instanceVariables) 
         {
             m_base->ScheduleRenderRequest(material, mesh, instanceVariables);
         }

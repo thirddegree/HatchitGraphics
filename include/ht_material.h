@@ -68,11 +68,11 @@ namespace Hatchit {
             bool Initialize(const std::string& file);
             bool InitializeAsync(Core::Handle<Material> handle);
 
-            bool SetInt(size_t chunk, std::string name, int data);
-            bool SetFloat(size_t chunk, std::string name, float data);
-            bool SetFloat3(size_t chunk, std::string name, Math::Vector3 data);
-            bool SetFloat4(size_t chunk, std::string name, Math::Vector4 data);
-            bool SetMatrix4(size_t chunk, std::string name, Math::Matrix4 data);
+            bool SetInt(size_t chunk, size_t offset, int data);
+            bool SetFloat(size_t chunk, size_t offset, float data);
+            bool SetFloat3(size_t chunk, size_t offset, Math::Vector3 data);
+            bool SetFloat4(size_t chunk, size_t offset, Math::Vector4 data);
+            bool SetMatrix4(size_t chunk, size_t offset, Math::Matrix4 data);
 
             bool BindTexture(std::string name, TextureHandle texture);
             bool UnbindTexture(std::string name, TextureHandle texture);

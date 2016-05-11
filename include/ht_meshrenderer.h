@@ -26,6 +26,7 @@
 
 #include <ht_renderpass.h>
 #include <ht_objectrenderer.h>
+#include <ht_shadervariablechunk.h>
 #include <ht_material.h>
 #include <ht_mesh.h>
 #include <ht_model.h>
@@ -54,7 +55,7 @@ namespace Hatchit
 
             /*Sets the instance data to be used with this particular mesh renderer
             */
-            virtual void SetInstanceData(std::vector<Resource::ShaderVariable*> data);
+            virtual void SetInstanceData(ShaderVariableChunk* data);
 
             //Override to submit a render request with a graphics language
             virtual void Render();
@@ -66,7 +67,7 @@ namespace Hatchit
             PipelineHandle          m_pipeline;
             MaterialHandle          m_material;
             MeshHandle              m_mesh;
-            std::vector<Resource::ShaderVariable*> m_instanceData;
+            ShaderVariableChunk*    m_instanceData;
         };
     }
 }

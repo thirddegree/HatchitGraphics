@@ -21,15 +21,14 @@ namespace Hatchit
     {
         /* Constructs a Shader Variable Chunk
         */
-        ShaderVariableChunk::ShaderVariableChunk(std::map<std::string, Resource::ShaderVariable*> variables)
+        ShaderVariableChunk::ShaderVariableChunk(std::vector<Resource::ShaderVariable*> variables)
         {
             //count byte size of data passed in
             m_byteDataSize = 0;
-            std::map<std::string, Resource::ShaderVariable*>::iterator itr;
-            for (itr = variables.begin(); itr != variables.end(); itr++)
+            for (size_t i = 0; i < variables.size(); i++)
             {
                 //increment size counter
-                Resource::ShaderVariable::Type type = itr->second->GetType();
+                Resource::ShaderVariable::Type type = variables[i]->GetType();
                 m_byteDataSize += Resource::ShaderVariable::SizeFromType(type);
             }
             //now that we've counted the bytes, allocate enough space
@@ -38,14 +37,12 @@ namespace Hatchit
 
             //restart, this time adding the data to the array
             m_byteDataSize = 0;
-            for (itr = variables.begin(); itr != variables.end(); itr++)
+            for (size_t i = 0; i < variables.size(); i++)
             {
-                Resource::ShaderVariable::Type type = itr->second->GetType();
+                Resource::ShaderVariable::Type type = variables[i]->GetType();
                 size_t offset = Resource::ShaderVariable::SizeFromType(type);
-                //new pointer to that location in the byte data
-                m_variables.emplace(itr->first, m_byteData + m_byteDataSize);
                 //add the data again for real this time
-                memcpy(m_byteData + m_byteDataSize, itr->second->GetData(), offset);
+                memcpy(m_byteData + m_byteDataSize, variables[i]->GetData(), offset);
                 //increment size counter
                 m_byteDataSize += offset;
             }
@@ -57,42 +54,42 @@ namespace Hatchit
         };
 
 
-        bool ShaderVariableChunk::SetInt(std::string name, uint32_t data)
+        bool ShaderVariableChunk::SetInt(size_t offset, uint32_t data)
         {
-            BYTE* location = m_variables.at(name);
-            assert(location + sizeof(uint32_t) >= m_byteData + m_byteDataSize);
+            BYTE* location = m_byteData + offset;
+            assert(location + sizeof(uint32_t) <= m_byteData + m_byteDataSize);
             memcpy(location, &data, sizeof(uint32_t));
             return true;
         }
 
-        bool ShaderVariableChunk::SetFloat(std::string name, float data)
+        bool ShaderVariableChunk::SetFloat(size_t offset, float data)
         {
-            BYTE* location = m_variables.at(name);
-            assert(location + sizeof(float) >= m_byteData + m_byteDataSize);
+            BYTE* location = m_byteData + offset;
+            assert(location + sizeof(float) <= m_byteData + m_byteDataSize);
             memcpy(location, &data, sizeof(float));
             return true;
         }
 
-        bool ShaderVariableChunk::SetFloat3(std::string name, Math::Vector3 data)
+        bool ShaderVariableChunk::SetFloat3(size_t offset, Math::Vector3 data)
         {
-            BYTE* location = m_variables.at(name);
-            assert(location + sizeof(float) * 3 >= m_byteData + m_byteDataSize);
+            BYTE* location = m_byteData + offset;
+            assert(location + sizeof(float) * 3 <= m_byteData + m_byteDataSize);
             memcpy(location, &data, sizeof(float) * 3);
             return true;
         }
 
-        bool ShaderVariableChunk::SetFloat4(std::string name, Math::Vector4 data)
+        bool ShaderVariableChunk::SetFloat4(size_t offset, Math::Vector4 data)
         {
-            BYTE* location = m_variables.at(name);
-            assert(location + sizeof(float) * 4 >= m_byteData + m_byteDataSize);
+            BYTE* location = m_byteData + offset;
+            assert(location + sizeof(float) * 4 <= m_byteData + m_byteDataSize);
             memcpy(location, &data, sizeof(float) * 4);
             return true;
         }
 
-        bool ShaderVariableChunk::SetMatrix4(std::string name, Math::Matrix4 data)
+        bool ShaderVariableChunk::SetMatrix4(size_t offset, Math::Matrix4 data)
         {
-            BYTE* location = m_variables.at(name);
-            assert(location + sizeof(float) * 16 >= m_byteData + m_byteDataSize);
+            BYTE* location = m_byteData + offset;
+            assert(location + sizeof(float) * 16 <= m_byteData + m_byteDataSize);
             memcpy(location, &data, sizeof(float) * 16);
             return true;
         }
