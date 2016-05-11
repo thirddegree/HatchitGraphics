@@ -41,7 +41,8 @@ namespace Hatchit
             
             void Kill();
             void Notify();
-            std::atomic_bool Processed();
+            
+            const std::atomic_bool& Processed() const;
 
         protected:
             std::thread m_thread;

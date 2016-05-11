@@ -32,7 +32,7 @@ namespace Hatchit
             m_waitLock.notify_one();
         }
 
-        std::atomic_bool RenderThread::Processed()
+        const std::atomic_bool& RenderThread::Processed() const
         {
             return !m_processing;
         }

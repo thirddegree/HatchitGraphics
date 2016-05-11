@@ -15,6 +15,7 @@
 #include <ht_renderer.h>
 #include <ht_gpuresourcepool.h>
 #include <ht_shadervariablechunk.h>
+#include <ht_swapchain.h>
 
 #ifdef DX12_SUPPORT
 #include <ht_d3d12device.h>
