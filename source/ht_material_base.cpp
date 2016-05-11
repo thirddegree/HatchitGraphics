@@ -14,19 +14,25 @@
 
 
 #include <ht_material_base.h>
+#include <ht_renderpass.h>
 #include <ht_shadervariablechunk.h>
 
 namespace Hatchit {
 
     namespace Graphics {
-        MaterialBase::MaterialBase() {};
+        
+        MaterialBase::MaterialBase() 
+        {
+
+        }
+        
         MaterialBase::~MaterialBase()
         {
-            for (int i = 0; i < m_shaderVariables.size(); i++)
+            for (size_t i = 0; i < m_shaderVariables.size(); i++)
             {
                 delete m_shaderVariables[i];
             }
-        };
+        }
 
         bool MaterialBase::SetInt(size_t chunk, size_t offset, int data)
         {

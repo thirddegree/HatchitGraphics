@@ -13,7 +13,7 @@
 **/
 
 #include <ht_shadervariablechunk.h>
-#include <ht_shadervariable.h>>
+#include <ht_shadervariable.h>
 
 namespace Hatchit
 {

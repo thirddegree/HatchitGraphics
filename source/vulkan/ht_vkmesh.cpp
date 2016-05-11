@@ -45,10 +45,6 @@ namespace Hatchit {
                 std::vector<aiVector3D> normals = mesh->getNormals();
                 std::vector<aiVector3D> uvs = mesh->getUVs();
 
-                size_t vertCount = verticies.size();
-                size_t normalCount = normals.size();
-                size_t uvCount = uvs.size();
-
                 for (uint32_t i = 0; i < verticies.size(); i++)
                 {
                     Vertex vertex;

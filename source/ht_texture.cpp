@@ -12,8 +12,6 @@
 **
 **/
 
-#pragma once
-
 #include <ht_texture.h>
 #include <ht_texture_base.h>
 #include <ht_texture_resource.h>

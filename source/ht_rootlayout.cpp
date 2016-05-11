@@ -12,8 +12,6 @@
 **
 **/
 
-#pragma once
-
 #include <ht_rootlayout.h>
 #include <ht_rootlayout_base.h>
 #include <ht_gpuresourcepool.h>

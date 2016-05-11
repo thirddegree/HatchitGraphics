@@ -263,7 +263,6 @@ namespace Hatchit {
                     pipeline->VSetInt("pass.4height", m_height);
                     pipeline->VUpdate();
 
-                    VkPipeline vkPipeline = pipeline->GetVKPipeline();
                     pipeline->BindPipeline(m_commandBuffer, vkPipelineLayout);
 
                     //Bind input textures
@@ -717,8 +716,6 @@ namespace Hatchit {
                 uint32_t index = 0;
                 for (auto it = inputTargets.begin(); it != inputTargets.end(); it++)
                 {
-                    uint32_t setIndex = it->first;
-
                     std::map<uint32_t, VKRenderTarget*> targetBindings = it->second;
 
                     

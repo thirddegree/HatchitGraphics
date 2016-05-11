@@ -208,7 +208,7 @@ namespace Hatchit {
             //Wait for all threads to finish
             while (true)
             {
-                int processed = 0;
+                size_t processed = 0;
                 for (size_t i = 0; i < this->m_threads.size(); i++)
                 {
                     if (m_threads[i]->Processed())

@@ -48,16 +48,32 @@ namespace Hatchit
             
             switch (rendererType)
             {
-#ifdef DX12_SUPPORT
                 case RendererType::DIRECTX12:
+                {
+#ifdef DX12_SUPPORT
                     instance.m_thread = new DX::D3D12GPUResourceThread(static_cast<DX::D3D12Device*>(device));
                     break;
+#else
+                    return false;
 #endif
-#ifdef VK_SUPPORT
+                }
+                
+
                 case RendererType::VULKAN:
+                {
+#ifdef VK_SUPPORT
                     instance.m_thread = new Vulkan::VKGPUResourceThread(static_cast<Vulkan::VKDevice*>(device), static_cast<Vulkan::VKSwapChain*>(swapchain));
                     break;
+#else
+                    return false;
 #endif
+                }
+
+                case RendererType::DIRECTX11:
+                case RendererType::OPENGL:
+                case RendererType::UNKNOWN:
+                    return false;
+
             }
 
 

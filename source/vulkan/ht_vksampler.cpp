@@ -12,8 +12,6 @@
 **
 **/
 
-#pragma once
-
 #include <ht_vksampler.h>
 #include <ht_debug.h>
 #include <cassert>

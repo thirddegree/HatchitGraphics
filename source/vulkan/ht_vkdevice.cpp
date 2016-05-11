@@ -352,7 +352,6 @@ namespace Hatchit
                 /**
                 * Check the following requested Vulkan layers against available layers
                 */
-                VkBool32 validationFound = 0;
                 uint32_t instanceLayerCount = 0;
                 err = vkEnumerateInstanceLayerProperties(&instanceLayerCount, NULL);
                 assert(!err);
@@ -379,8 +378,6 @@ namespace Hatchit
             {
                 VkResult err;
 
-                VkBool32 surfaceExtFound = 0;
-                VkBool32 platformSurfaceExtFound = 0;
                 uint32_t instanceExtensionCount = 0;
 
                 err = vkEnumerateInstanceExtensionProperties(NULL, &instanceExtensionCount, NULL);
@@ -395,19 +392,17 @@ namespace Hatchit
                     {
                         if (!strcmp(VK_KHR_SURFACE_EXTENSION_NAME, instanceExtensions[i].extensionName))
                         {
-                            surfaceExtFound = 1;
                             m_enabledExtensionNames.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
                         }
 #ifdef HT_SYS_WINDOWS
-                        if (!strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, instanceExtensions[i].extensionName)) {
-                            platformSurfaceExtFound = 1;
+                        if (!strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, instanceExtensions[i].extensionName)) 
+                        {
                             m_enabledExtensionNames.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
                         }
 #elif defined(HT_SYS_LINUX)
-                        if (!strcmp(VK_KHR_XCB_SURFACE_EXTENSION_NAME, instanceExtensions[i].extensionName))
+                        if (!strcmp(VK_KHR_XLIB_SURFACE_EXTENSION_NAME, instanceExtensions[i].extensionName))
                         {
-                            platformSurfaceExtFound = 1;
-                            m_enabledExtensionNames.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
+                            m_enabledExtensionNames.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
                         }
 #endif
                         if (m_validate)

@@ -254,6 +254,9 @@ namespace Hatchit {
                     case ShaderVariable::FLOAT3:
                         dataSize = sizeof(float) * 3;
                         break;
+                    case ShaderVariable::DOUBLE:
+                        dataSize = sizeof(double);
+                        break;
                     case ShaderVariable::FLOAT4:
                         dataSize = sizeof(float) * 4;
                         break;
@@ -697,6 +700,8 @@ namespace Hatchit {
 
                 switch(type)
                 {
+                case ShaderVariable::INT:
+                    return VK_FORMAT_R32_SINT;
                 case ShaderVariable::FLOAT:
                     return VK_FORMAT_R32_SFLOAT;
                 case ShaderVariable::FLOAT2:
@@ -705,6 +710,8 @@ namespace Hatchit {
                     return VK_FORMAT_R32G32B32_SFLOAT;
                 case ShaderVariable::FLOAT4:
                     return VK_FORMAT_R32G32B32A32_SFLOAT;
+                case ShaderVariable::DOUBLE:
+                    return VK_FORMAT_UNDEFINED;
                 case ShaderVariable::MAT4:
                     return VK_FORMAT_R32G32B32A32_SFLOAT;
                 }

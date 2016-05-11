@@ -13,6 +13,7 @@
 **/
 
 #include <ht_pipeline.h>
+#include <ht_pipeline_base.h>
 #include <ht_gpuresourcepool.h>
 
 namespace Hatchit

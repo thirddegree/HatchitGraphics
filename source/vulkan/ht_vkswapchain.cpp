@@ -215,7 +215,7 @@ namespace Hatchit {
 
                 VkExtent2D swapchainExtent = {};
                 // width and height are either both -1, or both not -1.
-                if (surfCaps.currentExtent.width == -1)
+                if (surfCaps.currentExtent.width == 0xFFFFFFFF)
                 {
                     // If the surface size is undefined, the size is set to
                     // the size of the images requested.
@@ -252,7 +252,7 @@ namespace Hatchit {
                     desiredNumberOfSwapchainImages = surfCaps.maxImageCount;
                 }
 
-                VkSurfaceTransformFlagsKHR preTransform;
+                /*VkSurfaceTransformFlagsKHR preTransform;
                 if (surfCaps.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
                 {
                     preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
@@ -260,7 +260,7 @@ namespace Hatchit {
                 else
                 {
                     preTransform = surfCaps.currentTransform;
-                }
+                }*/
 
                 VKTools::CreateSetupCommandBuffer();
 
@@ -319,15 +319,6 @@ namespace Hatchit {
             bool VKSwapChain::vkPrepareResources()
             {
                 VkResult err;
-
-                Resource::Pipeline::RasterizerState rasterState = {};
-                rasterState.cullMode = Resource::Pipeline::CullMode::NONE;
-                rasterState.polygonMode = Resource::Pipeline::PolygonMode::SOLID;
-                rasterState.depthClampEnable = true;
-
-                Resource::Pipeline::MultisampleState multisampleState = {};
-                multisampleState.minSamples = 0;
-                multisampleState.samples = Resource::Pipeline::SAMPLE_1_BIT;
 
                 m_pipelineHandle = Pipeline::GetHandle("SwapchainPipeline.json", "SwapchainPipeline.json");
                 m_pipeline = static_cast<VKPipeline*>(m_pipelineHandle->GetBase());
@@ -678,14 +669,14 @@ namespace Hatchit {
 #endif
 
 #ifdef HT_SYS_LINUX
-                VkXcbSurfaceCreateInfoKHR creationInfo;
+                VkXlibSurfaceCreateInfoKHR creationInfo;
                 creationInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
                 creationInfo.pNext = nullptr;
                 creationInfo.flags = 0;
-                creationInfo.connection = (xcb_connection_t*)m_display;
-                creationInfo.window = *(uint32_t*)m_window;
+                creationInfo.dpy = (Display*)m_display;
+                creationInfo.window = (Window)m_window;
 
-                err = vkCreateXcbSurfaceKHR(m_instance, &creationInfo, nullptr, &m_surface);
+                err = vkCreateXlibSurfaceKHR(m_instance, &creationInfo, nullptr, &m_surface);
 
                 if (err != VK_SUCCESS)
                 {
@@ -997,7 +988,7 @@ namespace Hatchit {
                 m_postPresentCommands.resize(m_swapchainBuffers.size());
                 m_prePresentCommands.resize(m_swapchainBuffers.size());
 
-                for (int i = 0; i < m_swapchainBuffers.size(); i++)
+                for (size_t i = 0; i < m_swapchainBuffers.size(); i++)
                 {
                     m_swapchainBuffers[i].command = VK_NULL_HANDLE;
                     m_postPresentCommands[i] = VK_NULL_HANDLE;

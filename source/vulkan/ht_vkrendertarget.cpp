@@ -22,8 +22,6 @@
 * utilize framebuffer objects with OpenGL or RenderTargets with DirectX
 */
 
-#pragma once
-
 #include <ht_vkrendertarget.h>
 #include <ht_vkswapchain.h>
 #include <ht_vktools.h>

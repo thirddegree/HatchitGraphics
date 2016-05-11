@@ -148,10 +148,18 @@ namespace Hatchit
                     case RootLayout::ShaderVisibility::TESS_EVAL:
                         shaderStages = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
                         break;
+                    case RootLayout::ShaderVisibility::UNKNOWN:
+                        break;
                     }
 
                     switch (p.type)
                     {
+                        case RootLayout::Parameter::Type::UNKNOWN:
+                        case RootLayout::Parameter::Type::CONSTANT_BUFFER:
+                        case RootLayout::Parameter::Type::SHADER_RESOURCE:
+                        case RootLayout::Parameter::Type::UNORDERED_ACCESS:
+                            break;
+
                         //Descriptor Set Layouts
                         case RootLayout::Parameter::Type::TABLE:
                         {
@@ -176,6 +184,9 @@ namespace Hatchit
                                 case RootLayout::Range::Type::SHADER_RESOURCE:
                                     descType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
                                     break;
+                                case RootLayout::Range::Type::SAMPLER:
+                                case RootLayout::Range::Type::UNKNOWN:
+                                     break;
                                 }
 
                                 VkDescriptorSetLayoutBinding descriptorSetLayoutBinding = {};
