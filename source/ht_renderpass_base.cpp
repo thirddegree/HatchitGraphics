@@ -28,29 +28,9 @@ namespace Hatchit
             renderRequest.pipeline = material->GetPipeline();
             renderRequest.material = material;
             renderRequest.mesh = mesh;
+            renderRequest.instanceData = instanceVariables;
 
             m_renderRequests.push_back(renderRequest);
-
-            //Append instance variables to the array of bytes
-
-            //Determine how much we need to append to the array
-            size_t newSize = m_instanceDataSize + instanceVariables->GetSize();
-
-            //Make an array of the new size and replace the existing one
-            BYTE* newArray = new BYTE[newSize];
-
-            if (m_instanceData != nullptr)
-            {
-                memcpy(newArray, m_instanceData, m_instanceDataSize);
-                delete[] m_instanceData;
-            }
-
-            m_instanceData = newArray;
-
-            //Copy data to new array
-            m_currentInstanceDataOffset = m_instanceDataSize;
-            memcpy(m_instanceData + m_currentInstanceDataOffset, instanceVariables->GetByteData(), instanceVariables->GetSize());
-            m_instanceDataSize = newSize;
         }
 
         uint64_t RenderPassBase::GetLayerFlags()
@@ -100,6 +80,11 @@ namespace Hatchit
                     instances.push_back({ material, mesh, 1 });
 
                 m_pipelineList[pipeline] = instances;
+
+                //Take the instance data for this mesh and add it to the map of instance data
+                //This is to make sure that different meshes will render in chunks with their own separate instance data
+                ShaderVariableChunk* instanceData = renderRequest.instanceData;
+                m_instanceData[mesh].push_back(instanceData);
             }
 
             //Done with render requests so we can clear them

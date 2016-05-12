@@ -35,14 +35,6 @@ namespace Hatchit {
                 m_view = Math::Matrix4();
                 m_proj = Math::Matrix4();
 
-                m_instanceData = nullptr;
-                m_instanceDataSize = 0;
-                m_currentInstanceDataOffset = 0;
-                m_instanceChunkSize = 0;
-
-                m_instanceBlock.buffer = VK_NULL_HANDLE;
-                m_instanceBlock.memory = VK_NULL_HANDLE;
-
                 m_commandBuffer = VK_NULL_HANDLE;
             }
 
@@ -67,8 +59,13 @@ namespace Hatchit {
                 vkFreeMemory(m_device, m_depthImage.memory, nullptr);
                 
                 //Free instance texel buffers
-                if(m_instanceBlock.buffer != VK_NULL_HANDLE)
-                    VKTools::DeleteUniformBuffer(m_instanceBlock);
+                for (auto it = m_instanceBlocks.begin(); it != m_instanceBlocks.end(); it++)
+                {
+                    UniformBlock_vk instanceBlock = it->second;
+                    if (instanceBlock.buffer != VK_NULL_HANDLE)
+                        VKTools::DeleteUniformBuffer(instanceBlock);
+                }
+                m_instanceBlocks.clear();
 
                 //Destroy framebuffer
                 vkDestroyFramebuffer(m_device, m_framebuffer, nullptr);
@@ -146,18 +143,42 @@ namespace Hatchit {
                 if (!allocateCommandBuffer(static_cast<const VKCommandPool*>(commandPool)))
                     return false;
 
-                if (m_instanceBlock.buffer != VK_NULL_HANDLE)
-                    VKTools::DeleteUniformBuffer(m_instanceBlock);
-
-                //Create block of data for instance variables
-                if (m_instanceDataSize > 0)
-                {
-                    if (!VKTools::CreateUniformBuffer(m_instanceDataSize, m_instanceData, &m_instanceBlock))
-                        return false;
-                }
-
                 //Setup the order of the commands we will issue in the command list
                 BuildRenderRequestHeirarchy();
+
+                //Free instance texel buffers
+                for (auto it = m_instanceBlocks.begin(); it != m_instanceBlocks.end(); it++)
+                {
+                    UniformBlock_vk instanceBlock = it->second;
+                    if (instanceBlock.buffer != VK_NULL_HANDLE)
+                        VKTools::DeleteUniformBuffer(instanceBlock);
+                }
+                m_instanceBlocks.clear();
+
+                //Create block of data for instance variables for each mesh
+                for (auto it = m_instanceData.begin(); it != m_instanceData.end(); it++)
+                {
+                    std::vector<ShaderVariableChunk*> chunks = it->second;
+
+                    BYTE* allChunkData = nullptr;
+                    size_t chunkSize = chunks[0]->GetSize();
+                    size_t totalDataSize = chunkSize * chunks.size();
+
+                    allChunkData = new BYTE[totalDataSize];
+
+                    for (size_t i = 0; i < chunks.size(); i++)
+                    {
+                        ShaderVariableChunk* chunk = chunks[i];
+                        memcpy(allChunkData + i * chunkSize, chunk->GetByteData(), chunkSize);
+                    }
+
+                    m_instanceBlocks[it->first] = {};
+                    if (!VKTools::CreateUniformBuffer(totalDataSize, allChunkData, &m_instanceBlocks[it->first]))
+                        return false;
+
+                    //It's on the GPU now so we don't need this
+                    delete[] allChunkData;
+                }
 
                 VkResult err;
 
@@ -288,8 +309,11 @@ namespace Hatchit {
                         material->BindMaterial(m_commandBuffer, vkPipelineLayout);
                     
                         //Bind instance buffer
-                        if(m_instanceDataSize > 0)
-                            vkCmdBindVertexBuffers(m_commandBuffer, 1, 1, &m_instanceBlock.buffer, offsets);
+                        if (m_instanceBlocks.find(meshHandle) != m_instanceBlocks.end())
+                        {
+                            UniformBlock_vk instanceBlock = m_instanceBlocks[meshHandle];
+                            vkCmdBindVertexBuffers(m_commandBuffer, 1, 1, &instanceBlock.buffer, offsets);
+                        }
 
                         UniformBlock_vk vertBlock = mesh->GetVertexBlock();
                         UniformBlock_vk indexBlock = mesh->GetIndexBlock();
@@ -325,10 +349,7 @@ namespace Hatchit {
                     return false;
                 }
 
-                //Delete instance data
-                delete[] m_instanceData;
-                m_instanceData = nullptr;
-                m_instanceDataSize = 0;
+                
 
                 return true;
             }
@@ -710,15 +731,17 @@ namespace Hatchit {
 
                 //Setup descriptor set writes
                 std::vector<VkWriteDescriptorSet> descSetWrites;
-                //Store texture descriptors first so that they can stay on the stack long enough
-                std::vector<VkDescriptorImageInfo> targetDescriptors;
+
+                //Keep a list of all the target descriptors so we can delete them later
+                std::vector<std::vector<VkDescriptorImageInfo>*> descriptorStorage;
 
                 uint32_t index = 0;
                 for (auto it = inputTargets.begin(); it != inputTargets.end(); it++)
                 {
+                    std::vector<VkDescriptorImageInfo>* targetDescriptors = new std::vector<VkDescriptorImageInfo>;
+
                     std::map<uint32_t, VKRenderTarget*> targetBindings = it->second;
 
-                    
                     for (auto it = targetBindings.begin(); it != targetBindings.end(); it++)
                     {
                         VKRenderTarget* target = it->second;
@@ -730,8 +753,10 @@ namespace Hatchit {
                         targetDescriptor.imageView = texture.image.view;
                         targetDescriptor.imageLayout = texture.layout;
 
-                        targetDescriptors.push_back(targetDescriptor);
+                        targetDescriptors->push_back(targetDescriptor);
                     }
+
+                    descriptorStorage.push_back(targetDescriptors);
 
                     uint32_t targetIndex = 0;
                     for (auto it = targetBindings.begin(); it != targetBindings.end(); it++)
@@ -741,7 +766,7 @@ namespace Hatchit {
                         inputTextureWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
                         inputTextureWrite.dstSet = m_inputTargetDescriptorSets[index];
                         inputTextureWrite.dstBinding = it->first;
-                        inputTextureWrite.pImageInfo = &targetDescriptors[targetIndex];
+                        inputTextureWrite.pImageInfo = &(*targetDescriptors)[targetIndex];
                         inputTextureWrite.descriptorCount = 1;
 
                         descSetWrites.push_back(inputTextureWrite);
@@ -752,6 +777,10 @@ namespace Hatchit {
 
                 vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(descSetWrites.size()), descSetWrites.data(), 0, nullptr);
 
+                //Cleanup collections
+                for (size_t i = 0; i < descriptorStorage.size(); i++)
+                    delete descriptorStorage[i];
+                
                 return true;
             }
         }

@@ -38,9 +38,10 @@ namespace Hatchit
     {
         struct RenderRequest
         {
-            PipelineHandle  pipeline;
-            MaterialHandle  material;
-            MeshHandle      mesh;
+            PipelineHandle          pipeline;
+            MaterialHandle          material;
+            MeshHandle              mesh;
+            ShaderVariableChunk*    instanceData;
         };
 
         struct Renderable
@@ -77,10 +78,7 @@ namespace Hatchit
             //Input
             std::vector<RenderRequest> m_renderRequests;
             std::map<PipelineHandle, std::vector<RenderableInstances>> m_pipelineList;
-            BYTE* m_instanceData;
-            size_t m_instanceDataSize;
-            size_t m_currentInstanceDataOffset;
-            size_t m_instanceChunkSize;
+            std::map<MeshHandle, std::vector<ShaderVariableChunk*>> m_instanceData;
 
             //Output
             std::vector<RenderTargetHandle> m_outputRenderTargets;

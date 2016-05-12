@@ -87,7 +87,7 @@ namespace Hatchit {
                 VKRootLayout* m_rootLayout;
                 
                 //For instance data
-                UniformBlock_vk m_instanceBlock;
+                std::map<MeshHandle, UniformBlock_vk> m_instanceBlocks;
 
                 std::vector<Image_vk> m_colorImages;
                 Image_vk m_depthImage;

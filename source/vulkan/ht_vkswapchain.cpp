@@ -670,7 +670,7 @@ namespace Hatchit {
 
 #ifdef HT_SYS_LINUX
                 VkXlibSurfaceCreateInfoKHR creationInfo;
-                creationInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+                creationInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
                 creationInfo.pNext = nullptr;
                 creationInfo.flags = 0;
                 creationInfo.dpy = (Display*)m_display;
