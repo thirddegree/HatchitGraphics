@@ -42,14 +42,16 @@ namespace Hatchit
         {
             uint32_t i;
 
-            //Clear past pipeline requests
+            //Clear past request data
             for (i = 0; i < m_renderRequests.size(); i++)
             {
                 RenderRequest renderRequest = m_renderRequests[i];
 
+                MeshHandle mesh = renderRequest.mesh;
                 PipelineHandle pipeline = renderRequest.pipeline;
 
                 m_pipelineList[pipeline].clear();
+                m_instanceData[mesh].clear();
             }
 
             //Build new requests
