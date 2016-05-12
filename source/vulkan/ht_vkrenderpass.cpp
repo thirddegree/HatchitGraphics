@@ -254,13 +254,12 @@ namespace Hatchit {
                     m_view = Math::MMMatrixTranspose(m_view);
                     m_proj = Math::MMMatrixTranspose(m_proj);
 
-                    //The numbers in these names are here to make sure that the variables are ordered properly in the map; 
-                    //An unordered map SHOULD relieve this problem
-                    pipeline->VSetMatrix4("pass.0proj", m_proj);
-                    pipeline->VSetMatrix4("pass.1view", m_view);
-                    pipeline->VSetMatrix4("pass.2invViewProj", invViewProj);
-                    pipeline->VSetInt("pass.3width", m_width);
-                    pipeline->VSetInt("pass.4height", m_height);
+                    //The numbers indicate the byte offset in memory that these values are written to
+                    pipeline->VSetMatrix4(0, m_proj);
+                    pipeline->VSetMatrix4(64, m_view);
+                    pipeline->VSetMatrix4(128, invViewProj);
+                    pipeline->VSetInt(192, m_width);
+                    pipeline->VSetInt(196, m_height);
                     pipeline->VUpdate();
 
                     pipeline->BindPipeline(m_commandBuffer, vkPipelineLayout);

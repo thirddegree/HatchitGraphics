@@ -18,6 +18,7 @@
 #include <ht_string.h>      //std::string
 #include <ht_math.h>        //Vectors and matricies
 #include <ht_texture.h>     //TextureHandle
+#include <ht_shadervariablechunk.h>
 
 namespace Hatchit {
 
@@ -40,19 +41,19 @@ namespace Hatchit {
         public:
             virtual ~PipelineBase() {};
 
-            virtual bool VAddShaderVariables(std::map<std::string, Hatchit::Resource::ShaderVariable*> shaderVariables) = 0;
+            virtual bool VSetShaderVariables(ShaderVariableChunk* variables) = 0;
 
-            virtual bool VSetInt(std::string name, int data) = 0;
-            virtual bool VSetDouble(std::string name, double data) = 0;
-            virtual bool VSetFloat(std::string name, float data) = 0;
-            virtual bool VSetFloat2(std::string name, Math::Vector2 data) = 0;
-            virtual bool VSetFloat3(std::string name, Math::Vector3 data) = 0;
-            virtual bool VSetFloat4(std::string name, Math::Vector4 data) = 0;
-            virtual bool VSetMatrix4(std::string name, Math::Matrix4 data) = 0;
+            virtual bool VSetInt(size_t offset, int data) = 0;
+            virtual bool VSetDouble(size_t offset, double data) = 0;
+            virtual bool VSetFloat(size_t offset, float data) = 0;
+            virtual bool VSetFloat2(size_t offset, Math::Vector2 data) = 0;
+            virtual bool VSetFloat3(size_t offset, Math::Vector3 data) = 0;
+            virtual bool VSetFloat4(size_t offset, Math::Vector4 data) = 0;
+            virtual bool VSetMatrix4(size_t offset, Math::Matrix4 data) = 0;
 
             virtual bool VUpdate() = 0;
         protected:
-            std::map<std::string, Resource::ShaderVariable*> m_shaderVariables;
+            ShaderVariableChunk* m_shaderVariables;
 
             friend class Pipeline;
         };

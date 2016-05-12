@@ -53,42 +53,42 @@ namespace Hatchit
             return true;
         }
 
-        bool Pipeline::AddShaderVariables(std::map<std::string, Resource::ShaderVariable*> shaderVariables)
+        bool Pipeline::SetShaderVariables(ShaderVariableChunk* variables)
         {
             return false;
         }
 
-        bool Pipeline::SetInt(std::string name, int data)
+        bool Pipeline::SetInt(size_t offset, int data)
         {
             return false;
         }
 
-        bool Pipeline::SetDouble(std::string name, double data)
+        bool Pipeline::SetDouble(size_t offset, double data)
         {
             return false;
         }
 
-        bool Pipeline::SetFloat(std::string name, float data)
+        bool Pipeline::SetFloat(size_t offset, float data)
         {
             return false;
         }
 
-        bool Pipeline::SetFloat2(std::string name, Math::Vector2 data)
+        bool Pipeline::SetFloat2(size_t offset, Math::Vector2 data)
         {
             return false;
         }
 
-        bool Pipeline::SetFloat3(std::string name, Math::Vector3 data)
+        bool Pipeline::SetFloat3(size_t offset, Math::Vector3 data)
         {
             return false;
         }
 
-        bool Pipeline::SetFloat4(std::string name, Math::Vector4 data)
+        bool Pipeline::SetFloat4(size_t offset, Math::Vector4 data)
         {
             return false;
         }
 
-        bool Pipeline::SetMatrix4(std::string name, Math::Matrix4 data)
+        bool Pipeline::SetMatrix4(size_t offset, Math::Matrix4 data)
         {
             return false;
         }

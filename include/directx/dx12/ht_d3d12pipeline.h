@@ -19,6 +19,7 @@
 #include <ht_pipeline_base.h>
 #include <ht_pipeline_resource.h>
 #include <ht_shader.h>
+#include <ht_shadervariablechunk.h>
 #include <ht_directx.h>
 #include <ht_d3d12shader.h>
 #include <ht_refcounted.h>
@@ -43,15 +44,15 @@ namespace Hatchit {
                 virtual bool VInitialize(const Resource::PipelineHandle handle);
                 virtual bool VUpdate() override;
 
-                virtual bool VAddShaderVariables(std::map<std::string, Resource::ShaderVariable*> shaderVariables) override;
+                virtual bool VSetShaderVariables(ShaderVariableChunk* variables) override;
 
-                virtual bool VSetInt(std::string name, int data) override;
-                virtual bool VSetDouble(std::string name, double data) override;
-                virtual bool VSetFloat(std::string name, float data) override;
-                virtual bool VSetFloat2(std::string name, Math::Vector2 data) override;
-                virtual bool VSetFloat3(std::string name, Math::Vector3 data) override;
-                virtual bool VSetFloat4(std::string name, Math::Vector4 data) override;
-                virtual bool VSetMatrix4(std::string name, Math::Matrix4 data) override;
+                virtual bool VSetInt(size_t offset, int data) override;
+                virtual bool VSetDouble(size_t offset, double data) override;
+                virtual bool VSetFloat(size_t offset, float data) override;
+                virtual bool VSetFloat2(size_t offset, Math::Vector2 data) override;
+                virtual bool VSetFloat3(size_t offset, Math::Vector3 data) override;
+                virtual bool VSetFloat4(size_t offset, Math::Vector4 data) override;
+                virtual bool VSetMatrix4(size_t offset, Math::Matrix4 data) override;
 
             private:
                 D3D12_GRAPHICS_PIPELINE_STATE_DESC m_description;
