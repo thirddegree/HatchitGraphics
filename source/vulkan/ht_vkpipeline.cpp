@@ -66,7 +66,8 @@ namespace Hatchit {
                 setRasterState(handle->GetRasterizationState());
                 setMultisampleState(handle->GetMultisampleState());
 
-                VAddShaderVariables(handle->GetShaderVariables());
+                ShaderVariableChunk* variables = new ShaderVariableChunk(handle->GetShaderVariables());//remember to delete this
+                VSetShaderVariables(variables);
 
                 //Load all shaders
                 std::map<Resource::Pipeline::ShaderSlot, std::string> shaderPaths = handle->GetSPVShaderPaths();
@@ -100,185 +101,73 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKPipeline::VAddShaderVariables(std::map<std::string, ShaderVariable*> shaderVariables)
+            bool VKPipeline::VSetShaderVariables(ShaderVariableChunk* variables)
             {
-                std::map<std::string, ShaderVariable*>::iterator it;
-                for (it = shaderVariables.begin(); it != shaderVariables.end(); it++)
-                {
-                    std::string name = it->first;
-                    ShaderVariable* var = it->second;
-                    
-                    switch (var->GetType())
-                    {
-                    case ShaderVariable::INT:
-                        VSetInt(name, *static_cast<int*>(var->GetData()));
-                        break;
-                    case ShaderVariable::DOUBLE:
-                        VSetDouble(name, *static_cast<double*>(var->GetData()));
-                        break;
-                    case ShaderVariable::FLOAT:
-                        VSetFloat(name, *static_cast<float*>(var->GetData()));
-                        break;
-                    case ShaderVariable::FLOAT2:
-                        VSetFloat2(name, *static_cast<Math::Vector2 *>(var->GetData()));
-                        break;
-                    case ShaderVariable::FLOAT3:
-                        VSetFloat3(name, *static_cast<Math::Vector3 *>(var->GetData()));
-                        break;
-                    case ShaderVariable::FLOAT4:
-                        VSetFloat4(name, *static_cast<Math::Vector4 *>(var->GetData()));
-                        break;
-                    case ShaderVariable::MAT4:
-                        VSetMatrix4(name, *static_cast<Math::Matrix4 *>(var->GetData()));
-                        break;
-                    }
-                }
-
+                m_shaderVariables = variables;
                 return true;
             }
 
-            bool VKPipeline::VSetInt(std::string name, int data)
+            bool VKPipeline::VSetInt(size_t offset, int data)
             {
-                //If the variable doesn't exist in the map lets allocate it
-                //Otherwise lets just change its data
-                std::map<std::string, ShaderVariable*>::iterator it = m_shaderVariables.find(name);
-                if (it != m_shaderVariables.end())
-                    static_cast<IntVariable*>(m_shaderVariables[name])->SetData(data);
-                else
-                    m_shaderVariables[name] = new IntVariable(data);
-
+                m_shaderVariables->SetInt(offset, data);
                 return true;
             }
-            bool VKPipeline::VSetDouble(std::string name, double data)
+            bool VKPipeline::VSetDouble(size_t offset, double data)
             {
-                //If the variable doesn't exist in the map lets allocate it
-                //Otherwise lets just change its data
-                std::map<std::string, ShaderVariable*>::iterator it = m_shaderVariables.find(name);
-                if (it != m_shaderVariables.end())
-                    static_cast<DoubleVariable*>(m_shaderVariables[name])->SetData(data);
-                else
-                    m_shaderVariables[name] = new DoubleVariable(data);
-
+                m_shaderVariables->SetDouble(offset, data);
                 return true;
             }
-            bool VKPipeline::VSetFloat(std::string name, float data)
+            bool VKPipeline::VSetFloat(size_t offset, float data)
             {
-                //If the variable doesn't exist in the map lets allocate it
-                //Otherwise lets just change its data
-                std::map<std::string, ShaderVariable*>::iterator it = m_shaderVariables.find(name);
-                if (it != m_shaderVariables.end())
-                    static_cast<FloatVariable*>(m_shaderVariables[name])->SetData(data);
-                else
-                    m_shaderVariables[name] = new FloatVariable(data);
-
+                m_shaderVariables->SetFloat(offset, data);
                 return true;
             }
-            bool VKPipeline::VSetFloat2(std::string name, Math::Vector2 data)
+            bool VKPipeline::VSetFloat2(size_t offset, Math::Vector2 data)
             {
-                //If the variable doesn't exist in the map lets allocate it
-                //Otherwise lets just change its data
-                std::map<std::string, ShaderVariable*>::iterator it = m_shaderVariables.find(name);
-                if (it != m_shaderVariables.end())
-                    static_cast<Float2Variable*>(m_shaderVariables[name])->SetData(data);
-                else
-                    m_shaderVariables[name] = new Float2Variable(data);
-
+                m_shaderVariables->SetFloat2(offset, data);
                 return true;
             }
-            bool VKPipeline::VSetFloat3(std::string name, Math::Vector3 data)
+            bool VKPipeline::VSetFloat3(size_t offset, Math::Vector3 data)
             {
-                //If the variable doesn't exist in the map lets allocate it
-                //Otherwise lets just change its data
-                std::map<std::string, ShaderVariable*>::iterator it = m_shaderVariables.find(name);
-                if (it != m_shaderVariables.end())
-                    static_cast<Float3Variable*>(m_shaderVariables[name])->SetData(data);
-                else
-                    m_shaderVariables[name] = new Float3Variable(data);
-
+                m_shaderVariables->SetFloat3(offset, data);
                 return true;
             }
-            bool VKPipeline::VSetFloat4(std::string name, Math::Vector4 data)
+            bool VKPipeline::VSetFloat4(size_t offset, Math::Vector4 data)
             {
-                //If the variable doesn't exist in the map lets allocate it
-                //Otherwise lets just change its data
-                std::map<std::string, ShaderVariable*>::iterator it = m_shaderVariables.find(name);
-                if (it != m_shaderVariables.end())
-                    static_cast<Float4Variable*>(m_shaderVariables[name])->SetData(data);
-                else
-                    m_shaderVariables[name] = new Float4Variable(data);
-
+                m_shaderVariables->SetFloat4(offset, data);
                 return true;
             }
-            bool VKPipeline::VSetMatrix4(std::string name, Math::Matrix4 data)
+            bool VKPipeline::VSetMatrix4(size_t offset, Math::Matrix4 data)
             {
-                //If the variable doesn't exist in the map lets allocate it
-                //Otherwise lets just change its data
-                std::map<std::string, ShaderVariable*>::iterator it = m_shaderVariables.find(name);
-                if (it != m_shaderVariables.end())
-                    static_cast<Matrix4Variable*>(m_shaderVariables[name])->SetData(data);
-                else
-                    m_shaderVariables[name] = new Matrix4Variable(data);
-                
+                m_shaderVariables->SetMatrix4(offset, data);
                 return true;
             }
 
             bool VKPipeline::VUpdate()
             {
                 //TODO: Organize push constant data other than just matricies
-                if (m_shaderVariables.size() == 0)
+                size_t size = m_shaderVariables->GetSize();
+                if (size == 0)
                     return true;
 
                 //clear out old data
                 m_pushData.clear();
                 m_descriptorData.clear();
 
-                //Add the first 128 bytes of data we have to the push data, all other data goes to the descriptor
-                std::map <std::string, ShaderVariable*>::iterator it;
-                for (it = m_shaderVariables.begin(); it != m_shaderVariables.end(); it++)
+                //if we have 128 bytes or less, add it to the push constants
+                if(size <= 128)
                 {
-                    ShaderVariable::Type varType = it->second->GetType();
+                    m_pushData.resize(size);
+                    memcpy(m_pushData.data(), m_shaderVariables->GetByteData(), size);
+                }
+                //if we have extra, memory it overflows to a seperate buffer
+                else
+                {
+                    m_pushData.resize(128);
+                    memcpy(m_pushData.data(), m_shaderVariables->GetByteData(), 128);
 
-                    size_t dataSize = 0;
-
-                    switch (varType)
-                    {
-                    case ShaderVariable::INT:
-                        dataSize = sizeof(uint32_t);
-                        break;
-                    case ShaderVariable::FLOAT:
-                        dataSize = sizeof(float);
-                        break;
-                    case ShaderVariable::FLOAT2:
-                        dataSize = sizeof(float) * 2;
-                        break;
-                    case ShaderVariable::FLOAT3:
-                        dataSize = sizeof(float) * 3;
-                        break;
-                    case ShaderVariable::DOUBLE:
-                        dataSize = sizeof(double);
-                        break;
-                    case ShaderVariable::FLOAT4:
-                        dataSize = sizeof(float) * 4;
-                        break;
-                    case ShaderVariable::MAT4:
-                        dataSize = sizeof(float) * 16;
-                        break;
-                    }
-                    
-                    std::vector<BYTE>* dataVector;
-
-                    //Determine which vector we push back to
-                    if (m_pushData.size() + dataSize <= 128)
-                        dataVector = &m_pushData;
-                    else
-                        dataVector = &m_descriptorData;
-
-                    //Push bytes into the appropriate vector
-                    for (size_t i = 0; i < dataSize; i++)
-                    {
-                        BYTE* bytes = (BYTE*)(it->second->GetData());
-                        dataVector->push_back(bytes[i]);
-                    }
+                    m_descriptorData.resize(size - 128);
+                    memcpy(m_descriptorData.data(), m_shaderVariables->GetByteData() + 128, size - 128);
                 }
 
                 //Push data onto descriptor set memory

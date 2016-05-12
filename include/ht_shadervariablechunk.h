@@ -42,7 +42,9 @@ namespace Hatchit {
             ~ShaderVariableChunk();
 
             bool SetInt(size_t offset, uint32_t data);
+            bool SetDouble(size_t offset, double data);
             bool SetFloat(size_t offset, float data);
+            bool SetFloat2(size_t offset, Math::Vector2 data);
             bool SetFloat3(size_t offset, Math::Vector3 data);
             bool SetFloat4(size_t offset, Math::Vector4 data);
             bool SetMatrix4(size_t offset, Math::Matrix4 data);

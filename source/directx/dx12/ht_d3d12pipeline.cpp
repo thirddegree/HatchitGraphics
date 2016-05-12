@@ -109,42 +109,42 @@ namespace Hatchit {
                 return false;
             }
 
-            bool D3D12Pipeline::VAddShaderVariables(std::map<std::string, Resource::ShaderVariable*> shaderVariables)
+            bool D3D12Pipeline::VSetShaderVariables(ShaderVariableChunk* variables)
             {
                 return false;
             }
 
-            bool D3D12Pipeline::VSetInt(std::string name, int data)
+            bool D3D12Pipeline::VSetInt(size_t offset, int data)
             {
                 return false;
             }
 
-            bool D3D12Pipeline::VSetDouble(std::string name, double data)
+            bool D3D12Pipeline::VSetDouble(size_t offset, double data)
             {
                 return false;
             }
 
-            bool D3D12Pipeline::VSetFloat(std::string name, float data)
+            bool D3D12Pipeline::VSetFloat(size_t offset, float data)
             {
                 return false;
             }
 
-            bool D3D12Pipeline::VSetFloat2(std::string name, Math::Vector2 data)
+            bool D3D12Pipeline::VSetFloat2(size_t offset, Math::Vector2 data)
             {
                 return false;
             }
 
-            bool D3D12Pipeline::VSetFloat3(std::string name, Math::Vector3 data)
+            bool D3D12Pipeline::VSetFloat3(size_t offset, Math::Vector3 data)
             {
                 return false;
             }
 
-            bool D3D12Pipeline::VSetFloat4(std::string name, Math::Vector4 data)
+            bool D3D12Pipeline::VSetFloat4(size_t offset, Math::Vector4 data)
             {
                 return false;
             }
 
-            bool D3D12Pipeline::VSetMatrix4(std::string name, Math::Matrix4 data)
+            bool D3D12Pipeline::VSetMatrix4(size_t offset, Math::Matrix4 data)
             {
                 return false;
             }

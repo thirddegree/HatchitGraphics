@@ -29,7 +29,7 @@
 #include <ht_platform.h>
 #include <ht_shader.h>
 #include <ht_debug.h>
-#include <ht_shadervariable.h>
+#include <ht_shadervariablechunk.h>
 #include <ht_pipeline_resource.h>
 #include <ht_shader_resource.h>
 
@@ -53,15 +53,15 @@ namespace Hatchit {
             /* Add a map of existing shader variables into this pipeline
             * \param shaderVariables the map of existing shader variables you want to add
             */
-            bool AddShaderVariables(std::map<std::string, Resource::ShaderVariable*> shaderVariables);
+            bool SetShaderVariables(ShaderVariableChunk* variables);
             
-            bool SetInt(std::string name, int data);
-            bool SetDouble(std::string name, double data);
-            bool SetFloat(std::string name, float data);
-            bool SetFloat2(std::string name, Math::Vector2 data);
-            bool SetFloat3(std::string name, Math::Vector3 data);
-            bool SetFloat4(std::string name, Math::Vector4 data);
-            bool SetMatrix4(std::string name, Math::Matrix4 data);
+            bool SetInt(size_t offset, int data);
+            bool SetDouble(size_t offset, double data);
+            bool SetFloat(size_t offset, float data);
+            bool SetFloat2(size_t offset, Math::Vector2 data);
+            bool SetFloat3(size_t offset, Math::Vector3 data);
+            bool SetFloat4(size_t offset, Math::Vector4 data);
+            bool SetMatrix4(size_t offset, Math::Matrix4 data);
 
             ///Update the pipeline after you've changed the uniform data
             bool Update();

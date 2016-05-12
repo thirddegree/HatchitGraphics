@@ -62,11 +62,27 @@ namespace Hatchit
             return true;
         }
 
+        bool ShaderVariableChunk::SetDouble(size_t offset, double data)
+        {
+            BYTE* location = m_byteData + offset;
+            assert(location + sizeof(double) <= m_byteData + m_byteDataSize);
+            memcpy(location, &data, sizeof(double));
+            return true;
+        }
+
         bool ShaderVariableChunk::SetFloat(size_t offset, float data)
         {
             BYTE* location = m_byteData + offset;
             assert(location + sizeof(float) <= m_byteData + m_byteDataSize);
             memcpy(location, &data, sizeof(float));
+            return true;
+        }
+
+        bool ShaderVariableChunk::SetFloat2(size_t offset, Math::Vector2 data)
+        {
+            BYTE* location = m_byteData + offset;
+            assert(location + sizeof(float) * 2 <= m_byteData + m_byteDataSize);
+            memcpy(location, &data, sizeof(float) * 2);
             return true;
         }
 
