@@ -88,9 +88,9 @@ namespace Hatchit {
 
         Renderer::~Renderer()
         {
-            delete _Device;
-            delete _Queue;
             delete _SwapChain;
+            delete _Queue;
+            delete _Device;
         }
 
         bool Renderer::Initialize(const RendererParams& params)
