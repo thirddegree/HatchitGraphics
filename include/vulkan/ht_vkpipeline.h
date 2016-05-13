@@ -65,7 +65,7 @@ namespace Hatchit {
 
                 VkPipeline                          GetVKPipeline();
                 
-                void BindPipeline(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout);
+                void BindPipeline(const VkCommandBuffer& commandBuffer);
 
             protected:
                 //Input

@@ -22,10 +22,10 @@
 
 #pragma once
 
-#include <ht_platform.h>
+#include <ht_platform.h>            //HT_API
 #include <ht_math.h>                //Math::Matrix4
 #include <ht_renderpass_resource.h> //Resource::RenderPass
-#include <ht_shadervariablechunk.h>
+#include <ht_shadervariablechunk.h> //ShaderVariableChunk
 
 #include <ht_material.h>            //MaterialHandle
 #include <ht_mesh.h>                //MeshHandle
@@ -77,6 +77,7 @@ namespace Hatchit
 
             //Input
             std::vector<RenderRequest> m_renderRequests;
+
             std::map<PipelineHandle, std::vector<RenderableInstances>> m_pipelineList;
             std::map<MeshHandle, std::vector<ShaderVariableChunk*>> m_instanceData;
 

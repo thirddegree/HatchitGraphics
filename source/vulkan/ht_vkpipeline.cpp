@@ -187,7 +187,7 @@ namespace Hatchit {
             This function binds the pipeline as a graphics pipeline and sends all of the pipeline's data to the given command buffer. 
             This includes up to 128 bytes of push constant data and all other data sent via a descriptor set.
             **/
-            void VKPipeline::BindPipeline(const VkCommandBuffer& commandBuffer, const VkPipelineLayout& pipelineLayout)
+            void VKPipeline::BindPipeline(const VkCommandBuffer& commandBuffer)
             {
                 //Bind to the graphics pipeline point
                 vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
@@ -197,7 +197,7 @@ namespace Hatchit {
                 vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, pushDataSize, m_pushData.data());
 
                 //Bind the appropriate descriptor set for all the descriptor data
-                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1, 1, &m_descriptorSet, 0, nullptr);
+                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 1, 1, &m_descriptorSet, 0, nullptr);
             }
 
             /*

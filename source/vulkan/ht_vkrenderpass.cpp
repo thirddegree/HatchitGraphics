@@ -257,20 +257,18 @@ namespace Hatchit {
                 vkCmdSetViewport(m_commandBuffer, 0, 1, &viewport);
                 vkCmdSetScissor(m_commandBuffer, 0, 1, &scissor);
 
-                std::map<PipelineHandle, std::vector<RenderableInstances>>::iterator iterator;
-
                 //Bind sampler set from root layout
                 VkPipelineLayout vkPipelineLayout = m_rootLayout->VKGetPipelineLayout();
 
                 vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 1, &m_rootLayout->VKGetSamplerSet(), 0, nullptr);
 
-                for (iterator = m_pipelineList.begin(); iterator != m_pipelineList.end(); iterator++)
+                for (auto iterator = m_pipelineList.begin(); iterator != m_pipelineList.end(); ++iterator)
                 {
                     PipelineHandle pipelineHandle = iterator->first;
                     VKPipeline* pipeline = static_cast<VKPipeline*>(pipelineHandle->GetBase());
 
                     //Calculate inverse view
-                    Math::Matrix4 invViewProj = Math::MMMatrixTranspose(Math::MMMatrixInverse(m_proj * m_view));
+                    Math::Matrix4 invView = Math::MMMatrixTranspose(Math::MMMatrixInverse(m_view));
 
                     m_view = Math::MMMatrixTranspose(m_view);
                     m_proj = Math::MMMatrixTranspose(m_proj);
@@ -278,12 +276,12 @@ namespace Hatchit {
                     //The numbers indicate the byte offset in memory that these values are written to
                     pipeline->VSetMatrix4(0, m_proj);
                     pipeline->VSetMatrix4(64, m_view);
-                    pipeline->VSetMatrix4(128, invViewProj);
+                    pipeline->VSetMatrix4(128, invView);
                     pipeline->VSetInt(192, m_width);
                     pipeline->VSetInt(196, m_height);
                     pipeline->VUpdate();
 
-                    pipeline->BindPipeline(m_commandBuffer, vkPipelineLayout);
+                    pipeline->BindPipeline(m_commandBuffer);
 
                     //Bind input textures
                     if(m_inputTargetDescriptorSets.size() > 0)
@@ -323,6 +321,7 @@ namespace Hatchit {
                         
                         vkCmdDrawIndexed(m_commandBuffer, indexCount, count, 0, 0, 0);
                     }
+
                 }
 
                 vkCmdEndRenderPass(m_commandBuffer);
