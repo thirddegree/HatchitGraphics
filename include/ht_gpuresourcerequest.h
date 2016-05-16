@@ -55,8 +55,6 @@ namespace Hatchit
         class HT_API GPURequest : public GPUResourceRequest
         {
         public:
-            Core::Handle<T>     defaultHandle;
-            Core::Handle<T>     tempHandle;
             std::string         file;
             void**              data;
         };

@@ -37,6 +37,22 @@ namespace Hatchit
     namespace Graphics
     {
 
+
+        /**
+        *   \fn GPUResourcePool::Initialize()
+        *   \brief Initializes the GPUResourcePool singleton class
+        *   \param device The GPU device object
+        *   \param swapchain The current swapchain
+        *
+        *   Initializes the GPUResourcePool instance with the device and swapchain.
+        *   
+        *   NOTE:
+        *   This is subject to change, as the GPUResourcePool shouldn't need to
+        *   know about any specific swapchain object. In an application, there may be
+        *   multiple renderers each with its own swapchain. Each of these renderers should
+        *   use the same GPUResourcePool and share memory.
+        *   
+        */  
         bool GPUResourcePool::Initialize(IDevice* device, SwapChain* swapchain)
         {
             if (!device)
@@ -81,7 +97,14 @@ namespace Hatchit
             
             return true;
         }
-        
+       
+        /**
+        *   \fn GPUResourcePool::DeInitialize()
+        *   \brief Destroys and released the memory used by the GPUResourcePool
+        *
+        *   This function releases the memory used by the GPUResourcePool
+        *   since it is a singleton instance and must be released safely by the application.
+        */ 
         void GPUResourcePool::DeInitialize()
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -89,6 +112,14 @@ namespace Hatchit
             delete instance.m_thread;
         }
 
+        /**
+        *   \fn GPUResourcePool::IsLocked()
+        *   \brief Returns true if the GPUResourcePool is locked, otherwise returns false.
+        *
+        *   Due to the multithreaded nature of the GPUResourcePool, it is necessary to know
+        *   if the GPUResourcePool master thread is currently locked. This function returns true
+        *   if the thread is locked, otherwise it returns false;
+        */
         bool GPUResourcePool::IsLocked()
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -96,6 +127,16 @@ namespace Hatchit
             return instance.m_thread->Locked();
         }
 
+        /**
+        *   \fn GPUResourcePool::RequestTexture()
+        *   \brief Function requests the GPUResourcePool to process a non-async texture load request.
+        *   \param file Path of the texture file to load
+        *   \param data Pointer to texture base implementation to fill.
+        *
+        *   This function requests the GPUResourcePool to process a non-asynchronous texture
+        *   load request. Calling this function will block the main thread until the requested texture
+        *   is loaded.
+        */  
         void GPUResourcePool::RequestTexture(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -108,6 +149,16 @@ namespace Hatchit
             instance.m_thread->Load(request);
         }
 
+        /**
+        *   \fn GPUResourcePool::RequestMaterial()
+        *   \brief Function requests the GPUResourcePool to process a non-async material load request.
+        *   \param file Path of the material file to load.
+        *   \param data Pointer to the material base implementation to fill.
+        *
+        *   This function requests the GPUResourcePool to process a non-asynchronous material
+        *   load request. Calling this function will block the main thread until the requested material
+        *   is loaded.
+        */
         void GPUResourcePool::RequestMaterial(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -120,6 +171,16 @@ namespace Hatchit
             instance.m_thread->Load(request);
         }
 
+        /**
+        *   \fn GPUResourcePool::RequestRootLayout()    
+        *   \brief Function requests the GPUResourcePool to process a non-async rootlayout load request.
+        *   \param file Path of the rootlayout file to load.
+        *   \param data Pointer to the rootlayout base implementation to fill.
+        *
+        *   This function requests the GPUResourcePool to process a non-asynchronous rootlayout
+        *   load request. Calling this function will block the main thread until the requested rootlayout
+        *   is loaded.
+        */
         void GPUResourcePool::RequestRootLayout(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -132,6 +193,16 @@ namespace Hatchit
             instance.m_thread->Load(request);
         }
 
+        /**
+        *   \fn GPUResourcePool::RequestPipeline()
+        *   \brief Function requests the GPUResourcePool to process a non-async pipeline load request.
+        *   \param file Path of the pipeline file to load.
+        *   \param data Pointer to the pipeline base implementation to fill.
+        *
+        *   This function requestts the GPUResourcePool to process a non-asynchronous  pipeline
+        *   load request. Calling this function will block the main thread until the requested pipeline
+        *   is loaded.
+        */
         void GPUResourcePool::RequestPipeline(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -144,6 +215,16 @@ namespace Hatchit
             instance.m_thread->Load(request);
         }
 
+        /**
+        *   \fn GPUResourcePool::RequestShader()
+        *   \brief Function requests the GPUResourcePool to process a non-async shader load request.
+        *   \param file Path of the shader file to load.
+        *   \param data Pointer to the shader base implementation to fill.
+        *
+        *   This function requests the GPUResourcePool to process a non-asynchronous shader
+        *   load request. Calling this function will block the main thread until the requested shader
+        *   is loaded.
+        */
         void GPUResourcePool::RequestShader(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -156,6 +237,16 @@ namespace Hatchit
             instance.m_thread->Load(request);
         }
 
+        /**
+        *   \fn GPUResourcePool::RequestRenderPass()
+        *   \brief Function requests the GPUResourcePool to process a non-async renderpass load request.
+        *   \param file Path of the renderpass file to load.
+        *   \param data Pointer to the renderpass base implementation to fill.
+        *
+        *   This function requests the GPUResourcePool to process a non-asynchronous renderpass
+        *   load request. Calling this function will block the main thread until the requested renderpass
+        *   is loaded.
+        */
         void GPUResourcePool::RequestRenderPass(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -167,7 +258,17 @@ namespace Hatchit
 
             instance.m_thread->Load(request);
         }
-
+        
+        /**
+        *   \fn GPUResourcePool::RequestRenderTarget()
+        *   \brief Function requests the GPUResourcePool to process a non-async rendertarget load request.
+        *   \param file Path of the rendertarget file to load.
+        *   \param data Pointer to base rendertarget implementation to fill.
+        *
+        *   This function requests the GPUResourcePool to process a non-asynchronous rendertarget
+        *   load request. Calling this function will block the main thread until the requested rendertarget
+        *   is loaded.
+        */
         void GPUResourcePool::RequestRenderTarget(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -180,6 +281,17 @@ namespace Hatchit
             instance.m_thread->Load(request);
         }
 
+
+        /**
+        *   \fn GPUResourcePool::RequestMesh()
+        *   \brief Function requests the GPUResourcePool to process a non-async mesh load request.
+        *   \param file Path of the mesh file to load.
+        *   \param data Pointer to the base mesh implementation to fill.
+        *
+        *   This function requests the GPUResourcePool to process a non-asynchronous mesh
+        *   load request. Calling this function will block the main thread until the requested mesh
+        *   is loaded.
+        */  
         void GPUResourcePool::RequestMesh(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -192,112 +304,101 @@ namespace Hatchit
             instance.m_thread->Load(request);
         }
 
-        void GPUResourcePool::RequestTextureAsync(TextureHandle _default, TextureHandle temporary, std::string file, void** data)
+        /**
+        *   \fn GPUResourcePool::RequestTextureAsync()
+        *   \brief Function requests the GPUResourcePool to process an async texture load request.
+        *   
+        */
+        void GPUResourcePool::RequestTextureAsync(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
 
             TextureRequest* request = new TextureRequest;
             request->file = file;
-            request->defaultHandle = _default;
-            request->tempHandle = temporary;
             request->data = data;
             request->type = GPUResourceRequest::Type::Texture;
 
             instance.m_thread->LoadAsync(request);
         }
 
-        void GPUResourcePool::RequestMaterialAsync(MaterialHandle _default, MaterialHandle temporary, std::string file, void** data)
+        void GPUResourcePool::RequestMaterialAsync(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
 
             MaterialRequest* request = new MaterialRequest;
             request->file = file;
-            request->defaultHandle = _default;
-            request->tempHandle = temporary;
             request->data = data;
             request->type = GPUResourceRequest::Type::Material;
 
             instance.m_thread->LoadAsync(request);
         }
 
-        void GPUResourcePool::RequestRootLayoutAsync(RootLayoutHandle _default, RootLayoutHandle temporary, std::string file, void** data)
+        void GPUResourcePool::RequestRootLayoutAsync(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
 
             RootLayoutRequest* request = new RootLayoutRequest;
             request->file = file;
-            request->defaultHandle = _default;
-            request->tempHandle = temporary;
             request->data = data;
             request->type = GPUResourceRequest::Type::RootLayout;
 
             instance.m_thread->LoadAsync(request);
         }
 
-        void GPUResourcePool::RequestPipelineAsync(PipelineHandle _default, PipelineHandle temporary, std::string file, void** data)
+        void GPUResourcePool::RequestPipelineAsync(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
 
             PipelineRequest* request = new PipelineRequest;
             request->file = file;
-            request->defaultHandle = _default;
-            request->tempHandle = temporary;
             request->type = GPUResourceRequest::Type::Pipeline;
             request->data = data;
 
             instance.m_thread->LoadAsync(request);
         }
 
-        void GPUResourcePool::RequestShaderAsync(ShaderHandle _default, ShaderHandle temporary, std::string file, void** data)
+        void GPUResourcePool::RequestShaderAsync(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
 
             ShaderRequest* request = new ShaderRequest;
             request->file = file;
-            request->defaultHandle = _default;
-            request->tempHandle = temporary;
             request->type = GPUResourceRequest::Type::Shader;
             request->data = data;
 
             instance.m_thread->LoadAsync(request);
         }
 
-        void GPUResourcePool::RequestRenderPassAsync(RenderPassHandle _default, RenderPassHandle temporary, std::string file, void** data)
+        void GPUResourcePool::RequestRenderPassAsync(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
 
             RenderPassRequest* request = new RenderPassRequest;
             request->file = file;
-            request->defaultHandle = _default;
-            request->tempHandle = temporary;
             request->type = GPUResourceRequest::Type::RenderPass;
             request->data = data;
 
             instance.m_thread->LoadAsync(request);
         }
 
-        void GPUResourcePool::RequestRenderTargetAsync(RenderTargetHandle _default, RenderTargetHandle temporary, std::string file, void** data)
+        void GPUResourcePool::RequestRenderTargetAsync(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
 
             RenderTargetRequest* request = new RenderTargetRequest;
             request->file = file;
-            request->defaultHandle = _default;
-            request->tempHandle = temporary;
             request->type = GPUResourceRequest::Type::RenderTarget;
             request->data = data;
 
             instance.m_thread->LoadAsync(request);
         }
 
-        void GPUResourcePool::RequestMeshAsync(MeshHandle _default, MeshHandle temporary, std::string file, void** data)
+        void GPUResourcePool::RequestMeshAsync(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
 
             MeshRequest* request = new MeshRequest;
             request->file = file;
-            request->defaultHandle = _default;
-            request->tempHandle = temporary;
             request->type = GPUResourceRequest::Type::Mesh;
             request->data = data;
 

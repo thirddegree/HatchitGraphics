@@ -12,6 +12,16 @@
 **
 **/
 
+/**
+*   \class GPUQueue
+*   \ingroup HatchitGraphics
+*
+*   \brief Singelton class that manages loading of GPU resource objects.
+*
+*   The class implements the logic for loading GPU resources non-asynchronously
+*   or asynchronously.
+*/
+
 #pragma once
 
 #include <ht_platform.h>
@@ -48,14 +58,14 @@ namespace Hatchit
             static void             RequestRenderTarget(std::string file, void** data);
             static void             RequestMesh(std::string file, void** data);
 
-            static void             RequestTextureAsync(TextureHandle _default, TextureHandle temporary, std::string file, void** data);
-            static void             RequestMaterialAsync(MaterialHandle _default, MaterialHandle temporary, std::string file, void** data);
-            static void             RequestRootLayoutAsync(RootLayoutHandle _default, RootLayoutHandle temporary, std::string file, void** data);
-            static void             RequestPipelineAsync(PipelineHandle _default, PipelineHandle temporary, std::string file, void** data);
-            static void             RequestShaderAsync(ShaderHandle _default, ShaderHandle temporary, std::string file, void** data);
-            static void             RequestRenderPassAsync(RenderPassHandle _default, RenderPassHandle temporary, std::string file, void** data);
-            static void             RequestRenderTargetAsync(RenderTargetHandle _default, RenderTargetHandle temporary, std::string file, void** data);
-            static void             RequestMeshAsync(MeshHandle _default, MeshHandle temporary, std::string file, void** data);
+            static void             RequestTextureAsync(std::string file, void** data);
+            static void             RequestMaterialAsync(std::string file, void** data);
+            static void             RequestRootLayoutAsync(std::string file, void** data);
+            static void             RequestPipelineAsync(std::string file, void** data);
+            static void             RequestShaderAsync(std::string file, void** data);
+            static void             RequestRenderPassAsync(std::string file, void** data);
+            static void             RequestRenderTargetAsync(std::string file, void** data);
+            static void             RequestMeshAsync(std::string file, void** data);
 
             static void             CreateTexture(std::string file, void** data);
             static void             CreateMaterial(std::string file, void** data);
