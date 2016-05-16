@@ -307,7 +307,11 @@ namespace Hatchit
         /**
         *   \fn GPUResourcePool::RequestTextureAsync()
         *   \brief Function requests the GPUResourcePool to process an async texture load request.
-        *   
+        *   \param file Path of texture file to load.
+        *   \param data Pointer to the base texture implementation to fill.
+        *
+        *   This function requests the GPUResourcePool to process an asynchronous texture
+        *   load request. Calling this function will NOT block the main thread.
         */
         void GPUResourcePool::RequestTextureAsync(std::string file, void** data)
         {
@@ -321,6 +325,15 @@ namespace Hatchit
             instance.m_thread->LoadAsync(request);
         }
 
+        /**
+        *   \fn GPUResourcePool::RequestMaterialAsync()
+        *   \brief Function requests the GPUResourcePool to process an async material load request.
+        *   \param file Path to material file to load.
+        *   \param data Pointer to the base material implementation to fill.
+        *
+        *   This function requests the GPUResourcePool to process an asynchronous material
+        *   load request. Calling this function will NOT block the main thread. 
+        */
         void GPUResourcePool::RequestMaterialAsync(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -333,6 +346,15 @@ namespace Hatchit
             instance.m_thread->LoadAsync(request);
         }
 
+        /**
+        *   \fn GPUResourcePool::RequestRootLayoutAsync()
+        *   \brief Function requests the GPUResourcePool to process an async rootlayout load request.
+        *   \param file Path to the rootlayout file to load.
+        *   \param data Pointer to the base rootlayout implementation to fill.
+        *
+        *   This function requests the GPUResourcePool to process an asynchronous rootlayout
+        *   load request. Calling this function will NOT block the main thread.
+        */
         void GPUResourcePool::RequestRootLayoutAsync(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -345,6 +367,15 @@ namespace Hatchit
             instance.m_thread->LoadAsync(request);
         }
 
+        /**
+        *   \fn GPUResourcePool::RequestPipelineAsync(()
+        *   \brief Function requests the GPUResourcePool to process an async pipeline load request.
+        *   \param file Path to the pipeline file to load.
+        *   \param data Pointer to the base pipeline implementation to fill.
+        *
+        *   This function requests the GPUResourcePool to process an asynchronous pipeline
+        *   load request. Calling this function will NOT block the main thread.
+        */
         void GPUResourcePool::RequestPipelineAsync(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -357,6 +388,15 @@ namespace Hatchit
             instance.m_thread->LoadAsync(request);
         }
 
+        /**
+        *   \fn GPUResourcePool::RequestShaderAsync()
+        *   \brief Function requests the GPUResourcePool to process an async shader load request.
+        *   \param file Path to the shader file to load.
+        *   \param data Pointer to the base shader implementation to fill.
+        *
+        *   This function requests the GPUResourcePool to process an asynchronous shader
+        *   load request. Calling this function will NOT block the main thread.
+        */
         void GPUResourcePool::RequestShaderAsync(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -369,6 +409,15 @@ namespace Hatchit
             instance.m_thread->LoadAsync(request);
         }
 
+        /**
+        *   \fn GPUResourcePool::RequestRenderPassAsync()
+        *   \brief Function requests the GPUResourcePool to process an async renderpass load request.
+        *   \param file Path to renderpass file to load.
+        *   \param data Pointer to the base renderpass implementation to fill.
+        *
+        *   This function requests the GPUResourcePool to process an asynchronous shader
+        *   load request. Calling this function will NOT block the main thread.
+        */
         void GPUResourcePool::RequestRenderPassAsync(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -381,6 +430,15 @@ namespace Hatchit
             instance.m_thread->LoadAsync(request);
         }
 
+        /**
+        *   \fn GPUResourcePool::RequestRenderTargetAsync()
+        *   \brief Function requests the GPUResourcePool to process an async rendertarget load request.
+        *   \param file Path to the renderpass file to load.
+        *   \param data Pointer to the base rendertarget implementation to fill.
+        *
+        *   This function requests the GPUResourcePool to process an asynchronous rendertarget
+        *   load request. Calling this function will NOT block the main thread.
+        */
         void GPUResourcePool::RequestRenderTargetAsync(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -393,6 +451,15 @@ namespace Hatchit
             instance.m_thread->LoadAsync(request);
         }
 
+        /**
+        *   \fn GPUResourcePool::RequestMeshAsync()
+        *   \brief Function requests the GPUResourcePool to process an async mesh load request.
+        *   \param file Path to the mesh file to load
+        *   \param data Pointer to the base mesh implementation to fill.
+        *
+        *   This function requests the GPUResourcePool to process an asynchronous mesh
+        *   load request. Calling this function will NOT block the main thread.
+        */
         void GPUResourcePool::RequestMeshAsync(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -405,6 +472,21 @@ namespace Hatchit
             instance.m_thread->LoadAsync(request);
         }
 
+        /**
+        *   \fn GPUResourcePool::CreateTexture()
+        *   \brief Function creates a texture within the GPUResourcePool thread.
+        *   \param file Path to the texture file to load.
+        *   \param data Pointer to the base texture implementation to fill.
+        *
+        *   This function creates a texture immediately on the GPUResourcePool.
+        *   Generally this function should not be called, but rather you should instead
+        *   use the RequestTexture or RequestTextureAsync functions.
+        *
+        *   The purpose of this function is to allow immediate creation of a texture if
+        *   we find ourselves already within the resource thread, and we know it is safe to do so.
+        *
+        *   NOTE: See ht_texture.cpp for example usage.
+        */
         void GPUResourcePool::CreateTexture(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
