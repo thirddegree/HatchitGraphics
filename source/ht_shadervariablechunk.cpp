@@ -12,14 +12,16 @@
 **
 **/
 
-#include <ht_shadervariablechunk.h>
-#include <ht_shadervariable.h>
+#include <ht_shadervariablechunk.h> //ShaderVariableChunk
+#include <ht_shadervariable.h>      //Resource::ShaderVariable
+#include <cassert>                  //assert
 
 namespace Hatchit
 {
     namespace Graphics
     {
-        /* Constructs a Shader Variable Chunk
+        /** Constructs a ShaderVariableChunk
+        * \param variables A vector of pointers to ShaderVariables to insert into this chunk
         */
         ShaderVariableChunk::ShaderVariableChunk(std::vector<Resource::ShaderVariable*> variables)
         {
@@ -33,7 +35,6 @@ namespace Hatchit
             }
             //now that we've counted the bytes, allocate enough space
             m_byteData = new BYTE[m_byteDataSize];
-
 
             //restart, this time adding the data to the array
             m_byteDataSize = 0;
@@ -52,7 +53,6 @@ namespace Hatchit
         {
             delete[] m_byteData;
         };
-
 
         bool ShaderVariableChunk::SetInt(size_t offset, uint32_t data)
         {

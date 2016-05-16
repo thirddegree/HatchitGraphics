@@ -12,9 +12,10 @@
 **
 **/
 
-#include <ht_rendertarget.h>
-#include <ht_rendertarget_base.h>
-#include <ht_gpuresourcepool.h>
+#include <ht_rendertarget.h>            //RenderTarget
+#include <ht_rendertarget_base.h>       //RenderTargetBase
+#include <ht_rendertarget_resource.h>   //Resource::RenderTarget::BlendOp
+#include <ht_gpuresourcepool.h>         //GPUResourcePool
 
 namespace Hatchit
 {
@@ -31,6 +32,15 @@ namespace Hatchit
             delete m_base;
         }
 
+        /** Initialize a RenderTarget synchronously with the GPUResourcePool
+        *
+        * If the GPUResourceThread is already in use the texture will be created directly.
+        * If the thread is not locked we will feed the thread a request.
+        * This will LOCK the main thread until it completes.
+        *
+        * \param file The file path of the RenderTexture json file that we want to load off the disk
+        * \return A boolean representing whether or not this operation succeeded
+        */
         bool RenderTarget::Initialize(const std::string& file)
         {
             if (GPUResourcePool::IsLocked())
@@ -53,15 +63,25 @@ namespace Hatchit
             return true;
         }
 
+        /** Get the blend op to be used on the color channels of this render target
+        * \return A BlendOp enum that represents the blending operation to be used on the color channels
+        */
         Resource::RenderTarget::BlendOp RenderTarget::GetColorBlendOp() const
         {
             return m_base->GetColorBlendOp();
         }
+
+        /** Get the blend op to be used on the alpha channel of this render target        *
+        * \return A BlendOp enum that represents the blending operation to be used on the alpha channel
+        */
         Resource::RenderTarget::BlendOp RenderTarget::GetAlphaBlendOp() const
         {
             return m_base->GetAlphaBlendOp();
         }
 
+        /** Get a pointer to the RenderTargetBase that this class wraps
+        * \return A pointer to the RenderTargetBase object that this object wraps
+        */
         RenderTargetBase* const RenderTarget::GetBase() const
         {
             return m_base;

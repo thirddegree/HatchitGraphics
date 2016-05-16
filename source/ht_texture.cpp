@@ -12,19 +12,11 @@
 **
 **/
 
-#include <ht_texture.h>
-#include <ht_texture_base.h>
-#include <ht_texture_resource.h>
-#include <ht_renderer.h>
+#include <ht_texture.h>             //Texture
+#include <ht_texture_base.h>        //TextureBase
+#include <ht_texture_resource.h>    //Resource::TextureResource
 
-#include <ht_gpuresourcepool.h>
-
-#ifdef DX12_SUPPORT
-#include <ht_d3d12device.h>
-#include <ht_d3d12texture.h>
-#else
-
-#endif
+#include <ht_gpuresourcepool.h>     //GPUResourcePool
 
 namespace Hatchit {
 
@@ -41,6 +33,15 @@ namespace Hatchit {
             delete m_base;
         }
 
+        /** Initialize a Texture synchronously with the GPUResourcePool
+        *
+        * If the GPUResourceThread is already in use the texture will be created directly. 
+        * If the thread is not locked we will feed the thread a request.
+        * This will LOCK the main thread until it completes.
+        *
+        * \param file The file path of the Texture that we want to load off the disk
+        * \return a boolean representing whether or not this operation succeeded
+        */
         bool Texture::Initialize(const std::string& file)
         {
             if (GPUResourcePool::IsLocked())
@@ -63,6 +64,16 @@ namespace Hatchit {
             return true;
         }
 
+        /** Initialize a Texture asynchronously on the GPUResourceThread
+        *
+        * NON FUNCTIONING
+        * Currently we have not found a solid way to swap data into the temp handle
+        *
+        * \param tempHandle A handle that will be kept alive and which will be filled with the resulting data
+        * \param defaultHandle A handle to a texture that will be used until the texture is created
+        * \param file The file path of the texture that we want to load off the disk
+        * \return a boolean representing whether or not this operation succeeded
+        */
         bool Texture::InitializeAsync(Core::Handle<Texture> tempHandle, Core::Handle<Texture> defaultHandle, const std::string & file)
         {
             //Request texture asynchronously. This will keep the current default alive,
@@ -75,16 +86,31 @@ namespace Hatchit {
             return true;
         }
 
+        /** Gets the width of the texture
+        * 
+        * This calls down to the base member's TextureBase::GetWidth method
+        *
+        * \return Returns the texture width as a uint32_t
+        */
         uint32_t Texture::GetWidth() const
         {
             return m_base->m_width;
         }
 
+        /** Gets the height of the texture
+        *
+        * This calls down to the base member's TextureBase::GetHeight method
+        *
+        * \return Returns the texture height as a uint32_t
+        */
         uint32_t Texture::GetHeight() const
         {
             return m_base->m_height;
         }
 
+        /** Get a pointer to the TextureBase* that this class wraps
+        * \return A TextureBase* 
+        */
         TextureBase* const Texture::GetBase() const
         {
             return m_base;

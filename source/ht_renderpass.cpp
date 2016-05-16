@@ -12,11 +12,12 @@
 **
 **/
 
-#include <ht_renderpass.h>
-#include <ht_renderpass_base.h>
-#include <ht_renderer.h>
-#include <ht_gpuresourcepool.h>
+#include <ht_guid.h>            //Core::Guid
+#include <ht_renderpass.h>      //RenderPass
+#include <ht_renderpass_base.h> //RenderPassBase
+#include <ht_gpuresourcepool.h> //GPUResourcePool
 #include <ht_commandpool.h>     //ICommandPool
+#include <ht_string.h>          //std::string
 
 namespace Hatchit
 {
@@ -28,6 +29,15 @@ namespace Hatchit
             m_base = nullptr;
         }
 
+        /** Initialize a RenderPass synchronously with the GPUResourcePool
+        *
+        * If the GPUResourceThread is already in use the texture will be created directly.
+        * If the thread is not locked we will feed the thread a request.
+        * This will LOCK the main thread until it completes.
+        *
+        * \param file The file path of the RenderPass json file that we want to load off the disk
+        * \return A boolean representing whether or not this operation succeeded
+        */
         bool RenderPass::Initialize(const std::string& file)
         {
             if (GPUResourcePool::IsLocked())
@@ -50,25 +60,52 @@ namespace Hatchit
             return true;
         }
 
+        /** Build a command list with the given command pool
+        * 
+        * Given an interface to a command pool, record all the necesary
+        * commands to render this render pass onto a command list.
+        *
+        * \param commandPool A pointer to the command pool to build the command list from
+        * \return A boolean representing whether or not this operation succeeded
+        */
         bool RenderPass::BuildCommandList(const ICommandPool* commandPool) 
         {
             return m_base->VBuildCommandList(commandPool);
         }
 
+        /** Set the view matrix to be used in this render pass
+        * \param view The Math::Matrix4 to be used for the view matrix
+        */
         void RenderPass::SetView(Math::Matrix4 view)
         {
             m_base->SetView(view);
         }
+
+        /** Set the projection matrix to be used in this render pass
+        * \param proj The Math::Matrix4 to be used for the projection matrix
+        */
         void RenderPass::SetProj(Math::Matrix4 proj)
         {
             m_base->SetProj(proj);
         }
 
+        /** Schedule a render request on this render pass
+        *
+        * Provide a material, mesh and any instance data you want and that object will be
+        * rendered in a command as part of this pass. The data will be sorted and built later.
+        *
+        * \param material A handle to the material you want to render with
+        * \param mesh A handle to the mesh you want to render
+        * \param instanceVariables Any instance level variables required for rendering
+        */
         void RenderPass::ScheduleRenderRequest(MaterialHandle material, MeshHandle mesh, ShaderVariableChunk* instanceVariables) 
         {
             m_base->ScheduleRenderRequest(material, mesh, instanceVariables);
         }
 
+        /** Gets the layers that this RenderPassBase is a part of
+        * \return A uint64_t bitfield of the layers that this is a part of
+        */
         uint64_t RenderPass::GetLayerFlags()
         {
             return m_base->GetLayerFlags();

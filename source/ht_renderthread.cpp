@@ -12,13 +12,19 @@
 **
 **/
 
-#include <ht_renderthread.h>
-#include <condition_variable>
+#include <ht_renderthread.h>    //RenderThread
+#include <condition_variable>   //std::condition_variable
+#include <thread>               //std::thread
 
 namespace Hatchit 
 {
     namespace Graphics 
     {
+        /** Kills the render thread
+        * 
+        * Sets this thread's alive and processing states to false and joins the thread
+        * onto the main thread. This should cause the thread to shut down asap.
+        */
         void RenderThread::Kill() 
         {
             m_alive = false;
@@ -27,11 +33,19 @@ namespace Hatchit
                 m_thread.join();
         }
 
+        /** Notify the thread that it should unlock because it has new 
+        *   work to process.
+        *
+        * Notifies the underlying locking std::condition_variable to wake up
+        */
         void RenderThread::Notify() 
         {
             m_waitLock.notify_one();
         }
 
+        /** Gets whether or not the thread has finished processing
+        * \return A boolean representing whether or not this thread has finished working.
+        */
         const bool RenderThread::Processed() const
         {
             return !m_processing;

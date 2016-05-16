@@ -12,8 +12,8 @@
 **
 **/
 
-#include <ht_shader.h>
-#include <ht_gpuresourcepool.h>
+#include <ht_shader.h>          //Shader
+#include <ht_gpuresourcepool.h> //GPUResourcePool
 
 namespace Hatchit
 {
@@ -30,6 +30,16 @@ namespace Hatchit
             delete m_base;
         }
 
+        /** Initialize a Shader with the GPUResourcePool
+        *
+        * This initialization step takes place on the GPUResourceThread but LOCKS the 
+        * main thread. An InitializeAsync method should be used for asynchronous requests. 
+        * If the pool is already in use we will assume that the request is made inside the thread
+        * and the Shader will be created immediately. 
+        *
+        * \param file The file path to the shader we want to load from disk
+        * \return A boolean representing whether or not this operation succeeded
+        */
         bool Shader::Initialize(const std::string& file)
         {
             if (GPUResourcePool::IsLocked())
@@ -52,6 +62,9 @@ namespace Hatchit
             return true;
         }
 
+        /** Gets a pointer to the ShaderBase that this class wraps
+        * \return A poiner to the ShaderBase object that this class wraps.
+        */
         ShaderBase* const Shader::GetBase() const
         {
             return m_base;

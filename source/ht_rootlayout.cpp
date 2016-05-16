@@ -12,9 +12,9 @@
 **
 **/
 
-#include <ht_rootlayout.h>
-#include <ht_rootlayout_base.h>
-#include <ht_gpuresourcepool.h>
+#include <ht_rootlayout.h>      //RootLayout
+#include <ht_rootlayout_base.h> //RootLayoutBase
+#include <ht_gpuresourcepool.h> //GPUResourcePool
 
 namespace Hatchit
 {
@@ -32,6 +32,16 @@ namespace Hatchit
             delete m_base;
         }
 
+        /** Initialize a RootLayout with the GPUResourcePool
+        *
+        * This initialization step takes place on the GPUResourceThread but LOCKS the
+        * main thread. An InitializeAsync method should be used for asynchronous requests.
+        * If the pool is already in use we will assume that the request is made inside the thread
+        * and the RootLayout will be created immediately.
+        *
+        * \param file The file path to the shader we want to load from disk
+        * \return A boolean representing whether or not this operation succeeded
+        */
         bool RootLayout::Initialize(const std::string& file)
         {
             if (GPUResourcePool::IsLocked())
@@ -54,6 +64,9 @@ namespace Hatchit
             return true;
         }
 
+        /** Gets a pointer to the RootLayoutBase that this class wraps
+        * \return A pointer to the RootLayoutBaseObject that this object is wrapping
+        */
         RootLayoutBase* const RootLayout::GetBase() const
         {
             return m_base;

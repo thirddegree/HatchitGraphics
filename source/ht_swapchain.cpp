@@ -14,15 +14,23 @@
 
 #include <ht_swapchain.h>
 
-namespace Hatchit {
+namespace Hatchit 
+{
 
-    namespace Graphics {
+    namespace Graphics 
+    {
 
+        /** Get the width of this swapchain's "screen"
+        * \return The width of the swapchain's rendering area as a uint32_t
+        */
         uint32_t SwapChain::GetWidth() const
         { 
             return m_width; 
         }
 
+        /** Get the height of this swapchain's "screen"
+        * \return The height of the swapchain's rendering area as a uint32_t
+        */
         uint32_t SwapChain::GetHeight() const
         { 
             return m_height;

@@ -12,15 +12,42 @@
 **
 **/
 
-#include <ht_renderpass_base.h>
+#include <ht_renderpass_base.h>     //RenderPassBase & RenderableRequest & RenderableInstances
+#include <ht_material.h>            //Material
+#include <ht_mesh.h>                //Mesh
+#include <ht_pipeline.h>            //Pipeline
+#include <ht_shadervariablechunk.h> //ShaderVariableChunk
+#include <ht_math.h>                //Math::Matrix4
 
 namespace Hatchit 
 {
     namespace Graphics 
     {
-        void RenderPassBase::SetView(Math::Matrix4 view) { m_view = view; }
-        void RenderPassBase::SetProj(Math::Matrix4 proj) { m_proj = proj; }
+        /** Set the view matrix to be used in this render pass
+        * \param view The Math::Matrix4 to be used for the view matrix
+        */
+        void RenderPassBase::SetView(Math::Matrix4 view) 
+        {
+            m_view = view; 
+        }
 
+        /** Set the projection matrix to be used in this render pass
+        * \param proj The Math::Matrix4 to be used for the projection matrix
+        */
+        void RenderPassBase::SetProj(Math::Matrix4 proj) 
+        { 
+            m_proj = proj; 
+        }
+
+        /** Schedule a render request on this render pass
+        * 
+        * Provide a material, mesh and any instance data you want and that object will be
+        * rendered in a command as part of this pass. The data will be sorted and built later.
+        *
+        * \param material A handle to the material you want to render with
+        * \param mesh A handle to the mesh you want to render
+        * \param instanceVariables Any instance level variables required for rendering
+        */
         void RenderPassBase::ScheduleRenderRequest(MaterialHandle material, MeshHandle mesh, ShaderVariableChunk* instanceVariables)
         {
             RenderRequest renderRequest = {};
@@ -33,11 +60,19 @@ namespace Hatchit
             m_renderRequests.push_back(renderRequest);
         }
 
+        /** Gets the layers that this RenderPassBase is a part of
+        * \return A uint64_t bitfield of the layers that this is a part of
+        */
         uint64_t RenderPassBase::GetLayerFlags()
         {
             return m_layerflags;
         }
 
+        /** Sorts this pass's render requests so that building the pass's commands is easier
+        * 
+        * This maps meshes and materials to the pipelines that they will be rendered with
+        * as well as shader instance variables with the meshes that they will be used to render.
+        */
         void RenderPassBase::BuildRenderRequestHeirarchy()
         {
             uint32_t i;

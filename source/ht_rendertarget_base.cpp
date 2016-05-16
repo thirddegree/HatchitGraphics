@@ -12,14 +12,28 @@
 **
 **/
 
-#include <ht_rendertarget_base.h>
+#include <ht_rendertarget_base.h>       //RenderTarget
+#include <ht_rendertarget_resource.h>   //Resource::RenderTarget::BlendOp
 
 namespace Hatchit
 {
     namespace Graphics 
     {
-        Resource::RenderTarget::BlendOp RenderTargetBase::GetColorBlendOp() const { return m_colorBlendOp; }
-        Resource::RenderTarget::BlendOp RenderTargetBase::GetAlphaBlendOp() const { return m_alphaBlendOp; }
+        /** Get the blend op to be used on the color channels of this render target
+        * \return A BlendOp enum that represents the blending operation to be used on the color channels
+        */
+        Resource::RenderTarget::BlendOp RenderTargetBase::GetColorBlendOp() const 
+        { 
+            return m_colorBlendOp; 
+        }
+
+        /** Get the blend op to be used on the alpha channel of this render target
+        * \return A BlendOp enum that represents the blending operation to be used on the alpha channel
+        */
+        Resource::RenderTarget::BlendOp RenderTargetBase::GetAlphaBlendOp() const 
+        { 
+            return m_alphaBlendOp; 
+        }
     }
 }
 

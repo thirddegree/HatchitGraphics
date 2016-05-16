@@ -18,11 +18,17 @@ namespace Hatchit
 {
     namespace Graphics
     {
+        /** Gets the width of the texture
+        * \return Returns the texture width as a uint32_t
+        */
         uint32_t TextureBase::GetWidth() const
         {
             return m_width;
         }
 
+        /** Gets the height of the texture
+        * \return Returns the texture height as a uint32_t
+        */
         uint32_t TextureBase::GetHeight() const
         {
             return m_height;
