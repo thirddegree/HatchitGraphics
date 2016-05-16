@@ -494,6 +494,21 @@ namespace Hatchit
             instance.m_thread->CreateTexture(file, data);
         }
 
+        /**
+        *   \fn GPUResourcePool::CreateMaterial()
+        *   \brief Function creates a mateiral within the GPUResourcePool thread.
+        *   \param file Path to the material file to load.
+        *   \param data Pointer to the base material implementation to fill.
+        *
+        *   This function creates a material immediately on the GPUResourcePool.
+        *   Generally this function should not be called, but rather you should instead
+        *   use the RequestMaterial or RequestMaterialAsync functions.
+        *
+        *   The purpose of this function is to allow immediate creation of a material if
+        *   we find ourselves already within the resource thread, and we know it is safe to do so.
+        *
+        *   NOTE: See ht_material.cpp for example usage.
+        */
         void GPUResourcePool::CreateMaterial(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -501,6 +516,21 @@ namespace Hatchit
             instance.m_thread->CreateMaterial(file, data);
         }
 
+        /**
+        *   \fn GPUResourcePool::CreateRootLayout()
+        *   \brief Function creates a rootlayout within the GPUResourcePool thread.
+        *   \param file Path to the rootlayout file to load.
+        *   \param data Pointer to the base rootlayout implementation to fill.
+        *
+        *   This function creates a rootlayout immediately on the GPUResourcePool.
+        *   Generally this function should not be called, but rather you should instead
+        *   use the RequestRootLayout or RequestRootLayoutAsync functions.
+        *
+        *   The purpose of this function is to allow immediate creation of a rootlayout if
+        *   we find ourselves already within the resource thread, and we know it is safe to do so.
+        *
+        *   NOTE: See ht_rootlayout.cpp for example usage.
+        */
         void GPUResourcePool::CreateRootLayout(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -508,6 +538,21 @@ namespace Hatchit
             instance.m_thread->CreateRootLayout(file, data);
         }
         
+        /**
+        *   \fn GPUResourcePool::CreatePipeline()
+        *   \brief Function creates a pipeline within the GPUResourcePool thread.
+        *   \param file Path to the pipeline file to load.
+        *   \param data Pointer to the base pipeline implementation to fill.
+        *
+        *   This function creates a pipeline immediately on the GPUResourcePool.
+        *   Generally this function should not be called, but rather you should instead
+        *   use the RequestPipeline or RequestPipelineAsync functions.
+        *
+        *   The purpose of this function is to allow immediate creation of a pipeline if
+        *   we find ourselves already within the resource thread, and we know it is safe to do so.
+        *
+        *   NOTE: See ht_pipeline.cpp for example usage.
+        */
         void GPUResourcePool::CreatePipeline(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -515,6 +560,21 @@ namespace Hatchit
             instance.m_thread->CreatePipeline(file, data);
         }
 
+        /**
+        *   \fn GPUResourcePool::CreateShader()
+        *   \brief Function creates a shader within the GPUResourcePool thread.
+        *   \param file Path to the shader file to load.
+        *   \param data Pointer to the base shader implementation to fill.
+        *
+        *   This function creates a shader immediately on the GPUResourcePool.
+        *   Generally this function should not be called, but rather you should instead
+        *   use the RequestShader or RequestShaderAsync functions.
+        *
+        *   The purpose of this function is to allow immediate creation of a shader if
+        *   we find ourselves already within the resource thread, and we know it is safe to do so.
+        *
+        *   NOTE: See ht_shader.cpp for example usage.
+        */
         void GPUResourcePool::CreateShader(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -522,6 +582,21 @@ namespace Hatchit
             instance.m_thread->CreateShader(file, data);
         }
 
+        /**
+        *   \fn GPUResourcePool::CreateRenderPass()
+        *   \brief Function creates a renderpass within the GPUResourcePool thread.
+        *   \param file Path to the renderpass file to load.
+        *   \param data Pointer to the base renderpass implementation to fill.
+        *
+        *   This function creates a renderpass immediately on the GPUResourcePool.
+        *   Generally this function should not be called, but rather you should instead
+        *   use the RequestRenderPass or RequestRenderPassAsync functions.
+        *
+        *   The purpose of this function is to allow immediate creation of a renderpass if
+        *   we find ourselves already within the resource thread, and we know it is safe to do so.
+        *
+        *   NOTE: See ht_renderpass.cpp for example usage.
+        */ 
         void GPUResourcePool::CreateRenderPass(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -529,6 +604,21 @@ namespace Hatchit
             instance.m_thread->CreateRenderPass(file, data);
         }
 
+        /**
+        *   \fn GPUResourcePool::CreateRenderTarget()
+        *   \brief Function creates a rendertarget within the GPUResourcePool thread.
+        *   \param file Path to the rendertarget file to load.
+        *   \param data Pointer to the base rendertarget implementation to fill.
+        *
+        *   This function creates a rendertarget immediately on the GPUResourcePool.
+        *   Generally this function should not be called, but rather you should instead
+        *   use the RequestRenderTarget or RequestRenderTargetAsync functions.
+        *
+        *   The purpose of this function is to allow immediate creation of a rendertarget if
+        *   we find ourselves already within the resource thread, and we know it is safe to do so.
+        *
+        *   NOTE: See ht_rendertarget.cpp for example usage.
+        */  
         void GPUResourcePool::CreateRenderTarget(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
@@ -536,6 +626,21 @@ namespace Hatchit
             instance.m_thread->CreateRenderTarget(file, data);
         }
 
+        /**
+        *   \fn GPUResourcePool::CreateMesh()
+        *   \brief Function creates a mesg within the GPUResourcePool thread.
+        *   \param file Path to the mesh file to load.
+        *   \param data Pointer to the base mesh implementation to fill.
+        *
+        *   This function creates a mesh immediately on the GPUResourcePool.
+        *   Generally this function should not be called, but rather you should instead
+        *   use the RequestMesh or RequestMeshAsync functions.
+        *
+        *   The purpose of this function is to allow immediate creation of a mesg if
+        *   we find ourselves already within the resource thread, and we know it is safe to do so.
+        *
+        *   NOTE: See ht_mesh.cpp for example usage.
+        */
         void GPUResourcePool::CreateMesh(std::string file, void** data)
         {
             GPUResourcePool& instance = GPUResourcePool::instance();
