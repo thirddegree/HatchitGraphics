@@ -80,8 +80,8 @@ namespace Hatchit {
             //while it is loading the resource on the GPUResourceThread. Once
             //loading is finished, the handle for this texture should contain
             //the internal data pointer to the requested resource
-            GPUResourcePool::RequestTextureAsync(defaultHandle, tempHandle, file,
-                reinterpret_cast<void**>(&m_base));
+            //GPUResourcePool::RequestTextureAsync(defaultHandle, tempHandle, file,
+            //    reinterpret_cast<void**>(&m_base));
 
             return true;
         }
