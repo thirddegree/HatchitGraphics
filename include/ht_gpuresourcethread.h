@@ -41,12 +41,22 @@ namespace Hatchit
     {
         class GPUResourceRequest;
 
+        /**
+        *   \class GPUResourceThread
+        *   \ingroup HatchitGraphics
+        *
+        *   \brief Abstract class that defines and implements functions for creation of GPU resource objects.
+        *
+        *   This class defines the logic for the GPU resource thread owned by GPUResourcePool, for the
+        *   loading and creation of GPU resource objects.
+        */
         class HT_API GPUResourceThread
         {
             using GPURequestQueue = Core::ThreadsafeStack<GPUResourceRequest*>;
 
         public:
             virtual ~GPUResourceThread() { };
+
             virtual void VStart() = 0;
 
             bool Locked() const;

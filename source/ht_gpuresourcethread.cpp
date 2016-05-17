@@ -25,6 +25,18 @@ namespace Hatchit
 {
     namespace Graphics
     {
+
+        /**
+        *   \fn GPUResourceThread::Locked()
+        *   \brief Function returns if thread is locked.
+        *   \return m_locked True if thread is locked, otherwise false.
+        *
+        *   The function returns true if the thread is currently in a locked state,
+        *   otherwise it returns false.
+        *   
+        *   NOTE: A GPUResourceThread is usually in a locked state due to a non-async
+        *   resource request.
+        */
         bool GPUResourceThread::Locked() const
         {
             return m_locked;

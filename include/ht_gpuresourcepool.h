@@ -12,16 +12,6 @@
 **
 **/
 
-/**
-*   \class GPUQueue
-*   \ingroup HatchitGraphics
-*
-*   \brief Singelton class that manages loading of GPU resource objects.
-*
-*   The class implements the logic for loading GPU resources non-asynchronously
-*   or asynchronously.
-*/
-
 #pragma once
 
 #include <ht_platform.h>
@@ -41,7 +31,16 @@ namespace Hatchit
     {
         class GPUResourceThread;
         class SwapChain;
-
+        
+        /**
+        *   \class GPUQueue
+        *   \ingroup HatchitGraphics
+        *
+        *   \brief Singelton class that manages loading of GPU resource objects.
+        *
+        *   The class implements the logic for loading GPU resources non-asynchronously
+        *   or asynchronously.
+        */
         class HT_API GPUResourcePool : public Core::Singleton<GPUResourcePool>
         {
         public:
