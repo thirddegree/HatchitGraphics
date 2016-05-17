@@ -12,14 +12,20 @@
 **
 **/
 
-#include <ht_gpuqueue.h>
+#include <ht_gpuqueue.h>    //GPUQueue & QueueType
 
 namespace Hatchit
 {
     namespace Graphics
     {
 
-        QueueType GPUQueue::GetQueueType() const { return m_queueType; }
+        /** Get the type of Queue this is
+        * \return The QueueType of this Queue
+        */
+        QueueType GPUQueue::GetQueueType() const 
+        { 
+            return m_queueType;
+        }
 
     }
 }

@@ -12,22 +12,28 @@
 **
 **/
 
-#include <ht_renderer.h>
-#include <ht_gpuresourcepool.h>
-#include <ht_shadervariablechunk.h>
-#include <ht_swapchain.h>
+#include <ht_renderer.h>            //Renderer & RendererType & RendererParams
+#include <ht_gpuresourcepool.h>     //GPUResourcePool
+#include <ht_shadervariablechunk.h> //ShaderVariableChunk
+#include <ht_swapchain.h>           //SwapChain
+#include <ht_device.h>              //IDevice
+#include <ht_gpuqueue.h>            //GPUQueue
+#include <ht_renderpass.h>          //RenderPass
+#include <ht_material.h>            //Material
+#include <ht_mesh.h>                //Mesh
+#include <ht_camera.h>              //Camera
 
 #ifdef DX12_SUPPORT
-#include <ht_d3d12device.h>
-#include <ht_d3d12swapchain.h>
+#include <ht_d3d12device.h>     //D3D12Device
+#include <ht_d3d12swapchain.h>  //D3D12SwapChain
 #endif
 
 #ifdef VK_SUPPORT
-#include <ht_vkdevice.h>
-#include <ht_vkswapchain.h>
-#include <ht_vkqueue.h>
-#include <ht_vktools.h>
-#include <ht_vkrenderthread.h>
+#include <ht_vkdevice.h>        //VKDevice
+#include <ht_vkswapchain.h>     //VKSwapChain
+#include <ht_vkqueue.h>         //VKQueue
+#include <ht_vktools.h>         //VKTools
+#include <ht_vkrenderthread.h>  //VKRenderThread
 #endif
 
 
@@ -40,6 +46,18 @@ namespace Hatchit {
         RendererType    Renderer::_Type = UNKNOWN;
         SwapChain*      Renderer::_SwapChain = nullptr;
 
+        /** Register a render request with the renderer
+        * 
+        * Tell a RenderPass that it should render a Mesh with a Material
+        * and a ShaderVariableChunk of instance data. Then make sure that the 
+        * pass is stored in a collection based on its layer. This way the 
+        * cameras will be able to be matched with the passes on the same layers. 
+        *
+        * \param pass The RenderPass you want to register a request with
+        * \param material A handle to the Material that you want to render with
+        * \param mesh A handle to the Mesh you want to render
+        * \param instanceVaraibles A pointer to a ShaderVariableChunk of instance data necessary for rendering
+        */
         void Renderer::RegisterRenderRequest(RenderPassHandle pass, MaterialHandle material, MeshHandle mesh, ShaderVariableChunk* instanceVariables)
         {
             pass->ScheduleRenderRequest(material, mesh, instanceVariables);
@@ -66,6 +84,13 @@ namespace Hatchit {
             }
         }
 
+        /** Register a camera with this renderer so it can be given things to render
+        * 
+        * The camera will be sorted into a collection based on which layers it wants to render.
+        * It will then be matched and given to render passes on the same layers.
+        *
+        * \param camera The Camera you'd like to register with this Renderer
+        */
         void Renderer::RegisterCamera(Camera camera)
         {
             uint64_t flags = camera.GetLayerFlags();
