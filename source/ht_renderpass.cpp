@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -12,124 +12,109 @@
 **
 **/
 
-#include <ht_renderpass.h>
-#include <ht_renderer.h>
+#include <ht_guid.h>            //Core::Guid
+#include <ht_renderpass.h>      //RenderPass
+#include <ht_renderpass_base.h> //RenderPassBase
+#include <ht_gpuresourcepool.h> //GPUResourcePool
+#include <ht_commandpool.h>     //ICommandPool
+#include <ht_string.h>          //std::string
 
 namespace Hatchit
 {
     namespace Graphics
-    {
-        bool RenderPassBase::VInitFromResource(const Resource::RenderPassHandle& handle)
+    {            
+        RenderPass::RenderPass(Core::Guid ID):
+            Core::RefCounted<RenderPass>(std::move(ID))
         {
-            //Initialize from file here
+            m_base = nullptr;
+        }
+
+        /** Initialize a RenderPass synchronously with the GPUResourcePool
+        *
+        * If the GPUResourceThread is already in use the texture will be created directly.
+        * If the thread is not locked we will feed the thread a request.
+        * This will LOCK the main thread until it completes.
+        *
+        * \param file The file path of the RenderPass json file that we want to load off the disk
+        * \return A boolean representing whether or not this operation succeeded
+        */
+        bool RenderPass::Initialize(const std::string& file)
+        {
+            if (GPUResourcePool::IsLocked())
+            {
+                HT_DEBUG_PRINTF("In GPU Resource Thread.\n");
+
+                //Currenty, we are already in the GPU Resource Thread.
+                //So instead of submitting a request to fill the pipeline base,
+                //we should just immediately have the thread fill it for us.
+                GPUResourcePool::CreateRenderPass(file, reinterpret_cast<void**>(&m_base));
+            }
+            else
+            {
+                //Request pipeline immediately for main thread of execution
+                //This call will block the active thread while the GPUResourcePool
+                //allocated the memory
+                GPUResourcePool::RequestRenderPass(file, reinterpret_cast<void**>(&m_base));
+            }
+
             return true;
         }
 
-        void RenderPassBase::VSetView(Math::Matrix4 view)
+        /** Build a command list with the given command pool
+        * 
+        * Given an interface to a command pool, record all the necesary
+        * commands to render this render pass onto a command list.
+        *
+        * \param commandPool A pointer to the command pool to build the command list from
+        * \return A boolean representing whether or not this operation succeeded
+        */
+        bool RenderPass::BuildCommandList(const ICommandPool* commandPool) 
         {
-            m_view = std::move(view);
-        }
-        void RenderPassBase::VSetProj(Math::Matrix4 proj)
-        {
-            m_proj = std::move(proj);
-        }
-
-        void RenderPassBase::VScheduleRenderRequest(IMaterialHandle material, IMeshHandle mesh, std::vector<Resource::ShaderVariable*> instanceVariables)
-        {
-            RenderRequest renderRequest = {};
-
-            renderRequest.pipeline = material->GetPipeline();
-            renderRequest.material = material;
-            renderRequest.mesh = mesh;
-
-            m_renderRequests.push_back(renderRequest);
-
-            //Append instance variables to the array of bytes
-
-            //Determine how much we need to append to the array
-            size_t newSize = m_instanceDataSize;
-            m_instanceChunkSize = 0;
-            for (size_t i = 0; i < instanceVariables.size(); i++)
-            {
-                m_instanceChunkSize += Resource::ShaderVariable::SizeFromType(instanceVariables[i]->GetType());
-                newSize += m_instanceChunkSize;
-            }
-                
-            //Make an array of the new size and replace the existing one
-            BYTE* newArray = new BYTE[newSize];
-            
-            if (m_instanceData != nullptr)
-            {
-                memcpy(newArray, m_instanceData, m_instanceDataSize);
-                delete[] m_instanceData;
-            }
-
-            m_instanceData = newArray;
-
-            //Copy data to new array
-            m_currentInstanceDataOffset = m_instanceDataSize;
-            for (size_t i = 0; i < instanceVariables.size(); i++)
-            {
-                size_t size = Resource::ShaderVariable::SizeFromType(instanceVariables[i]->GetType());
-                memcpy(m_instanceData + m_currentInstanceDataOffset, instanceVariables[i]->GetData(), size);
-                m_currentInstanceDataOffset += size;
-            }
-
-            m_instanceDataSize = m_currentInstanceDataOffset;
+            return m_base->VBuildCommandList(commandPool);
         }
 
-        uint64_t RenderPassBase::GetLayerFlags()
+        /** Set the view matrix to be used in this render pass
+        * \param view The Math::Matrix4 to be used for the view matrix
+        */
+        void RenderPass::SetView(Math::Matrix4 view)
         {
-            return m_layerflags;
+            m_base->SetView(view);
         }
 
-        void RenderPassBase::BuildRenderRequestHeirarchy()
+        /** Set the projection matrix to be used in this render pass
+        * \param proj The Math::Matrix4 to be used for the projection matrix
+        */
+        void RenderPass::SetProj(Math::Matrix4 proj)
         {
-            uint32_t i;
-
-            //Clear past pipeline requests
-            for (i = 0; i < m_renderRequests.size(); i++)
-            {
-                RenderRequest renderRequest = m_renderRequests[i];
-
-                IPipelineHandle pipeline = renderRequest.pipeline;
-
-                m_pipelineList[pipeline].clear();
-            }
-
-            //Build new requests
-            for (i = 0; i < m_renderRequests.size(); i++)
-            {
-                RenderRequest renderRequest = m_renderRequests[i];
-
-                IPipelineHandle pipeline = renderRequest.pipeline;
-                IMaterialHandle material = renderRequest.material;
-                IMeshHandle mesh = renderRequest.mesh;
-
-                std::vector<RenderableInstances> instances = m_pipelineList[pipeline];
-
-                //If the pipeline maps to an existing material and mesh, lets increment the count
-                bool found = false;
-                for (size_t i = 0; i < instances.size(); i++)
-                {
-                    Renderable renderable = instances[i].renderable;
-                    if (renderable.material == material && renderable.mesh == mesh)
-                    {
-                        instances[i].count++;
-                        found = true;
-                        break;
-                    }
-                }
-
-                if(!found)
-                    instances.push_back({ material, mesh, 1 });
-
-                m_pipelineList[pipeline] = instances;
-            }
-
-            //Done with render requests so we can clear them
-            m_renderRequests.clear();
-
+            m_base->SetProj(proj);
         }
+
+        /** Schedule a render request on this render pass
+        *
+        * Provide a material, mesh and any instance data you want and that object will be
+        * rendered in a command as part of this pass. The data will be sorted and built later.
+        *
+        * \param material A handle to the material you want to render with
+        * \param mesh A handle to the mesh you want to render
+        * \param instanceVariables Any instance level variables required for rendering
+        */
+        void RenderPass::ScheduleRenderRequest(MaterialHandle material, MeshHandle mesh, ShaderVariableChunk* instanceVariables) 
+        {
+            m_base->ScheduleRenderRequest(material, mesh, instanceVariables);
+        }
+
+        /** Gets the layers that this RenderPassBase is a part of
+        * \return A uint64_t bitfield of the layers that this is a part of
+        */
+        uint64_t RenderPass::GetLayerFlags()
+        {
+            return m_base->GetLayerFlags();
+        }
+
+        RenderPassBase* const RenderPass::GetBase() const
+        {
+            return m_base;
+        }
+
     }
 }

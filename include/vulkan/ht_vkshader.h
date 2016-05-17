@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -26,6 +26,7 @@
 
 #include <ht_vulkan.h>
 #include <ht_shader.h>
+#include <ht_shader_resource.h>
 
 namespace Hatchit {
 
@@ -33,27 +34,24 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            class HT_API VKShader : public Core::RefCounted<VKShader>, public IShader
+            class HT_API VKShader : public ShaderBase
             {
-                friend class IMaterial;
-                friend class VKRenderer;
-                friend class VKSwapchain;
+                friend class VKSwapChain;
             public:
-                VKShader(Core::Guid ID);
+                VKShader();
                 VKShader(VKShader&&) = default;
                 ~VKShader();
 
                 //Required function for RefCounted classes
-                bool Initialize(const std::string& fileName, VKRenderer* renderer);
+                bool Initialize(Resource::ShaderHandle handle, const VkDevice& device);
 
                 VkShaderModule GetShaderModule();
 
             private:
-                const VkDevice* m_device;
+                VkDevice m_device;
                 VkShaderModule m_shader;
             };
 
-            using VKShaderHandle = Core::Handle<VKShader>;
         }
     }
 }

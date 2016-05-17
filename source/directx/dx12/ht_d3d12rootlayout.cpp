@@ -13,6 +13,7 @@
 **/
 
 #include <ht_d3d12rootlayout.h>
+#include <ht_rootlayout_resource.h>
 #include <ht_debug.h>
 
 namespace Hatchit
@@ -21,54 +22,29 @@ namespace Hatchit
     {
         namespace DX
         {
-            D3D12RootLayout::D3D12RootLayout(Core::Guid ID)
-                : Core::RefCounted<D3D12RootLayout>(std::move(ID))
+            D3D12RootLayout::D3D12RootLayout()
             {
                 m_rootSignature = nullptr;
-                m_CBV_SRV_UAV_Heap = nullptr;
-                m_RTV_Heap = nullptr;
-                m_DSV_Heap = nullptr;
-
-                m_totalCBV_SRV_UAV_Descriptors = 0;
             }
 
             D3D12RootLayout::~D3D12RootLayout()
             {
                 ReleaseCOM(m_rootSignature);
-                ReleaseCOM(m_CBV_SRV_UAV_Heap);
             }
 
-            ID3D12DescriptorHeap* D3D12RootLayout::GetHeap(HeapType type)
-            {
-                switch (type)
-                {
-                case HeapType::CBV_SRV_UAV:
-                    return m_CBV_SRV_UAV_Heap;
-                case HeapType::DSV:
-                    return m_DSV_Heap;
-                case HeapType::RTV:
-                    return m_RTV_Heap;
-                }
-                
-                return nullptr;
-            }
 
-            bool D3D12RootLayout::Initialize(const std::string& fileName, ID3D12Device* device)
+            bool D3D12RootLayout::Initialize(Resource::RootLayoutHandle handle, ID3D12Device* device)
             {
                 using namespace Resource;
 
                 HRESULT hr = S_OK;
 
-                Resource::RootLayoutHandle resource = Resource::RootLayout::GetHandleFromFileName(fileName);
-                if (!resource.IsValid())
-                    return false;
-
                 D3D12_ROOT_SIGNATURE_DESC rootDesc;
 
                 /*Build RootParameter Collection*/
                 std::vector<D3D12_ROOT_PARAMETER> _RootParameters;
-                std::vector<RootLayout::Parameter> parameters = resource->GetParameters();
-                for (uint32_t i = 0; i < resource->GetParameterCount(); i++)
+                std::vector<Resource::RootLayout::Parameter> parameters = handle->GetParameters();
+                for (uint32_t i = 0; i < handle->GetParameterCount(); i++)
                 {
                     
                     RootLayout::Parameter p = parameters[i];
@@ -126,7 +102,6 @@ namespace Hatchit
                                 case RootLayout::Range::Type::CONSTANT_BUFFER:
                                 {
                                     _range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-                                    m_totalCBV_SRV_UAV_Descriptors++;
                                 } break;
 
                                 case RootLayout::Range::Type::SAMPLER:
@@ -137,13 +112,11 @@ namespace Hatchit
                                 case RootLayout::Range::Type::SHADER_RESOURCE:
                                 {
                                     _range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-                                    m_totalCBV_SRV_UAV_Descriptors++;
                                 } break;
 
                                 case RootLayout::Range::Type::UNORDERED_ACCESS:
                                 {
                                     _range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-                                    m_totalCBV_SRV_UAV_Descriptors++;
                                 } break;
 
                                 default:
@@ -209,12 +182,12 @@ namespace Hatchit
                 }
 
                 /*Create Static Samplers*/
-                std::vector<D3D12_STATIC_SAMPLER_DESC> _Samplers = SamplerDescsFromHandle(resource);
-                rootDesc.NumParameters = resource->GetParameterCount();
+                std::vector<D3D12_STATIC_SAMPLER_DESC> _Samplers = SamplerDescsFromHandle(handle);
+                rootDesc.NumParameters = handle->GetParameterCount();
                 rootDesc.pParameters = &_RootParameters[0];
-                rootDesc.NumStaticSamplers = static_cast<uint32_t>(resource->GetSamplers().size());
+                rootDesc.NumStaticSamplers = static_cast<uint32_t>(handle->GetSamplers().size());
                 rootDesc.pStaticSamplers = &_Samplers[0];
-                rootDesc.Flags = RootSignatureFlagsFromHandle(resource);
+                rootDesc.Flags = RootSignatureFlagsFromHandle(handle);
 
                 ID3DBlob* _signature = nullptr;
                 ID3DBlob* _error = nullptr;
@@ -238,9 +211,7 @@ namespace Hatchit
                     return false;
                 }
 
-                BuildDescriptorHeaps(device);
 
-                HT_D3D12_DEBUGNAME(m_rootSignature, ("D3D12RootLayout [" + fileName + "]").c_str());
                 PostInitCleanup();
 
                 return true;
@@ -258,27 +229,6 @@ namespace Hatchit
                     delete[] range;
             }
 
-            bool D3D12RootLayout::BuildDescriptorHeaps(ID3D12Device* device)
-            {
-                HRESULT hr = S_OK;
-
-                /*Create CBV_SRV_UAV Descriptor Heap*/
-                D3D12_DESCRIPTOR_HEAP_DESC heapDesc;
-                heapDesc.NumDescriptors = m_totalCBV_SRV_UAV_Descriptors;
-                heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-                heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-                heapDesc.NodeMask = 0;
-                hr = device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_CBV_SRV_UAV_Heap));
-                if (FAILED(hr))
-                {
-                    HT_DEBUG_PRINTF("Failed to create constant buffer descriptor heap.\n");
-                    return false;
-                }
-                HT_D3D12_DEBUGNAME(m_CBV_SRV_UAV_Heap, "D3D12RootLayout [CBV_SRV_UAV Heap]");
-
-                return true;
-            }
-            
             D3D12_ROOT_SIGNATURE_FLAGS D3D12RootLayout::RootSignatureFlagsFromHandle(const Resource::RootLayoutHandle& handle)
             {
                 using namespace Resource;

@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -35,10 +35,17 @@
 #include <ht_string.h>
 #include <ht_renderpass.h>
 #include <ht_camera.h>
+#include <ht_device.h>
+#include <ht_gpuqueue.h>
+#include <ht_threadqueue.h>
+#include <ht_shadervariable.h>
+#include <ht_renderthread.h>
 
 namespace Hatchit {
 
     namespace Graphics {
+
+        class SwapChain;
 
         enum class ClearArgs
         {
@@ -52,6 +59,7 @@ namespace Hatchit {
 
         enum RendererType
         {
+            UNKNOWN,
             OPENGL,
             DIRECTX11,
             DIRECTX12,
@@ -73,52 +81,62 @@ namespace Hatchit {
         class HT_API Renderer
         {
         public:
-            virtual ~Renderer() { };
+            Renderer();
+
+            ~Renderer();
             
             /** Initialize the renderer
             * \param params The paramaters to intialize this renderer with
             */
-            virtual bool VInitialize(const RendererParams& params) = 0;
-            ///Shutdown the renderer
-            virtual void VDeInitialize() = 0;
+            bool Initialize(const RendererParams& params);
+
             /** Resizes the the screen
             * \param width The new width of the screen
             * \param height The new height of the screen
             */
-            virtual void VResizeBuffers(uint32_t width, uint32_t height) = 0;
+            void ResizeBuffers(uint32_t width, uint32_t height);
 
-            /** Sets the color that the screen will clear with
-            * \param color The Color to clear the screen with
-            */
-            virtual void VSetClearColor(const Color& color) = 0;
-            /** Clears the screen with the given clear color
-            * \param args Arguments to describe which buffer you want to clear
-            */
-            virtual void VClearBuffer(ClearArgs args) = 0;
-            
             ///Render all render passes
-            virtual void VRender(float dt) = 0;
+            void Render();
 
             ///Present a frame to the screen via a backbuffer
-            virtual void VPresent() = 0;
+            void Present();
 
-            uint32_t GetWidth() const;
-            uint32_t GetHeight() const;
+            void RegisterRenderRequest(RenderPassHandle pass, MaterialHandle material, MeshHandle mesh, ShaderVariableChunk* instanceVariables);
 
-            void RegisterRenderPass(RenderPassBaseHandle pass);
             void RegisterCamera(Camera camera);
 
-            static Renderer* FromType(RendererType type);
+            static IDevice* const GetDevice();
+
+            static SwapChain* const GetSwapChain();
+
+            static RendererType GetType();
 
         protected:
+            static IDevice*     _Device;
+            static GPUQueue*    _Queue;
+            static RendererType _Type;
+            static SwapChain*   _SwapChain;
 
             //A collection of renderpass layers. Each layer may contain multiple render passes.
-            std::vector<std::vector<RenderPassBaseHandle>> m_renderPassLayers = std::vector<std::vector<RenderPassBaseHandle>>(64);
+            std::vector<std::vector<RenderPassHandle>> m_renderPassLayers = std::vector<std::vector<RenderPassHandle>>(64);
             //A collection of cameras sorted by renderpass layer. Repopulated each frame.
             std::vector<std::vector<Graphics::Camera>> m_renderPassCameras = std::vector<std::vector<Graphics::Camera>>(64);
+            
+            std::vector<RenderThread*> m_threads;
+            std::mutex m_mutex;
+            std::unique_lock<std::mutex> m_lock;
+            std::condition_variable m_cv;
+            bool m_locked;
+            bool m_processed;
 
-            uint32_t m_width;
-            uint32_t m_height;
+            Core::ThreadsafeQueue<RenderPassHandle> m_threadQueue;
+
+            RendererParams  m_params;
+            
+            TextureHandle test;
+
+            void initThreads();
         };
 
     }

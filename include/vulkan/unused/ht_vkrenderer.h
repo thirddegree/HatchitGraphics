@@ -18,9 +18,10 @@
 #include <ht_vulkan.h>
 #include <ht_renderer.h>
 #include <ht_vkrenderpass.h>
-#include <ht_vkswapchain.h>
+#include <ht_VKSwapChain.h>
 #include <ht_vkmaterial.h>
 #include <ht_vkrootlayout.h>
+#include <ht_vkdevice.h>
 #include <ht_string.h>
 #include <vector>
 
@@ -65,20 +66,10 @@ namespace Hatchit {
                 ///Present a frame to the screen via a backbuffer
                 void VPresent() override;
 
-                /* Get the physical vulkan device
-                * \return A physical vulkan device
-                */
-                VkPhysicalDevice GetVKPhysicalDevice();
-
                 /* Get the core Vulkan device
                 * \return The VkDevice
                 */
-                const VkDevice& GetVKDevice() const;
-
-                /* Get the core Vulkan instance
-                * \return The VkInstance for the app
-                */
-                const VkInstance& GetVKInstance() const;
+                const VKDevice& GetVKDevice() const;
 
                 /* Get the core Vulkan command pool
                 * \return a vulkan command pool
@@ -90,6 +81,11 @@ namespace Hatchit {
                 */
                 const VkDescriptorPool& GetVKDescriptorPool() const;
 
+<<<<<<< HEAD:include/vulkan/unused/ht_vkrenderer.h
+                VKRootLayout* const GetVKRootLayoutHandle() const;
+
+=======
+>>>>>>> dev:include/vulkan/ht_vkrenderer.h
                 const VkCommandBuffer& GetSetupCommandBuffer() const;
 
                 const VkFormat& GetPreferredImageFormat() const;
@@ -103,7 +99,6 @@ namespace Hatchit {
                 void FlushSetupCommandBuffer();
 
                 //Reused helpers
-                bool CheckLayers(std::vector<const char*> layerNames, VkLayerProperties* layers, uint32_t layerCount);
                 bool SetImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageAspectFlags aspectMask,
                     VkImageLayout oldImageLayout, VkImageLayout newImageLayout);
                 bool MemoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, uint32_t* typeIndex);
@@ -117,15 +112,11 @@ namespace Hatchit {
                 RendererParams m_rendererParams; //We will need these later to re-create the swapchain if the window resizes
 
                 //Vuklan data structs
-                VkApplicationInfo                       m_appInfo;
-                VkInstance                              m_instance;
-                VkPhysicalDevice                        m_gpu;
                 std::vector<VkQueueFamilyProperties>    m_queueProps;
-                VkDevice                                m_device; 
                 VkQueue                                 m_queue;
                 VkPhysicalDeviceMemoryProperties        m_memoryProps;
                 
-                VKSwapchain*                            m_swapchain;
+                VKSwapChain*                            m_swapchain;
 
                 VkCommandBuffer                         m_setupCommandBuffer;
 
@@ -139,23 +130,30 @@ namespace Hatchit {
                 VkClearValue                            m_clearColor;
 
                 //Resources we want loaded elsewhere
+<<<<<<< HEAD:include/vulkan/unused/ht_vkrenderer.h
+                VKRootLayoutHandle m_rootLayout;
+                MaterialHandle m_material;
+=======
                 IMaterialHandle m_material;
+>>>>>>> dev:include/vulkan/ht_vkrenderer.h
                 TextureHandle m_texture;
-                IPipelineHandle m_pipeline;
-                IMeshHandle m_meshHandle;
+                PipelineHandle m_pipeline;
+                MeshHandle m_meshHandle;
                 VKRenderPassHandle m_renderPass;
 
                 VKRenderPassHandle m_lightingPass;
-                IPipelineHandle m_pointLightingPipeline;
-                IMaterialHandle m_pointLightMaterial;
-                IMeshHandle m_pointLightMeshHandle;
+                PipelineHandle m_pointLightingPipeline;
+                MaterialHandle m_pointLightMaterial;
+                MeshHandle m_pointLightMeshHandle;
 
                 VKRenderPassHandle m_compositionPass;
-                IPipelineHandle m_compositionPipeline;
-                IMaterialHandle m_compositionMaterial;
-                IMeshHandle m_compositionMeshHandle;
+                PipelineHandle m_compositionPipeline;
+                MaterialHandle m_compositionMaterial;
+                MeshHandle m_compositionMeshHandle;
 
                 float m_angle = 0;
+
+                VKDevice m_device;
 
                 //Vulkan Callbacks
                 PFN_vkCreateDebugReportCallbackEXT m_createDebugReportCallback;
@@ -168,25 +166,17 @@ namespace Hatchit {
                     const char *pLayerPrefix, const char *pMsg, void *pUserData);
 
                 //Core init methods
-                bool initVulkan();
                 bool initVulkanSwapchain();
                 bool prepareVulkan();
 
-                //Helper init methods
-
                 //Helper inits for initVulkan
-                bool checkInstanceLayers();
-                bool checkInstanceExtensions();
-                bool enumeratePhysicalDevices();
-                bool checkDeviceLayers();
-                bool checkDeviceExtensions();
                 bool setupDebugCallbacks();
-                bool setupProcAddresses();
 
                 bool setupCommandPool();
                 bool setupDescriptorPool();
 
-                bool createDevice();
+                bool VKRenderer::setupSwapchainFunctions();
+
             };
 
         }

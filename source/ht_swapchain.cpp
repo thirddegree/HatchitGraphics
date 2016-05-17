@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -14,12 +14,27 @@
 
 #include <ht_swapchain.h>
 
-namespace Hatchit {
+namespace Hatchit 
+{
 
-    namespace Graphics {
+    namespace Graphics 
+    {
 
-        uint32_t ISwapchain::GetWidth() { return m_width; }
-        uint32_t ISwapchain::GetHeight() { return m_height; }
+        /** Get the width of this swapchain's "screen"
+        * \return The width of the swapchain's rendering area as a uint32_t
+        */
+        uint32_t SwapChain::GetWidth() const
+        { 
+            return m_width; 
+        }
+
+        /** Get the height of this swapchain's "screen"
+        * \return The height of the swapchain's rendering area as a uint32_t
+        */
+        uint32_t SwapChain::GetHeight() const
+        { 
+            return m_height;
+        }
 
     }
 }

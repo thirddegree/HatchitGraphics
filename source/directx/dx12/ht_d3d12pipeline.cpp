@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 ThirdDegree
+**    Copyright(c) 2015-2016ThirdDegree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -13,6 +13,9 @@
 **/
 
 #include <ht_d3d12pipeline.h>
+#include <ht_d3d12rootlayout.h>
+#include <ht_rootlayout.h>
+#include <ht_renderpass_resource.h>
 
 namespace Hatchit {
 
@@ -20,8 +23,7 @@ namespace Hatchit {
 
         namespace DX
         {
-            D3D12Pipeline::D3D12Pipeline(Core::Guid ID)
-                : Core::RefCounted<D3D12Pipeline>(std::move(ID))
+            D3D12Pipeline::D3D12Pipeline()
             {
                 m_pipelineState = nullptr;
             }
@@ -29,6 +31,7 @@ namespace Hatchit {
             D3D12Pipeline::~D3D12Pipeline()
             {
                 ReleaseCOM(m_pipelineState);
+                m_shaders.clear();
             }
 
             ID3D12PipelineState* D3D12Pipeline::GetPipeline()
@@ -36,15 +39,14 @@ namespace Hatchit {
                 return m_pipelineState;
             }
 
-            bool D3D12Pipeline::Initialize(const std::string & fileName, ID3D12Device * device, ID3D12RootSignature * root)
+            bool D3D12Pipeline::Initialize(Resource::PipelineHandle handle, ID3D12Device * device)
             {
                 HRESULT hr = S_OK;
 
-                m_description = {};
+                Resource::RenderPassHandle renderPass = Resource::RenderPass::GetHandle(handle->GetRenderPassPath(),
+                    handle->GetRenderPassPath());
 
-                Resource::PipelineHandle handle = Resource::Pipeline::GetHandleFromFileName(fileName);
-                if (!handle.IsValid())
-                    return false;
+                m_description = {};
 
                 /*Build Input Layout*/
                 std::vector<D3D12_INPUT_ELEMENT_DESC> _elements;
@@ -67,9 +69,11 @@ namespace Hatchit {
                 inputLayoutDesc.pInputElementDescs = &_elements[0];
                 inputLayoutDesc.NumElements = static_cast<uint32_t>(_elements.size());
 
+                auto rootSignature = RootLayout::GetHandle(renderPass->GetRootLayoutPath(), renderPass->GetRootLayoutPath());
+
                 /*Build Pipeline State Object*/
                 m_description.InputLayout = inputLayoutDesc;
-                m_description.pRootSignature = root;
+                m_description.pRootSignature = static_cast<D3D12RootLayout*>(rootSignature->GetBase())->GetRootSignature();
                 m_description.VS = ShaderBytecodeFromHandle(Resource::Pipeline::VERTEX, handle);
                 m_description.GS = ShaderBytecodeFromHandle(Resource::Pipeline::GEOMETRY, handle);
                 m_description.HS = ShaderBytecodeFromHandle(Resource::Pipeline::TESS_CONTROL, handle);
@@ -105,42 +109,42 @@ namespace Hatchit {
                 return false;
             }
 
-            bool D3D12Pipeline::VAddShaderVariables(std::map<std::string, Resource::ShaderVariable*> shaderVariables)
+            bool D3D12Pipeline::VSetShaderVariables(ShaderVariableChunk* variables)
             {
                 return false;
             }
 
-            bool D3D12Pipeline::VSetInt(std::string name, int data)
+            bool D3D12Pipeline::VSetInt(size_t offset, int data)
             {
                 return false;
             }
 
-            bool D3D12Pipeline::VSetDouble(std::string name, double data)
+            bool D3D12Pipeline::VSetDouble(size_t offset, double data)
             {
                 return false;
             }
 
-            bool D3D12Pipeline::VSetFloat(std::string name, float data)
+            bool D3D12Pipeline::VSetFloat(size_t offset, float data)
             {
                 return false;
             }
 
-            bool D3D12Pipeline::VSetFloat2(std::string name, Math::Vector2 data)
+            bool D3D12Pipeline::VSetFloat2(size_t offset, Math::Vector2 data)
             {
                 return false;
             }
 
-            bool D3D12Pipeline::VSetFloat3(std::string name, Math::Vector3 data)
+            bool D3D12Pipeline::VSetFloat3(size_t offset, Math::Vector3 data)
             {
                 return false;
             }
 
-            bool D3D12Pipeline::VSetFloat4(std::string name, Math::Vector4 data)
+            bool D3D12Pipeline::VSetFloat4(size_t offset, Math::Vector4 data)
             {
                 return false;
             }
 
-            bool D3D12Pipeline::VSetMatrix4(std::string name, Math::Matrix4 data)
+            bool D3D12Pipeline::VSetMatrix4(size_t offset, Math::Matrix4 data)
             {
                 return false;
             }
@@ -190,14 +194,20 @@ namespace Hatchit {
 
             D3D12_SHADER_BYTECODE D3D12Pipeline::ShaderBytecodeFromHandle(Resource::Pipeline::ShaderSlot slot, const Resource::PipelineHandle & handle)
             {
-                std::map<Resource::Pipeline::ShaderSlot, std::string> paths = handle->GetCSOShaderPaths();
-                
-                D3D12ShaderHandle _handle = D3D12Shader::GetHandle(paths[slot], paths[slot]);
-                if(_handle.IsValid())
-                {
-                    m_shaders[slot] = _handle;
+                auto handles = handle->GetCSOShaderHandles();
+                auto paths = handle->GetCSOShaderPaths();
 
-                    return _handle->GetBytecode();
+                if (handles[slot].IsValid())
+                {
+                    ShaderHandle _handle = Shader::GetHandle(paths[slot], paths[slot]);
+                    if (_handle.IsValid())
+                    {
+                        return static_cast<D3D12Shader*>(_handle->GetBase())->GetBytecode();
+                    }
+                    else
+                    {
+                        return CD3DX12_SHADER_BYTECODE(nullptr, 0);
+                    }
                 }
                 else
                 {

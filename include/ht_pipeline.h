@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 ThirdDegree
+**    Copyright(c) 2015-2016ThirdDegree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -29,7 +29,7 @@
 #include <ht_platform.h>
 #include <ht_shader.h>
 #include <ht_debug.h>
-#include <ht_shadervariable.h>
+#include <ht_shadervariablechunk.h>
 #include <ht_pipeline_resource.h>
 #include <ht_shader_resource.h>
 
@@ -39,31 +39,39 @@ namespace Hatchit {
     
    namespace Graphics {
    
-       class HT_API IPipeline
+        class PipelineBase;
+       
+        class HT_API Pipeline : public Core::RefCounted<Pipeline>
         {
-       public:
-            virtual ~IPipeline() {};
+        public:
+            Pipeline(Core::Guid ID);
+            
+            ~Pipeline();
            
+            bool Initialize(const std::string& file);
+
             /* Add a map of existing shader variables into this pipeline
             * \param shaderVariables the map of existing shader variables you want to add
             */
-            virtual bool VAddShaderVariables(std::map<std::string, Resource::ShaderVariable*> shaderVariables) = 0;
-
-            virtual bool VSetInt(std::string name, int data) = 0;
-            virtual bool VSetDouble(std::string name, double data) = 0;
-            virtual bool VSetFloat(std::string name, float data) = 0;
-            virtual bool VSetFloat2(std::string name, Math::Vector2 data) = 0;
-            virtual bool VSetFloat3(std::string name, Math::Vector3 data) = 0;
-            virtual bool VSetFloat4(std::string name, Math::Vector4 data) = 0;
-            virtual bool VSetMatrix4(std::string name, Math::Matrix4 data) = 0;
+            bool SetShaderVariables(ShaderVariableChunk* variables);
+            
+            bool SetInt(size_t offset, int data);
+            bool SetDouble(size_t offset, double data);
+            bool SetFloat(size_t offset, float data);
+            bool SetFloat2(size_t offset, Math::Vector2 data);
+            bool SetFloat3(size_t offset, Math::Vector3 data);
+            bool SetFloat4(size_t offset, Math::Vector4 data);
+            bool SetMatrix4(size_t offset, Math::Matrix4 data);
 
             ///Update the pipeline after you've changed the uniform data
-            virtual bool VUpdate() = 0;
+            bool Update();
+
+            PipelineBase* const GetBase() const;
 
         protected:
-            std::map<std::string, Resource::ShaderVariable*> m_shaderVariables;
+            PipelineBase* m_base;
         };
        
-       using IPipelineHandle = Core::Handle<IPipeline>;
+        using PipelineHandle = Core::Handle<Pipeline>;
     }
 }

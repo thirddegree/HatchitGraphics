@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -13,56 +13,40 @@
 **/
 
 /**
-* \class IRenderTarget
+* \class RenderTarget
 * \ingroup HatchitGraphics
 *
-* \brief An interface for a class that will act as a render target with a given graphics language
-*
-* Imagine this as a template for an implementation of a class that will
-* utilize framebuffer objects with OpenGL or RenderTargets with DirectX
+* \brief A wrapper over a RenderTargetBase
 */
 
 #pragma once
 
 #include <ht_platform.h>
-#include <ht_math.h>
 #include <ht_rendertarget_resource.h>
 
 namespace Hatchit {
 
     namespace Graphics {
         
-        class IRenderPass;
+        class RenderTargetBase;
 
-        class HT_API IRenderTarget
+        class HT_API RenderTarget : public Core::RefCounted<RenderTarget>
         {
         public:
-            virtual ~IRenderTarget() { };
+            RenderTarget(Core::Guid ID);
+            ~RenderTarget();
 
-            ///Prepare the render target with a graphics language
-            virtual bool VPrepare() = 0;
+            bool Initialize(const std::string& file);
 
-            virtual Resource::RenderTarget::BlendOp GetColorBlendOp() const = 0;
-            virtual Resource::RenderTarget::BlendOp GetAlphaBlendOp() const = 0;
+            Resource::RenderTarget::BlendOp GetColorBlendOp() const;
+            Resource::RenderTarget::BlendOp GetAlphaBlendOp() const;
+
+            RenderTargetBase* const GetBase() const;
+
+        private:
+            RenderTargetBase* m_base;
         };
 
-        class HT_API RenderTargetBase : public IRenderTarget
-        {
-        public:
-            virtual ~RenderTargetBase() { };
-
-            Resource::RenderTarget::BlendOp GetColorBlendOp() const override;
-            Resource::RenderTarget::BlendOp GetAlphaBlendOp() const override;
-
-        protected:
-            uint32_t m_width;
-            uint32_t m_height;
-
-            Resource::RenderTarget::BlendOp m_colorBlendOp;
-            Resource::RenderTarget::BlendOp m_alphaBlendOp;
-        };
-
-        using IRenderTargetHandle = Core::Handle<IRenderTarget>;
-        using RenderTargetBaseHandle = Core::Handle<RenderTargetBase>;
+        using RenderTargetHandle = Core::Handle<RenderTarget>;
     }
 }

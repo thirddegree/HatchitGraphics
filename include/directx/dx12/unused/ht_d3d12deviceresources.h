@@ -41,7 +41,7 @@ namespace Hatchit {
 				
             
                 ID3D12Device*               GetDevice();
-                D3D12RootLayoutHandle       GetRootLayout();
+                D3D12RootLayout*            GetRootLayout();
                 IDXGISwapChain3*            GetSwapChain();
                 ID3D12Resource*             GetRenderTarget();
                 ID3D12Resource*             GetDepthStencil();

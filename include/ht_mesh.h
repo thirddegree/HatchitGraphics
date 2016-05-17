@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -31,6 +31,8 @@
 namespace Hatchit {
     namespace Graphics {
 
+        class MeshBase;
+
         struct Vertex
         {
             aiVector3D pos;
@@ -38,17 +40,22 @@ namespace Hatchit {
             aiVector2D uv;
         };
 
-        class HT_API IMesh 
+        class HT_API Mesh : public Core::RefCounted<Mesh>
         {
         public:
-            virtual ~IMesh() {};
+            Mesh(Core::Guid ID);
+            ~Mesh();
+
+            bool Initialize(const std::string& file);
 
             uint32_t GetIndexCount();
 
+            MeshBase* const GetBase() const;
+
         protected:
-            uint32_t m_indexCount;
+            MeshBase* m_base;
         };
 
-        using IMeshHandle = Core::Handle<IMesh>;
+        using MeshHandle = Core::Handle<Mesh>;
     }
 }

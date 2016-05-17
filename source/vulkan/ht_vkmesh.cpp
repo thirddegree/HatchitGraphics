@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -12,35 +12,31 @@
 **
 **/
 
+#include <ht_mesh.h>
 #include <ht_vkmesh.h>
-#include <ht_vkrenderer.h>
+#include <ht_vkdevice.h>
+#include <ht_vktools.h>
 #include <ht_debug.h>
 
 namespace Hatchit {
     namespace Graphics {
         namespace Vulkan {
         
-            VKMesh::VKMesh(Core::Guid ID) :
-                RefCounted<VKMesh>(std::move(ID))
+            VKMesh::VKMesh()
             {}
 
             VKMesh::~VKMesh() 
             {
-                //Get Device
-                VkDevice device = m_renderer->GetVKDevice();
+                vkDestroyBuffer(m_device, m_vertexBlock.buffer, nullptr);
+                vkFreeMemory(m_device, m_vertexBlock.memory, nullptr);
 
-                vkDestroyBuffer(device, m_vertexBlock.buffer, nullptr);
-                vkFreeMemory(device, m_vertexBlock.memory, nullptr);
-
-                vkDestroyBuffer(device, m_indexBlock.buffer, nullptr);
-                vkFreeMemory(device, m_indexBlock.memory, nullptr);
+                vkDestroyBuffer(m_device, m_indexBlock.buffer, nullptr);
+                vkFreeMemory(m_device, m_indexBlock.memory, nullptr);
             }
 
-            bool VKMesh::Initialize(Resource::Mesh* mesh, VKRenderer* renderer)
+            bool VKMesh::Initialize(Resource::Mesh* mesh, const VkDevice& device)
             {
-                m_renderer = renderer;
-                //Get Device
-                VkDevice device = renderer->GetVKDevice();
+                m_device = device;
 
                 //Generate Vertex Buffer
                 std::vector<Vertex> vertexBuffer; 
@@ -48,10 +44,6 @@ namespace Hatchit {
                 std::vector<aiVector3D> verticies = mesh->getVertices();
                 std::vector<aiVector3D> normals = mesh->getNormals();
                 std::vector<aiVector3D> uvs = mesh->getUVs();
-
-                size_t vertCount = verticies.size();
-                size_t normalCount = normals.size();
-                size_t uvCount = uvs.size();
 
                 for (uint32_t i = 0; i < verticies.size(); i++)
                 {
@@ -83,15 +75,16 @@ namespace Hatchit {
                 m_indexCount = static_cast<uint32_t>(indexBuffer.size());
                 size_t indexBufferSize = m_indexCount * sizeof(uint32_t);
 
-                if (!m_renderer->CreateBuffer(device, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexBufferSize, vertexBuffer.data(), &m_vertexBlock))
+                if (!VKTools::CreateUniformBuffer(vertexBufferSize, vertexBuffer.data(), &m_vertexBlock))
                     return false;
 
-                if (!m_renderer->CreateBuffer(device, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indexBufferSize, indexBuffer.data(), &m_indexBlock))
+                if (!VKTools::CreateUniformBuffer(indexBufferSize, indexBuffer.data(), &m_indexBlock))
                     return false;
 
                 return true;
-
             }
+
+            uint32_t VKMesh::VGetIndexCount() { return m_indexCount; }
 
             UniformBlock_vk VKMesh::GetVertexBlock() { return m_vertexBlock; }
             UniformBlock_vk VKMesh::GetIndexBlock() { return m_indexBlock; }

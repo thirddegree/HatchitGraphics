@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -31,12 +31,12 @@ namespace Hatchit {
                 ~VKSampler();
 
                 //For initializing directly from a resource (immutable samplers)
-                bool InitFromResource(const Resource::Sampler& sampler, const VkDevice* device);
+                bool InitFromResource(const Resource::Sampler& sampler, const VkDevice& device);
 
                 VkSampler GetVkSampler();
 
             private:
-                const VkDevice*             m_device;
+                VkDevice                    m_device;
                 VkSampler                   m_sampler;
 
                 VkSamplerAddressMode    VKAddressModeFromType(Resource::Sampler::AddressMode mode);
