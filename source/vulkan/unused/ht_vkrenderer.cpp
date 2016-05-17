@@ -30,8 +30,7 @@
 #endif
 
 #ifdef HT_SYS_LINUX
-#include <xcb/xcb.h>
-#include <xcb/xproto.h>
+#include <X11/Xlib.h>
 #endif
 
 //#define NO_VALIDATION
@@ -112,8 +111,11 @@ namespace Hatchit {
                     return false;
 
                 //TODO: remove this test code
+<<<<<<< HEAD:source/vulkan/unused/ht_vkrenderer.cpp
                 m_rootLayout = VKRootLayout::GetHandle("TestRootDescriptor.json", "TestRootDescriptor.json", &m_device.GetVKDevices()[0]);
 
+=======
+>>>>>>> dev:source/vulkan/ht_vkrenderer.cpp
                 ModelHandle model = Model::GetHandleFromFileName("Raptor.obj");
                 ModelHandle lightModel = Model::GetHandleFromFileName("IcoSphere.dae");
                 ModelHandle fullscreenTri = Model::GetHandleFromFileName("Tri.obj");
@@ -162,8 +164,6 @@ namespace Hatchit {
                 {
                     m_renderPassLayers[i].clear();
                 }
-
-                m_rootLayout.Release();
 
                 m_material.Release();
                 m_texture.Release();
@@ -425,11 +425,6 @@ namespace Hatchit {
                 return m_descriptorPool;
             }
 
-            const VKRootLayoutHandle& VKRenderer::GetVKRootLayoutHandle() const
-            {
-                return m_rootLayout;
-            }
-
             const VkCommandBuffer& VKRenderer::GetSetupCommandBuffer() const
             {
                 return m_setupCommandBuffer;
@@ -503,6 +498,196 @@ namespace Hatchit {
                 return true;
             }
 
+<<<<<<< HEAD:source/vulkan/unused/ht_vkrenderer.cpp
+=======
+
+            bool VKRenderer::checkInstanceLayers()
+            {
+                //If we don't want to validate, just skip this
+                if (!m_enableValidation)
+                    return true;
+
+                VkResult err;
+
+                /**
+                * Check the following requested Vulkan layers against available layers
+                */
+                VkBool32 validationFound = 0;
+                uint32_t instanceLayerCount = 0;
+                err = vkEnumerateInstanceLayerProperties(&instanceLayerCount, NULL);
+                assert(!err);
+
+                m_enabledLayerNames = {
+                    "VK_LAYER_GOOGLE_threading",      "VK_LAYER_LUNARG_core_validation",
+                    "VK_LAYER_LUNARG_object_tracker", "VK_LAYER_LUNARG_parameter_validation",
+                    "VK_LAYER_LUNARG_standard_validation",  "VK_LAYER_LUNARG_swapchain",
+                    "VK_LAYER_LUNARG_device_limits",  "VK_LAYER_LUNARG_image",
+                    "VK_LAYER_GOOGLE_unique_objects",
+                };
+
+                if (instanceLayerCount > 0)
+                {
+                    VkLayerProperties* instanceLayers = new VkLayerProperties[instanceLayerCount];
+                    err = vkEnumerateInstanceLayerProperties(&instanceLayerCount, instanceLayers);
+                    assert(!err);
+
+                    bool validated = CheckLayers(m_enabledLayerNames, instanceLayers, instanceLayerCount);
+
+                    delete[] instanceLayers;
+                    if (!validated)
+                        return false;
+
+                    return true;
+                }
+
+                HT_DEBUG_PRINTF("VKRenderer::checkInstanceLayers(), instanceLayerCount is zero. \n");
+                return false;
+            }
+
+            bool VKRenderer::checkInstanceExtensions()
+            {
+                VkResult err;
+
+                /**
+                * Vulkan:
+                *
+                * Check the for correct Vulkan instance extensions
+                *
+                */
+                VkBool32 surfaceExtFound = 0;
+                VkBool32 platformSurfaceExtFound = 0;
+                uint32_t instanceExtensionCount = 0;
+
+                err = vkEnumerateInstanceExtensionProperties(NULL, &instanceExtensionCount, NULL);
+                assert(!err);
+
+                if (instanceExtensionCount > 0)
+                {
+                    VkExtensionProperties* instanceExtensions = new VkExtensionProperties[instanceExtensionCount];
+                    err = vkEnumerateInstanceExtensionProperties(NULL, &instanceExtensionCount, instanceExtensions);
+                    assert(!err);
+                    for (uint32_t i = 0; i < instanceExtensionCount; i++)
+                    {
+                        if (!strcmp(VK_KHR_SURFACE_EXTENSION_NAME, instanceExtensions[i].extensionName))
+                        {
+                            surfaceExtFound = 1;
+                            m_enabledExtensionNames.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+                        }
+#ifdef HT_SYS_WINDOWS
+                        if (!strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, instanceExtensions[i].extensionName)) {
+                            platformSurfaceExtFound = 1;
+                            m_enabledExtensionNames.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+                        }
+#elif defined(HT_SYS_LINUX)
+                        if (!strcmp(VK_KHR_XLIB_SURFACE_EXTENSION_NAME, instanceExtensions[i].extensionName))
+                        {
+                            platformSurfaceExtFound = 1;
+                            m_enabledExtensionNames.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
+                        }
+#endif
+                        if (m_enableValidation)
+                        {
+                            if (!strcmp(VK_EXT_DEBUG_REPORT_EXTENSION_NAME, instanceExtensions[i].extensionName)) {
+                                m_enabledExtensionNames.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+                            }
+                        }
+
+                        assert(m_enabledExtensionNames.size() < 64);
+                    }
+
+                    delete[] instanceExtensions;
+
+                    return true;
+                }
+
+                HT_DEBUG_PRINTF("VKRenderer::checkInstanceExtensions(), instanceExtensionCount is zero. \n");
+
+                return false;
+            }
+
+            bool VKRenderer::enumeratePhysicalDevices()
+            {
+                VkResult err;
+                uint32_t gpuCount = 0;
+
+                err = vkEnumeratePhysicalDevices(m_instance, &gpuCount, nullptr);
+                if (gpuCount <= 0 || err != VK_SUCCESS)
+                {
+                    HT_DEBUG_PRINTF("No compatible devices were found.\n");
+                    return false;
+                }
+
+                VkPhysicalDevice* physicalDevices = new VkPhysicalDevice[gpuCount];
+                err = vkEnumeratePhysicalDevices(m_instance, &gpuCount, physicalDevices);
+                if (err)
+                {
+                    HT_DEBUG_PRINTF("Vulkan encountered error enumerating physical devices.\n");
+                    delete[] physicalDevices;
+                    return false;
+                }
+
+                /*For now, we store the first device Vulkan finds*/
+                m_gpu = physicalDevices[0];
+                delete[] physicalDevices;
+
+                return true;
+            }
+
+            bool VKRenderer::checkDeviceLayers()
+            {
+                VkResult err;
+                uint32_t deviceLayerCount = 0;
+                err = vkEnumerateDeviceLayerProperties(m_gpu, &deviceLayerCount, NULL);
+                assert(!err);
+
+                if (deviceLayerCount == 0)
+                {
+                    HT_DEBUG_PRINTF("VKRenderer::checkValidationLayers(): No layers were found on the device.\n");
+                    return false;
+                }
+
+                VkLayerProperties* deviceLayers = new VkLayerProperties[deviceLayerCount];
+                err = vkEnumerateDeviceLayerProperties(m_gpu, &deviceLayerCount, deviceLayers);
+                assert(!err);
+
+                bool validated = CheckLayers(m_enabledLayerNames, deviceLayers, deviceLayerCount);
+                delete[] deviceLayers;
+
+                if (!validated)
+                {
+                    HT_DEBUG_PRINTF("VkRenderer::checkValidationLayers(): Could not validate enabled layers against device layers.\n");
+                    return false;
+                }
+
+                return true;
+            }
+
+            bool VKRenderer::CheckLayers(std::vector<const char*> layerNames, VkLayerProperties * layers, uint32_t layerCount)
+            {
+                bool validated = true;
+                for (size_t i = 0; i < layerNames.size(); i++)
+                {
+                    VkBool32 found = 0;
+                    for (uint32_t j = 0; j < layerCount; j++)
+                    {
+                        if (!strcmp(layerNames[i], layers[j].layerName))
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found)
+                    {
+                        HT_DEBUG_PRINTF("VKRenderer::checkLayers(), Cannot find layer: %s\n", layerNames[i]);
+                        validated = false;
+                    }
+
+                }
+
+                return validated;
+            }
+
+>>>>>>> dev:source/vulkan/ht_vkrenderer.cpp
             bool VKRenderer::CreateBuffer(VkDevice device, VkBufferUsageFlagBits usage, size_t dataSize, void* data, UniformBlock_vk* uniformBlock)
             {
                 VkResult err;

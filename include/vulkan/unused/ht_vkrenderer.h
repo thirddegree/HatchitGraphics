@@ -81,8 +81,11 @@ namespace Hatchit {
                 */
                 const VkDescriptorPool& GetVKDescriptorPool() const;
 
+<<<<<<< HEAD:include/vulkan/unused/ht_vkrenderer.h
                 VKRootLayout* const GetVKRootLayoutHandle() const;
 
+=======
+>>>>>>> dev:include/vulkan/ht_vkrenderer.h
                 const VkCommandBuffer& GetSetupCommandBuffer() const;
 
                 const VkFormat& GetPreferredImageFormat() const;
@@ -127,8 +130,12 @@ namespace Hatchit {
                 VkClearValue                            m_clearColor;
 
                 //Resources we want loaded elsewhere
+<<<<<<< HEAD:include/vulkan/unused/ht_vkrenderer.h
                 VKRootLayoutHandle m_rootLayout;
                 MaterialHandle m_material;
+=======
+                IMaterialHandle m_material;
+>>>>>>> dev:include/vulkan/ht_vkrenderer.h
                 TextureHandle m_texture;
                 PipelineHandle m_pipeline;
                 MeshHandle m_meshHandle;

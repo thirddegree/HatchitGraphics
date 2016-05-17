@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -680,7 +680,7 @@ namespace Hatchit {
 
                 if (err != VK_SUCCESS)
                 {
-                    HT_DEBUG_PRINTF("VKSwapChain::prepareSurface(): Error creating VkSurface for Xcb window");
+                    HT_ERROR_PRINTF("VKSwapChain::prepareSurface(): Could not create VkSurface for XLib window");
 
                     return false;
                 }

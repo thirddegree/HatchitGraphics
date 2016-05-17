@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -71,7 +71,6 @@ namespace Hatchit {
                 //Get root layout from first render pass
                 VKRenderPass* renderPass = static_cast<VKRenderPass*>(m_renderPasses[0]->GetBase());
                 const VKRootLayout* rootLayout = renderPass->GetVKRootLayout();
-
                 m_descriptorSetLayouts = rootLayout->VKGetDescriptorSetLayouts();
 
                 std::vector<Resource::Material::TexturePath> texturePaths = handle->GetTexturePaths();
