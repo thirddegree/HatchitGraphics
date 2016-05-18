@@ -50,8 +50,11 @@ namespace Hatchit
             m_processed = false;
 
             m_requests.push(request);
+
             std::unique_lock<std::mutex> lock(m_mutex);
-            m_cv.wait(lock, [this]() -> bool { m_locked = true;  return this->m_processed; });
+            while(!m_processed)
+                m_cv.wait(lock, [this]() -> bool { m_locked = true;  return this->m_processed; });
+            
             m_locked = false;
         }
 

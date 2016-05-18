@@ -352,9 +352,9 @@ namespace Hatchit
                 // Undefined layout
                 // Only allowed as initial layout!
                 // Make sure any writes to the image have been finished
-                if (oldImageLayout == VK_IMAGE_LAYOUT_UNDEFINED)
+                if (oldImageLayout == VK_IMAGE_LAYOUT_PREINITIALIZED)
                 {
-                    //imageMemoryBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+                    imageMemoryBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
                 }
 
                 // Old layout is color attachment
