@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -16,7 +16,8 @@
 
 #include <ht_platform.h>
 #include <ht_directx.h>
-#include <ht_material.h>
+#include <ht_material_base.h>
+#include <ht_material_resource.h>
 
 namespace Hatchit {
 
@@ -33,26 +34,27 @@ namespace Hatchit {
 
     namespace Graphics {
 
+        class Material;
         namespace DX
         {
-            class HT_API D3D12Material : public IMaterial
+            class D3D12Device;
+
+            class HT_API D3D12Material : public MaterialBase
             {
             public:
                 D3D12Material();
 
-            private:
+                ~D3D12Material();
 
-                // Inherited via IMaterial
-                //virtual void VOnLoaded() override;
-              
-                virtual bool VSetInt(std::string name, int data) override;
-                virtual bool VSetFloat(std::string name, float data) override;
-                virtual bool VSetFloat3(std::string name, Math::Vector3 data) override;
-                virtual bool VSetFloat4(std::string name, Math::Vector4 data) override;
-                virtual bool VSetMatrix4(std::string name, Math::Matrix4 data) override;
-                virtual bool VBindTexture(std::string name, TextureHandle texture) override;
-                virtual bool VUnbindTexture(std::string name, TextureHandle texture) override;
-                virtual bool VUpdate() override;
+                bool VBindTexture(std::string name, TextureHandle texture)      override;
+                bool VUnbindTexture(std::string name, TextureHandle texture)    override;
+                bool VUpdate()                                                  override;
+                const PipelineHandle VGetPipeline() const                       override;
+
+            private:
+                bool Initialize(Resource::MaterialHandle handle, D3D12Device* device);
+
+                friend class D3D12GPUResourceThread;
             };
         }
     }

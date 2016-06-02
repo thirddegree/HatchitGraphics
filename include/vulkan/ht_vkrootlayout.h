@@ -16,7 +16,8 @@
 
 #include <ht_platform.h>
 #include <ht_vulkan.h>
-#include <ht_rootlayout.h>
+#include <ht_rootlayout_base.h>
+#include <ht_rootlayout_resource.h>
 
 namespace Hatchit
 {
@@ -24,28 +25,33 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            class HT_API VKRootLayout : public Core::RefCounted<VKRootLayout>, public IRootLayout
+            class VKSampler;
+
+            class HT_API VKRootLayout : public RootLayoutBase
             {
             public:
-                VKRootLayout(Core::Guid ID);
+                VKRootLayout();
 
                 ~VKRootLayout();
 
-                bool Initialize(const std::string& fileName, const VkDevice& device);
+                bool Initialize(const Resource::RootLayoutHandle& handle, const VkDevice& device, const VkDescriptorPool& descriptorPool);
 
                 const VkPipelineLayout& VKGetPipelineLayout() const;
+                const VkDescriptorSet& VKGetSamplerSet() const;
                 std::vector<VkDescriptorSetLayout> VKGetDescriptorSetLayouts() const;
                 std::vector<VkPushConstantRange> VKGetPushConstantRanges() const;
 
             private:
                 VkDevice m_device;
 
+                std::vector<VKSampler*> m_samplers; //So we can delete them later
+                VkDescriptorSet         m_samplerSet; //Bind this so we can avoid the pipeline complaining about it
                 VkPipelineLayout m_pipelineLayout;
                 std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;
                 std::vector<VkPushConstantRange> m_pushConstantRanges;
-            };
 
-            using VKRootLayoutHandle = Core::Handle<VKRootLayout>;
+                bool setupSamplerSet(const VkDevice& device, const VkDescriptorPool& descriptorPool);
+            };
         }
     }
 }

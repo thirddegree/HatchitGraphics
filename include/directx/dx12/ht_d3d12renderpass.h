@@ -17,7 +17,8 @@
 
 #include <ht_platform.h>
 #include <ht_refcounted.h>
-#include <ht_renderpass.h>
+#include <ht_renderpass_base.h>
+#include <ht_commandpool.h>
 
 namespace Hatchit
 {
@@ -25,17 +26,18 @@ namespace Hatchit
     {
         namespace DX
         {
-            class HT_API D3D12RenderPass : public Core::RefCounted<D3D12RenderPass>, public RenderPassBase
+            class HT_API D3D12RenderPass : public RenderPassBase
             {
             public:
-                D3D12RenderPass(Core::Guid ID);
+                D3D12RenderPass();
+                ~D3D12RenderPass() {};
 
-                bool Initialize(const std::string& fileName);
+                bool Initialize(const Resource::RenderPassHandle& handle);
 
                 // Inherited via RenderPassBase
                 virtual void VUpdate() override;
 
-                virtual bool VBuildCommandList() override;
+                virtual bool VBuildCommandList(const ICommandPool* commandPool) override;
 
             private:
 

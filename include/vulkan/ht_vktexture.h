@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -15,6 +15,7 @@
 #pragma once
 
 #include <ht_texture.h>
+#include <ht_texture_base.h>
 #include <ht_texture_resource.h>
 #include <ht_vksampler.h>
 #include <ht_vulkan.h>
@@ -25,17 +26,17 @@ namespace Hatchit {
     
         namespace Vulkan {
 
-            class HT_API VKTexture : public Core::RefCounted<VKTexture>, public Texture
+            class HT_API VKTexture : public TextureBase
             {
             public:
-                VKTexture(Core::Guid ID);
+                VKTexture();
                 virtual ~VKTexture();
 
                 //Required function for RefCounted classes
-                bool Initialize(const std::string& fileName);
+                bool Initialize(Resource::TextureHandle handle, const VkDevice& device);
 
                 //For building a texture *not* from a file
-                bool Initialize(const BYTE* data, size_t width, size_t height, uint32_t channelCount, uint32_t mipLevels);
+                bool Initialize(const VkDevice& device, const BYTE* data, uint32_t width, uint32_t height, uint32_t channelCount, uint32_t mipLevels);
 
                 VkImageView GetView();
 
@@ -50,8 +51,6 @@ namespace Hatchit {
 
                 VkDeviceMemory m_deviceMemory;
             };
-
-            using VKTextureHandle = Core::Handle<VKTexture>;
 
         }
     }

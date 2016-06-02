@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -12,9 +12,6 @@
 **
 **/
 
-#pragma once
-
-#include <ht_vkrenderer.h>
 #include <ht_vksampler.h>
 #include <ht_debug.h>
 #include <cassert>
@@ -25,45 +22,35 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKSampler::VKSampler(Core::Guid ID) :
-                RefCounted<VKSampler>(std::move(ID)),
-                m_device(VKRenderer::RendererInstance->GetVKDevice())
+            VKSampler::VKSampler()
             {}
 
-            bool VKSampler::Initialize(const std::string& fileName)
+            bool VKSampler::InitFromResource(const Resource::Sampler& sampler, const VkDevice& device)
             {
-                m_fileName = fileName;
+                m_device = device;
                 m_sampler = nullptr;
-
-                //Contents of old VPrepare
-                Resource::SamplerHandle handle = Resource::MutableSampler::GetHandleFromFileName(m_fileName);
-
-                if (!handle.IsValid())
-                {
-                    HT_DEBUG_PRINTF("Failed to retrieve handle for VKSampler prepar()\n");
-                    return false;
-                }
-
                 VkResult err;
+
+                Resource::Sampler::Filter filter = sampler.GetFilter();
+                Resource::Sampler::Address address = sampler.GetAddress();
 
                 //Setup the sampler
                 VkSamplerCreateInfo samplerInfo = {};
                 samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
                 samplerInfo.pNext = nullptr;
-                samplerInfo.magFilter = VKFilterModeFromType(handle->GetFilter().mag);
-                samplerInfo.minFilter = VKFilterModeFromType(handle->GetFilter().min);
-                samplerInfo.mipmapMode = VKMipMapModeFromType(handle->GetMipMode());
-                samplerInfo.addressModeU = VKAddressModeFromType(handle->GetAddress().u);
-                samplerInfo.addressModeV = VKAddressModeFromType(handle->GetAddress().v);
-                samplerInfo.addressModeW = VKAddressModeFromType(handle->GetAddress().w);
-                samplerInfo.mipLodBias = handle->GetMipLODBias();
-                samplerInfo.compareOp = VKCompareOpFromType(handle->GetCompareOp());
-                samplerInfo.minLod = handle->GetMinLOD();
-                samplerInfo.maxLod = handle->GetMaxLOD();
-                samplerInfo.maxAnisotropy = static_cast<float>(handle->GetMaxAnisotropy());
+                samplerInfo.magFilter = VKFilterModeFromType(filter.mag);
+                samplerInfo.minFilter = VKFilterModeFromType(filter.min);
+                samplerInfo.mipmapMode = VKMipMapModeFromType(sampler.GetMipMode());
+                samplerInfo.addressModeU = VKAddressModeFromType(address.u);
+                samplerInfo.addressModeV = VKAddressModeFromType(address.v);
+                samplerInfo.addressModeW = VKAddressModeFromType(address.w);
+                samplerInfo.mipLodBias = sampler.GetMipLODBias();
+                samplerInfo.compareOp = VKCompareOpFromType(sampler.GetCompareOp());
+                samplerInfo.minLod = sampler.GetMinLOD();
+                samplerInfo.maxLod = sampler.GetMaxLOD();
+                samplerInfo.maxAnisotropy = static_cast<float>(sampler.GetMaxAnisotropy());
                 samplerInfo.anisotropyEnable = VK_TRUE;
-                samplerInfo.borderColor = VKBorderColorFromType(handle->GetBorderColor());
-                m_colorSpace = VKColorSpaceFromType(handle->GetColorSpace());
+                samplerInfo.borderColor = VKBorderColorFromType(sampler.GetBorderColor());
 
                 err = vkCreateSampler(m_device, &samplerInfo, nullptr, &m_sampler);
                 assert(!err);
@@ -84,11 +71,6 @@ namespace Hatchit {
             VkSampler VKSampler::GetVkSampler()
             { 
                 return m_sampler; 
-            }
-
-            VkFormat VKSampler::GetVkColorSpace()
-            {
-                return m_colorSpace;
             }
 
             VkSamplerAddressMode VKSampler::VKAddressModeFromType(Resource::Sampler::AddressMode mode)

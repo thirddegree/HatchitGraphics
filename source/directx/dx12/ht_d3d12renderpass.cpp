@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -22,17 +22,15 @@ namespace Hatchit
     {
         namespace DX
         {
-            D3D12RenderPass::D3D12RenderPass(Core::Guid ID)
-                : Core::RefCounted<D3D12RenderPass>(std::move(ID))
+            D3D12RenderPass::D3D12RenderPass()
             {
 
             }
 
-            bool D3D12RenderPass::Initialize(const std::string & fileName)
+            bool D3D12RenderPass::Initialize(const Resource::RenderPassHandle& handle)
             {
                 using namespace Resource;
 
-                RenderPassHandle handle = RenderPass::GetHandleFromFileName(fileName);
                 if (!handle.IsValid())
                 {
                     HT_DEBUG_PRINTF("Error: Tried to load D3D12RenderPass but the resource handle was invalid!\n");
@@ -55,7 +53,7 @@ namespace Hatchit
 
             }
 
-            bool D3D12RenderPass::VBuildCommandList()
+            bool D3D12RenderPass::VBuildCommandList(const ICommandPool* commandPool)
             {
                 return false;
             }

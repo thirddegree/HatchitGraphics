@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include <ht_rendertarget.h>
+#include <ht_rendertarget_base.h>
 #include <ht_vulkan.h>
 
 namespace Hatchit {
@@ -33,19 +33,16 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            class VKRenderer;
+            class VKSwapChain;
 
-            class HT_API VKRenderTarget : public Core::RefCounted<VKRenderTarget>, public RenderTargetBase
+            class HT_API VKRenderTarget : public RenderTargetBase
             {
             public:
-                VKRenderTarget(Core::Guid ID);
+                VKRenderTarget();
                 ~VKRenderTarget();
 
                 //Required function from RefCounted classes
-                bool Initialize(const std::string& fileName);
-
-                ///Prepare the render target with Vulkan
-                bool VPrepare() override;
+                bool Initialize(const Resource::RenderTargetHandle& handle, const VkDevice& device, const VkPhysicalDevice& gpu, const VKSwapChain* swapchain);
 
                 bool Blit(VkCommandBuffer commandBuffer, const Image_vk& image);
 
@@ -57,17 +54,16 @@ namespace Hatchit {
                 const VkClearValue* GetClearColor() const;
 
             protected:
-                const VkDevice& m_device;
+                VkDevice m_device;
+                VkPhysicalDevice m_gpu;
 
                 VkClearValue* m_clearColor;
 
                 VkFormat m_colorFormat;
                 Texture_vk m_texture;
 
-                bool setupTargetTexture(VKRenderer* renderer);
+                bool setupTargetTexture();
             };
-
-            using VKRenderTargetHandle = Core::Handle<VKRenderTarget>;
         }
     }
 }

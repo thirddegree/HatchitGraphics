@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -32,6 +32,8 @@ namespace Hatchit {
 
     namespace Graphics {
 
+        class Renderer;
+
         class HT_API Camera
         {
         public:
@@ -45,8 +47,9 @@ namespace Hatchit {
 
             void SetView(Math::Matrix4 view);
             void SetProjection(Math::Matrix4 projection);
+            void SetLayerFlags(uint64_t flags);
 
-            void RegisterCamera();
+            void RegisterCamera(Renderer& renderer);
 
         private:
             Math::Matrix4 m_view;

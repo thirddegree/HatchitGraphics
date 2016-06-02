@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -16,7 +16,8 @@
 
 #include <ht_platform.h>
 #include <ht_directx.h>
-#include <ht_shader.h>
+#include <ht_shader_base.h>
+#include <ht_shader_resource.h>
 #include <unordered_map>
 
 namespace Hatchit {
@@ -25,15 +26,14 @@ namespace Hatchit {
 
         namespace DX
         {
-
-            class HT_API D3D12Shader : public Core::RefCounted<D3D12Shader>, public IShader
+            class HT_API D3D12Shader : public ShaderBase
             {
             public:
-                D3D12Shader(Core::Guid ID);
-                D3D12Shader(D3D12Shader&&) = default;
+                D3D12Shader();
+
                 ~D3D12Shader();
 
-                bool Initialize(const std::string& fileName);
+                bool Initialize(Resource::ShaderHandle handle);
 
                 D3D12_SHADER_BYTECODE GetBytecode();
 
@@ -41,7 +41,6 @@ namespace Hatchit {
                 ID3DBlob*                   m_blob;
               
             };
-            using D3D12ShaderHandle = Core::Handle<D3D12Shader>;
         }
     }
 }

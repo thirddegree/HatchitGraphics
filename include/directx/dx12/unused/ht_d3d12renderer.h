@@ -21,7 +21,6 @@
 #include <ht_d3d12indexbuffer.h>
 #include <ht_d3d12pipeline.h>
 #include <ht_d3d12texture.h>
-#include <ht_d3d12deviceresources.h>
 #include <ht_d3d12constantbuffer.h>
 #include <ht_math.h>
 #include <DirectXMath.h>
@@ -38,7 +37,7 @@ namespace Hatchit {
                 Math::Matrix4 proj;
             };
 
-            class HT_API D3D12Renderer : public IRenderer
+            class HT_API D3D12Renderer : public Graphics::Renderer
             {
                 static const int NUM_BUFFER_FRAMES = 2;
             public:
@@ -58,13 +57,12 @@ namespace Hatchit {
 
                 void VPresent()                                         override;
 
-                void VRender(float dt)                                          override;
+                void VRender(float dt)                                  override;
 
             private:
                 D3D12DeviceResources*       m_resources;
                 uint32_t                    m_cbDescriptorSize;
                 D3D12PipelineHandle         m_pipeline;
-                D3D12TextureHandle          m_texture;
                 Color                       m_clearColor;
 
                 //Demo only

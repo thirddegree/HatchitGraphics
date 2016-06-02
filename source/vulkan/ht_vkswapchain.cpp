@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -13,8 +13,9 @@
 **/
 
 #include <ht_vkswapchain.h>
-#include <ht_vkrenderer.h>
-#include <ht_vkrenderer.h>
+#include <ht_vkrootlayout.h>
+#include <ht_rootlayout.h>
+#include <ht_vktools.h>
 
 namespace Hatchit {
 
@@ -24,26 +25,35 @@ namespace Hatchit {
 
             using namespace Resource;
 
-            VKSwapchain::VKSwapchain(VkInstance& instance, VkPhysicalDevice& gpu, VkDevice& device, VkCommandPool& commandPool) :
-                m_instance(instance), m_gpu(gpu), m_device(device), m_commandPool(commandPool)
+            VKSwapChain::VKSwapChain(const RendererParams& rendererParams, VKDevice* device, VKQueue* queue)
             {
                 m_swapchain = VK_NULL_HANDLE;
 
-                m_instance = instance;
-                m_gpu = gpu;
-                m_device = device;
-                m_commandPool = commandPool;
+                m_device = device->GetVKDevices()[0];
+                m_instance = device->GetVKInstance();
+                m_gpu = device->GetVKPhysicalDevices()[0];
 
-                /*
-                Prepare surface
-                */
-                VKRenderer* renderer = VKRenderer::RendererInstance;
-                const RendererParams& rendererParams = renderer->GetRendererParams();
-                if (!prepareSurface(rendererParams))
-                    HT_DEBUG_PRINTF("VKSwapchain(): Failed to prepare surface");
+                m_currentBuffer = 0;
+
+                //TODO: Worry about different queue types
+                if (queue->GetQueueType() != QueueType::GRAPHICS)
+                    HT_ERROR_PRINTF("Providing a non-graphics queue to the swapchain is currently undefined");
+                m_queue = queue->GetVKQueue();
+
+                Color clearColor = rendererParams.clearColor;
+                m_clearColor.color = { clearColor.r, clearColor.g, clearColor.b, clearColor.a };
+
+                m_window = rendererParams.window;
+                m_display = rendererParams.display;
+
+                m_presentSemaphore = VK_NULL_HANDLE;
+                m_renderSemaphore = VK_NULL_HANDLE;
+                m_submitInfo = {};
+
+                m_dirty = true;
             }
 
-            VKSwapchain::~VKSwapchain()
+            VKSwapChain::~VKSwapChain()
             {
                 destroyPipeline();
 
@@ -60,29 +70,115 @@ namespace Hatchit {
                 destroySurface();
             }
 
-            const VkCommandBuffer& VKSwapchain::VKGetCurrentCommand()
+            void VKSwapChain::VClear(float* color) 
+            {
+                m_clearColor.color = { color[0], color[1], color[2], color[3] };
+
+                assert(BuildSwapchainCommands(m_clearColor));
+            }
+            bool VKSwapChain::VInitialize(uint32_t width, uint32_t height)
+            {
+                if (!prepareSurface())
+                    HT_DEBUG_PRINTF("VKSwapChain(): Failed to prepare surface");
+
+                if (!vkPrepare())
+                    HT_ERROR_PRINTF("VKSwapChain(): Failed to prepare subsystems");
+
+                if (!vkPrepareResources())
+                    HT_ERROR_PRINTF("VKSwapChain(): Failed to prepare necessary resources");
+
+                return true;
+            }
+
+            void VKSwapChain::VResize(uint32_t width, uint32_t height) 
+            {
+                m_dirty = true;
+            }
+
+            void VKSwapChain::VExecute(std::vector<RenderPassHandle> renderPasses)
+            {
+                if (renderPasses.size() <= 0)
+                    return;
+
+                std::vector<VkCommandBuffer> commandBuffers;
+
+                for (uint32_t i = 0; i < renderPasses.size(); i++)
+                {
+                    VKRenderPass* vkpass = static_cast<VKRenderPass*>(renderPasses[i]->GetBase());
+                    VkCommandBuffer command = vkpass->GetVkCommandBuffer();
+
+                    commandBuffers.push_back(command);
+                }
+
+                VkResult err;
+
+                //Submit swapchain command
+                VkSubmitInfo submitInfo = m_submitInfo;
+                submitInfo.waitSemaphoreCount = 0;
+                submitInfo.pWaitSemaphores = nullptr;
+                submitInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
+                submitInfo.pCommandBuffers = commandBuffers.data();
+                submitInfo.signalSemaphoreCount = 0;
+                submitInfo.pSignalSemaphores = nullptr;
+
+                err = vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE);
+                assert(!err);
+            }
+
+            void VKSwapChain::VSetInput(RenderPassHandle handle)
+            {
+                VKRenderPass* pass = static_cast<VKRenderPass*>(handle->GetBase());
+                VKSetIncomingRenderPass(pass);
+            }
+
+            void VKSwapChain::VPresent() 
+            {
+                VkResult err;
+
+                err = VKGetNextImage(m_presentSemaphore);
+                assert(!err);
+
+                assert(VKPostPresentBarrier(m_queue));
+
+                //Submit swapchain command
+                VkSubmitInfo swapChainSubmit = m_submitInfo;
+                swapChainSubmit.commandBufferCount = 1;
+                swapChainSubmit.pCommandBuffers = &m_swapchainBuffers[m_currentBuffer].command;
+                swapChainSubmit.signalSemaphoreCount = 0;
+                swapChainSubmit.pSignalSemaphores = nullptr;
+
+                err = vkQueueSubmit(m_queue, 1, &swapChainSubmit, VK_NULL_HANDLE);
+                assert(!err);
+
+                assert(VKPrePresentBarrier(m_queue));
+
+                err = VKPresent(m_queue, VK_NULL_HANDLE);
+                assert(!err);
+
+                err = vkQueueWaitIdle(m_queue);
+                assert(!err);
+            }
+
+            const VkCommandBuffer& VKSwapChain::GetVKCurrentCommand() const
             {
                 return m_swapchainBuffers[m_currentBuffer].command;
             }
 
-            const VkSurfaceKHR& VKSwapchain::VKGetSurface()
+            const VkSurfaceKHR& VKSwapChain::GetVKSurface() const
             {
                 return m_surface;
             }
-            const uint32_t& VKSwapchain::VKGetGraphicsQueueIndex()
+            const uint32_t& VKSwapChain::GetVKGraphicsQueueIndex() const
             {
                 return m_graphicsQueueNodeIndex;
             }
-            const VkFormat& VKSwapchain::VKGetPreferredColorFormat()
+
+            const VkClearValue& VKSwapChain::GetVKClearColor() const
             {
-                return m_preferredColorFormat;
-            }
-            const VkFormat& VKSwapchain::VKGetPreferredDepthFormat()
-            {
-                return m_preferredDepthFormat;
+                return m_clearColor;
             }
 
-            bool VKSwapchain::VKPrepare()
+            bool VKSwapChain::vkPrepare()
             {
                 VkResult err;
 
@@ -119,7 +215,7 @@ namespace Hatchit {
 
                 VkExtent2D swapchainExtent = {};
                 // width and height are either both -1, or both not -1.
-                if (surfCaps.currentExtent.width == -1)
+                if (surfCaps.currentExtent.width == 0xFFFFFFFF)
                 {
                     // If the surface size is undefined, the size is set to
                     // the size of the images requested.
@@ -156,7 +252,7 @@ namespace Hatchit {
                     desiredNumberOfSwapchainImages = surfCaps.maxImageCount;
                 }
 
-                VkSurfaceTransformFlagsKHR preTransform;
+                /*VkSurfaceTransformFlagsKHR preTransform;
                 if (surfCaps.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
                 {
                     preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
@@ -164,21 +260,21 @@ namespace Hatchit {
                 else
                 {
                     preTransform = surfCaps.currentTransform;
-                }
+                }*/
 
-                VKRenderer* renderer = VKRenderer::RendererInstance;
+                VKTools::CreateSetupCommandBuffer();
 
                 /*
                     Prepare Color
                 */
-                if (!prepareSwapchain(renderer, m_preferredColorFormat, m_colorSpace,
+                if (!prepareSwapchain(m_preferredColorFormat, m_colorSpace,
                     presentModes, surfCaps, swapchainExtent))
                     return false;
 
                 /*
                     Prepare depth
                 */
-                if (!prepareSwapchainDepth(renderer, m_preferredDepthFormat, swapchainExtent))
+                if (!prepareSwapchainDepth(m_preferredDepthFormat, swapchainExtent))
                     return false;
 
                 /*
@@ -193,77 +289,62 @@ namespace Hatchit {
                 if (!prepareFramebuffers(swapchainExtent))
                     return false;
 
+                //Setup semaphores and submission info
+                VkSemaphoreCreateInfo semaphoreCreateInfo = {};
+                semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+                semaphoreCreateInfo.pNext = nullptr;
+                semaphoreCreateInfo.flags = 0;
+
+                err = vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_presentSemaphore);
+                assert(!err);
+
+                err = vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_renderSemaphore);
+                assert(!err);
+
+                m_submitStages = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+
+                m_submitInfo = {};
+                m_submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+                m_submitInfo.pWaitDstStageMask = &m_submitStages;
+                m_submitInfo.waitSemaphoreCount = 1;
+                m_submitInfo.pWaitSemaphores = &m_presentSemaphore;
+                m_submitInfo.signalSemaphoreCount = 1;
+                m_submitInfo.pSignalSemaphores = &m_renderSemaphore;
+
+                VKTools::FlushSetupCommandBuffer();
+
                 return true;
             }
 
-            bool VKSwapchain::VKPrepareResources()
+            bool VKSwapChain::vkPrepareResources()
             {
-                VKRenderer* renderer = VKRenderer::RendererInstance;
-
                 VkResult err;
 
-                Pipeline::RasterizerState rasterState = {};
-                rasterState.cullMode = Pipeline::CullMode::NONE;
-                rasterState.polygonMode = Pipeline::PolygonMode::SOLID;
-                rasterState.depthClampEnable = true;
-
-                Pipeline::MultisampleState multisampleState = {};
-                multisampleState.minSamples = 0;
-                multisampleState.samples = Pipeline::SAMPLE_1_BIT;
-
-                m_pipeline = VKPipeline::GetHandle("SwapchainPipeline.json", "SwapchainPipeline.json");
+                m_pipelineHandle = Pipeline::GetHandle("SwapchainPipeline.json", "SwapchainPipeline.json");
+                m_pipeline = static_cast<VKPipeline*>(m_pipelineHandle->GetBase());
 
                 //Setup the descriptor sets
-                const std::vector<VkDescriptorSetLayout> descriptorSetLayouts = renderer->GetVKRootLayoutHandle()->VKGetDescriptorSetLayouts();
+                Graphics::RootLayoutHandle rootLayoutHandle = Graphics::RootLayout::GetHandle("TestRootDescriptor.json", "TestRootDescriptor.json");
+                VKRootLayout* rootLayout = static_cast<VKRootLayout*>(rootLayoutHandle->GetBase());
+                const std::vector<VkDescriptorSetLayout> descriptorSetLayouts = rootLayout->VKGetDescriptorSetLayouts();
 
                 VkDescriptorSetAllocateInfo allocInfo = {};
                 allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-                allocInfo.descriptorPool = renderer->GetVKDescriptorPool();
-                allocInfo.pSetLayouts = &descriptorSetLayouts[1];
+                allocInfo.descriptorPool = m_descriptorPool;
+                allocInfo.pSetLayouts = &descriptorSetLayouts[3];
                 allocInfo.descriptorSetCount = 1;
 
                 err = vkAllocateDescriptorSets(m_device, &allocInfo, &m_descriptorSet);
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-                    HT_DEBUG_PRINTF("VKSwapchain::prepareResources: Failed to allocate descriptor set\n");
+                    HT_DEBUG_PRINTF("VKSwapChain::prepareResources: Failed to allocate descriptor set\n");
                     return false;
                 }
 
-                std::vector<VkDescriptorImageInfo> textureDescriptors;
-                std::vector<VkWriteDescriptorSet> descriptorWrites;
-
-                for (size_t i = 0; i < m_inputTextures.size(); i++)
-                {
-                    Texture_vk inputTexture = m_inputTextures[i];
-
-                    // Image descriptor for the color map texture
-                    VkDescriptorImageInfo texDescriptor = {};
-                    texDescriptor.sampler = inputTexture.sampler;
-                    texDescriptor.imageView = inputTexture.image.view;
-                    texDescriptor.imageLayout = inputTexture.layout;
-
-                    textureDescriptors.push_back(texDescriptor);
-                }
-
-                for (size_t i = 0; i < m_inputTextures.size(); i++)
-                {
-                    VkWriteDescriptorSet uniformSampler2DWrite = {};
-                    uniformSampler2DWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                    uniformSampler2DWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                    uniformSampler2DWrite.dstSet = m_descriptorSet;
-                    uniformSampler2DWrite.dstBinding = static_cast<uint32_t>(i);
-                    uniformSampler2DWrite.pImageInfo = &textureDescriptors[i];
-                    uniformSampler2DWrite.descriptorCount = 1;
-
-                    descriptorWrites.push_back(uniformSampler2DWrite);
-                }
-
-                vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-
                 //Buffer 3 blank points
                 float blank[9] = { 0,0,0,0,0,0,0,0,0 };
-                if (!renderer->CreateBuffer(m_device, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 9, blank, &m_vertexBuffer))
+                if (!VKTools::CreateUniformBuffer(9, blank, &m_vertexBuffer))
                     return false;
 
                 m_vertexBuffer.descriptor.offset = 0;
@@ -272,8 +353,11 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKSwapchain::BuildSwapchainCommands(VkClearValue clearColor)
+            bool VKSwapChain::BuildSwapchainCommands(VkClearValue clearColor)
             {
+                if (!m_dirty)
+                    return true;
+
                 /*
                     Allocate space for the swapchain command buffers
                 */
@@ -302,7 +386,9 @@ namespace Hatchit {
                 clearValues[0] = clearColor;
                 clearValues[1] = { 1.0f, 0 };
 
-                VkPipelineLayout pipelineLayout = VKRenderer::RendererInstance->GetVKRootLayoutHandle()->VKGetPipelineLayout();
+                Graphics::RootLayoutHandle rootLayoutHandle = Graphics::RootLayout::GetHandle("TestRootDescriptor.json", "TestRootDescriptor.json");
+                VKRootLayout* rootLayout = static_cast<VKRootLayout*>(rootLayoutHandle->GetBase());
+                VkPipelineLayout pipelineLayout = rootLayout->VKGetPipelineLayout();
 
                 for (uint32_t i = 0; i < m_swapchainBuffers.size(); i++)
                 {
@@ -324,7 +410,7 @@ namespace Hatchit {
                     assert(!err);
                     if (err != VK_SUCCESS)
                     {
-                        HT_DEBUG_PRINTF("VKSwapchain::BuildSwapchain(): Failed to build command buffer.\n");
+                        HT_DEBUG_PRINTF("VKSwapChain::BuildSwapchain(): Failed to build command buffer.\n");
                         return false;
                     }
 
@@ -345,8 +431,11 @@ namespace Hatchit {
                     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
                     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
+                    //Bind sampler set from root layout
+                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &rootLayout->VKGetSamplerSet(), 0, nullptr);
+
                     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-                        1, 1, &m_descriptorSet, 0, nullptr);
+                        3, 1, &m_descriptorSet, 0, nullptr);
                     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline->GetVKPipeline());
 
                     //Draw fullscreen Tri; geometry created in shader
@@ -361,7 +450,7 @@ namespace Hatchit {
                     assert(!err);
                     if (err != VK_SUCCESS)
                     {
-                        HT_DEBUG_PRINTF("VKSwapchain::BuildSwapchain(): Failed to end command buffer.\n");
+                        HT_DEBUG_PRINTF("VKSwapChain::BuildSwapchain(): Failed to end command buffer.\n");
                         return false;
                     }
 
@@ -379,7 +468,7 @@ namespace Hatchit {
                     postPresentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
                     postPresentBarrier.srcAccessMask = 0;
                     postPresentBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-                    postPresentBarrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+                    postPresentBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
                     postPresentBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
                     postPresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                     postPresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -427,26 +516,27 @@ namespace Hatchit {
 
                 }
 
+                m_dirty = false;
+
                 return true;
             }
 
-            VkResult VKSwapchain::VKGetNextImage(VkSemaphore presentSemaphore)
+            VkResult VKSwapChain::VKGetNextImage(VkSemaphore presentSemaphore)
             {
                 //TODO: Use fences
-                VkDevice device = VKRenderer::RendererInstance->GetVKDevice();
-                return fpAcquireNextImageKHR(device, m_swapchain, UINT64_MAX, presentSemaphore, VK_NULL_HANDLE, &m_currentBuffer);
+                return fpAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, presentSemaphore, VK_NULL_HANDLE, &m_currentBuffer);
             }
 
-            bool VKSwapchain::VKPostPresentBarrier(const VkQueue& queue)
+            bool VKSwapChain::VKPostPresentBarrier(const VkQueue& queue)
             {
                 return submitBarrier(queue, m_postPresentCommands[m_currentBuffer]);
             }
-            bool VKSwapchain::VKPrePresentBarrier(const VkQueue& queue)
+            bool VKSwapChain::VKPrePresentBarrier(const VkQueue& queue)
             {
                 return submitBarrier(queue, m_prePresentCommands[m_currentBuffer]);
             }
 
-            VkResult VKSwapchain::VKPresent(const VkQueue& queue, const VkSemaphore& renderSemaphore)
+            VkResult VKSwapChain::VKPresent(const VkQueue& queue, const VkSemaphore& renderSemaphore)
             {
                 VkPresentInfoKHR present = {};
                 present.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -464,13 +554,52 @@ namespace Hatchit {
                 return fpQueuePresentKHR(queue, &present);
             }
 
-            void VKSwapchain::VKSetIncomingRenderPass(VKRenderPassHandle renderPass)
+            void VKSwapChain::VKSetIncomingRenderPass(VKRenderPass* renderPass)
             {
-                std::vector<IRenderTargetHandle> incomingRenderTargets = renderPass->GetOutputRenderTargets();
+                m_dirty = true;
+
+                m_inputTextures.clear();
+
+                std::vector<RenderTargetHandle> incomingRenderTargets = renderPass->GetOutputRenderTargets();
                 for (size_t i = 0; i < incomingRenderTargets.size(); i++)
                 {
-                    VKRenderTargetHandle vkRenderTarget = incomingRenderTargets[i].DynamicCastHandle<VKRenderTarget>();
+                    VKRenderTarget* vkRenderTarget = static_cast<VKRenderTarget*>(incomingRenderTargets[i]->GetBase());
                     m_inputTextures.push_back(vkRenderTarget->GetVKTexture());
+                }
+
+                //Send input textures into descriptor set
+                if (m_inputTextures.size() > 0)
+                {
+                    std::vector<VkDescriptorImageInfo> textureDescriptors;
+                    std::vector<VkWriteDescriptorSet> descriptorWrites;
+
+                    for (size_t i = 0; i < m_inputTextures.size(); i++)
+                    {
+                        Texture_vk inputTexture = m_inputTextures[i];
+
+                        // Image descriptor for the color map texture
+                        VkDescriptorImageInfo texDescriptor = {};
+                        texDescriptor.sampler = inputTexture.sampler;
+                        texDescriptor.imageView = inputTexture.image.view;
+                        texDescriptor.imageLayout = inputTexture.layout;
+
+                        textureDescriptors.push_back(texDescriptor);
+                    }
+
+                    for (size_t i = 0; i < 1; i++)
+                    {
+                        VkWriteDescriptorSet uniformTexure2DWrite = {};
+                        uniformTexure2DWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                        uniformTexure2DWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+                        uniformTexure2DWrite.dstSet = m_descriptorSet;
+                        uniformTexure2DWrite.dstBinding = static_cast<uint32_t>(i);
+                        uniformTexure2DWrite.pImageInfo = &textureDescriptors[i];
+                        uniformTexure2DWrite.descriptorCount = 1;
+
+                        descriptorWrites.push_back(uniformTexure2DWrite);
+                    }
+
+                    vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
                 }
             }
 
@@ -478,14 +607,48 @@ namespace Hatchit {
                 Private Methods
             */
 
-            bool VKSwapchain::prepareSurface(const RendererParams& rendererParams) 
+            bool VKSwapChain::createAllocatorPools()
+            {
+                VkResult err;
+
+                VkCommandPoolCreateInfo commandPoolInfo = {};
+                commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+                commandPoolInfo.pNext = nullptr;
+                commandPoolInfo.flags = 0;
+                commandPoolInfo.queueFamilyIndex = m_graphicsQueueNodeIndex;
+               
+                err = vkCreateCommandPool(m_device, &commandPoolInfo, nullptr, &m_commandPool);
+                assert(!err);
+
+                std::vector<VkDescriptorPoolSize> poolSizes;
+
+                VkDescriptorPoolSize imageSize = {};
+                imageSize.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+                imageSize.descriptorCount = 2;
+
+                poolSizes.push_back(imageSize);
+
+                VkDescriptorPoolCreateInfo poolCreateInfo = {};
+                poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+                poolCreateInfo.pPoolSizes = poolSizes.data();
+                poolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+                poolCreateInfo.maxSets = 2;
+                poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+
+                err = vkCreateDescriptorPool(m_device, &poolCreateInfo, nullptr, &m_descriptorPool);
+                assert(!err);
+
+                return true;
+            }
+
+            bool VKSwapChain::prepareSurface() 
             {
                 VkResult err;
 
                 //Hook into the window
 #ifdef HT_SYS_WINDOWS
                 //Get HINSTANCE from HWND
-                HWND window = (HWND)rendererParams.window;
+                HWND window = (HWND)m_window;
                 HINSTANCE instance;
                 instance = (HINSTANCE)GetWindowLongPtr(window, GWLP_HINSTANCE);
 
@@ -506,35 +669,38 @@ namespace Hatchit {
 #endif
 
 #ifdef HT_SYS_LINUX
-                VkXcbSurfaceCreateInfoKHR creationInfo;
-                creationInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+                VkXlibSurfaceCreateInfoKHR creationInfo;
+                creationInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
                 creationInfo.pNext = nullptr;
                 creationInfo.flags = 0;
-                creationInfo.connection = (xcb_connection_t*)rendererParams.display;
-                creationInfo.window = *(uint32_t*)rendererParams.window;
+                creationInfo.dpy = (Display*)m_display;
+                creationInfo.window = (Window)m_window;
 
-                err = vkCreateXcbSurfaceKHR(m_instance, &creationInfo, nullptr, &m_surface);
+                err = vkCreateXlibSurfaceKHR(m_instance, &creationInfo, nullptr, &m_surface);
 
                 if (err != VK_SUCCESS)
                 {
-                    HT_DEBUG_PRINTF("VKSwapchain::prepareSurface(): Error creating VkSurface for Xcb window");
+                    HT_ERROR_PRINTF("VKSwapChain::prepareSurface(): Could not create VkSurface for XLib window");
 
                     return false;
                 }
 #endif
                 if(!getQueueProperties())
-                    HT_DEBUG_PRINTF("VKSwapchain::prepareSurface(): Error getting queue properties");
+                    HT_DEBUG_PRINTF("VKSwapChain::prepareSurface(): Error getting queue properties");
 
                 if(!findSutibleQueue())
-                    HT_DEBUG_PRINTF("VKSwapchain::prepareSurface(): Could not find suitible queue");
+                    HT_DEBUG_PRINTF("VKSwapChain::prepareSurface(): Could not find suitible queue");
 
                 if (!getPreferredFormats())
-                    HT_DEBUG_PRINTF("VKSwapchain::prepareSurface(): Error getting preffered image formats");
+                    HT_DEBUG_PRINTF("VKSwapChain::prepareSurface(): Error getting preffered image formats");
+
+                if (!createAllocatorPools())
+                    HT_DEBUG_PRINTF("VKSwapChain::prepareSurface(): Error creating allocator pools");
 
                 return true;
             }
 
-            bool VKSwapchain::getQueueProperties() 
+            bool VKSwapChain::getQueueProperties() 
             {
                 vkGetPhysicalDeviceProperties(m_gpu, &m_gpuProps);
 
@@ -569,7 +735,7 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKSwapchain::findSutibleQueue() 
+            bool VKSwapChain::findSutibleQueue() 
             {
                 uint32_t i; //we reuse this for all the loops
 
@@ -620,7 +786,7 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKSwapchain::getPreferredFormats() 
+            bool VKSwapChain::getPreferredFormats() 
             {
                 VkResult err;
 
@@ -684,7 +850,7 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKSwapchain::prepareSwapchain(VKRenderer* renderer, VkFormat preferredColorFormat, VkColorSpaceKHR colorSpace, std::vector<VkPresentModeKHR> presentModes, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D surfaceExtents)
+            bool VKSwapChain::prepareSwapchain(VkFormat preferredColorFormat, VkColorSpaceKHR colorSpace, std::vector<VkPresentModeKHR> presentModes, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D surfaceExtents)
             {
                 VkResult err;
                 VkSwapchainKHR oldSwapchain = VK_NULL_HANDLE;
@@ -800,12 +966,6 @@ namespace Hatchit {
                     SwapchainBuffer buffer;
                     buffer.image = swapchainImages[i];
 
-                    //Render loop will expect image to have been used before
-                    //Init image ot the VK_IMAGE_ASPECT_COLOR_BIT state
-                    VkCommandBuffer setupCommand = renderer->GetSetupCommandBuffer();
-                    renderer->SetImageLayout(setupCommand, buffer.image, VK_IMAGE_ASPECT_COLOR_BIT,
-                        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-
                     colorImageView.image = buffer.image;
 
                     //Attempt to create the image view
@@ -823,7 +983,7 @@ namespace Hatchit {
                 m_postPresentCommands.resize(m_swapchainBuffers.size());
                 m_prePresentCommands.resize(m_swapchainBuffers.size());
 
-                for (int i = 0; i < m_swapchainBuffers.size(); i++)
+                for (size_t i = 0; i < m_swapchainBuffers.size(); i++)
                 {
                     m_swapchainBuffers[i].command = VK_NULL_HANDLE;
                     m_postPresentCommands[i] = VK_NULL_HANDLE;
@@ -833,7 +993,7 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKSwapchain::prepareSwapchainDepth(VKRenderer* renderer, const VkFormat& preferredDepthFormat, VkExtent2D extent)
+            bool VKSwapChain::prepareSwapchainDepth(const VkFormat& preferredDepthFormat, VkExtent2D extent)
             {
                 VkResult err;
 
@@ -886,7 +1046,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-                    HT_DEBUG_PRINTF("VKSwapchain::prepareSwapchainDepth(): Error, failed to create image\n");
+                    HT_DEBUG_PRINTF("VKSwapChain::prepareSwapchainDepth(): Error, failed to create image\n");
                     return false;
                 }
 
@@ -898,11 +1058,11 @@ namespace Hatchit {
                 m_depthBuffer.memAllocInfo.memoryTypeIndex = 0;
 
                 //No requirements
-                pass = renderer->MemoryTypeFromProperties(memoryRequirements.memoryTypeBits, 0, &m_depthBuffer.memAllocInfo.memoryTypeIndex);
+                pass = VKTools::MemoryTypeFromProperties(memoryRequirements.memoryTypeBits, 0, &m_depthBuffer.memAllocInfo.memoryTypeIndex);
                 assert(pass);
                 if (!pass)
                 {
-                    HT_DEBUG_PRINTF("VKSwapchain::prepareSwapchainDepth(): Error, failed to get memory type for depth buffer\n");
+                    HT_DEBUG_PRINTF("VKSwapChain::prepareSwapchainDepth(): Error, failed to get memory type for depth buffer\n");
                     return false;
                 }
 
@@ -911,7 +1071,7 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-                    HT_DEBUG_PRINTF("VKSwapchain::prepareSwapchainDepth(): Error, failed to allocate memory for depth buffer\n");
+                    HT_DEBUG_PRINTF("VKSwapChain::prepareSwapchainDepth(): Error, failed to allocate memory for depth buffer\n");
                     return false;
                 }
 
@@ -920,12 +1080,11 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-                    HT_DEBUG_PRINTF("VKSwapchain::prepareSwapchainDepth(): Error, failed to bind depth buffer memory\n");
+                    HT_DEBUG_PRINTF("VKSwapChain::prepareSwapchainDepth(): Error, failed to bind depth buffer memory\n");
                     return false;
                 }
 
-                VkCommandBuffer setupCommand = renderer->GetSetupCommandBuffer();
-                renderer->SetImageLayout(setupCommand, m_depthBuffer.image, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+                VKTools::SetImageLayout(m_depthBuffer.image, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
                 //Create image view
@@ -934,14 +1093,14 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-                    HT_DEBUG_PRINTF("VKSwapchain::prepareSwapchainDepth(): Error, failed create image view for depth buffer\n");
+                    HT_DEBUG_PRINTF("VKSwapChain::prepareSwapchainDepth(): Error, failed create image view for depth buffer\n");
                     return false;
                 }
 
                 return true;
             }
 
-            bool VKSwapchain::prepareRenderPass()
+            bool VKSwapChain::prepareRenderPass()
             {
                 VkAttachmentDescription attachments[2];
                 attachments[0].format = m_preferredColorFormat;
@@ -1001,14 +1160,14 @@ namespace Hatchit {
                 assert(!err);
                 if (err != VK_SUCCESS)
                 {
-                    HT_DEBUG_PRINTF("VKSwapchain::prepareRenderPass(): Failed to create render pass\n");
+                    HT_DEBUG_PRINTF("VKSwapChain::prepareRenderPass(): Failed to create render pass\n");
                     return false;
                 }
 
                 return true;
             }
 
-            bool VKSwapchain::prepareFramebuffers(VkExtent2D extents)
+            bool VKSwapChain::prepareFramebuffers(VkExtent2D extents)
             {
                 VkResult err;
 
@@ -1033,7 +1192,7 @@ namespace Hatchit {
 
                     if (err != VK_SUCCESS)
                     {
-                        HT_DEBUG_PRINTF("VKSwapchain::prepareFrambuffers(): Failed to create framebuffer at index:%d \n", i);
+                        HT_DEBUG_PRINTF("VKSwapChain::prepareFrambuffers(): Failed to create framebuffer at index:%d \n", i);
                         return false;
                     }
 
@@ -1043,9 +1202,12 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKSwapchain::allocateCommandBuffers() 
+            bool VKSwapChain::allocateCommandBuffers() 
             {
                 VkResult err;
+
+                err = vkResetCommandPool(m_device, m_commandPool, VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
+                assert(!err);
 
                 VkCommandBufferAllocateInfo allocateInfo;
                 allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -1064,7 +1226,7 @@ namespace Hatchit {
 
                     if (err != VK_SUCCESS)
                     {
-                        HT_DEBUG_PRINTF("VKSwapchain::allocateCommandBuffers(): Failed to allocate for command buffer at index:%d \n", i);
+                        HT_DEBUG_PRINTF("VKSwapChain::allocateCommandBuffers(): Failed to allocate for command buffer at index:%d \n", i);
                         return false;
                     }
                 }
@@ -1089,7 +1251,7 @@ namespace Hatchit {
                     err = vkAllocateCommandBuffers(m_device, &allocateInfo, m_postPresentCommands.data());
                     if (err != VK_SUCCESS)
                     {
-                        HT_DEBUG_PRINTF("VKSwapchain::allocateCommandBuffers(): Failed to allocate for post present barrier \n");
+                        HT_DEBUG_PRINTF("VKSwapChain::allocateCommandBuffers(): Failed to allocate for post present barrier \n");
                         return false;
                     }
                 }
@@ -1110,7 +1272,7 @@ namespace Hatchit {
                     err = vkAllocateCommandBuffers(m_device, &allocateInfo, m_prePresentCommands.data());
                     if (err != VK_SUCCESS)
                     {
-                        HT_DEBUG_PRINTF("VKSwapchain::allocateCommandBuffers(): Failed to allocate for pre present barrier \n");
+                        HT_DEBUG_PRINTF("VKSwapChain::allocateCommandBuffers(): Failed to allocate for pre present barrier \n");
                         return false;
                     }
                 }
@@ -1118,7 +1280,7 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKSwapchain::submitBarrier(const VkQueue& queue, const VkCommandBuffer& command)
+            bool VKSwapChain::submitBarrier(const VkQueue& queue, const VkCommandBuffer& command)
             {
                 VkResult err;
 
@@ -1136,36 +1298,32 @@ namespace Hatchit {
                 return true;
             }
 
-            void VKSwapchain::destroySurface() 
+            void VKSwapChain::destroySurface() 
             {
                 vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
             }
-            void VKSwapchain::destroyPipeline()
+            void VKSwapChain::destroyPipeline()
             {
-                VKRenderer* renderer = VKRenderer::RendererInstance;
-
                 vkFreeMemory(m_device, m_vertexBuffer.memory, nullptr);
                 vkDestroyBuffer(m_device, m_vertexBuffer.buffer, nullptr);
 
-                vkFreeDescriptorSets(m_device, renderer->GetVKDescriptorPool(), 1, &m_descriptorSet);
-
-                m_pipeline.Release();
+                vkFreeDescriptorSets(m_device, m_descriptorPool, 1, &m_descriptorSet);
             }
-            void VKSwapchain::destroyDepth()
+            void VKSwapChain::destroyDepth()
             {
                 //Destroy depth
                 vkDestroyImageView(m_device, m_depthBuffer.view, nullptr);
                 vkDestroyImage(m_device, m_depthBuffer.image, nullptr);
                 vkFreeMemory(m_device, m_depthBuffer.memory, nullptr);
             }
-            void VKSwapchain::destroyFramebuffers()
+            void VKSwapChain::destroyFramebuffers()
             {
                 //Clear out framebuffers
                 for (uint32_t i = 0; i < m_swapchainBuffers.size(); i++)
                     vkDestroyFramebuffer(m_device, m_framebuffers[i], nullptr);
                 m_framebuffers.clear();
             }
-            void VKSwapchain::destroySwapchainBuffers()
+            void VKSwapChain::destroySwapchainBuffers()
             {
                 uint32_t bufferCount = static_cast<uint32_t>(m_swapchainBuffers.size());
 
@@ -1180,11 +1338,11 @@ namespace Hatchit {
                 vkFreeCommandBuffers(m_device, m_commandPool, bufferCount, m_postPresentCommands.data());
                 vkFreeCommandBuffers(m_device, m_commandPool, bufferCount, m_prePresentCommands.data());
             }
-            void VKSwapchain::destroyRenderPass() 
+            void VKSwapChain::destroyRenderPass() 
             {
                 vkDestroyRenderPass(m_device, m_renderPass, nullptr);
             }
-            void VKSwapchain::destroySwapchain()
+            void VKSwapChain::destroySwapchain()
             {
                 fpDestroySwapchainKHR(m_device, m_swapchain, nullptr);
             }

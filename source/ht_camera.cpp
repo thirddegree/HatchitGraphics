@@ -12,12 +12,15 @@
 **
 **/
 
-#include <ht_camera.h>
-#include <ht_renderer.h>
-namespace Hatchit {
+#include <ht_camera.h>      //Camera
+#include <ht_renderer.h>    //Renderer
+#include <ht_math.h>        //Math::Matrix4
+#include <cstdint>          //uint64_t
 
-    namespace Graphics {
-
+namespace Hatchit 
+{
+    namespace Graphics 
+    {
         Camera::Camera(Math::Matrix4 view, Math::Matrix4 projection)
         {
             m_view = view;
@@ -25,50 +28,60 @@ namespace Hatchit {
             m_layerflags = 0;
         }
 
-        /* Gets the view matrix
-        *\return A reference to the camera's view matrix as a Matrix4
+        /** Gets the view matrix
+        * \return A reference to the camera's view matrix as a Matrix4
         */
         const Math::Matrix4& Camera::GetView() const
         {
             return m_view;
         }
 
-        /* Gets the projection matrix
-        *\return A reference to the camera's projection matrix as a Matrix4
+        /** Gets the projection matrix
+        * \return A reference to the camera's projection matrix as a Matrix4
         */
         const Math::Matrix4& Camera::GetProjection() const
         {
             return m_projection;
         }
 
-        /* Get the flags describing which render layers this camera is on
-        *\return A 64-bit bitflag representing the render layers
+        /** Get the flags describing which render layers this camera is on
+        * \return A 64-bit bitflag representing the render layers
         */
         uint64_t Camera::GetLayerFlags() const
         {
             return m_layerflags;
         }
 
-        /* Sets the view matrix of the camera
-        *\view A Matrix4 describing a view matrix
+        /** Sets the view matrix of the camera
+        * \param view A Math::Matrix4 describing a view matrix
         */
         void Camera::SetView(Math::Matrix4 view)
         {
             m_view = view;
         }
 
-        /* Sets the projection matrix of the camera
-        *\view A Matrix4 describing a projection matrix
+        /** Sets the projection matrix of the camera
+        * \param view A Math::Matrix4 describing a projection matrix
         */
         void Camera::SetProjection(Math::Matrix4 projection)
         {
             m_projection = projection;
         }
 
-        //Register this camera to the renderer based on its layer flags
-        void Camera::RegisterCamera()
+        /** Sets the layer flags of the camera
+        * \param flags A 64 bit integer containing the flags that this camera is a part of
+        */
+        void Camera::SetLayerFlags(uint64_t flags) 
         {
-            IRenderer::Instance->RegisterCamera(*this, m_layerflags);
+            m_layerflags = flags;
+        }
+
+        /** Register this camera to the renderer based on its layer flags
+        * \param renderer The Renderer to register this camera to
+        */
+        void Camera::RegisterCamera(Renderer& renderer)
+        {
+            renderer.RegisterCamera(*this);
         }
 
     }

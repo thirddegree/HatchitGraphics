@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -13,7 +13,7 @@
 **/
 
 #include <ht_vkshader.h>
-#include <ht_vkrenderer.h>
+
 
 namespace Hatchit {
 
@@ -23,19 +23,17 @@ namespace Hatchit {
 
             using namespace Resource;
 
-            VKShader::VKShader(Core::Guid ID) :
-                m_device(VKRenderer::RendererInstance->GetVKDevice()),
-                Core::RefCounted<VKShader>(std::move(ID)),
-                m_shader(VK_NULL_HANDLE)
-            {}
-
-            bool VKShader::Initialize(const std::string& fileName)
+            VKShader::VKShader()
             {
                 m_shader = VK_NULL_HANDLE;
-                ShaderHandle shaderResourceHandle = Shader::GetHandleFromFileName(fileName);
+            }
 
-                size_t size = shaderResourceHandle->GetBytecodeSize();
-                const BYTE* shaderCode = shaderResourceHandle->GetBytecode();
+            bool VKShader::Initialize(Resource::ShaderHandle handle, const VkDevice& device)
+            {
+                m_device = device;
+
+                size_t size = handle->GetBytecodeSize();
+                const BYTE* shaderCode = handle->GetBytecode();
 
                 VkResult err;
 
@@ -58,10 +56,8 @@ namespace Hatchit {
 
             VKShader::~VKShader() 
             {
-                VkDevice device = VKRenderer::RendererInstance->GetVKDevice();
-
                 if(m_shader != VK_NULL_HANDLE)
-                    vkDestroyShaderModule(device, m_shader, nullptr);
+                    vkDestroyShaderModule(m_device, m_shader, nullptr);
             }
 
             VkShaderModule VKShader::GetShaderModule()

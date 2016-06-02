@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -13,7 +13,7 @@
 **/
 
 /**
-* \class VKSwapchain
+* \class VKSwapChain
 * \ingroup HatchitGraphics
 *
 * \brief A Vulkan based swapchain
@@ -28,6 +28,7 @@
 
 #include <ht_vkpipeline.h>  
 #include <ht_vkrendertarget.h>
+#include <ht_vkqueue.h>
 
 namespace Hatchit {
 
@@ -51,20 +52,24 @@ namespace Hatchit {
 
             class VKRenderer;
 
-            class HT_API VKSwapchain : public ISwapchain
+            class HT_API VKSwapChain : public SwapChain
             {
             public:
-                VKSwapchain(VkInstance& instance, VkPhysicalDevice& gpu, VkDevice& device, VkCommandPool& commandPool);
-                ~VKSwapchain();
+                VKSwapChain(const RendererParams& rendererParams, VKDevice* device, VKQueue* queue);
+                ~VKSwapChain();
                 
-                const VkCommandBuffer&  VKGetCurrentCommand();
-                const VkSurfaceKHR&     VKGetSurface();
-                const uint32_t&         VKGetGraphicsQueueIndex();
-                const VkFormat&         VKGetPreferredColorFormat();
-                const VkFormat&         VKGetPreferredDepthFormat();
+                void VClear(float* color)                                   override;
+                bool VInitialize(uint32_t width, uint32_t height)           override;
+                void VResize(uint32_t width, uint32_t height)               override;
+                void VExecute(std::vector<RenderPassHandle> renderPasses)   override;
+                void VSetInput(RenderPassHandle handle)                     override;
+                void VPresent()                                             override;
 
-                bool VKPrepare();
-                bool VKPrepareResources();
+                const VkCommandBuffer&  GetVKCurrentCommand() const;
+                const VkSurfaceKHR&     GetVKSurface() const;
+                const uint32_t&         GetVKGraphicsQueueIndex() const;
+
+                const VkClearValue&     GetVKClearColor() const;
 
                 bool BuildSwapchainCommands(VkClearValue clearColor);
 
@@ -73,13 +78,22 @@ namespace Hatchit {
                 bool VKPrePresentBarrier(const VkQueue& queue);
                 VkResult VKPresent(const VkQueue& queue, const VkSemaphore& renderSemaphore);
 
-                void VKSetIncomingRenderPass(VKRenderPassHandle renderPass);
+                void VKSetIncomingRenderPass(VKRenderPass* renderPass);
 
             private:
-                VkInstance&         m_instance;
-                VkPhysicalDevice&   m_gpu;
-                VkDevice&           m_device;
-                VkCommandPool&      m_commandPool;
+                VkInstance          m_instance;
+                VkPhysicalDevice    m_gpu;
+                VkDevice            m_device;
+                VkQueue             m_queue;
+                VkCommandPool       m_commandPool;
+                VkDescriptorPool    m_descriptorPool;
+
+                VkPipelineStageFlags m_submitStages;
+                VkSemaphore          m_presentSemaphore;
+                VkSemaphore          m_renderSemaphore;
+                VkSubmitInfo         m_submitInfo;
+
+                bool m_dirty;
 
                 VkSurfaceKHR                            m_surface;
                 VkPhysicalDeviceProperties              m_gpuProps;
@@ -89,9 +103,15 @@ namespace Hatchit {
                 VkFormat        m_preferredColorFormat;
                 VkFormat        m_preferredDepthFormat;
                 VkColorSpaceKHR m_colorSpace;
+                VkClearValue    m_clearColor;
+
+                //Void pointers because their contents are dependant on the platform
+                void* m_window;
+                void* m_display;
 
                 VkRenderPass            m_renderPass;
-                VKPipelineHandle        m_pipeline;
+                PipelineHandle          m_pipelineHandle; //Hold this so it doesn't deref and destroy the pipeline
+                VKPipeline*             m_pipeline;
                 VkDescriptorSet         m_descriptorSet;
 
                 std::vector<VkCommandBuffer> m_postPresentCommands;
@@ -102,10 +122,15 @@ namespace Hatchit {
                 std::vector<VkFramebuffer>   m_framebuffers;
                 DepthBuffer                  m_depthBuffer;
 
-                UniformBlock_vk    m_vertexBuffer;
+                UniformBlock_vk         m_vertexBuffer;
                 std::vector<Texture_vk> m_inputTextures;
 
-                bool prepareSurface(const RendererParams& rendererParams);
+                bool vkPrepare();
+                bool vkPrepareResources();
+
+                bool createAllocatorPools();
+
+                bool prepareSurface();
 
                 bool getQueueProperties();
 
@@ -114,11 +139,11 @@ namespace Hatchit {
                 bool getPreferredFormats();
 
                 //Prepare the swapchain base
-                bool prepareSwapchain(VKRenderer* renderer, VkFormat preferredColorFormat, VkColorSpaceKHR colorSpace,
+                bool prepareSwapchain(VkFormat preferredColorFormat, VkColorSpaceKHR colorSpace,
                     std::vector<VkPresentModeKHR> presentModes, VkSurfaceCapabilitiesKHR surfaceCapabilities, VkExtent2D surfaceExtents);
 
                 //Prepare the swapchain depth buffer
-                bool prepareSwapchainDepth(VKRenderer* renderer, const VkFormat& preferredDepthFormat, VkExtent2D extent);
+                bool prepareSwapchainDepth(const VkFormat& preferredDepthFormat, VkExtent2D extent);
 
                 //Prepare the internal render pass
                 bool prepareRenderPass();

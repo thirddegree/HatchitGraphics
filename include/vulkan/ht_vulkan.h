@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -21,7 +21,7 @@
 #endif
 
 #ifdef HT_SYS_LINUX
-#define VK_USE_PLATFORM_XCB_KHR 1
+#define VK_USE_PLATFORM_XLIB_KHR 1
 #endif
 
 #include <vulkan/vulkan.h>
@@ -29,6 +29,8 @@
 namespace Hatchit {
     namespace Graphics {
         namespace Vulkan {
+
+            class VKRenderer;
 
             struct UniformBlock_vk
             {
@@ -60,12 +62,6 @@ namespace Hatchit {
                 uint32_t mipLevels;
             };
 
-            bool CreateUniformBuffer(const VkDevice& device, size_t dataSize, void* data, UniformBlock_vk* uniformBlock);
-            bool CreateTexelBuffer(const VkDevice& device, size_t dataSize, void* data, TexelBlock_vk* texelBlock);
-
-            void DeleteUniformBuffer(const VkDevice& device, UniformBlock_vk& uniformBlock);
-            void DeleteTexelBuffer(const VkDevice& device, TexelBlock_vk& texelBlock);
-
             extern PFN_vkGetPhysicalDeviceSurfaceSupportKHR
                 fpGetPhysicalDeviceSurfaceSupportKHR;
             extern PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR
@@ -74,6 +70,13 @@ namespace Hatchit {
                 fpGetPhysicalDeviceSurfaceFormatsKHR;
             extern PFN_vkGetPhysicalDeviceSurfacePresentModesKHR
                 fpGetPhysicalDeviceSurfacePresentModesKHR;
+
+            extern PFN_vkCreateDebugReportCallbackEXT
+                fpCreateDebugReportCallback;
+            extern PFN_vkDestroyDebugReportCallbackEXT
+                fpDestroyDebugReportCallback;
+            extern PFN_vkDebugReportMessageEXT
+                fpDebugReportMessage;
 
             extern PFN_vkCreateSwapchainKHR
                 fpCreateSwapchainKHR;

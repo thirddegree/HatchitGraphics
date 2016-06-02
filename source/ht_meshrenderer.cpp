@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -13,35 +13,41 @@
 **/
 
 #include <ht_meshrenderer.h>
+#include <ht_pipeline.h>
 
 namespace Hatchit {
 
     namespace Graphics {
 
+        MeshRenderer::MeshRenderer(Renderer* renderer)
+        {
+            m_renderer = renderer;
+        }
+
         MeshRenderer::~MeshRenderer()
         {
         }
 
-        void MeshRenderer::SetMaterial(IMaterialHandle material)
+        void MeshRenderer::SetMaterial(MaterialHandle material)
         {
             m_material = material;
             m_pipeline = material->GetPipeline();
             m_renderPass = material->GetRenderPasses()[0];
         }
 
-        void MeshRenderer::SetMesh(IMeshHandle mesh)
+        void MeshRenderer::SetMesh(MeshHandle mesh)
         {
             m_mesh = mesh;
         }
 
-        void MeshRenderer::SetInstanceData(std::vector<Resource::ShaderVariable*> data)
+        void MeshRenderer::SetInstanceData(ShaderVariableChunk* data)
         {
             m_instanceData = data;
         }
 
         void MeshRenderer::Render()
         {          
-            m_renderPass->VScheduleRenderRequest(m_material, m_mesh, m_instanceData);
+            m_renderer->RegisterRenderRequest(m_renderPass, m_material, m_mesh, m_instanceData);
         }
     }
 }

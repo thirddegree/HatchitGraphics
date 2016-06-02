@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -27,26 +27,35 @@
 
 #include <ht_platform.h>
 #include <ht_rendertarget.h>
-#include <ht_pipeline.h>
 #include <ht_renderer.h>
 
 namespace Hatchit {
 
     namespace Graphics {
 
-        class HT_API ISwapchain
+        class PipelineBase;
+
+        class HT_API SwapChain
         {
         public:
-            virtual ~ISwapchain() {}
+            virtual ~SwapChain() {}
 
-            uint32_t GetWidth();
-            uint32_t GetHeight();
+            uint32_t GetWidth()  const;
+            uint32_t GetHeight() const;
+
+            virtual void VClear(float* color) = 0;
+            virtual bool VInitialize(uint32_t width, uint32_t height) = 0;
+            virtual void VResize(uint32_t width, uint32_t height) = 0;
+            virtual void VExecute(std::vector<RenderPassHandle> renderPasses) = 0;
+            virtual void VSetInput(RenderPassHandle handle) = 0;
+            virtual void VPresent() = 0;
 
         protected:
             //For rendering
-            IPipeline* m_pipeline;
+            PipelineBase* m_pipeline;
             uint32_t m_currentBuffer;
-            uint32_t m_width, m_height;
+            uint32_t m_width;
+            uint32_t m_height;
         };
     }
 }

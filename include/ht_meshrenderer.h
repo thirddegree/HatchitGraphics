@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -26,44 +26,48 @@
 
 #include <ht_renderpass.h>
 #include <ht_objectrenderer.h>
+#include <ht_shadervariablechunk.h>
 #include <ht_material.h>
 #include <ht_mesh.h>
 #include <ht_model.h>
+#include <ht_renderer.h>
 
-namespace Hatchit {
-
-    namespace Graphics {
-
+namespace Hatchit 
+{
+    namespace Graphics
+    {
         class HT_API MeshRenderer : public IObjectRenderer
         {
         public:
+            MeshRenderer(Renderer* renderer);
             virtual ~MeshRenderer();
 
             /* Set which material you want to render with
             * \param material the material you want to render with
             * The material should also store the appropriate pipeline
             */
-            virtual void SetMaterial(IMaterialHandle material);
+            virtual void SetMaterial(MaterialHandle material);
 
             /* Set which mesh will be rendered
             * \param mesh A pointer to the mesh you want to render
             */
-            virtual void SetMesh(IMeshHandle mesh);
+            virtual void SetMesh(MeshHandle mesh);
 
             /*Sets the instance data to be used with this particular mesh renderer
             */
-            virtual void SetInstanceData(std::vector<Resource::ShaderVariable*> data);
+            virtual void SetInstanceData(ShaderVariableChunk* data);
 
             //Override to submit a render request with a graphics language
             virtual void Render();
 
 
         protected:
-            RenderPassBaseHandle    m_renderPass;
-            IPipelineHandle         m_pipeline;
-            IMaterialHandle         m_material;
-            IMeshHandle             m_mesh;
-            std::vector<Resource::ShaderVariable*> m_instanceData;
+            Renderer*               m_renderer;
+            RenderPassHandle        m_renderPass;
+            PipelineHandle          m_pipeline;
+            MaterialHandle          m_material;
+            MeshHandle              m_mesh;
+            ShaderVariableChunk*    m_instanceData;
         };
     }
 }

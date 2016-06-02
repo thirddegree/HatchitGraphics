@@ -16,8 +16,10 @@
 
 #include <ht_platform.h>
 #include <ht_directx.h>
-#include <ht_rootlayout.h>
+#include <ht_rootlayout_base.h>
+#include <ht_rootlayout_resource.h>
 #include <ht_refcounted.h>
+#include <ht_sampler_resource.h>
 
 namespace Hatchit
 { 
@@ -25,7 +27,7 @@ namespace Hatchit
     {
         namespace DX
         {
-            class HT_API D3D12RootLayout : public Core::RefCounted<D3D12RootLayout>, public IRootLayout
+            class HT_API D3D12RootLayout : public RootLayoutBase
             {
             public:
                 enum class HeapType
@@ -35,26 +37,18 @@ namespace Hatchit
                     DSV
                 };
 
-                D3D12RootLayout(Core::Guid ID);
+                D3D12RootLayout();
 
                 ~D3D12RootLayout();
 
-                bool Initialize(const std::string& fileName, ID3D12Device* device);
+                bool Initialize(Resource::RootLayoutHandle handle, ID3D12Device* device);
 
                 ID3D12RootSignature* GetRootSignature();
 
-                ID3D12DescriptorHeap* GetHeap(HeapType type);
-
             private:
                 ID3D12RootSignature*  m_rootSignature;
-                ID3D12DescriptorHeap* m_CBV_SRV_UAV_Heap;
-                ID3D12DescriptorHeap* m_RTV_Heap;
-                ID3D12DescriptorHeap* m_DSV_Heap;
 
-                uint32_t              m_totalCBV_SRV_UAV_Descriptors;
-                uint32_t              m_totalRTV_Descriptors;
-
-                std::vector<D3D12_DESCRIPTOR_RANGE*> m_allocatedRanges;
+                std::vector<D3D12_DESCRIPTOR_RANGE*>        m_allocatedRanges;
 
                 void                                        PostInitCleanup();
                 std::vector<D3D12_STATIC_SAMPLER_DESC>      SamplerDescsFromHandle(const Resource::RootLayoutHandle& handle);
@@ -66,9 +60,7 @@ namespace Hatchit
                 D3D12_FILTER                                FilterFromType(const Resource::Sampler::Filter& filter);
                 D3D12_TEXTURE_ADDRESS_MODE                  AddressModeFromType(const Resource::Sampler::AddressMode mode);
             
-                bool BuildDescriptorHeaps(ID3D12Device* device);
             };
-            using D3D12RootLayoutHandle = Core::Handle<D3D12RootLayout>;
         }
     }
 }

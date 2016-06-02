@@ -15,16 +15,29 @@
 #pragma once
 
 #include <ht_platform.h>
-#include <ht_rootlayout_resource.h>
+#include <ht_refcounted.h>
 
 namespace Hatchit
 {
     namespace Graphics
     {
-        class HT_API IRootLayout
+        class RootLayoutBase;
+
+        class HT_API RootLayout : public Core::RefCounted<RootLayout>
         {
         public:
-            virtual ~IRootLayout() { };
+            RootLayout(Core::Guid ID);
+            
+            ~RootLayout();
+
+            RootLayoutBase* const GetBase() const;
+
+            bool Initialize(const std::string& file);
+            
+        private:
+            RootLayoutBase* m_base;
         };
+
+        using RootLayoutHandle = Core::Handle<RootLayout>;
     }
 }

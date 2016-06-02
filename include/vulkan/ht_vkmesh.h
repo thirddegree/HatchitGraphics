@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015 Third-Degree
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -13,18 +13,16 @@
 **/
 
 /**
-* \class IMesh
+* \class VKMesh
 * \ingroup HatchitGraphics
 *
-* \brief An interface to a mesh that exists on the GPU
-*
-* You must pass this interface a Resource::Mesh which is a collection
-* of data that you want buffered onto the graphics card
+* \brief A Mesh existing on the GPU via Vulkan
 */
 
 #pragma once
 
-#include <ht_mesh.h>
+#include <ht_mesh_resource.h>
+#include <ht_mesh_base.h>
 #include <ht_vulkan.h>
 
 namespace Hatchit {
@@ -33,23 +31,25 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            class HT_API VKMesh : public Core::RefCounted<VKMesh>, public IMesh
+            class VKRenderer;
+            class HT_API VKMesh : public MeshBase
             {
             public:
-                VKMesh(Core::Guid ID);
+                VKMesh();
                 ~VKMesh();
 
-                bool Initialize(Hatchit::Resource::Mesh* mesh);
+                bool Initialize(Hatchit::Resource::Mesh* mesh, const VkDevice& device);
+
+                uint32_t VGetIndexCount() override;
 
                 UniformBlock_vk GetVertexBlock();
                 UniformBlock_vk GetIndexBlock();
 
             private:
+                VkDevice m_device;
                 UniformBlock_vk m_vertexBlock;
                 UniformBlock_vk m_indexBlock;
             };
-
-            using VKMeshHandle = Core::Handle<VKMesh>;
 
         }
 
