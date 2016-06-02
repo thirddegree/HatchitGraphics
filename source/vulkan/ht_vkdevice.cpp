@@ -23,6 +23,13 @@ namespace Hatchit
 
             VKDevice::VKDevice() 
             {
+                m_layerNames1013 = {
+                    "VK_LAYER_GOOGLE_threading",            "VK_LAYER_LUNARG_core_validation",
+                    "VK_LAYER_LUNARG_object_tracker",       "VK_LAYER_LUNARG_parameter_validation",
+                    "VK_LAYER_LUNARG_swapchain",            "VK_LAYER_LUNARG_device_limits",
+                    "VK_LAYER_LUNARG_image"
+                };
+
                 m_layerNames1011 = {
                     "VK_LAYER_GOOGLE_threading",            "VK_LAYER_LUNARG_core_validation",
                     "VK_LAYER_LUNARG_object_tracker",       "VK_LAYER_LUNARG_parameter_validation",
@@ -51,6 +58,7 @@ namespace Hatchit
                     "VK_LAYER_LUNARG_device_limits",    "VK_LAYER_LUNARG_image"
                 };
 
+                m_layerNamesCollection.push_back(m_layerNames1013);
                 m_layerNamesCollection.push_back(m_layerNames1011);
                 m_layerNamesCollection.push_back(m_layerNames108);
                 m_layerNamesCollection.push_back(m_layerNames105);

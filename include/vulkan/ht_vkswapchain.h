@@ -88,9 +88,10 @@ namespace Hatchit {
                 VkCommandPool       m_commandPool;
                 VkDescriptorPool    m_descriptorPool;
 
-                VkSemaphore     m_presentSemaphore;
-                VkSemaphore     m_renderSemaphore;
-                VkSubmitInfo    m_submitInfo;
+                VkPipelineStageFlags m_submitStages;
+                VkSemaphore          m_presentSemaphore;
+                VkSemaphore          m_renderSemaphore;
+                VkSubmitInfo         m_submitInfo;
 
                 bool m_dirty;
 

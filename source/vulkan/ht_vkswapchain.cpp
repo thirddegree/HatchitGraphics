@@ -301,11 +301,11 @@ namespace Hatchit {
                 err = vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_renderSemaphore);
                 assert(!err);
 
-                VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+                m_submitStages = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 
                 m_submitInfo = {};
                 m_submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-                m_submitInfo.pWaitDstStageMask = &stageFlags;
+                m_submitInfo.pWaitDstStageMask = &m_submitStages;
                 m_submitInfo.waitSemaphoreCount = 1;
                 m_submitInfo.pWaitSemaphores = &m_presentSemaphore;
                 m_submitInfo.signalSemaphoreCount = 1;
@@ -468,7 +468,7 @@ namespace Hatchit {
                     postPresentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
                     postPresentBarrier.srcAccessMask = 0;
                     postPresentBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-                    postPresentBarrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+                    postPresentBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
                     postPresentBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
                     postPresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                     postPresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -966,11 +966,6 @@ namespace Hatchit {
                     SwapchainBuffer buffer;
                     buffer.image = swapchainImages[i];
 
-                    //Render loop will expect image to have been used before
-                    //Init image ot the VK_IMAGE_ASPECT_COLOR_BIT state
-                    VKTools::SetImageLayout(buffer.image, VK_IMAGE_ASPECT_COLOR_BIT,
-                        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-
                     colorImageView.image = buffer.image;
 
                     //Attempt to create the image view
@@ -1211,7 +1206,7 @@ namespace Hatchit {
             {
                 VkResult err;
 
-                err = vkResetCommandPool(m_device, m_commandPool, VK_COMMAND_POOL_RESET_FLAG_BITS_MAX_ENUM);
+                err = vkResetCommandPool(m_device, m_commandPool, VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
                 assert(!err);
 
                 VkCommandBufferAllocateInfo allocateInfo;
