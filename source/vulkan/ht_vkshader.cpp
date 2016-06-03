@@ -13,7 +13,7 @@
 **/
 
 #include <ht_vkshader.h>
-
+#include "spirv_glsl.hpp"
 
 namespace Hatchit {
 
@@ -35,6 +35,13 @@ namespace Hatchit {
                 size_t size = handle->GetBytecodeSize();
                 const BYTE* shaderCode = handle->GetBytecode();
 
+                //Convert shader bytecode to SPV ops which are uint32_ts
+                //SPIRV-Cross expects a vector
+                std::vector<uint32_t> shaderOps;
+                size_t uintsize = (size / sizeof(uint32_t));
+                shaderOps.resize(uintsize);
+                memcpy(shaderOps.data(), shaderCode, size);
+
                 VkResult err;
 
                 VkShaderModuleCreateInfo moduleCreateInfo = {};
@@ -51,6 +58,26 @@ namespace Hatchit {
                     HT_DEBUG_PRINTF("VKShader::VInitFromFile(): Error creating shader module\n");
                     return false;
                 }
+
+                //TEST REFLECTION
+                //spirv_cross::CompilerGLSL glsl(std::move(shaderOps));
+                //spirv_cross::ShaderResources resources = glsl.get_shader_resources();
+                //
+                //// Get all sampled images in the shader.
+                //HT_DEBUG_PRINTF("Shader Images: \n");
+                //for (auto &resource : resources.storage_images)
+                //{
+                //    unsigned set = glsl.get_decoration(resource.id, spv::DecorationDescriptorSet);
+                //    unsigned binding = glsl.get_decoration(resource.id, spv::DecorationBinding);
+                //    HT_DEBUG_PRINTF("Image %s at set = %u, binding = %u\n", resource.name.c_str(), set, binding);
+                //
+                //    // Modify the decoration to prepare it for GLSL.
+                //    glsl.unset_decoration(resource.id, spv::DecorationDescriptorSet);
+                //
+                //    // Some arbitrary remapping if we want.
+                //    glsl.set_decoration(resource.id, spv::DecorationBinding, set * 16 + binding);
+                //}
+
                 return true;
             }
 
