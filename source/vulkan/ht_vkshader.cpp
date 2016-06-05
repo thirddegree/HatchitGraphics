@@ -13,6 +13,7 @@
 **/
 
 #include <ht_vkshader.h>
+#undef Bool
 #include "spirv_glsl.hpp"
 
 namespace Hatchit {
