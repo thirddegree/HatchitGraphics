@@ -30,12 +30,12 @@
 #pragma once
 
 #include <ht_platform.h>
-#include <ht_color.h>
+#include <Hatchit/HatchitGraphics/include/ht_color.h>
 #include <ht_types.h>
 #include <ht_string.h>
 #include <ht_renderpass.h>
 #include <ht_camera.h>
-#include <ht_device.h>
+#include <Hatchit/HatchitGraphics/include/ht_device.h>
 #include <ht_gpuqueue.h>
 #include <ht_threadqueue.h>
 #include <ht_shadervariable.h>

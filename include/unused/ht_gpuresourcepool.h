@@ -17,7 +17,7 @@
 #include <ht_platform.h>
 #include <ht_texture.h>
 #include <ht_singleton.h>
-#include <ht_device.h>
+#include <Hatchit/HatchitGraphics/include/ht_device.h>
 #include <ht_material.h>
 #include <ht_pipeline.h>
 #include <ht_rootlayout.h>

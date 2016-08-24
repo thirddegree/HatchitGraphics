@@ -28,7 +28,7 @@
 #include <ht_mesh.h>
 #include <ht_material.h>
 #include <ht_math.h>
-#include <ht_color.h>
+#include <Hatchit/HatchitGraphics/include/ht_color.h>
 #include <ht_shadervariablechunk.h>
 #include <ht_commandpool.h>     //ICommandPool
 

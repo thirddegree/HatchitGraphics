@@ -1,6 +1,8 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015-2016 Third-Degree
+**    Copyright(c) 2016 Third-Degree
+**
+**    Created by Matt Guerrette on 8/23/16.
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -15,18 +17,24 @@
 #pragma once
 
 #include <ht_platform.h>
+#include <ht_device.h>
 
 namespace Hatchit
 {
     namespace Graphics
     {
-        class HT_API IDevice
+        namespace Vulkan
         {
-        public:
-            virtual ~IDevice() { };
+            class HT_API VKDevice : public IDevice
+            {
+            public:
+                VKDevice();
 
-            virtual bool VInitialize() = 0;
-            virtual void VReportDeviceInfo() = 0;
-        };
+                ~VKDevice();
+
+                bool VInitialize()          override;
+                void VReportDeviceInfo()    override;
+            };
+        }
     }
 }

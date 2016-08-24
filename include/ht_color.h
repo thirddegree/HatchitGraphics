@@ -20,6 +20,9 @@ namespace Hatchit {
 
     namespace Graphics {
 
+        /**
+         * @brief Color class defining a 4-component color value
+         */
         class HT_API Color
         {
         public:
@@ -49,6 +52,9 @@ namespace Hatchit {
             }
         };
 
+        /**
+         * @brief Contains static definitions for various Color values
+         */
         namespace Colors {
 
             static const Color IndianRed = Color(0.804f, 0.361f, 0.361f, 1.0f); //RGBA: {0.804f, 0.361f, 0.361f, 1.0f}
