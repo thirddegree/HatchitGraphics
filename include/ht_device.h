@@ -21,7 +21,8 @@ namespace Hatchit
     namespace Graphics
     {
         /**
-         * @brief Interface class defining a Graphics Device
+         * \class IDevice
+         * \brief Interface outlining implementation for GPU Device
          */
         class HT_API IDevice
         {

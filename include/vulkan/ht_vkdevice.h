@@ -1,8 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2016 Third-Degree
-**
-**    Created by Matt Guerrette on 8/23/16.
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -25,7 +23,15 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            class HT_API VKDevice : public IDevice
+            /**
+             * \class VKDevice
+             * \brief Vulkan device wrapper
+             *
+             * This class wraps the functionality associated with interfacing with a GPU device
+             * using Vulkan. Since there can be multiple active devices, this class represents a single
+             * device instance.
+             */
+            class VKDevice : public IDevice
             {
             public:
                 VKDevice();
@@ -34,6 +40,8 @@ namespace Hatchit
 
                 bool VInitialize()          override;
                 void VReportDeviceInfo()    override;
+
+            private:
             };
         }
     }

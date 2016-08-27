@@ -15,6 +15,7 @@
 #pragma once
 
 #include <ht_platform.h>
+#include <ht_string.h>
 
 #ifdef HT_SYS_WINDOWS
 #define VK_USE_PLATFORM_WIN32_KHR 1
@@ -26,12 +27,13 @@
 
 #include <vulkan/vulkan.h>
 
-namespace Hatchit {
-    namespace Graphics {
-        namespace Vulkan {
-
-            class VKRenderer;
-
+namespace Hatchit
+{
+    namespace Graphics
+    {
+        namespace Vulkan
+        {
+            /*
             struct UniformBlock_vk
             {
                 VkBuffer                buffer;
@@ -61,6 +63,9 @@ namespace Hatchit {
                 uint32_t width, height;
                 uint32_t mipLevels;
             };
+             */
+
+
 
             extern PFN_vkGetPhysicalDeviceSurfaceSupportKHR
                 fpGetPhysicalDeviceSurfaceSupportKHR;

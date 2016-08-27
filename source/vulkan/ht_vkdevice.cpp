@@ -1,8 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2016 Third-Degree
-**
-**    Created by Matt Guerrette on 8/23/16.
+**    Copyright(c) 2015-2016 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -16,23 +14,22 @@
 
 #include <ht_vkdevice.h>
 
-namespace Hatchit
-{
-    namespace Graphics
-    {
-        namespace Vulkan
-        {
+namespace Hatchit {
+    namespace Graphics {
+        namespace Vulkan {
 
-            VKDevice::VKDevice() {
+            VKDevice::VKDevice()
+            {
 
             }
 
-            VKDevice::~VKDevice() {
+            VKDevice::~VKDevice()
+            {
 
             }
 
             bool VKDevice::VInitialize() {
-                return false;
+                return true;
             }
 
             void VKDevice::VReportDeviceInfo() {
