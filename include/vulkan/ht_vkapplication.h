@@ -25,6 +25,8 @@ namespace Hatchit
     {
         namespace Vulkan
         {
+            class VKDevice;
+
             /**
              * \class VKApplication
              * \brief Defines a Vulkan application instance
@@ -40,24 +42,34 @@ namespace Hatchit
                 ~VKApplication();
 
                 bool Initialize();
-
                 bool IsValid();
 
-                const std::string& Name() const;
-                const uint32_t Version() const;
-                const std::string& EngineName() const;
-                const uint32_t EngineVersion() const;
-                const uint32_t APIVersion() const;
-            private:
-                VkInstance                  m_instance;
-                VkApplicationInfo           m_info;
+                const std::string&  Name()              const;
+                const uint32_t      Version()           const;
+                const std::string&  EngineName()        const;
+                const uint32_t      EngineVersion()     const;
+                const uint32_t      APIVersion()        const;
 
-                std::vector<std::string>    m_layers;
-                std::vector<std::string>    m_extensions;
+                VKDevice* const     Device(uint32_t index);
+
+            private:
+                VkInstance                          m_instance;
+                VkApplicationInfo                   m_info;
+
+                std::vector<std::string>            m_layers;
+                std::vector<std::string>            m_extensions;
+
+                std::vector<VkPhysicalDevice>       m_devices;
 
             private:
                 bool CheckInstanceLayers();
                 bool CheckInstanceExtensions();
+                bool EnumeratePhysicalDevices();
+
+
+                static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType,
+                    uint64_t srcObject, size_t location, int32_t msgCode,
+                    const char *pLayerPrefix, const char *pMsg, void *pUserData);
             };
         }
     }

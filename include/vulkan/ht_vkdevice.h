@@ -16,6 +16,9 @@
 
 #include <ht_platform.h>
 #include <ht_device.h>
+#include <ht_string.h>
+#include <ht_vulkan.h>
+#include <set>
 
 namespace Hatchit
 {
@@ -31,17 +34,24 @@ namespace Hatchit
              * using Vulkan. Since there can be multiple active devices, this class represents a single
              * device instance.
              */
-            class VKDevice : public IDevice
+            class VKDevice
             {
             public:
                 VKDevice();
 
                 ~VKDevice();
 
-                bool VInitialize()          override;
-                void VReportDeviceInfo()    override;
+                bool Initialize();
+
+                const VkPhysicalDeviceProperties& Properties();
+
+                operator VkPhysicalDevice();
 
             private:
+                VkPhysicalDevice            m_vkDevice;
+                VkPhysicalDeviceProperties  m_vkDeviceProperties;
+
+                static std::set<uint32_t>   _RegisteredDevices;
             };
         }
     }

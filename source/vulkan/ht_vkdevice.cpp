@@ -28,12 +28,8 @@ namespace Hatchit {
 
             }
 
-            bool VKDevice::VInitialize() {
+            bool VKDevice::Initialize() {
                 return true;
-            }
-
-            void VKDevice::VReportDeviceInfo() {
-
             }
 
         }
