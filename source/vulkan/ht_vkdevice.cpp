@@ -28,9 +28,22 @@ namespace Hatchit {
 
             }
 
-            bool VKDevice::Initialize() {
+            bool VKDevice::Initialize(uint32_t index) {
+
+                VkResult err = VK_SUCCESS;
+
+                uint32_t numDevices = 0;
+                
+
+
+
                 return true;
             }
+
+            const VkPhysicalDeviceProperties& VKDevice::Properties() const {
+                return m_vkDeviceProperties;
+            }
+
 
         }
     }

@@ -41,17 +41,17 @@ namespace Hatchit
 
                 ~VKDevice();
 
-                bool Initialize();
+                bool Initialize(uint32_t index);
 
-                const VkPhysicalDeviceProperties& Properties();
+
+                const VkPhysicalDeviceProperties& Properties() const;
 
                 operator VkPhysicalDevice();
 
             private:
                 VkPhysicalDevice            m_vkDevice;
+                VkPhysicalDeviceFeatures    m_vkDeviceFeatures;
                 VkPhysicalDeviceProperties  m_vkDeviceProperties;
-
-                static std::set<uint32_t>   _RegisteredDevices;
             };
         }
     }
