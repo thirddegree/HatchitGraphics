@@ -118,7 +118,7 @@ namespace Hatchit
                 return m_instance != VK_NULL_HANDLE;
             }
 
-            const std::string &VKApplication::Name() const {
+            const std::string VKApplication::Name() const {
                 return m_info.pApplicationName;
             }
 

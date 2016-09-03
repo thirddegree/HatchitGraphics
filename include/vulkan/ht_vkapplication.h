@@ -33,7 +33,7 @@ namespace Hatchit
              *
              * A Vulkan application instance stores the per-application vulkan states
              */
-            class VKApplication
+            class HT_API VKApplication
             {
             public:
                 VKApplication();
@@ -44,7 +44,7 @@ namespace Hatchit
                 bool Initialize();
                 bool IsValid();
 
-                const std::string&  Name()              const;
+                const std::string   Name()              const;
                 const uint32_t      Version()           const;
                 const std::string&  EngineName()        const;
                 const uint32_t      EngineVersion()     const;

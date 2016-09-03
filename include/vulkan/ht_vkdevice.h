@@ -34,7 +34,7 @@ namespace Hatchit
              * using Vulkan. Since there can be multiple active devices, this class represents a single
              * device instance.
              */
-            class VKDevice
+            class HT_API VKDevice
             {
             public:
                 VKDevice();
