@@ -50,7 +50,15 @@ namespace Hatchit
                 const uint32_t      EngineVersion()     const;
                 const uint32_t      APIVersion()        const;
 
+                const uint32_t      EnabledLayerCount() const;
+                const uint32_t      EnabledExtensionCount() const;
+
+                const std::vector<std::string>& EnabledLayerNames() const;
+                const std::vector<std::string>& EnabledExtensionNames() const;
+
                 VKDevice* const     Device(uint32_t index);
+
+                operator VkInstance();
 
             private:
                 VkInstance                          m_instance;
@@ -59,12 +67,11 @@ namespace Hatchit
                 std::vector<std::string>            m_layers;
                 std::vector<std::string>            m_extensions;
 
-                std::vector<VkPhysicalDevice>       m_devices;
+                std::vector<VKDevice*>              m_devices;
 
             private:
                 bool CheckInstanceLayers();
                 bool CheckInstanceExtensions();
-                bool EnumeratePhysicalDevices();
 
 
                 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType,

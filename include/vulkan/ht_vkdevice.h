@@ -26,6 +26,8 @@ namespace Hatchit
     {
         namespace Vulkan
         {
+            class VKApplication;
+
             /**
              * \class VKDevice
              * \brief Vulkan device wrapper
@@ -41,17 +43,24 @@ namespace Hatchit
 
                 ~VKDevice();
 
-                bool Initialize(uint32_t index);
+                bool Initialize(VKApplication& instance, uint32_t index);
 
 
                 const VkPhysicalDeviceProperties& Properties() const;
 
+                operator VkDevice();
                 operator VkPhysicalDevice();
 
             private:
-                VkPhysicalDevice            m_vkDevice;
-                VkPhysicalDeviceFeatures    m_vkDeviceFeatures;
-                VkPhysicalDeviceProperties  m_vkDeviceProperties;
+                VkDevice                            m_vkDevice;
+                VkPhysicalDevice                    m_vkPhysicalDevice;
+                VkPhysicalDeviceFeatures            m_vkPhysicalDeviceFeatures;
+                VkPhysicalDeviceProperties          m_vkPhysicalDeviceProperties;
+                VkPhysicalDeviceMemoryProperties    m_vkPhysicalDeviceMemoryProperties;
+
+
+                bool EnumeratePhysicalDevices(VKApplication& instance, uint32_t index);
+                bool QueryPhysicalDeviceInfo();
             };
         }
     }

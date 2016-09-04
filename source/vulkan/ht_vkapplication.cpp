@@ -73,7 +73,7 @@ namespace Hatchit
                 m_info.applicationVersion = 0;
                 m_info.pEngineName = "Hatchit";
                 m_info.engineVersion = 0;
-                m_info.apiVersion = VK_MAKE_VERSION(1, 0, 8);
+                m_info.apiVersion = VK_MAKE_VERSION(1, 0, 11);
 
                 /**
                  * Attempt to create application instance
@@ -105,12 +105,6 @@ namespace Hatchit
                     return false;
                 }
 
-                /**
-                 * Enumerate device properties available on system
-                 */
-                if(!EnumeratePhysicalDevices())
-                    return false;
-
                 return true;
             }
 
@@ -138,12 +132,35 @@ namespace Hatchit
                 return m_info.apiVersion;
             }
 
+            const uint32_t VKApplication::EnabledLayerCount() const {
+                return static_cast<uint32_t>(m_layers.size());
+            }
+
+            const uint32_t VKApplication::EnabledExtensionCount() const {
+                return static_cast<uint32_t>(m_extensions.size());
+            }
+
+            const std::vector<std::string>& VKApplication::EnabledLayerNames() const{
+                return m_layers;
+            }
+
+            const std::vector<std::string>& VKApplication::EnabledExtensionNames() const {
+                return m_extensions;
+            }
+
             VKDevice *const VKApplication::Device(uint32_t index) {
                 if (index > m_devices.size() || index < 0)
                     return nullptr;
 
                 return nullptr;
             }
+
+            VKApplication::operator VkInstance()
+            {
+                return m_instance;
+            }
+
+           
 
 
             bool VKApplication::CheckInstanceLayers() {
@@ -194,11 +211,12 @@ namespace Hatchit
                 assert(!err);
 
                 for (auto &ext : instanceExtensions) {
-                    if (!strcmp(VK_KHR_SURFACE_EXTENSION_NAME, ext.extensionName))
-                        m_extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+                    /*if (!strcmp(VK_KHR_SURFACE_EXTENSION_NAME, ext.extensionName))
+                        m_extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);*/
 
 #ifdef HT_SYS_WINDOWS
-
+                    /*if (!strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, ext.extensionName))
+                        m_extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);*/
 #elif defined(HT_SYS_LINUX)
                     if (!strcmp(VK_KHR_XLIB_SURFACE_EXTENSION_NAME, ext.extensionName))
                         m_extensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
@@ -207,36 +225,12 @@ namespace Hatchit
                     /**
                      * Enable validation extension layer
                      */
-                    if (!strcmp(VK_EXT_DEBUG_REPORT_EXTENSION_NAME, ext.extensionName))
-                        m_extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+                    /*if (!strcmp(VK_EXT_DEBUG_REPORT_EXTENSION_NAME, ext.extensionName))
+                        m_extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);*/
                 }
 
                 return true;
             }
-
-            bool VKApplication::EnumeratePhysicalDevices() {
-
-                VkResult err = VK_SUCCESS;
-
-                uint32_t deviceCount = 0;
-                err = vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr);
-                if(deviceCount <= 0 || err != VK_SUCCESS)
-                {
-                    HT_ERROR_PRINTF("VKApplication::EnumeratePhysicalDevices(): No compatible devices found\n");
-                    return false;
-                }
-
-                m_devices.resize(deviceCount);
-                err = vkEnumeratePhysicalDevices(m_instance, &deviceCount, m_devices.data());
-                if(err != VK_SUCCESS)
-                {
-                    HT_ERROR_PRINTF("VKApplication::EnumeratePhysicalDevices(): Failed to acquire device information\n");
-                    return false;
-                }
-
-                return true;
-            }
-
 
             VKAPI_ATTR VkBool32 VKAPI_CALL VKApplication::DebugCallback(VkFlags msgFlags,
                                                                         VkDebugReportObjectTypeEXT objType,
