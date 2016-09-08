@@ -27,11 +27,12 @@ namespace Hatchit
                 m_info = {};
 
                 m_layers = {
-                        "VK_LAYER_GOOGLE_threading", "VK_LAYER_LUNARG_core_validation",
-                        "VK_LAYER_LUNARG_object_tracker", "VK_LAYER_LUNARG_parameter_validation",
-                        "VK_LAYER_LUNARG_standard_validation", "VK_LAYER_LUNARG_swapchain",
-                        "VK_LAYER_LUNARG_device_limits", "VK_LAYER_LUNARG_image"
+                    // This is a meta layer that enables all of the standard
+                    // validation layers in the correct order :
+                    // threading, parameter_validation, device_limits, object_tracker, image, core_validation, swapchain, and unique_objects
+                    "VK_LAYER_LUNARG_standard_validation"
                 };
+
             }
 
             VKApplication::VKApplication(const VkApplicationInfo &info) {
@@ -39,10 +40,10 @@ namespace Hatchit
                 m_info = info;
 
                 m_layers = {
-                        "VK_LAYER_GOOGLE_threading", "VK_LAYER_LUNARG_core_validation",
-                        "VK_LAYER_LUNARG_object_tracker", "VK_LAYER_LUNARG_parameter_validation",
-                        "VK_LAYER_LUNARG_standard_validation", "VK_LAYER_LUNARG_swapchain",
-                        "VK_LAYER_LUNARG_device_limits", "VK_LAYER_LUNARG_image"
+                    // This is a meta layer that enables all of the standard
+                    // validation layers in the correct order :
+                    // threading, parameter_validation, device_limits, object_tracker, image, core_validation, swapchain, and unique_objects
+                    "VK_LAYER_LUNARG_standard_validation"
                 };
 
 
@@ -73,7 +74,7 @@ namespace Hatchit
                 m_info.applicationVersion = 0;
                 m_info.pEngineName = "Hatchit";
                 m_info.engineVersion = 0;
-                m_info.apiVersion = VK_MAKE_VERSION(1, 0, 11);
+                m_info.apiVersion = VK_API_VERSION_1_0;
 
                 /**
                  * Attempt to create application instance
@@ -211,12 +212,12 @@ namespace Hatchit
                 assert(!err);
 
                 for (auto &ext : instanceExtensions) {
-                    /*if (!strcmp(VK_KHR_SURFACE_EXTENSION_NAME, ext.extensionName))
-                        m_extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);*/
+                    if (!strcmp(VK_KHR_SURFACE_EXTENSION_NAME, ext.extensionName))
+                        m_extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
 
 #ifdef HT_SYS_WINDOWS
-                    /*if (!strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, ext.extensionName))
-                        m_extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);*/
+                    if (!strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, ext.extensionName))
+                        m_extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
 #elif defined(HT_SYS_LINUX)
                     if (!strcmp(VK_KHR_XLIB_SURFACE_EXTENSION_NAME, ext.extensionName))
                         m_extensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);

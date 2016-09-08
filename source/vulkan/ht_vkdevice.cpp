@@ -45,7 +45,7 @@ namespace Hatchit {
 
                 float QueueProperties[] = { 0.0f };
 
-                VkDeviceQueueCreateInfo queue;
+                VkDeviceQueueCreateInfo queue = {};
                 queue.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
                 queue.pNext = nullptr;
                 queue.queueFamilyIndex = 0; //TODO: This could be subject to change
@@ -53,12 +53,12 @@ namespace Hatchit {
                 queue.pQueuePriorities = QueueProperties;
 
 
-                VkDeviceCreateInfo device;
+                VkDeviceCreateInfo device = {};
                 device.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
                 device.pNext = nullptr;
                 device.queueCreateInfoCount = 1;
                 device.pQueueCreateInfos = &queue;
-                device.enabledExtensionCount = instance.EnabledExtensionCount();
+                device.enabledExtensionCount = 1;
                 std::vector<const char *> extensions;
                 extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
                 device.ppEnabledExtensionNames = extensions.data();
