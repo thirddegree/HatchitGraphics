@@ -61,7 +61,7 @@ namespace Hatchit
                     return false;
                 }*/
 #elif defined(HT_SYS_LINUX)
-                VkXlibSurfaceCreateInfoKHR creationInfo;
+/*                VkXlibSurfaceCreateInfoKHR creationInfo;
                 creationInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
                 creationInfo.pNext = nullptr;
                 creationInfo.flags = 0;
@@ -74,7 +74,7 @@ namespace Hatchit
                 {
                     HT_ERROR_PRINTF("VKSwapChain::Initialize(): [%s] Could not create VkSurface for XLib window\n", VKErrorString(err));
                     return false;
-                }
+                }*/
 #endif
 
                 /**
