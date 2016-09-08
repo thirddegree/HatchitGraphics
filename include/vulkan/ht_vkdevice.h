@@ -38,6 +38,11 @@ namespace Hatchit
              */
             class HT_API VKDevice
             {
+                struct QueueFamily
+                {
+                    uint32_t graphics;
+                    uint32_t compute;
+                };
             public:
                 VKDevice();
 
@@ -58,9 +63,14 @@ namespace Hatchit
                 VkPhysicalDeviceProperties          m_vkPhysicalDeviceProperties;
                 VkPhysicalDeviceMemoryProperties    m_vkPhysicalDeviceMemoryProperties;
 
+                std::vector<VkQueueFamilyProperties> m_vkQueueFamilyProperties;
+
+                
 
                 bool EnumeratePhysicalDevices(VKApplication& instance, uint32_t index);
                 bool QueryPhysicalDeviceInfo();
+                QueueFamily QueryQueueFamily(VkQueueFlagBits flags);
+            
             };
         }
     }

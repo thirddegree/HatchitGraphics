@@ -15,6 +15,7 @@
 #pragma once
 
 #include <ht_platform.h>
+#include <ht_debug.h>
 #include <ht_string.h>
 
 #ifdef HT_SYS_WINDOWS
@@ -34,6 +35,8 @@ namespace Hatchit
         namespace Vulkan
         {
             std::string VKErrorString(VkResult code);
+
+            
            
             extern PFN_vkGetPhysicalDeviceSurfaceSupportKHR
                 fpGetPhysicalDeviceSurfaceSupportKHR;
@@ -61,6 +64,34 @@ namespace Hatchit
                 fpAcquireNextImageKHR;
             extern PFN_vkQueuePresentKHR
                 fpQueuePresentKHR;
+
+            template<typename T>
+            bool GetInstanceProcAddr(VkInstance instance, const char* entry, T** func)
+            {
+                *func = reinterpret_cast<T>(vkGetInstanceProcAddr(instance, entry));
+                if (*func == nullptr)
+                {
+                    HT_ERROR_PRINTF("Vulkan::GetInstanceProcAddr(): Failed to get %s address\n",
+                        entry);
+                    return false;
+                }
+
+                return true;
+            }
+
+            template<typename T>
+            bool GetDeviceProcAddr(VkDevice device, const char* entry, T** func)
+            {
+                *func = reinterpret_cast<T*>(vkGetDeviceProcAddr(device, entry));
+                if (*func == nullptr)
+                {
+                    HT_ERROR_PRINTF("Vulkan::GetDeviceProcAddr(): Failed to get %s address\n",
+                        entry);
+                    return false;
+                }
+
+                return true;
+            }
         }
     }
 }

@@ -37,12 +37,11 @@ namespace Hatchit
             {
             public:
                 VKApplication();
-                VKApplication(const VkApplicationInfo& info,
-                    void* window, void* display);
+                VKApplication(const VkApplicationInfo& info);
 
                 ~VKApplication();
 
-                bool Initialize(void* window, void* display);
+                bool Initialize();
                 bool IsValid();
 
                 const std::string   Name()              const;
@@ -54,9 +53,6 @@ namespace Hatchit
                 const uint32_t      EnabledLayerCount() const;
                 const uint32_t      EnabledExtensionCount() const;
 
-                void*               WindowHandle()      const;
-                void*               DisplayHandle()     const;
-
                 const std::vector<std::string>& EnabledLayerNames() const;
                 const std::vector<std::string>& EnabledExtensionNames() const;
 
@@ -67,9 +63,7 @@ namespace Hatchit
             private:
                 VkInstance                          m_instance;
                 VkApplicationInfo                   m_info;
-
-                void*                               m_windowHandle;
-                void*                               m_displayHandle;
+                VkSurfaceKHR                        m_window;
 
                 std::vector<std::string>            m_layers;
                 std::vector<std::string>            m_extensions;

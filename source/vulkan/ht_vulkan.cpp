@@ -21,6 +21,33 @@ namespace Hatchit
     {
         namespace Vulkan 
         {
+            PFN_vkGetPhysicalDeviceSurfaceSupportKHR
+                fpGetPhysicalDeviceSurfaceSupportKHR;
+            PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR
+                fpGetPhysicalDeviceSurfaceCapabilitiesKHR;
+            PFN_vkGetPhysicalDeviceSurfaceFormatsKHR
+                fpGetPhysicalDeviceSurfaceFormatsKHR;
+            PFN_vkGetPhysicalDeviceSurfacePresentModesKHR
+                fpGetPhysicalDeviceSurfacePresentModesKHR;
+
+            PFN_vkCreateDebugReportCallbackEXT
+                fpCreateDebugReportCallback;
+            PFN_vkDestroyDebugReportCallbackEXT
+                fpDestroyDebugReportCallback;
+            PFN_vkDebugReportMessageEXT
+                fpDebugReportMessage;
+
+            PFN_vkCreateSwapchainKHR
+                fpCreateSwapchainKHR;
+            PFN_vkDestroySwapchainKHR
+                fpDestroySwapchainKHR;
+            PFN_vkGetSwapchainImagesKHR
+                fpGetSwapchainImagesKHR;
+            PFN_vkAcquireNextImageKHR
+                fpAcquireNextImageKHR;
+            PFN_vkQueuePresentKHR
+                fpQueuePresentKHR;
+
             std::string VKErrorString(VkResult code)
             {
 #define VK_RES_CASE(x) case VK_ ##x: return HT_SFY_(x)
