@@ -21,7 +21,7 @@ namespace Hatchit
     {
         namespace Vulkan 
         {
-            std::string ErrorString(VkResult code)
+            std::string VKErrorString(VkResult code)
             {
 #define VK_RES_CASE(x) case VK_ ##x: return HT_SFY_(x)
                 switch (code)

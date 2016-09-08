@@ -33,7 +33,7 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            std::string ErrorString(VkResult code);
+            std::string VKErrorString(VkResult code);
            
             extern PFN_vkGetPhysicalDeviceSurfaceSupportKHR
                 fpGetPhysicalDeviceSurfaceSupportKHR;

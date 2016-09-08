@@ -36,9 +36,11 @@ namespace Hatchit
 
             }
 
-            VKApplication::VKApplication(const VkApplicationInfo &info) {
+            VKApplication::VKApplication(const VkApplicationInfo &info, void* window, void* display) {
                 m_instance = VK_NULL_HANDLE;
                 m_info = info;
+                m_windowHandle = window;
+                m_displayHandle = display;
 
                 m_layers = {
                     // This is a meta layer that enables all of the standard
@@ -54,7 +56,10 @@ namespace Hatchit
 
             }
 
-            bool VKApplication::Initialize() {
+            bool VKApplication::Initialize(void* window, void* display) {
+                m_windowHandle = window;
+                m_displayHandle = display;
+                
                 /**
                  * Verify requested Vulkan instance layers
                  * are available
@@ -155,6 +160,14 @@ namespace Hatchit
                     return nullptr;
 
                 return nullptr;
+            }
+
+            void* VKApplication::WindowHandle() const {
+                return m_windowHandle;
+            }
+            
+            void* VKApplication::DisplayHandle() const {
+                return m_displayHandle;
             }
 
             VKApplication::operator VkInstance()
