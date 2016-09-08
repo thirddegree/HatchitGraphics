@@ -58,11 +58,25 @@ namespace Hatchit
                 err = vkCreateWin32SurfaceKHR(instance, &creationInfo, nullptr, &m_surface);
                 if (err != VK_SUCCESS)
                 {
-                    HT_ERROR_PRINTF("VKSwapChain::Initialize() [%s]\n", VKErrorString(err));
+                    HT_ERROR_PRINTF("VKSwapChain::Initialize() [%s] Could not create VkSurface for Win32 window\n", VKErrorString(err));
                     return false;
                 }
 #elif defined(HT_SYS_LINUX)
+                VkXlibSurfaceCreateInfoKHR creationInfo;
+                creationInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+                creationInfo.pNext = nullptr;
+                creationInfo.flags = 0;
+                creationInfo.dpy = (Display*)instance.DisplayHandle();
+                creationInfo.window = (Window)instance.WindowHandle();
 
+                err = vkCreateXlibSurfaceKHR(instance, &creationInfo, nullptr, &m_surface);
+
+                if (err != VK_SUCCESS)
+                {
+                    HT_ERROR_PRINTF("VKSwapChain::Initialize(): [%s] Could not create VkSurface for XLib window\n", VKErrorString(err));
+
+                    return false;
+                }
 #endif
 
                 return true;
