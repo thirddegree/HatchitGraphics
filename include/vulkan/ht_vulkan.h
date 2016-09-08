@@ -33,40 +33,8 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            /*
-            struct UniformBlock_vk
-            {
-                VkBuffer                buffer;
-                VkDeviceMemory          memory;
-                VkDescriptorBufferInfo  descriptor;
-            };
-
-            struct TexelBlock_vk
-            {
-                VkBuffer                buffer;
-                VkDeviceMemory          memory;
-                VkBufferView            view;
-            };
-
-            struct Image_vk
-            {
-                VkImage         image;
-                VkImageView     view;
-                VkDeviceMemory  memory;
-            };
-
-            struct Texture_vk
-            {
-                VkSampler sampler;
-                VkImageLayout layout;
-                Image_vk image;
-                uint32_t width, height;
-                uint32_t mipLevels;
-            };
-             */
-
-
-
+            std::string ErrorString(VkResult code);
+           
             extern PFN_vkGetPhysicalDeviceSurfaceSupportKHR
                 fpGetPhysicalDeviceSurfaceSupportKHR;
             extern PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR
