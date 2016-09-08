@@ -46,7 +46,7 @@ namespace Hatchit
 
                 const std::string   Name()              const;
                 const uint32_t      Version()           const;
-                const std::string&  EngineName()        const;
+                const std::string   EngineName()        const;
                 const uint32_t      EngineVersion()     const;
                 const uint32_t      APIVersion()        const;
 

@@ -122,7 +122,7 @@ namespace Hatchit
                 return m_info.applicationVersion;
             }
 
-            const std::string &VKApplication::EngineName() const {
+            const std::string VKApplication::EngineName() const {
                 return m_info.pEngineName;
             }
 
