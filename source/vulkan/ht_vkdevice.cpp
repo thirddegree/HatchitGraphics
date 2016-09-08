@@ -60,13 +60,10 @@ namespace Hatchit {
                 device.pQueueCreateInfos = &queue;
                 device.enabledExtensionCount = instance.EnabledExtensionCount();
                 std::vector<const char *> extensions;
-                std::transform(instance.EnabledExtensionNames().begin(), instance.EnabledExtensionNames().end(), std::back_inserter(extensions),
-                    [](const std::string &s) {
-                    return s.c_str();
-                });
                 extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
                 device.ppEnabledExtensionNames = extensions.data();
                 device.pEnabledFeatures = nullptr;
+                device.flags = 0;
                 
                 err = vkCreateDevice(m_vkPhysicalDevice, &device, nullptr, &m_vkDevice);
                 if (err != VK_SUCCESS)
