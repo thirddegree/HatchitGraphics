@@ -16,6 +16,7 @@
 #include <ht_debug.h>
 #include <cassert>
 #include <algorithm>
+#include <iterator>
 
 namespace Hatchit
 {
