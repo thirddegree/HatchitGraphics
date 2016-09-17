@@ -75,10 +75,12 @@ namespace Hatchit
 
                 std::vector<VKDevice*>              m_devices;
 
+                VkDebugReportCallbackEXT m_debugReportCallback;
+
             private:
                 bool CheckInstanceLayers();
                 bool CheckInstanceExtensions();
-
+                bool SetupDebugCallback();
 
                 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType,
                     uint64_t srcObject, size_t location, int32_t msgCode,

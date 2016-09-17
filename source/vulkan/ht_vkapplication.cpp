@@ -75,6 +75,8 @@ namespace Hatchit
                 if (!CheckInstanceExtensions())
                     return false;
 
+
+
                 m_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
                 m_info.pNext = nullptr;
                 m_info.pApplicationName = "Test";
@@ -112,6 +114,10 @@ namespace Hatchit
                     HT_ERROR_PRINTF("VKAppication::Initialize(): Failed to create VkInstance\n");
                     return false;
                 }
+
+
+                if(!SetupDebugCallback())
+                    return false;
 
                 return true;
             }
@@ -241,8 +247,8 @@ namespace Hatchit
                     /**
                      * Enable validation extension layer
                      */
-                    /*if (!strcmp(VK_EXT_DEBUG_REPORT_EXTENSION_NAME, ext.extensionName))
-                        m_extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);*/
+                    if (!strcmp(VK_EXT_DEBUG_REPORT_EXTENSION_NAME, ext.extensionName))
+                        m_extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
                 }
 
                 return true;
@@ -275,6 +281,57 @@ namespace Hatchit
                 */
                 return false;
 
+            }
+
+            bool VKApplication::SetupDebugCallback() {
+                VkResult err;
+
+                //Get debug callback function pointers
+                fpCreateDebugReportCallback =
+                        (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(m_instance, "vkCreateDebugReportCallbackEXT");
+                fpDestroyDebugReportCallback =
+                        (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(m_instance, "vkDestroyDebugReportCallbackEXT");
+
+                if (!fpCreateDebugReportCallback)
+                {
+                    HT_DEBUG_PRINTF("GetProcAddr: Unable to find vkCreateDebugReportCallbackEXT\n");
+                    return false;
+                }
+                if (!fpDestroyDebugReportCallback) {
+                    HT_DEBUG_PRINTF("GetProcAddr: Unable to find vkDestroyDebugReportCallbackEXT\n");
+                    return false;
+                }
+
+                fpDebugReportMessage =
+                        (PFN_vkDebugReportMessageEXT)vkGetInstanceProcAddr(m_instance, "vkDebugReportMessageEXT");
+                if (!fpDebugReportMessage) {
+                    HT_DEBUG_PRINTF("GetProcAddr: Unable to find vkDebugReportMessageEXT\n");
+                    return false;
+                }
+
+                PFN_vkDebugReportCallbackEXT callback;
+                callback = VKApplication::DebugCallback;
+
+                VkDebugReportCallbackCreateInfoEXT dbgCreateInfo;
+                dbgCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
+                dbgCreateInfo.pNext = NULL;
+                dbgCreateInfo.pfnCallback = callback;
+                dbgCreateInfo.pUserData = NULL;
+                dbgCreateInfo.flags =
+                        VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
+                err = fpCreateDebugReportCallback(m_instance, &dbgCreateInfo, NULL, &m_debugReportCallback);
+                switch (err) {
+                    case VK_SUCCESS:
+                        break;
+                    case VK_ERROR_OUT_OF_HOST_MEMORY:
+                        HT_DEBUG_PRINTF("ERROR: Out of host memory!\n");
+                        return false;
+                    default:
+                        HT_DEBUG_PRINTF("ERROR: An unknown error occured!\n");
+                        return false;
+                }
+
+                return true;
             }
         }
     }
