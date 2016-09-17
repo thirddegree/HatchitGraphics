@@ -51,7 +51,7 @@ namespace Hatchit
                 creationInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
                 creationInfo.pNext = nullptr;
                 creationInfo.flags = 0;
-                creationInfo.hinstance = GetModuleHandle(nullptr);
+                creationInfo.hinstance = hInstance;
                 creationInfo.hwnd = window;
 
                 err = vkCreateWin32SurfaceKHR(instance, &creationInfo, nullptr, &m_surface);
@@ -83,8 +83,7 @@ namespace Hatchit
                 * the physical device queue properties. This is to make sure
                 * we have a valid logical device to present with
                 */
-
-                /*uint32_t queueCount = 0;
+                uint32_t queueCount = 0;
                 vkGetPhysicalDeviceQueueFamilyProperties(device, &queueCount, nullptr);
                 if (queueCount < 1)
                 {
@@ -97,7 +96,62 @@ namespace Hatchit
                 
                 std::vector<VkBool32> supportsPresent(queueCount);
                 for (uint32_t i = 0; i < queueCount; i++)
-                    fpGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &supportsPresent[i]);*/
+                    fpGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &supportsPresent[i]);
+
+
+                // Search for a graphics and a present queue in the array of queue
+                // families, try to find one that supports both
+                uint32_t graphicsQueueNodeIndex = UINT32_MAX;
+                uint32_t presentQueueNodeIndex = UINT32_MAX;
+                for (uint32_t i = 0; i < queueCount; i++)
+                {
+                    if ((queueProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0)
+                    {
+                        if (graphicsQueueNodeIndex == UINT32_MAX)
+                        {
+                            graphicsQueueNodeIndex = i;
+                        }
+
+                        if (supportsPresent[i] == VK_TRUE)
+                        {
+                            graphicsQueueNodeIndex = i;
+                            presentQueueNodeIndex = i;
+                            break;
+                        }
+                    }
+                }
+                if (presentQueueNodeIndex == UINT32_MAX)
+                {
+                    // If there's no queue that supports both present and graphics
+                    // try to find a separate present queue
+                    for (uint32_t i = 0; i < queueCount; ++i)
+                    {
+                        if (supportsPresent[i] == VK_TRUE)
+                        {
+                            presentQueueNodeIndex = i;
+                            break;
+                        }
+                    }
+                }
+
+                /**
+                *   Exit if there is neither a graphics nor a present queue available
+                */
+                if (graphicsQueueNodeIndex == UINT32_MAX || presentQueueNodeIndex == UINT32_MAX)
+                {
+                    HT_ERROR_PRINTF("VKSwapChain::Initialize(): Could not find a graphics and/or presenting queue!\n");
+                    return false;
+                }
+
+                /**
+                *   TODO:
+                *       Add support for separate graphics and presenting queue
+                */
+                if (graphicsQueueNodeIndex != presentQueueNodeIndex)
+                {
+                    HT_ERROR_PRINTF("VKSwapChain::Initialize(): Separate graphics and presenting queues are not supported yet!\n");
+                    return false;
+                }
 
                 return true;
             }
