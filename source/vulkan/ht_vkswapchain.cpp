@@ -43,7 +43,7 @@ namespace Hatchit
                 */
 #ifdef HT_SYS_WINDOWS
                 //Get HINSTANCE from HWND
-                /*HWND window = (HWND)instance.WindowHandle();
+                HWND window = (HWND)instance.NativeWindow();
                 HINSTANCE hInstance;
                 hInstance = (HINSTANCE)GetWindowLongPtr(window, GWLP_HINSTANCE);
 
@@ -59,14 +59,14 @@ namespace Hatchit
                 {
                     HT_ERROR_PRINTF("VKSwapChain::Initialize() [%s] Could not create VkSurface for Win32 window\n", VKErrorString(err));
                     return false;
-                }*/
+                }
 #elif defined(HT_SYS_LINUX)
-/*                VkXlibSurfaceCreateInfoKHR creationInfo;
+                VkXlibSurfaceCreateInfoKHR creationInfo;
                 creationInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
                 creationInfo.pNext = nullptr;
                 creationInfo.flags = 0;
-                creationInfo.dpy = (Display*)instance.DisplayHandle();
-                creationInfo.window = (Window)instance.WindowHandle();
+                creationInfo.dpy = (Display*)instance.NativeDisplay();
+                creationInfo.window = (Window)instance.NativeWindow();
 
                 err = vkCreateXlibSurfaceKHR(instance, &creationInfo, nullptr, &m_surface);
 
@@ -74,7 +74,7 @@ namespace Hatchit
                 {
                     HT_ERROR_PRINTF("VKSwapChain::Initialize(): [%s] Could not create VkSurface for XLib window\n", VKErrorString(err));
                     return false;
-                }*/
+                }
 #endif
 
                 /**
@@ -97,8 +97,7 @@ namespace Hatchit
                 
                 std::vector<VkBool32> supportsPresent(queueCount);
                 for (uint32_t i = 0; i < queueCount; i++)
-                    fpGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &supportsPresent[i]);
-*/
+                    fpGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &supportsPresent[i]);*/
 
                 return true;
             }

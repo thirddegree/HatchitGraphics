@@ -55,7 +55,11 @@ namespace Hatchit
 
             }
 
-            bool VKApplication::Initialize() {
+            bool VKApplication::Initialize(void* window, void* display) {
+
+
+                m_nativeWindow = window;
+                m_nativeDisplay = display;
                 
                 /**
                  * Verify requested Vulkan instance layers
@@ -162,6 +166,14 @@ namespace Hatchit
             VKApplication::operator VkInstance()
             {
                 return m_instance;
+            }
+
+            void* VKApplication::NativeWindow(){
+                return m_nativeWindow;
+            }
+
+            void* VKApplication::NativeDisplay() {
+                return m_nativeDisplay;
             }
 
             
