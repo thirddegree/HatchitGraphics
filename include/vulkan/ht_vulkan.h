@@ -38,8 +38,7 @@ namespace Hatchit
 
             
            
-            extern PFN_vkGetPhysicalDeviceSurfaceSupportKHR
-                fpGetPhysicalDeviceSurfaceSupportKHR;
+            
             extern PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR
                 fpGetPhysicalDeviceSurfaceCapabilitiesKHR;
             extern PFN_vkGetPhysicalDeviceSurfaceFormatsKHR

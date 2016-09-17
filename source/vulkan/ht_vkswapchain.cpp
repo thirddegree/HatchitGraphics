@@ -96,8 +96,7 @@ namespace Hatchit
                 
                 std::vector<VkBool32> supportsPresent(queueCount);
                 for (uint32_t i = 0; i < queueCount; i++)
-                    fpGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &supportsPresent[i]);
-
+                    vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &supportsPresent[i]);
 
                 // Search for a graphics and a present queue in the array of queue
                 // families, try to find one that supports both

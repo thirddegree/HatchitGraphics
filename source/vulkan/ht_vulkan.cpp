@@ -21,8 +21,7 @@ namespace Hatchit
     {
         namespace Vulkan 
         {
-            PFN_vkGetPhysicalDeviceSurfaceSupportKHR
-                fpGetPhysicalDeviceSurfaceSupportKHR;
+            
             PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR
                 fpGetPhysicalDeviceSurfaceCapabilitiesKHR;
             PFN_vkGetPhysicalDeviceSurfaceFormatsKHR

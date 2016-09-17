@@ -67,11 +67,14 @@ namespace Hatchit {
                 queue.pQueuePriorities = QueueProperties;
 
 
+                std::vector<VkDeviceQueueCreateInfo> queueInfos;
+                queueInfos.push_back(queue);
+
                 VkDeviceCreateInfo device = {};
                 device.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
                 device.pNext = nullptr;
                 device.queueCreateInfoCount = 1;
-                device.pQueueCreateInfos = &queue;
+                device.pQueueCreateInfos = queueInfos.data();
                 device.enabledExtensionCount = 1;
                 std::vector<const char *> extensions;
                 extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -91,8 +94,7 @@ namespace Hatchit {
                 */
                 GetDeviceProcAddr(m_vkDevice, "vkCreateSwapchainKHR",
                     &fpCreateSwapchainKHR);
-                GetDeviceProcAddr(m_vkDevice, "vkGetPhysicalDeviceSurfaceSupportKHR",
-                    &fpGetPhysicalDeviceSurfaceSupportKHR);
+                
 
                 return true;
             }
