@@ -26,11 +26,16 @@ namespace Hatchit
             VKSwapChain::VKSwapChain()
             {
                 m_surface = VK_NULL_HANDLE;
+                m_swapchain = VK_NULL_HANDLE;
             }
 
             VKSwapChain::~VKSwapChain()
             {
+                /* How you want to hold the reference for the instance?
 
+                vkDestroySurfaceKHR(instanceReference, m_surface, nullptr);
+                vkDestroySwapchainKHR(instancereference, m_swapchain, nullptr);
+                */
             }
 
             bool VKSwapChain::Initialize(VKApplication& instance, VKDevice& device)
@@ -142,13 +147,115 @@ namespace Hatchit
                     return false;
                 }
 
-                /**
-                *   TODO:
-                *       Add support for separate graphics and presenting queue
-                */
-                if (graphicsQueueNodeIndex != presentQueueNodeIndex)
+                /* if (graphicsQueueNodeIndex != presentQueueNodeIndex)
                 {
-                    HT_ERROR_PRINTF("VKSwapChain::Initialize(): Separate graphics and presenting queues are not supported yet!\n");
+                    HT_ERROR_PRINTF("VKSwapChain::Initialize(): different queues not yet supported.\n");
+                    return false;
+                } */
+
+                uint32_t formatCount = 0;
+                vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &formatCount, nullptr);
+                std::vector<VkSurfaceFormatKHR> surfaceFormats(formatCount);
+                vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &formatCount, surfaceFormats.data());
+
+                uint32_t presentCount = 0;
+                vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &presentCount, nullptr);
+                std::vector<VkPresentModeKHR> presentModes(presentCount);
+                vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &presentCount, presentModes.data());
+
+                if ( surfaceFormats.empty() || presentModes.empty() )
+                {
+                    HT_ERROR_PRINTF("VkSwapChain::Initialize(): Swap chain is not supported.\n");
+                    return false;
+                }
+
+                /*
+                * We need to discuss how the policy to choose the formats.
+                * Try to find a specific surface format, otherwise gets the first result
+                */
+                VkSurfaceFormatKHR choosenSurfaceFormat = { VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+                bool choosenFormatFound = false;
+
+                for ( std::vector<VkSurfaceFormatKHR>::iterator sfor = surfaceFormats.begin(); sfor != surfaceFormats.end(); ++sfor)
+                {
+                    if (( sfor->format == VK_FORMAT_UNDEFINED ) || ( sfor->format == choosenSurfaceFormat.format && sfor->colorSpace == choosenSurfaceFormat.colorSpace ))
+                    {
+                        choosenFormatFound = true;
+                        break;
+                    }
+                }
+
+                choosenSurfaceFormat = surfaceFormats[0];
+
+                /*
+                * We need to discuss the policy to choose the present modes yet
+                */
+                VkPresentModeKHR choosenPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+                bool presentModeFound = false;
+
+                for ( std::vector<VkPresentModeKHR>::iterator prsnt = presentModes.begin(); prsnt != presentModes.end(); ++prsnt)
+                {
+                    if ( *prsnt == VK_PRESENT_MODE_MAILBOX_KHR )
+                    {
+                        choosenPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+                        presentModeFound = true;
+                        break;
+                    }
+
+                    if ( *prsnt == VK_PRESENT_MODE_FIFO_KHR )
+                        presentModeFound = true;
+                }
+
+                if ( !presentModeFound )
+                {
+                    HT_ERROR_PRINTF("VKSwapChain::Initialize(): Default present mode not found.\n");
+                    return false;
+                }
+
+                VkSurfaceCapabilitiesKHR surfaceCapabilities;
+                vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_surface, &surfaceCapabilities); 
+
+                uint32_t imageCount = surfaceCapabilities.minImageCount + 1 <= surfaceCapabilities.maxImageCount ?
+                    surfaceCapabilities.minImageCount + 1 : surfaceCapabilities.maxImageCount;
+
+                VkExtent2D choosenExtent;
+
+                if ( surfaceCapabilities.currentExtent.width != UINT32_MAX )
+                    choosenExtent = surfaceCapabilities.currentExtent;
+                else
+                {
+                    choosenExtent.width = std::max(surfaceCapabilities.minImageExtent.width, std::min(surfaceCapabilities.maxImageExtent.width, m_width));
+                    choosenExtent.height = std::max(surfaceCapabilities.minImageExtent.height, std::min(surfaceCapabilities.maxImageExtent.height, m_height));
+                }
+
+                VkSwapchainCreateInfoKHR createSwapChainInfo;
+                createSwapChainInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+                createSwapChainInfo.surface = m_surface;
+                createSwapChainInfo.minImageCount = imageCount;
+                createSwapChainInfo.imageColorSpace = choosenSurfaceFormat.colorSpace;
+                /* I do believe in the first version we are not goig to enable occulus, vive and others... */
+                createSwapChainInfo.imageArrayLayers = 1;
+                createSwapChainInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+                createSwapChainInfo.preTransform = surfaceCapabilities.currentTransform;
+                createSwapChainInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+                createSwapChainInfo.presentMode = choosenPresentMode;
+                createSwapChainInfo.clipped = VK_TRUE;
+                createSwapChainInfo.oldSwapchain = VK_NULL_HANDLE;
+                createSwapChainInfo.imageExtent = choosenExtent;
+
+                if ( graphicsQueueNodeIndex != presentQueueNodeIndex )
+                {
+                    createSwapChainInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+                    createSwapChainInfo.queueFamilyIndexCount = 2;
+                    uint32_t familiesIndices[2] = {graphicsQueueNodeIndex, presentQueueNodeIndex};
+                    createSwapChainInfo.pQueueFamilyIndices = familiesIndices;
+                }
+                else
+                    createSwapChainInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+                if ( vkCreateSwapchainKHR(device, &createSwapChainInfo, nullptr, &m_swapchain) != VK_SUCCESS )
+                {
+                    HT_ERROR_PRINTF("VKSwapChain::Initialize(): Failed to create swapchain.\n");
                     return false;
                 }
 
@@ -157,12 +264,7 @@ namespace Hatchit
 
             bool VKSwapChain::IsValid()
             {
-                /*
-                * Check to make sure swapchain 
-                * was initialized properly
-                */
-
-                return true;
+                return m_swapchain != VK_NULL_HANDLE; 
             }
         }
     }
