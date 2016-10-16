@@ -44,8 +44,12 @@ namespace Hatchit
 
                 bool IsValid();
 
+                uint32_t QueueFamilyIndex() const;
+
             private:
                 VkSwapchainKHR m_swapchain;
+                VkInstance     m_instance;
+                VkDevice       m_device;
 
                 VkSurfaceKHR    m_surface;
 
@@ -53,6 +57,7 @@ namespace Hatchit
 
                 uint32_t m_width;
                 uint32_t m_height;
+                uint32_t m_queueFamilyIndex;
             };
         }
     }

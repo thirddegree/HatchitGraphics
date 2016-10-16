@@ -17,6 +17,8 @@
 #include <ht_vkdevice.h>
 #include <ht_debug.h>
 
+#include <algorithm>
+
 namespace Hatchit
 {
     namespace Graphics
@@ -27,19 +29,37 @@ namespace Hatchit
             {
                 m_surface = VK_NULL_HANDLE;
                 m_swapchain = VK_NULL_HANDLE;
+                m_device = VK_NULL_HANDLE;
+                m_instance = VK_NULL_HANDLE;
             }
 
             VKSwapChain::~VKSwapChain()
             {
-                /* How you want to hold the reference for the instance?
-
-                vkDestroySurfaceKHR(instanceReference, m_surface, nullptr);
-                vkDestroySwapchainKHR(instancereference, m_swapchain, nullptr);
+                /**
+                * Free Vulkan resource memory
                 */
+
+                if (m_swapchain != VK_NULL_HANDLE)
+                {
+                    for (auto buffer : m_buffers)
+                        vkDestroyImageView(m_device, buffer.imageView, nullptr);
+                }
+
+                if (m_surface != VK_NULL_HANDLE)
+                {
+                    vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
+                    vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+                }
+
+                m_surface = VK_NULL_HANDLE;
+                m_swapchain = VK_NULL_HANDLE;
             }
 
             bool VKSwapChain::Initialize(VKApplication& instance, VKDevice& device)
             {
+                m_instance = instance;
+                m_device = device;
+
                 VkResult err = VK_SUCCESS;
 
                 /*
@@ -146,6 +166,7 @@ namespace Hatchit
                     HT_ERROR_PRINTF("VKSwapChain::Initialize(): Could not find a graphics and/or presenting queue!\n");
                     return false;
                 }
+                m_queueFamilyIndex = graphicsQueueNodeIndex; //store queue family index for pool creation.
 
                 /* if (graphicsQueueNodeIndex != presentQueueNodeIndex)
                 {
@@ -190,14 +211,14 @@ namespace Hatchit
                 /*
                 * We need to discuss the policy to choose the present modes yet
                 */
-                VkPresentModeKHR choosenPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+                VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
                 bool presentModeFound = false;
 
                 for ( std::vector<VkPresentModeKHR>::iterator prsnt = presentModes.begin(); prsnt != presentModes.end(); ++prsnt)
                 {
                     if ( *prsnt == VK_PRESENT_MODE_MAILBOX_KHR )
                     {
-                        choosenPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+                        presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
                         presentModeFound = true;
                         break;
                     }
@@ -218,17 +239,17 @@ namespace Hatchit
                 uint32_t imageCount = surfaceCapabilities.minImageCount + 1 <= surfaceCapabilities.maxImageCount ?
                     surfaceCapabilities.minImageCount + 1 : surfaceCapabilities.maxImageCount;
 
-                VkExtent2D choosenExtent;
-
+                VkExtent2D extent;
                 if ( surfaceCapabilities.currentExtent.width != UINT32_MAX )
-                    choosenExtent = surfaceCapabilities.currentExtent;
+                    extent = surfaceCapabilities.currentExtent;
                 else
                 {
-                    choosenExtent.width = std::max(surfaceCapabilities.minImageExtent.width, std::min(surfaceCapabilities.maxImageExtent.width, m_width));
-                    choosenExtent.height = std::max(surfaceCapabilities.minImageExtent.height, std::min(surfaceCapabilities.maxImageExtent.height, m_height));
+                    extent.width = std::max(surfaceCapabilities.minImageExtent.width, std::min(surfaceCapabilities.maxImageExtent.width, m_width));
+                    extent.height = std::max(surfaceCapabilities.minImageExtent.height, std::min(surfaceCapabilities.maxImageExtent.height, m_height));
                 }
 
-                VkSwapchainCreateInfoKHR createSwapChainInfo;
+                VkSwapchainCreateInfoKHR createSwapChainInfo = {};
+                createSwapChainInfo.pNext = nullptr;
                 createSwapChainInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
                 createSwapChainInfo.surface = m_surface;
                 createSwapChainInfo.minImageCount = imageCount;
@@ -238,10 +259,12 @@ namespace Hatchit
                 createSwapChainInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
                 createSwapChainInfo.preTransform = surfaceCapabilities.currentTransform;
                 createSwapChainInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-                createSwapChainInfo.presentMode = choosenPresentMode;
+                createSwapChainInfo.presentMode = presentMode;
                 createSwapChainInfo.clipped = VK_TRUE;
-                createSwapChainInfo.oldSwapchain = VK_NULL_HANDLE;
-                createSwapChainInfo.imageExtent = choosenExtent;
+                createSwapChainInfo.oldSwapchain = VK_NULL_HANDLE; //We will need to handle creating from previous
+                createSwapChainInfo.imageExtent = extent;
+                createSwapChainInfo.imageFormat = VK_FORMAT_B8G8R8A8_UNORM;
+                createSwapChainInfo.flags = 0;
 
                 if ( graphicsQueueNodeIndex != presentQueueNodeIndex )
                 {
@@ -259,12 +282,72 @@ namespace Hatchit
                     return false;
                 }
 
+                /**
+                * Now we will create the image view for the swapchain. This entain grabbing
+                * the swapchain image count, query for the image info and creating the ImageView create
+                * structure.
+                */
+
+                uint32_t scImgCount = 0;
+                err = vkGetSwapchainImagesKHR(device, m_swapchain, &scImgCount, nullptr);
+                if (err != VK_SUCCESS)
+                {
+                    HT_ERROR_PRINTF("VKSwapChain::Initialize(): Failed to query swapchain image count. %s\n", VKErrorString(err));
+                    return false;
+                }
+
+                std::vector<VkImage> images(scImgCount);
+                err = vkGetSwapchainImagesKHR(device, m_swapchain, &scImgCount, images.data());
+                if (err != VK_SUCCESS)
+                {
+                    HT_ERROR_PRINTF("VKSwapChain::Initialize(): Failed to query swapchain images. %s\n", VKErrorString(err));
+                    return false;
+                }
+
+                m_buffers.resize(scImgCount);
+                for (uint32_t i = 0; i < scImgCount; i++)
+                {
+                    VkImageViewCreateInfo colorAttachmentView = {};
+                    colorAttachmentView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+                    colorAttachmentView.pNext = NULL;
+                    colorAttachmentView.format = VK_FORMAT_B8G8R8A8_UNORM;
+                    colorAttachmentView.components = {
+                        VK_COMPONENT_SWIZZLE_R,
+                        VK_COMPONENT_SWIZZLE_G,
+                        VK_COMPONENT_SWIZZLE_B,
+                        VK_COMPONENT_SWIZZLE_A
+                    };
+                    colorAttachmentView.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                    colorAttachmentView.subresourceRange.baseMipLevel = 0;
+                    colorAttachmentView.subresourceRange.levelCount = 1;
+                    colorAttachmentView.subresourceRange.baseArrayLayer = 0;
+                    colorAttachmentView.subresourceRange.layerCount = 1;
+                    colorAttachmentView.viewType = VK_IMAGE_VIEW_TYPE_2D;
+                    colorAttachmentView.image = images[i];
+                    colorAttachmentView.flags = 0;
+
+                    m_buffers[i].image = images[i];
+
+                    err = vkCreateImageView(device, &colorAttachmentView, nullptr, &m_buffers[i].imageView);
+                    if (err != VK_SUCCESS)
+                    {
+                        HT_ERROR_PRINTF("VKSwapChain::Initialize(): Failed to create image view. %s\n", VKErrorString(err));
+                        return false;
+                    }
+                }
+
+
                 return true;
             }
 
             bool VKSwapChain::IsValid()
             {
                 return m_swapchain != VK_NULL_HANDLE; 
+            }
+
+            uint32_t VKSwapChain::QueueFamilyIndex() const
+            {
+                return m_queueFamilyIndex;
             }
         }
     }
