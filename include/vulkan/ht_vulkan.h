@@ -15,6 +15,7 @@
 #pragma once
 
 #include <ht_platform.h>
+#include <ht_debug.h>
 #include <ht_string.h>
 
 #ifdef HT_SYS_WINDOWS
@@ -33,42 +34,11 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            /*
-            struct UniformBlock_vk
-            {
-                VkBuffer                buffer;
-                VkDeviceMemory          memory;
-                VkDescriptorBufferInfo  descriptor;
-            };
+            std::string VKErrorString(VkResult code);
 
-            struct TexelBlock_vk
-            {
-                VkBuffer                buffer;
-                VkDeviceMemory          memory;
-                VkBufferView            view;
-            };
-
-            struct Image_vk
-            {
-                VkImage         image;
-                VkImageView     view;
-                VkDeviceMemory  memory;
-            };
-
-            struct Texture_vk
-            {
-                VkSampler sampler;
-                VkImageLayout layout;
-                Image_vk image;
-                uint32_t width, height;
-                uint32_t mipLevels;
-            };
-             */
-
-
-
-            extern PFN_vkGetPhysicalDeviceSurfaceSupportKHR
-                fpGetPhysicalDeviceSurfaceSupportKHR;
+            
+           
+            
             extern PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR
                 fpGetPhysicalDeviceSurfaceCapabilitiesKHR;
             extern PFN_vkGetPhysicalDeviceSurfaceFormatsKHR
@@ -93,6 +63,34 @@ namespace Hatchit
                 fpAcquireNextImageKHR;
             extern PFN_vkQueuePresentKHR
                 fpQueuePresentKHR;
+
+            template<typename T>
+            bool GetInstanceProcAddr(VkInstance instance, const char* entry, T** func)
+            {
+                *func = reinterpret_cast<T>(vkGetInstanceProcAddr(instance, entry));
+                if (*func == nullptr)
+                {
+                    HT_ERROR_PRINTF("Vulkan::GetInstanceProcAddr(): Failed to get %s address\n",
+                        entry);
+                    return false;
+                }
+
+                return true;
+            }
+
+            template<typename T>
+            bool GetDeviceProcAddr(VkDevice device, const char* entry, T** func)
+            {
+                *func = reinterpret_cast<T*>(vkGetDeviceProcAddr(device, entry));
+                if (*func == nullptr)
+                {
+                    HT_ERROR_PRINTF("Vulkan::GetDeviceProcAddr(): Failed to get %s address\n",
+                        entry);
+                    return false;
+                }
+
+                return true;
+            }
         }
     }
 }

@@ -41,7 +41,7 @@ namespace Hatchit
 
                 ~VKApplication();
 
-                bool Initialize();
+                bool Initialize(void* window, void* display);
                 bool IsValid();
 
                 const std::string   Name()              const;
@@ -58,21 +58,29 @@ namespace Hatchit
 
                 VKDevice* const     Device(uint32_t index);
 
+                void* NativeWindow();
+                void* NativeDisplay();
+
                 operator VkInstance();
 
             private:
                 VkInstance                          m_instance;
                 VkApplicationInfo                   m_info;
+                VkSurfaceKHR                        m_window;
+                void*                               m_nativeWindow;  //Windows: HWND, Linux: Xlib Window
+                void*                               m_nativeDisplay; //Linux only
 
                 std::vector<std::string>            m_layers;
                 std::vector<std::string>            m_extensions;
 
                 std::vector<VKDevice*>              m_devices;
 
+                VkDebugReportCallbackEXT m_debugReportCallback;
+
             private:
                 bool CheckInstanceLayers();
                 bool CheckInstanceExtensions();
-
+                bool SetupDebugCallback();
 
                 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType,
                     uint64_t srcObject, size_t location, int32_t msgCode,

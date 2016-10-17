@@ -41,6 +41,20 @@ namespace Hatchit {
                 if (!QueryPhysicalDeviceInfo())
                     return false;
 
+                /*
+                * Query information about device queue family
+                */
+                uint32_t queueCount = 0;
+                vkGetPhysicalDeviceQueueFamilyProperties(m_vkPhysicalDevice, &queueCount, nullptr);
+                if (queueCount < 1) {
+                    HT_ERROR_PRINTF("VKDevice::Initialize(): Invalid queue count.\n");
+                    return false;
+                }
+                m_vkQueueFamilyProperties.resize(queueCount);
+                vkGetPhysicalDeviceQueueFamilyProperties(m_vkPhysicalDevice, &queueCount, m_vkQueueFamilyProperties.data());
+                
+                QueueFamily queueFamily = QueryQueueFamily(VK_QUEUE_GRAPHICS_BIT);
+
                 VkResult err = VK_SUCCESS;
 
                 float QueueProperties[] = { 0.0f };
@@ -48,16 +62,19 @@ namespace Hatchit {
                 VkDeviceQueueCreateInfo queue = {};
                 queue.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
                 queue.pNext = nullptr;
-                queue.queueFamilyIndex = 0; //TODO: This could be subject to change
+                queue.queueFamilyIndex = queueFamily.graphics;
                 queue.queueCount = 1;
                 queue.pQueuePriorities = QueueProperties;
 
+
+                std::vector<VkDeviceQueueCreateInfo> queueInfos;
+                queueInfos.push_back(queue);
 
                 VkDeviceCreateInfo device = {};
                 device.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
                 device.pNext = nullptr;
                 device.queueCreateInfoCount = 1;
-                device.pQueueCreateInfos = &queue;
+                device.pQueueCreateInfos = queueInfos.data();
                 device.enabledExtensionCount = 1;
                 std::vector<const char *> extensions;
                 extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -72,6 +89,12 @@ namespace Hatchit {
                     return false;
                 }
 
+                /*
+                * Initialize all device related function pointers
+                */
+                GetDeviceProcAddr(m_vkDevice, "vkCreateSwapchainKHR",
+                    &fpCreateSwapchainKHR);
+                
 
                 return true;
             }
@@ -137,6 +160,25 @@ namespace Hatchit {
 
 
                 return true;
+            }
+
+            VKDevice::QueueFamily VKDevice::QueryQueueFamily(VkQueueFlagBits flags)
+            {
+                QueueFamily family = {};
+
+                /*Find family index for graphics bit*/
+                if (flags & VK_QUEUE_GRAPHICS_BIT)
+                {
+                    for (uint32_t i = 0; i < m_vkQueueFamilyProperties.size(); i++) {
+                        if (m_vkQueueFamilyProperties[i].queueFlags & flags) {
+                            family.graphics = i;
+                            break;
+                        }
+                    }
+                }
+
+
+                return family;
             }
         }
     }
