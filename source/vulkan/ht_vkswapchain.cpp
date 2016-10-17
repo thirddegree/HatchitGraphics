@@ -170,7 +170,7 @@ namespace Hatchit
                 }
 
                 /*
-                * We need to discuss how the policy to choose the formats.
+                * We need to discuss whats the policy to choose the formats.
                 * Try to find a specific surface format, otherwise gets the first result
                 */
                 VkSurfaceFormatKHR choosenSurfaceFormat = { VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
@@ -185,7 +185,8 @@ namespace Hatchit
                     }
                 }
 
-                choosenSurfaceFormat = surfaceFormats[0];
+                if ( !choosenFormatFound )
+                    choosenSurfaceFormat = surfaceFormats[0];
 
                 /*
                 * We need to discuss the policy to choose the present modes yet
@@ -233,7 +234,6 @@ namespace Hatchit
                 createSwapChainInfo.surface = m_surface;
                 createSwapChainInfo.minImageCount = imageCount;
                 createSwapChainInfo.imageColorSpace = choosenSurfaceFormat.colorSpace;
-                /* I do believe in the first version we are not goig to enable occulus, vive and others... */
                 createSwapChainInfo.imageArrayLayers = 1;
                 createSwapChainInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
                 createSwapChainInfo.preTransform = surfaceCapabilities.currentTransform;
@@ -242,6 +242,9 @@ namespace Hatchit
                 createSwapChainInfo.clipped = VK_TRUE;
                 createSwapChainInfo.oldSwapchain = VK_NULL_HANDLE;
                 createSwapChainInfo.imageExtent = choosenExtent;
+                createSwapChainInfo.pNext = nullptr;
+                createSwapChainInfo.flags = 0;
+                createSwapChainInfo.imageFormat = choosenSurfaceFormat.format;
 
                 if ( graphicsQueueNodeIndex != presentQueueNodeIndex )
                 {
