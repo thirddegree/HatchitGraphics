@@ -45,9 +45,14 @@ namespace Hatchit
                 bool IsValid();
 
             private:
+                VkSwapchainKHR m_swapchain;
+
                 VkSurfaceKHR    m_surface;
 
                 std::vector<Buffer> m_buffers;
+
+                uint32_t m_width;
+                uint32_t m_height;
             };
         }
     }
