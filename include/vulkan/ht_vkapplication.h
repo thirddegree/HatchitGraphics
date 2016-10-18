@@ -14,6 +14,14 @@
 
 #pragma once
 
+/**
+ * \file ht_vkapplication.h
+ * \brief VKApplication class definition
+ * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ *
+ * This file contains definition for VKApplication class
+ */
+
 #include <ht_platform.h>
 #include <ht_vulkan.h>
 #include <ht_string.h>

@@ -14,8 +14,18 @@
 
 #pragma once
 
+/**
+ * \file ht_vkcommandpool.h
+ * \brief VKCommandPool definition
+ * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ *
+ * This file contains definition for VKCommandPool class
+ */
+
 #include <ht_platform.h>
 #include <ht_vulkan.h>
+
+
 
 namespace Hatchit
 {
@@ -26,6 +36,13 @@ namespace Hatchit
             class VKDevice;
             class VKCommandBuffer;
 
+            /**
+             * \class VKCommandPool
+             * \brief Vulkan command pool wrapper
+             *
+             * This class wraps functionality associated with VkCommandPool,
+             * command buffer generation and management.
+             */
             class HT_API VKCommandPool
             {
             public:

@@ -14,6 +14,14 @@
 
 #pragma once
 
+/**
+ * \file ht_vkimage.h
+ * \brief VKImage class definition
+ * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ *
+ * This file contains definition for VKImage class
+ */
+
 #include <ht_platform.h>
 #include <ht_vulkan.h>
 

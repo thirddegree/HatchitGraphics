@@ -14,6 +14,15 @@
 
 #pragma once
 
+/**
+ * \file ht_vulkan.h
+ * \brief Vulkan include file
+ * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ *
+ * This file contains various Vulkan utilities. It also
+ * includes the master vulkan.h from the Vulkan SDK.
+ */
+
 #include <ht_platform.h>
 #include <ht_debug.h>
 #include <ht_string.h>

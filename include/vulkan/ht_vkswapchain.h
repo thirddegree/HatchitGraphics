@@ -14,6 +14,15 @@
 
 #pragma once
 
+/**
+ * \file ht_vkswapchain.h
+ * \brief VKSwapChain class definition
+ * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ * \author jkvargas (https://github.com/jkvargas)
+ *
+ * This file contains definition for VKSwapChain class
+ */
+
 #include <ht_platform.h>
 #include <ht_vulkan.h>
 #include <vector>

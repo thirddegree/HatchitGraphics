@@ -14,6 +14,14 @@
 
 #pragma once
 
+/**
+ * \file ht_color.h
+ * \brief Color defines
+ * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ *
+ * This file contains various color definitions.
+ */
+
 #include <ht_platform.h>
 
 namespace Hatchit {
@@ -21,7 +29,7 @@ namespace Hatchit {
     namespace Graphics {
 
         /**
-         * @brief Color class defining a 4-component color value
+         * \brief Color class defining a 4-component color value
          */
         class HT_API Color
         {
@@ -53,7 +61,7 @@ namespace Hatchit {
         };
 
         /**
-         * @brief Contains static definitions for various Color values
+         * \brief Contains static definitions for various Color values
          */
         namespace Colors {
 

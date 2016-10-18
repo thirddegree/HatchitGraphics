@@ -14,8 +14,15 @@
 
 #pragma once
 
+/**
+ * \file ht_vkdevice.h
+ * \brief VKDevice class definition
+ * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ *
+ * This file contains definition for VKDevice class
+ */
+
 #include <ht_platform.h>
-#include <ht_device.h>
 #include <ht_string.h>
 #include <ht_vulkan.h>
 #include <set>
