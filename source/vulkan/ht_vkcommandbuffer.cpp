@@ -21,19 +21,61 @@ namespace Hatchit {
 
         namespace Vulkan {
 
-            VKCommandBuffer::VKCommandBuffer(VkCommandBufferLevel level)
+            VKCommandBuffer::VKCommandBuffer()
             {
-                m_vkCommandBufferLevel = level;
+                m_vkDevice = VK_NULL_HANDLE;
+                m_vkCommandPool = VK_NULL_HANDLE;
                 m_vkCommandBuffer = VK_NULL_HANDLE;
+                m_isBegin = false;
             }
 
             VKCommandBuffer::~VKCommandBuffer()
             {
-
+                vkFreeCommandBuffers(m_vkDevice, m_vkCommandPool, 1, &m_vkCommandBuffer);
             }
 
-            bool VKCommandBuffer::Initialize(VKDevice& device)
+            bool VKCommandBuffer::Begin(const VkCommandBufferBeginInfo* pInfo)
             {
+                if (!pInfo)
+                    return false;
+
+                if (m_isBegin)
+                {
+                    HT_ERROR_PRINTF("VKCommandBuffer::Begin(): Command buffer must not already be recording.\n");
+                    return false;
+                }
+
+                VkResult err = VK_SUCCESS;
+                
+                err = vkBeginCommandBuffer(m_vkCommandBuffer, pInfo);
+                if (err != VK_SUCCESS)
+                {
+                    HT_ERROR_PRINTF("VKCommandBuffer::Begin(): Failed to begin command buffer recording. %s\n", VKErrorString(err));
+                    return false;
+                }
+
+                m_isBegin = true;
+                return true;
+            }
+
+            bool VKCommandBuffer::End()
+            {
+                if (!m_isBegin)
+                {
+                    HT_ERROR_PRINTF("VKCommandBuffer::End(): Command buffer must be recording.\n");
+                    return false;
+                }
+
+                VkResult err = VK_SUCCESS;
+
+                err = vkEndCommandBuffer(m_vkCommandBuffer);
+                if (err != VK_SUCCESS)
+                {
+                    HT_ERROR_PRINTF("VKCommandBuffer::End(): Failed to end command buffer recording. %s\n", VKErrorString(err));
+                    return false;
+                }
+                m_isBegin = false;
+
                 return true;
             }
 

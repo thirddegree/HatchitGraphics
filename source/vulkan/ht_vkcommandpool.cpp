@@ -81,7 +81,7 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKCommandPool::AllocateCommandBuffers(VkCommandBufferLevel level, uint32_t count, VKCommandBuffer * pCommandBuffers)
+            bool VKCommandPool::AllocateCommandBuffers(VkCommandBufferLevel level, uint32_t count, VKCommandBuffer* pCommandBuffers)
             {
                 if (!pCommandBuffers)
                     return false;
@@ -95,11 +95,19 @@ namespace Hatchit {
                 aInfo.commandBufferCount = count;
                 aInfo.level = level;
                 
-                err = vkAllocateCommandBuffers(m_vkDevice, &aInfo, *pCommandBuffers);
+                std::vector<VkCommandBuffer> buffers(count);
+                err = vkAllocateCommandBuffers(m_vkDevice, &aInfo, buffers.data());
                 if (err != VK_SUCCESS)
                 {
                     HT_ERROR_PRINTF("VKCommandPool::AllocateCommandBuffers(): Failed to allocate command buffer(s) %s\n", VKErrorString(err));
                     return false;
+                }
+
+                for (uint32_t i = 0; i < count; i++)
+                {
+                    pCommandBuffers[i].m_vkCommandBuffer = buffers[i];
+                    pCommandBuffers[i].m_vkDevice = m_vkDevice;
+                    pCommandBuffers[i].m_vkCommandPool = *this;
                 }
 
                 return true;

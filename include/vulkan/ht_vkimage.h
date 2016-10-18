@@ -24,27 +24,24 @@ namespace Hatchit
         namespace Vulkan
         {
             class VKDevice;
-            class VKCommandPool;
 
-            class HT_API VKCommandBuffer
+            class HT_API VKImage
             {
             public:
-                VKCommandBuffer();
+                VKImage();
 
-                ~VKCommandBuffer();
+                ~VKImage();
 
-                bool Begin(const VkCommandBufferBeginInfo* pInfo);
-                bool End();
+                bool Initialize(VKDevice& device,
+                    const VkImageCreateInfo* pImageInfo, 
+                    VkImageViewCreateInfo* pImageViewInfo);
 
-                operator VkCommandBuffer();
-                operator VkCommandBuffer*();
-            private:
-                VkDevice                m_vkDevice;
-                VkCommandPool           m_vkCommandPool;
-                VkCommandBuffer         m_vkCommandBuffer;
-                bool                    m_isBegin;
-
-                friend class VKCommandPool;
+                operator VkImage();
+                operator VkImageView();
+            protected:
+                VkDevice    m_vkDevice;
+                VkImage     m_vkImage;
+                VkImageView m_vkImageView;
             };
         }
     }

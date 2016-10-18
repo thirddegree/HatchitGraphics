@@ -43,6 +43,7 @@ namespace Hatchit
             private:
                 VkDevice      m_vkDevice;
                 VkCommandPool m_vkCommandPool;
+
             };
         }
     }
