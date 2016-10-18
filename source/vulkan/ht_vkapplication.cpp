@@ -27,12 +27,14 @@ namespace Hatchit
                 m_instance = VK_NULL_HANDLE;
                 m_info = {};
 
+#ifdef HT_SYS_WINDOWS //NOTE: Currently, Linux builds Validation is disabled.
                 m_layers = {
                     // This is a meta layer that enables all of the standard
                     // validation layers in the correct order :
                     // threading, parameter_validation, device_limits, object_tracker, image, core_validation, swapchain, and unique_objects
                     "VK_LAYER_LUNARG_standard_validation"
                 };
+#endif
 
             }
 
@@ -41,13 +43,15 @@ namespace Hatchit
                 m_info = info;
                 m_window = VK_NULL_HANDLE;
 
+
+#ifdef HT_SYS_WINDOWS //NOTE: Currently, Linux builds Validation is disabled.
                 m_layers = {
                     // This is a meta layer that enables all of the standard
                     // validation layers in the correct order :
                     // threading, parameter_validation, device_limits, object_tracker, image, core_validation, swapchain, and unique_objects
                     "VK_LAYER_LUNARG_standard_validation"
                 };
-
+#endif
 
             }
 
