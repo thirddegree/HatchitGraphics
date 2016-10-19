@@ -12,6 +12,15 @@
 **
 **/
 
+/**
+ * \file ht_vkswapchain.cpp
+ * \brief VKSwapChain class implementation
+ * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ * \author jkvargas (https://github.com/jkvargas)
+ *
+ * This file contains implementation for VKSwapChain class
+ */
+
 #include <ht_vkswapchain.h>
 #include <ht_vkapplication.h>
 #include <ht_vkdevice.h>

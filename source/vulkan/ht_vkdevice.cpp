@@ -12,6 +12,14 @@
 **
 **/
 
+/**
+ * \file ht_vkdevice.cpp
+ * \brief VKDevice class implementation
+ * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ *
+ * This file contains implementation for VKDevice class
+ */
+
 #include <ht_vkdevice.h>
 #include <ht_vkapplication.h>
 #include <ht_debug.h>

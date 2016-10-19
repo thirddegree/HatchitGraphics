@@ -12,6 +12,14 @@
 **
 **/
 
+/**
+ * \file ht_vkcommandpool.cpp
+ * \brief VKCommandPool class implementation
+ * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ *
+ * This file contains implementation for VKCommandPool class
+ */
+
 #include <ht_vkcommandpool.h>
 #include <ht_vkcommandbuffer.h>
 #include <ht_vkdevice.h>

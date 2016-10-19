@@ -12,6 +12,14 @@
 **
 **/
 
+/**
+ * \file ht_vkimage.cpp
+ * \brief VKImage class implementation
+ * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ *
+ * This file contains implementation for VKIMage class
+ */
+
 #include <ht_vkimage.h>
 #include <ht_vkdevice.h>
 

@@ -12,6 +12,14 @@
 **
 **/
 
+/**
+ * \file ht_vulkan.cpp
+ * \brief Vulkan utility implementation file
+ * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ *
+ * This file contains implementation for various Vulkan utilities
+ */
+
 #include <ht_vulkan.h>
 #include <ht_debug.h>
 

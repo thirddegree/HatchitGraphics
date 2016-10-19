@@ -12,6 +12,14 @@
 **
 **/
 
+/**
+ * \file ht_vkapplication.cpp
+ * \brief VKApplication class implementation
+ * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ *
+ * This file contains the implementation for VKApplication class
+ */
+
 #include <ht_vkapplication.h>
 #include <ht_debug.h>
 #include <cassert>

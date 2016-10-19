@@ -12,6 +12,14 @@
 **
 **/
 
+/**
+ * \file ht_vkcommandbuffer.cpp
+ * \brief VKCommandBuffer class implementation
+ * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ *
+ * This file contains implementation for VKCommandBuffer class
+ */
+
 #include <ht_vkcommandbuffer.h>
 #include <ht_vkdevice.h>
 
