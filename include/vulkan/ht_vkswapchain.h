@@ -49,7 +49,7 @@ namespace Hatchit
                
                 ~VKSwapChain();
 
-                bool Initialize(VKApplication& instance, VKDevice& device);
+                bool Initialize(const uint32_t pHeight, const uint32_t pWidth, VKApplication& instance, VKDevice& device);
 
                 bool IsValid();
 

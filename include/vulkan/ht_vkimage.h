@@ -49,6 +49,7 @@ namespace Hatchit
             protected:
                 VkDevice    m_vkDevice;
                 VkImage     m_vkImage;
+                VkDeviceMemory m_vkMemory;
                 VkImageView m_vkImageView;
             };
         }

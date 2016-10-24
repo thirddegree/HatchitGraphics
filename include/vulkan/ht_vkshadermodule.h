@@ -22,7 +22,7 @@
 #pragma once
 
 #include <ht_platform.h>
-#include <vulkan/vulkan.h>
+#include <ht_vulkan.h>
 
 namespace Hatchit
 {

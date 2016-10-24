@@ -22,8 +22,9 @@
 #pragma once
 
 #include <ht_platform.h>
-#include <vulkan/vulkan.h>
+#include <ht_vulkan.h>
 #include <ht_vkdevice.h>
+#include <ht_vkrenderpass.h>
 
 namespace Hatchit
 {
@@ -34,10 +35,10 @@ namespace Hatchit
             class HT_API VKFrameBuffer
             {
             public:
-                VKFrameBuffer();
+                VKFrameBuffer(VKDevice& pDevice);
                 ~VKFrameBuffer();
 
-                bool Initialize(VKDevice& pDevice);
+                bool Initialize(VKRenderPass& pRenderPass);
             private:
                 VkFramebuffer m_Buffer;
                 VkDevice m_Device;

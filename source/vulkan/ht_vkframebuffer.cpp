@@ -27,24 +27,26 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            VKFrameBuffer::VKFrameBuffer() : m_Buffer{VK_NULL_HANDLE}
+            VKFrameBuffer::VKFrameBuffer(VKDevice& pDevice) : m_Buffer{VK_NULL_HANDLE}, m_Device{pDevice}
             {
             }
 
             VKFrameBuffer::~VKFrameBuffer()
             {
-                vkDestroyFramebuffer(m_Device, m_Buffer, nullptr);
+                if ( m_Buffer != VK_NULL_HANDLE )
+                    vkDestroyFramebuffer(m_Device, m_Buffer, nullptr);
             }
 
-            bool VKFrameBuffer::Initialize(VKDevice &pDevice)
+            bool VKFrameBuffer::Initialize(VKRenderPass& pRenderPass)
             {
                 VkFramebufferCreateInfo pCreateInfo;
 
                 pCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+                pCreateInfo.renderPass = pRenderPass;
 
                 VkResult err = VK_SUCCESS;
 
-                err = vkCreateFramebuffer(pDevice, &pCreateInfo, nullptr, &m_Buffer);
+                err = vkCreateFramebuffer(m_Device, &pCreateInfo, nullptr, &m_Buffer);
                 if ( err != VK_SUCCESS )
                 {
                     HT_ERROR_PRINTF("VkFrameBuffer::Initialize(): Failed to create framebuffer. %s\n", VKErrorString(err));
