@@ -15,7 +15,7 @@
 
 /**
  * \file ht_vksetup.h
- * \brief VkSetup class implementation
+ * \brief Setup class implementation
  * \author Jhonny Knaak de Vargas (lomaisdoro@gmail.com)
  *
  */
