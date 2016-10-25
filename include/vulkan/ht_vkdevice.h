@@ -64,6 +64,9 @@ namespace Hatchit
                 */
                 bool GetSupportedDepthFormat(VkFormat& pFormat) const;
 
+                /* Get the type memoty index considering the memory property flags */
+                uint32_t GetMemoryType(uint32_t pTypeBits, VkMemoryPropertyFlags pProperties, VkBool32* pMemTypeFound = nullptr);
+
                 operator VkDevice();
                 operator VkPhysicalDevice();
 

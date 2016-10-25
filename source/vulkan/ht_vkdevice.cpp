@@ -214,6 +214,30 @@ namespace Hatchit {
                     return false;
                 }
             }
+
+            uint32_t VKDevice::GetMemoryType(uint32_t pTypeBits, VkMemoryPropertyFlags pProperties, VkBool32 *pMemTypeFound)
+            {
+                for ( size_t i = 0; i < m_vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++ )
+                {
+                    if ((( pTypeBits & 1) == 1 ) && ( m_vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & pProperties) == pProperties )
+                    {
+                        if ( pMemTypeFound )
+                            *pMemTypeFound = true;
+
+                        return i;
+                    }
+
+                    pTypeBits >>= 1;
+                }
+
+                if ( pMemTypeFound )
+                {
+                    *pMemTypeFound = false;
+                    return 0;
+                }
+                else
+                    HT_ERROR_PRINTF("VKDevice::GetMemoryType() Could not find a matching memory type.\n");
+            }
         }
     }
 }
