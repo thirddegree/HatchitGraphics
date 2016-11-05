@@ -20,7 +20,6 @@
  */
 
 #include <ht_vkshadermodule.h>
-#include <ht_debug.h>
 
 namespace Hatchit
 {

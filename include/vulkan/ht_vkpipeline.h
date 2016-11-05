@@ -13,8 +13,8 @@
  **/
 
 /**
- * \file ht_vkshadermodule.h
- * \brief VKShaderModule class implementation
+ * \file ht_vkpipeline.h
+ * \brief VkPipeline class implementation
  * \author Jhonny Knaak de Vargas (lomaisdoro@gmail.com)
  *
  */
@@ -22,6 +22,7 @@
 #pragma once
 
 #include <ht_platform.h>
+#include <ht_vkdevice.h>
 #include <ht_vulkan.h>
 
 namespace Hatchit
@@ -30,29 +31,19 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            class HT_API VKShaderModule
+            class HT_API VKPipeline
             {
             public:
-                enum TypeOfShader
-                {
-                    Fragment,
-                    Vertex
-                };
+                VKPipeline(VKDevice& pDevice);
+                ~VKPipeline();
 
-                VKShaderModule();
-                ~VKShaderModule();
+                bool Initialize(const VkPipelineLayoutCreateInfo& pCreateInfo);
 
-                /* Compiled vertex or fragment shaders code */
-                bool Load(TypeOfShader pType, const char* pCode, const uint32_t pSize);
-                VkPipelineShaderStageCreateInfo GetStageCreateInfo() const;
-
-                operator VkShaderModule();
-                operator VkShaderModule*();
-
+                operator VkPipelineLayout();
+                operator VkPipelineLayout*();
             private:
-                VkShaderModule m_vkShader;
-                VkDevice m_vkDevice;
-                TypeOfShader m_Type;
+                VkPipelineLayout m_PipelineLayout;
+                VkDevice m_Device;
             };
         }
     }

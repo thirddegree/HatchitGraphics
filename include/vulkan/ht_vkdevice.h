@@ -57,8 +57,15 @@ namespace Hatchit
 
                 bool Initialize(VKApplication& instance, uint32_t index);
 
-
                 const VkPhysicalDeviceProperties& Properties() const;
+
+                /* Searches for available depth formats on the device based on the precision
+                *  then sets it on pFormat, return true if formar found, false otherwise.
+                */
+                bool GetSupportedDepthFormat(VkFormat& pFormat) const;
+
+                /* Get the type memoty index considering the memory property flags */
+                uint32_t GetMemoryType(uint32_t pTypeBits, VkMemoryPropertyFlags pProperties, VkBool32* pMemTypeFound = nullptr);
 
                 operator VkDevice();
                 operator VkPhysicalDevice();
@@ -72,12 +79,9 @@ namespace Hatchit
 
                 std::vector<VkQueueFamilyProperties> m_vkQueueFamilyProperties;
 
-                
-
                 bool EnumeratePhysicalDevices(VKApplication& instance, uint32_t index);
                 bool QueryPhysicalDeviceInfo();
                 QueueFamily QueryQueueFamily(VkQueueFlagBits flags);
-            
             };
         }
     }

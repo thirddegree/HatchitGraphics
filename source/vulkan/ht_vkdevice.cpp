@@ -24,6 +24,7 @@
 #include <ht_vkapplication.h>
 #include <ht_debug.h>
 
+#include <vector>
 #include <algorithm>
 
 namespace Hatchit {
@@ -60,7 +61,7 @@ namespace Hatchit {
                 }
                 m_vkQueueFamilyProperties.resize(queueCount);
                 vkGetPhysicalDeviceQueueFamilyProperties(m_vkPhysicalDevice, &queueCount, m_vkQueueFamilyProperties.data());
-                
+
                 QueueFamily queueFamily = QueryQueueFamily(VK_QUEUE_GRAPHICS_BIT);
 
                 VkResult err = VK_SUCCESS;
@@ -89,7 +90,7 @@ namespace Hatchit {
                 device.ppEnabledExtensionNames = extensions.data();
                 device.pEnabledFeatures = nullptr;
                 device.flags = 0;
-                
+
                 err = vkCreateDevice(m_vkPhysicalDevice, &device, nullptr, &m_vkDevice);
                 if (err != VK_SUCCESS)
                 {
@@ -102,7 +103,6 @@ namespace Hatchit {
                 */
                 GetDeviceProcAddr(m_vkDevice, "vkCreateSwapchainKHR",
                     &fpCreateSwapchainKHR);
-                
 
                 return true;
             }
@@ -187,6 +187,56 @@ namespace Hatchit {
 
 
                 return family;
+            }
+
+            bool VKDevice::GetSupportedDepthFormat(VkFormat& pFormat) const
+            {
+                std::vector<VkFormat> pFormats =
+                {
+                    VK_FORMAT_D32_SFLOAT_S8_UINT,
+                    VK_FORMAT_D32_SFLOAT,
+                    VK_FORMAT_D24_UNORM_S8_UINT,
+                    VK_FORMAT_D16_UNORM_S8_UINT,
+                    VK_FORMAT_D16_UNORM
+                };
+
+                for ( std::vector<VkFormat>::iterator it = pFormats.begin(); it != pFormats.end(); ++it)
+                {
+                    VkFormatProperties formatProp;
+                    vkGetPhysicalDeviceFormatProperties(m_vkPhysicalDevice, *it, &formatProp);
+
+                    if ( formatProp.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT )
+                    {
+                        pFormat = *it;
+                        return true;
+                    }
+
+                    return false;
+                }
+            }
+
+            uint32_t VKDevice::GetMemoryType(uint32_t pTypeBits, VkMemoryPropertyFlags pProperties, VkBool32 *pMemTypeFound)
+            {
+                for ( size_t i = 0; i < m_vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++ )
+                {
+                    if ((( pTypeBits & 1) == 1 ) && ( m_vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & pProperties) == pProperties )
+                    {
+                        if ( pMemTypeFound )
+                            *pMemTypeFound = true;
+
+                        return i;
+                    }
+
+                    pTypeBits >>= 1;
+                }
+
+                if ( pMemTypeFound )
+                {
+                    *pMemTypeFound = false;
+                    return 0;
+                }
+                else
+                    HT_ERROR_PRINTF("VKDevice::GetMemoryType() Could not find a matching memory type.\n");
             }
         }
     }

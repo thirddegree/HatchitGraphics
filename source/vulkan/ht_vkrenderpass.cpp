@@ -1,3 +1,4 @@
+
 /**
  **    Hatchit Engine
  **    Copyright(c) 2015-2016 Third-Degree
@@ -13,13 +14,14 @@
  **/
 
 /**
- * \file ht_vkframebuffer.h
- * \brief VkSetup class implementation
+ * \file ht_vkrenderpass.cpp
+ * \brief VKRenderPass class implementation
  * \author Jhonny Knaak de Vargas (lomaisdoro@gmail.com)
  *
  */
 
-#include <ht_vkframebuffer.h>
+#include <ht_vkrenderpass.h>
+#include <vector>
 
 namespace Hatchit
 {
@@ -27,29 +29,40 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            VKFrameBuffer::VKFrameBuffer() : m_Buffer{VK_NULL_HANDLE}, m_Device{VK_NULL_HANDLE}
+            VKRenderPass::VKRenderPass() : m_Device{VK_NULL_HANDLE}, m_RenderPass{VK_NULL_HANDLE}
             {
             }
 
-            VKFrameBuffer::~VKFrameBuffer()
+            VKRenderPass::~VKRenderPass()
             {
-                vkDestroyFramebuffer(m_Device, m_Buffer, nullptr);
+                vkDestroyRenderPass(m_Device, m_RenderPass, nullptr);
             }
 
-            bool VKFrameBuffer::Initialize(VKDevice& pDevice, VkFramebufferCreateInfo& pCreateInfo)
+            bool VKRenderPass::Initialize(VKDevice& pDevice, const VkRenderPassCreateInfo& pCreateInfo)
             {
                 m_Device = pDevice;
 
                 VkResult err = VK_SUCCESS;
 
-                err = vkCreateFramebuffer(m_Device, &pCreateInfo, nullptr, &m_Buffer);
+                err = vkCreateRenderPass(m_Device, &pCreateInfo, nullptr, &m_RenderPass);
+
                 if ( err != VK_SUCCESS )
                 {
-                    HT_ERROR_PRINTF("VkFrameBuffer::Initialize(): Failed to create framebuffer. %s\n", VKErrorString(err));
+                    HT_ERROR_PRINTF("VKRenderPass::Initialize(): Failed to create renderpass. %s\n", VKErrorString(err));
                     return false;
                 }
 
                 return true;
+            }
+
+            VKRenderPass::operator VkRenderPass()
+            {
+                return m_RenderPass;
+            }
+
+            VKRenderPass::operator VkRenderPass*()
+            {
+                return &m_RenderPass;
             }
         }
     }

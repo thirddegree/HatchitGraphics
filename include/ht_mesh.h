@@ -13,35 +13,29 @@
  **/
 
 /**
- * \file ht_vkframebuffer.h
- * \brief VkFrameBuffer class implementation
+ * \file ht_mesh.h
+ * \brief Some new structures for mesh
  * \author Jhonny Knaak de Vargas (lomaisdoro@gmail.com)
  *
  */
 
 #pragma once
 
-#include <ht_platform.h>
-#include <ht_vulkan.h>
-#include <ht_vkdevice.h>
+#include <glm/glm.hpp>
 
 namespace Hatchit
 {
     namespace Graphics
     {
-        namespace Vulkan
+        class Vertex
         {
-            class HT_API VKFrameBuffer
-            {
-            public:
-                VKFrameBuffer();
-                ~VKFrameBuffer();
+        public:
+            glm::vec3 Position;
+            glm::vec3 Normal;
+            glm::vec3 Color;
 
-                bool Initialize(VKDevice& pDevice, VkFramebufferCreateInfo& pCreateInfo);
-            private:
-                VkFramebuffer m_Buffer;
-                VkDevice m_Device;
-            };
-        }
+            Vertex(const glm::vec3& pPosition, const glm::vec3& pNormal, const glm::vec3& pColor)
+                : Position{pPosition}, Normal{pNormal}, Color{pColor} {}
+        };
     }
 }

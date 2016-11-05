@@ -1,3 +1,4 @@
+
 /**
  **    Hatchit Engine
  **    Copyright(c) 2015-2016 Third-Degree
@@ -13,8 +14,8 @@
  **/
 
 /**
- * \file ht_vkshadermodule.h
- * \brief VKShaderModule class implementation
+ * \file ht_vkframebuffer.h
+ * \brief VkFrameBuffer class implementation
  * \author Jhonny Knaak de Vargas (lomaisdoro@gmail.com)
  *
  */
@@ -22,6 +23,7 @@
 #pragma once
 
 #include <ht_platform.h>
+#include <ht_vkdevice.h>
 #include <ht_vulkan.h>
 
 namespace Hatchit
@@ -30,29 +32,20 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            class HT_API VKShaderModule
+            class HT_API VKRenderPass
             {
             public:
-                enum TypeOfShader
-                {
-                    Fragment,
-                    Vertex
-                };
+                VKRenderPass();
+                ~VKRenderPass();
 
-                VKShaderModule();
-                ~VKShaderModule();
+                operator VkRenderPass();
+                operator VkRenderPass*();
 
-                /* Compiled vertex or fragment shaders code */
-                bool Load(TypeOfShader pType, const char* pCode, const uint32_t pSize);
-                VkPipelineShaderStageCreateInfo GetStageCreateInfo() const;
+                virtual bool Initialize(VKDevice& pDevice, const VkRenderPassCreateInfo& pCreateInfo);
 
-                operator VkShaderModule();
-                operator VkShaderModule*();
-
-            private:
-                VkShaderModule m_vkShader;
-                VkDevice m_vkDevice;
-                TypeOfShader m_Type;
+            protected:
+                VkRenderPass m_RenderPass;
+                VkDevice m_Device;
             };
         }
     }

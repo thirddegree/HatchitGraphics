@@ -24,15 +24,16 @@
 
 #include <ht_platform.h>
 #include <ht_vulkan.h>
+#include <ht_vkdevice.h>
 
 namespace Hatchit
 {
     namespace Graphics
     {
+        class VKDevice;
+
         namespace Vulkan
         {
-            class VKDevice;
-
             class HT_API VKImage
             {
             public:
@@ -44,11 +45,15 @@ namespace Hatchit
                     const VkImageCreateInfo* pImageInfo, 
                     VkImageViewCreateInfo* pImageViewInfo);
 
+                bool AllocateAndBindMemory(VKDevice& pDevice);
+
                 operator VkImage();
                 operator VkImageView();
+                operator VkDeviceMemory();
             protected:
                 VkDevice    m_vkDevice;
                 VkImage     m_vkImage;
+                VkDeviceMemory m_vkMemory;
                 VkImageView m_vkImageView;
             };
         }

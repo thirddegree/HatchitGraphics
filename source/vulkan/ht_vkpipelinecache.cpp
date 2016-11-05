@@ -13,13 +13,13 @@
  **/
 
 /**
- * \file ht_vkframebuffer.h
- * \brief VkSetup class implementation
+ * \file ht_vkpipelinecache.h
+ * \brief VKPipelineCache class implementation
  * \author Jhonny Knaak de Vargas (lomaisdoro@gmail.com)
  *
  */
 
-#include <ht_vkframebuffer.h>
+#include <ht_vkpipelinecache.h>
 
 namespace Hatchit
 {
@@ -27,29 +27,40 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            VKFrameBuffer::VKFrameBuffer() : m_Buffer{VK_NULL_HANDLE}, m_Device{VK_NULL_HANDLE}
+            VKPipelineCache::VKPipelineCache() : m_PipelineCache{VK_NULL_HANDLE}
             {
             }
 
-            VKFrameBuffer::~VKFrameBuffer()
+            VKPipelineCache::~VKPipelineCache()
             {
-                vkDestroyFramebuffer(m_Device, m_Buffer, nullptr);
+                vkDestroyPipelineCache(m_Device, m_PipelineCache, nullptr);
             }
 
-            bool VKFrameBuffer::Initialize(VKDevice& pDevice, VkFramebufferCreateInfo& pCreateInfo)
+            bool VKPipelineCache::Initialize(VKDevice &pDevice, VkPipelineCacheCreateInfo &pCreateInfo)
             {
                 m_Device = pDevice;
 
                 VkResult err = VK_SUCCESS;
 
-                err = vkCreateFramebuffer(m_Device, &pCreateInfo, nullptr, &m_Buffer);
+                err = vkCreatePipelineCache(m_Device, &pCreateInfo, nullptr, &m_PipelineCache);
+
                 if ( err != VK_SUCCESS )
                 {
-                    HT_ERROR_PRINTF("VkFrameBuffer::Initialize(): Failed to create framebuffer. %s\n", VKErrorString(err));
+                    HT_ERROR_PRINTF("VKPipelineCache::Initialize(): Failed to create pipelinecache. %s\n", VKErrorString(err));
                     return false;
                 }
 
                 return true;
+            }
+
+            VKPipelineCache::operator VkPipelineCache()
+            {
+                return m_PipelineCache;
+            }
+
+            VKPipelineCache::operator VkPipelineCache*()
+            {
+                return &m_PipelineCache;
             }
         }
     }

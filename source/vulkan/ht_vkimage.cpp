@@ -34,12 +34,14 @@ namespace Hatchit {
                 m_vkDevice = VK_NULL_HANDLE;
                 m_vkImage = VK_NULL_HANDLE;
                 m_vkImageView = VK_NULL_HANDLE;
+                m_vkMemory = VK_NULL_HANDLE;
             }
 
             VKImage::~VKImage()
             {
                 vkDestroyImageView(m_vkDevice, m_vkImageView, nullptr);
                 vkDestroyImage(m_vkDevice, m_vkImage, nullptr);
+                vkFreeMemory(m_vkDevice, m_vkMemory, nullptr);
             }
 
             bool VKImage::Initialize(VKDevice& device, const VkImageCreateInfo* pImageInfo, VkImageViewCreateInfo* pImageViewInfo)
@@ -77,6 +79,45 @@ namespace Hatchit {
             VKImage::operator VkImageView()
             {
                 return m_vkImageView;
+            }
+
+            VKImage::operator VkDeviceMemory()
+            {
+                return m_vkMemory;
+            }
+
+            bool VKImage::AllocateAndBindMemory(VKDevice& pDevice)
+            {
+                VkMemoryAllocateInfo memAllocateInfo = {};
+                memAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+                memAllocateInfo.pNext = nullptr;
+                memAllocateInfo.allocationSize = 0;
+                memAllocateInfo.memoryTypeIndex = 0;
+
+                VkMemoryRequirements memoryRequirement = {};
+                vkGetImageMemoryRequirements(pDevice, m_vkImage, &memoryRequirement);
+                memAllocateInfo.allocationSize = memoryRequirement.size;
+                memAllocateInfo.memoryTypeIndex = pDevice.GetMemoryType(memoryRequirement.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+                VkResult err = VK_SUCCESS;
+
+                err = vkAllocateMemory(pDevice, &memAllocateInfo, nullptr, &m_vkMemory);
+
+                if ( err != VK_SUCCESS )
+                {
+                    HT_ERROR_PRINTF("VKImage::AllocateAndBindMemmory(): Failed to allocate memory. %s\n", VKErrorString(err));
+                    return false;
+                }
+
+                err = vkBindImageMemory(pDevice, m_vkImage, m_vkMemory, 0);
+
+                if ( err != VK_SUCCESS )
+                {
+                    HT_ERROR_PRINTF("VkImage::AllocateAndBindMemory(): Failed to bind memory to image. %s\n", VKErrorString(err));
+                    return false;
+                }
+
+                return true;
             }
         }
     }
