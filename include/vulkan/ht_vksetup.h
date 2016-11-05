@@ -31,6 +31,8 @@
 #include <ht_vkcommandbuffer.h>
 #include <ht_vkimage.h>
 #include <ht_vkrenderpass.h>
+#include <ht_vkpipelinecache.h>
+#include <ht_vkframebuffer.h>
 #include <vector>
 
 namespace Hatchit
@@ -51,7 +53,7 @@ namespace Hatchit
                 Setup();
                 ~Setup();
                 /* Setup the vulkan app */
-                void Start();
+                void Initialize();
             protected:
                 VKCommandBuffer m_CommandBuffer;
                 VertexDesc m_VertexDescription;
@@ -63,6 +65,8 @@ namespace Hatchit
                 uint32_t m_ScreenWidth;
                 VKImage m_ImageDepth;
                 VKRenderPass m_RenderPass;
+                VKPipelineCache m_PipelineCache;
+                std::vector<VKFrameBuffer> m_FrameBuffers;
             };
         }
     }

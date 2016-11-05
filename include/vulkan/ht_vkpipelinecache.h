@@ -13,8 +13,8 @@
  **/
 
 /**
- * \file ht_vkframebuffer.h
- * \brief VkFrameBuffer class implementation
+ * \file ht_vkpipelinecache.h
+ * \brief VKPipelineCache class implementation
  * \author Jhonny Knaak de Vargas (lomaisdoro@gmail.com)
  *
  */
@@ -31,16 +31,19 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            class HT_API VKFrameBuffer
+            class VKPipelineCache
             {
             public:
-                VKFrameBuffer();
-                ~VKFrameBuffer();
+                VKPipelineCache();
+                ~VKPipelineCache();
 
-                bool Initialize(VKDevice& pDevice, VkFramebufferCreateInfo& pCreateInfo);
+                bool Initialize(VKDevice& pDevice, VkPipelineCacheCreateInfo& pCreateInfo);
+
+                operator VkPipelineCache();
+                operator VkPipelineCache*();
             private:
-                VkFramebuffer m_Buffer;
-                VkDevice m_Device;
+                VkPipelineCache m_PipelineCache;
+                VKDevice m_Device;
             };
         }
     }

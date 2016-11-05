@@ -292,24 +292,24 @@ namespace Hatchit
                 * structure.
                 */
 
-                uint32_t scImgCount = 0;
-                err = vkGetSwapchainImagesKHR(device, m_swapchain, &scImgCount, nullptr);
+                m_scImgCount = 0;
+                err = vkGetSwapchainImagesKHR(device, m_swapchain, &m_scImgCount, nullptr);
                 if (err != VK_SUCCESS)
                 {
                     HT_ERROR_PRINTF("VKSwapChain::Initialize(): Failed to query swapchain image count. %s\n", VKErrorString(err));
                     return false;
                 }
 
-                std::vector<VkImage> images(scImgCount);
-                err = vkGetSwapchainImagesKHR(device, m_swapchain, &scImgCount, images.data());
+                std::vector<VkImage> images(m_scImgCount);
+                err = vkGetSwapchainImagesKHR(device, m_swapchain, &m_scImgCount, images.data());
                 if (err != VK_SUCCESS)
                 {
                     HT_ERROR_PRINTF("VKSwapChain::Initialize(): Failed to query swapchain images. %s\n", VKErrorString(err));
                     return false;
                 }
 
-                m_buffers.resize(scImgCount);
-                for (uint32_t i = 0; i < scImgCount; i++)
+                m_buffers.resize(m_scImgCount);
+                for (uint32_t i = 0; i < m_scImgCount; i++)
                 {
                     VkImageViewCreateInfo colorAttachmentView = {};
                     colorAttachmentView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -342,6 +342,16 @@ namespace Hatchit
 
 
                 return true;
+            }
+
+            uint32_t VKSwapChain::GetImageCount() const
+            {
+                return m_scImgCount;
+            }
+
+            std::vector<VKSwapChain::Buffer>& VKSwapChain::GetBuffers()
+            {
+                return m_buffers;
             }
 
             bool VKSwapChain::IsValid()

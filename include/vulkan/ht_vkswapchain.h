@@ -54,6 +54,8 @@ namespace Hatchit
                 bool IsValid();
 
                 uint32_t QueueFamilyIndex() const;
+                uint32_t GetImageCount() const;
+                std::vector<Buffer>& GetBuffers();
 
             private:
                 VkSwapchainKHR m_swapchain;
@@ -67,6 +69,7 @@ namespace Hatchit
                 uint32_t m_width;
                 uint32_t m_height;
                 uint32_t m_queueFamilyIndex;
+                uint32_t m_scImgCount;
             };
         }
     }
