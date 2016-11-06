@@ -21,6 +21,7 @@
  */
 
 #include <ht_vksetup.h>
+#include <ht_mesh.h>
 
 namespace Hatchit
 {
@@ -186,6 +187,52 @@ namespace Hatchit
                     pFrameAttachments[0] = m_Swapchain.GetBuffers()[i].imageView;
                     it->Initialize(m_Device, pFrameBufferInfo);
                 }
+
+                VkVertexInputBindingDescription pBindDescInfo{};
+
+                pBindDescInfo.binding = 0;
+                pBindDescInfo.stride = sizeof(Hatchit::Graphics::Vertex);
+                pBindDescInfo.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+                VkVertexInputAttributeDescription pPositionAttribute{};
+
+                pPositionAttribute.binding = 0;
+                pPositionAttribute.location = 0;
+                pPositionAttribute.format = VK_FORMAT_R32G32B32A32_SFLOAT,
+                pPositionAttribute.offset = 0;
+
+                VkVertexInputAttributeDescription pNormalAttribute{};
+
+                pNormalAttribute.binding = 0;
+                pNormalAttribute.location = 1;
+                pNormalAttribute.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+                pNormalAttribute.offset = sizeof(float) * 3;
+
+                VkVertexInputAttributeDescription pColorAttribute{};
+
+                pColorAttribute.binding = 0;
+                pColorAttribute.location = 2;
+                pColorAttribute.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+                pColorAttribute.offset = sizeof(float) * 6;
+
+                m_VertexDescription.bindingDescriptions.resize(1);
+                m_VertexDescription.bindingDescriptions[0] = pBindDescInfo;
+
+                m_VertexDescription.attributeDescription.resize(3);
+                m_VertexDescription.attributeDescription[0] = pPositionAttribute;
+                m_VertexDescription.attributeDescription[1] = pNormalAttribute;
+                m_VertexDescription.attributeDescription[2] = pColorAttribute;
+
+                VkPipelineVertexInputStateCreateInfo pInputState{};
+                pInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+                pInputState.pNext = nullptr;
+                pInputState.vertexAttributeDescriptionCount = m_VertexDescription.attributeDescription.size();
+                pInputState.pVertexAttributeDescriptions = m_VertexDescription.attributeDescription.data();
+                pInputState.vertexBindingDescriptionCount = m_VertexDescription.bindingDescriptions.size();
+                pInputState.pVertexBindingDescriptions = m_VertexDescription.bindingDescriptions.data();
+
+                m_VertexDescription.inputState = pInputState;
+
             }
         }
     }
