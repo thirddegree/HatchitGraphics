@@ -188,50 +188,104 @@ namespace Hatchit
                     it->Initialize(m_Device, pFrameBufferInfo);
                 }
 
-                VkVertexInputBindingDescription pBindDescInfo{};
+                /* Maybe we could add this content directly to the Vertex structure, so each vertex format could have its own VkPipelineVertexInputStateCreateInfo */
+                /* Vertex information */
+                {
+                    VkVertexInputBindingDescription pBindDescInfo{};
 
-                pBindDescInfo.binding = 0;
-                pBindDescInfo.stride = sizeof(Hatchit::Graphics::Vertex);
-                pBindDescInfo.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+                    pBindDescInfo.binding = 0;
+                    pBindDescInfo.stride = sizeof(Hatchit::Graphics::Vertex);
+                    pBindDescInfo.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-                VkVertexInputAttributeDescription pPositionAttribute{};
+                    VkVertexInputAttributeDescription pPositionAttribute{};
 
-                pPositionAttribute.binding = 0;
-                pPositionAttribute.location = 0;
-                pPositionAttribute.format = VK_FORMAT_R32G32B32A32_SFLOAT,
-                pPositionAttribute.offset = 0;
+                    pPositionAttribute.binding = 0;
+                    pPositionAttribute.location = 0;
+                    pPositionAttribute.format = VK_FORMAT_R32G32B32A32_SFLOAT,
+                    pPositionAttribute.offset = 0;
 
-                VkVertexInputAttributeDescription pNormalAttribute{};
+                    VkVertexInputAttributeDescription pNormalAttribute{};
 
-                pNormalAttribute.binding = 0;
-                pNormalAttribute.location = 1;
-                pNormalAttribute.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-                pNormalAttribute.offset = sizeof(float) * 3;
+                    pNormalAttribute.binding = 0;
+                    pNormalAttribute.location = 1;
+                    pNormalAttribute.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+                    pNormalAttribute.offset = sizeof(float) * 3;
 
-                VkVertexInputAttributeDescription pColorAttribute{};
+                    VkVertexInputAttributeDescription pColorAttribute{};
 
-                pColorAttribute.binding = 0;
-                pColorAttribute.location = 2;
-                pColorAttribute.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-                pColorAttribute.offset = sizeof(float) * 6;
+                    pColorAttribute.binding = 0;
+                    pColorAttribute.location = 2;
+                    pColorAttribute.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+                    pColorAttribute.offset = sizeof(float) * 6;
 
-                m_VertexDescription.bindingDescriptions.resize(1);
-                m_VertexDescription.bindingDescriptions[0] = pBindDescInfo;
+                    m_VertexDescription.bindingDescriptions.resize(1);
+                    m_VertexDescription.bindingDescriptions[0] = pBindDescInfo;
 
-                m_VertexDescription.attributeDescription.resize(3);
-                m_VertexDescription.attributeDescription[0] = pPositionAttribute;
-                m_VertexDescription.attributeDescription[1] = pNormalAttribute;
-                m_VertexDescription.attributeDescription[2] = pColorAttribute;
+                    m_VertexDescription.attributeDescription.resize(3);
+                    m_VertexDescription.attributeDescription[0] = pPositionAttribute;
+                    m_VertexDescription.attributeDescription[1] = pNormalAttribute;
+                    m_VertexDescription.attributeDescription[2] = pColorAttribute;
 
-                VkPipelineVertexInputStateCreateInfo pInputState{};
-                pInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-                pInputState.pNext = nullptr;
-                pInputState.vertexAttributeDescriptionCount = m_VertexDescription.attributeDescription.size();
-                pInputState.pVertexAttributeDescriptions = m_VertexDescription.attributeDescription.data();
-                pInputState.vertexBindingDescriptionCount = m_VertexDescription.bindingDescriptions.size();
-                pInputState.pVertexBindingDescriptions = m_VertexDescription.bindingDescriptions.data();
+                    VkPipelineVertexInputStateCreateInfo pInputState{};
+                    pInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+                    pInputState.pNext = nullptr;
+                    pInputState.vertexAttributeDescriptionCount = m_VertexDescription.attributeDescription.size();
+                    pInputState.pVertexAttributeDescriptions = m_VertexDescription.attributeDescription.data();
+                    pInputState.vertexBindingDescriptionCount = m_VertexDescription.bindingDescriptions.size();
+                    pInputState.pVertexBindingDescriptions = m_VertexDescription.bindingDescriptions.data();
 
-                m_VertexDescription.inputState = pInputState;
+                    m_VertexDescription.inputState = pInputState;
+                }
+
+                /* Layout Binding and Descriptors */
+                {
+                    std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings{};
+
+                    VkDescriptorSetLayoutBinding pDescLayBind {};
+                    pDescLayBind.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                    pDescLayBind.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+                    pDescLayBind.binding = 0;
+                    pDescLayBind.descriptorCount = 0;
+
+                    setLayoutBindings.push_back(pDescLayBind);
+
+                    VkDescriptorSetLayoutCreateInfo descLayoutCreateInfo{};
+
+                    descLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+                    descLayoutCreateInfo.pNext = nullptr;
+                    descLayoutCreateInfo.pBindings = setLayoutBindings.data();
+                    descLayoutCreateInfo.bindingCount = setLayoutBindings.size();
+
+                    m_DescSetLayout.Initialize(m_Device, descLayoutCreateInfo);
+
+                    VkPipelineLayoutCreateInfo pipelineLayCreateInfo{};
+
+                    pipelineLayCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+                    pipelineLayCreateInfo.pNext = nullptr;
+                    pipelineLayCreateInfo.pSetLayouts = m_DescSetLayout;
+                    pipelineLayCreateInfo.setLayoutCount = 1;
+
+                    m_PipelineLayout.Initialize(m_Device, pipelineLayCreateInfo);
+                }
+
+                VkPipelineInputAssemblyStateCreateInfo pipelineInputAssemblyStateCreateInfo{};
+                pipelineInputAssemblyStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+                pipelineInputAssemblyStateCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+                pipelineInputAssemblyStateCreateInfo.flags = 0;
+                pipelineInputAssemblyStateCreateInfo.primitiveRestartEnable = VK_FALSE;
+
+                VkPipelineRasterizationStateCreateInfo pipelineRasterizationStateCreateInfo;
+
+                pipelineRasterizationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+                pipelineRasterizationStateCreateInfo.pNext = nullptr;
+                pipelineRasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
+                pipelineRasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+                pipelineRasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+                pipelineRasterizationStateCreateInfo.flags = 0;
+                pipelineRasterizationStateCreateInfo.depthClampEnable = VK_FALSE;
+                pipelineRasterizationStateCreateInfo.lineWidth = 1.0f;
+
+
 
             }
         }
