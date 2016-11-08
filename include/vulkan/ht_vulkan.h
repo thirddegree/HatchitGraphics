@@ -45,34 +45,6 @@ namespace Hatchit
         {
             std::string VKErrorString(VkResult code);
 
-            
-           
-            
-            extern PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR
-                fpGetPhysicalDeviceSurfaceCapabilitiesKHR;
-            extern PFN_vkGetPhysicalDeviceSurfaceFormatsKHR
-                fpGetPhysicalDeviceSurfaceFormatsKHR;
-            extern PFN_vkGetPhysicalDeviceSurfacePresentModesKHR
-                fpGetPhysicalDeviceSurfacePresentModesKHR;
-
-            extern PFN_vkCreateDebugReportCallbackEXT
-                fpCreateDebugReportCallback;
-            extern PFN_vkDestroyDebugReportCallbackEXT
-                fpDestroyDebugReportCallback;
-            extern PFN_vkDebugReportMessageEXT
-                fpDebugReportMessage;
-
-            extern PFN_vkCreateSwapchainKHR
-                fpCreateSwapchainKHR;
-            extern  PFN_vkDestroySwapchainKHR
-                fpDestroySwapchainKHR;
-            extern PFN_vkGetSwapchainImagesKHR
-                fpGetSwapchainImagesKHR;
-            extern PFN_vkAcquireNextImageKHR
-                fpAcquireNextImageKHR;
-            extern PFN_vkQueuePresentKHR
-                fpQueuePresentKHR;
-
             template<typename T>
             bool GetInstanceProcAddr(VkInstance instance, const char* entry, T** func)
             {

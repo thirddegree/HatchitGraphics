@@ -98,12 +98,6 @@ namespace Hatchit {
                     return false;
                 }
 
-                /*
-                * Initialize all device related function pointers
-                */
-                GetDeviceProcAddr(m_vkDevice, "vkCreateSwapchainKHR",
-                    &fpCreateSwapchainKHR);
-
                 return true;
             }
 

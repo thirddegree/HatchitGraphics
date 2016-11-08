@@ -298,29 +298,6 @@ namespace Hatchit
             bool VKApplication::SetupDebugCallback() {
                 VkResult err;
 
-                //Get debug callback function pointers
-                fpCreateDebugReportCallback =
-                        (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(m_instance, "vkCreateDebugReportCallbackEXT");
-                fpDestroyDebugReportCallback =
-                        (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(m_instance, "vkDestroyDebugReportCallbackEXT");
-
-                if (!fpCreateDebugReportCallback)
-                {
-                    HT_DEBUG_PRINTF("GetProcAddr: Unable to find vkCreateDebugReportCallbackEXT\n");
-                    return false;
-                }
-                if (!fpDestroyDebugReportCallback) {
-                    HT_DEBUG_PRINTF("GetProcAddr: Unable to find vkDestroyDebugReportCallbackEXT\n");
-                    return false;
-                }
-
-                fpDebugReportMessage =
-                        (PFN_vkDebugReportMessageEXT)vkGetInstanceProcAddr(m_instance, "vkDebugReportMessageEXT");
-                if (!fpDebugReportMessage) {
-                    HT_DEBUG_PRINTF("GetProcAddr: Unable to find vkDebugReportMessageEXT\n");
-                    return false;
-                }
-
                 PFN_vkDebugReportCallbackEXT callback;
                 callback = VKApplication::DebugCallback;
 
@@ -331,7 +308,7 @@ namespace Hatchit
                 dbgCreateInfo.pUserData = NULL;
                 dbgCreateInfo.flags =
                         VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
-                err = fpCreateDebugReportCallback(m_instance, &dbgCreateInfo, NULL, &m_debugReportCallback);
+                err = vkCreateDebugReportCallbackEXT(m_instance, &dbgCreateInfo, NULL, &m_debugReportCallback);
                 switch (err) {
                     case VK_SUCCESS:
                         break;
