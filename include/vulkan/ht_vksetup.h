@@ -33,6 +33,10 @@
 #include <ht_vkrenderpass.h>
 #include <ht_vkpipelinecache.h>
 #include <ht_vkframebuffer.h>
+#include <ht_vkpipeline.h>
+#include <ht_vkpipelinelayout.h>
+#include <ht_vkdescriptorsetlayout.h>
+#include <ht_vkdescriptorpool.h>
 #include <vector>
 
 namespace Hatchit
@@ -66,6 +70,10 @@ namespace Hatchit
                 VKImage m_ImageDepth;
                 VKRenderPass m_RenderPass;
                 VKPipelineCache m_PipelineCache;
+                VKPipelineLayout m_PipelineLayout;
+                VKDescriptorSetLayout m_DescSetLayout;
+                VKDescriptorPool m_DescPool;
+                VKPipeline m_Pipeline;
                 std::vector<VKFrameBuffer> m_FrameBuffers;
             };
         }

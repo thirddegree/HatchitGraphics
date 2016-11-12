@@ -21,6 +21,7 @@
  */
 
 #include <ht_vksetup.h>
+#include <ht_mesh.h>
 
 namespace Hatchit
 {
@@ -186,6 +187,171 @@ namespace Hatchit
                     pFrameAttachments[0] = m_Swapchain.GetBuffers()[i].imageView;
                     it->Initialize(m_Device, pFrameBufferInfo);
                 }
+
+                /* Maybe we could add this content directly to the Vertex structure, so each vertex format could have its own VkPipelineVertexInputStateCreateInfo */
+                /* Vertex information */
+                {
+                    VkVertexInputBindingDescription pBindDescInfo{};
+
+                    pBindDescInfo.binding = 0;
+                    pBindDescInfo.stride = sizeof(Hatchit::Graphics::Vertex);
+                    pBindDescInfo.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+                    VkVertexInputAttributeDescription pPositionAttribute{};
+
+                    pPositionAttribute.binding = 0;
+                    pPositionAttribute.location = 0;
+                    pPositionAttribute.format = VK_FORMAT_R32G32B32A32_SFLOAT,
+                    pPositionAttribute.offset = 0;
+
+                    VkVertexInputAttributeDescription pNormalAttribute{};
+
+                    pNormalAttribute.binding = 0;
+                    pNormalAttribute.location = 1;
+                    pNormalAttribute.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+                    pNormalAttribute.offset = sizeof(float) * 3;
+
+                    VkVertexInputAttributeDescription pColorAttribute{};
+
+                    pColorAttribute.binding = 0;
+                    pColorAttribute.location = 2;
+                    pColorAttribute.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+                    pColorAttribute.offset = sizeof(float) * 6;
+
+                    m_VertexDescription.bindingDescriptions.resize(1);
+                    m_VertexDescription.bindingDescriptions[0] = pBindDescInfo;
+
+                    m_VertexDescription.attributeDescription.resize(3);
+                    m_VertexDescription.attributeDescription[0] = pPositionAttribute;
+                    m_VertexDescription.attributeDescription[1] = pNormalAttribute;
+                    m_VertexDescription.attributeDescription[2] = pColorAttribute;
+
+                    VkPipelineVertexInputStateCreateInfo pInputState{};
+                    pInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+                    pInputState.pNext = nullptr;
+                    pInputState.vertexAttributeDescriptionCount = m_VertexDescription.attributeDescription.size();
+                    pInputState.pVertexAttributeDescriptions = m_VertexDescription.attributeDescription.data();
+                    pInputState.vertexBindingDescriptionCount = m_VertexDescription.bindingDescriptions.size();
+                    pInputState.pVertexBindingDescriptions = m_VertexDescription.bindingDescriptions.data();
+
+                    m_VertexDescription.inputState = pInputState;
+                }
+
+                /* Layout Binding and Descriptors */
+                {
+                    std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings{};
+
+                    VkDescriptorSetLayoutBinding pDescLayBind {};
+                    pDescLayBind.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                    pDescLayBind.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+                    pDescLayBind.binding = 0;
+                    pDescLayBind.descriptorCount = 0;
+
+                    setLayoutBindings.push_back(pDescLayBind);
+
+                    VkDescriptorSetLayoutCreateInfo descLayoutCreateInfo{};
+
+                    descLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+                    descLayoutCreateInfo.pNext = nullptr;
+                    descLayoutCreateInfo.pBindings = setLayoutBindings.data();
+                    descLayoutCreateInfo.bindingCount = setLayoutBindings.size();
+
+                    m_DescSetLayout.Initialize(m_Device, descLayoutCreateInfo);
+
+                    VkPipelineLayoutCreateInfo pipelineLayCreateInfo{};
+
+                    pipelineLayCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+                    pipelineLayCreateInfo.pNext = nullptr;
+                    pipelineLayCreateInfo.pSetLayouts = m_DescSetLayout;
+                    pipelineLayCreateInfo.setLayoutCount = 1;
+
+                    m_PipelineLayout.Initialize(m_Device, pipelineLayCreateInfo);
+                }
+
+                VkPipelineInputAssemblyStateCreateInfo pipelineInputAssemblyStateCreateInfo{};
+                pipelineInputAssemblyStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+                pipelineInputAssemblyStateCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+                pipelineInputAssemblyStateCreateInfo.flags = 0;
+                pipelineInputAssemblyStateCreateInfo.primitiveRestartEnable = VK_FALSE;
+
+                VkPipelineRasterizationStateCreateInfo pipelineRasterizationStateCreateInfo{};
+
+                pipelineRasterizationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+                pipelineRasterizationStateCreateInfo.pNext = nullptr;
+                pipelineRasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
+                pipelineRasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+                pipelineRasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+                pipelineRasterizationStateCreateInfo.flags = 0;
+                pipelineRasterizationStateCreateInfo.depthClampEnable = VK_FALSE;
+                pipelineRasterizationStateCreateInfo.lineWidth = 1.0f;
+
+                VkPipelineColorBlendAttachmentState pBlendAttachmentState{};
+                pBlendAttachmentState.colorWriteMask = 0xf;
+                pBlendAttachmentState.blendEnable = VK_FALSE;
+
+                VkPipelineColorBlendStateCreateInfo pBlendStateCreateInfo{};
+                pBlendStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+                pBlendStateCreateInfo.pNext = nullptr;
+                pBlendStateCreateInfo.attachmentCount = 1;
+                pBlendStateCreateInfo.pAttachments = &pBlendAttachmentState;
+
+                VkPipelineDepthStencilStateCreateInfo pDepthStateCreateInfo{};
+                pDepthStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+                pDepthStateCreateInfo.depthTestEnable = VK_TRUE;
+                pDepthStateCreateInfo.depthWriteEnable = VK_TRUE;
+                pDepthStateCreateInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+                pDepthStateCreateInfo.front = pDepthStateCreateInfo.back;
+                pDepthStateCreateInfo.back.compareOp = VK_COMPARE_OP_ALWAYS;
+
+                VkPipelineViewportStateCreateInfo pViewportStateCreateInfo{};
+                pViewportStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+                pViewportStateCreateInfo.viewportCount = 1;
+                pViewportStateCreateInfo.scissorCount = 1;
+                pViewportStateCreateInfo.flags = 0;
+
+                VkPipelineMultisampleStateCreateInfo pMultisampleStateCreateInfo{};
+                pMultisampleStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+                pMultisampleStateCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+                std::vector<VkDynamicState> pDynamicStates {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+                VkPipelineDynamicStateCreateInfo pDynamicStateCreateInfo{};
+                pDynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+                pDynamicStateCreateInfo.pDynamicStates = pDynamicStates.data();
+                pDynamicStateCreateInfo.dynamicStateCount = pDynamicStates.size();
+
+                VkGraphicsPipelineCreateInfo pPipelineCreateInfo{};
+
+                pPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+                pPipelineCreateInfo.pNext = nullptr;
+                pPipelineCreateInfo.layout = m_PipelineLayout;
+                pPipelineCreateInfo.renderPass = m_RenderPass;
+                pPipelineCreateInfo.flags = 0;
+                pPipelineCreateInfo.pVertexInputState = &m_VertexDescription.inputState;
+                pPipelineCreateInfo.pInputAssemblyState = &pipelineInputAssemblyStateCreateInfo;
+                pPipelineCreateInfo.pRasterizationState = &pipelineRasterizationStateCreateInfo;
+                pPipelineCreateInfo.pColorBlendState = &pBlendStateCreateInfo;
+                pPipelineCreateInfo.pMultisampleState = &pMultisampleStateCreateInfo;
+                pPipelineCreateInfo.pViewportState = &pViewportStateCreateInfo;
+                pPipelineCreateInfo.pDepthStencilState = &pDepthStateCreateInfo;
+                pPipelineCreateInfo.pDynamicState = &pDynamicStateCreateInfo;
+
+                m_Pipeline.Initialize(m_Device, m_PipelineCache, pPipelineCreateInfo);
+
+                VkDescriptorPoolSize pDescPoolSize{};
+                pDescPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                pDescPoolSize.descriptorCount = 3;
+
+                std::vector<VkDescriptorPoolSize> pPoolSizes {pDescPoolSize};
+
+                VkDescriptorPoolCreateInfo pDescPoolCreateInfo{};
+                pDescPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+                pDescPoolCreateInfo.pNext = nullptr;
+                pDescPoolCreateInfo.poolSizeCount = pPoolSizes.size();
+                pDescPoolCreateInfo.pPoolSizes = pPoolSizes.data();
+                pDescPoolCreateInfo.maxSets = 1;
+
+                m_DescPool.Initialize(m_Device, pDescPoolCreateInfo);
+
             }
         }
     }

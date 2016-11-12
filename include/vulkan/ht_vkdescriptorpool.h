@@ -1,3 +1,4 @@
+
 /**
  **    Hatchit Engine
  **    Copyright(c) 2015-2016 Third-Degree
@@ -13,8 +14,8 @@
  **/
 
 /**
- * \file ht_vkpipeline.h
- * \brief VkPipeline class implementation
+ * \file ht_vkdescriptorpool.h
+ * \brief VKDescriptorPool class implementation
  * \author Jhonny Knaak de Vargas (lomaisdoro@gmail.com)
  *
  */
@@ -23,7 +24,6 @@
 
 #include <ht_platform.h>
 #include <ht_vkdevice.h>
-#include <ht_vkpipelinecache.h>
 #include <ht_vulkan.h>
 
 namespace Hatchit
@@ -32,19 +32,19 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            class HT_API VKPipeline
+            class HT_API VKDescriptorPool
             {
             public:
-                VKPipeline();
-                ~VKPipeline();
+                VKDescriptorPool();
+                ~VKDescriptorPool();
 
-                bool Initialize(VKDevice& pDevice, VKPipelineCache& pPipelineCache, const VkGraphicsPipelineCreateInfo& pCreateInfo);
+                operator VkDescriptorPool();
+                operator VkDescriptorPool*();
 
-                operator VkPipeline();
-                operator VkPipeline*();
-            private:
-                VkPipeline m_Pipeline;
-                VkPipelineCache m_PipelineCache;
+                bool Initialize(VKDevice& pDevice, const VkDescriptorPoolCreateInfo& pCreateInfo);
+
+            protected:
+                VkDescriptorPool m_DescriptorPool;
                 VkDevice m_Device;
             };
         }

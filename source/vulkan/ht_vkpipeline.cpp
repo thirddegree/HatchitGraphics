@@ -27,20 +27,24 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            VKPipeline::VKPipeline(VKDevice& pDevice) : m_PipelineLayout{VK_NULL_HANDLE}, m_Device{pDevice}
+            VKPipeline::VKPipeline()
+                : m_Pipeline{VK_NULL_HANDLE}, m_Device{VK_NULL_HANDLE}, m_PipelineCache{VK_NULL_HANDLE}
             {
             }
 
             VKPipeline::~VKPipeline()
             {
-                vkDestroyPipelineLayout(m_Device, m_PipelineLayout, nullptr);
+                vkDestroyPipeline(m_Device, m_Pipeline, nullptr);
             }
 
-            bool VKPipeline::Initialize(const VkPipelineLayoutCreateInfo& pCreateInfo)
+            bool VKPipeline::Initialize(Hatchit::Graphics::Vulkan::VKDevice &pDevice, Hatchit::Graphics::Vulkan::VKPipelineCache &pPipelineCache, const VkGraphicsPipelineCreateInfo &pCreateInfo)
             {
+                m_Device = pDevice;
+                m_PipelineCache = pPipelineCache;
+
                 VkResult err = VK_SUCCESS;
 
-                err = vkCreatePipelineLayout(m_Device, &pCreateInfo, nullptr, &m_PipelineLayout);
+                err = vkCreateGraphicsPipelines(m_Device, m_PipelineCache, 1, &pCreateInfo, nullptr, &m_Pipeline);
 
                 if ( err != VK_SUCCESS)
                 {
@@ -51,14 +55,14 @@ namespace Hatchit
                 return true;
             }
 
-            VKPipeline::operator VkPipelineLayout()
+            VKPipeline::operator VkPipeline()
             {
-                return m_PipelineLayout;
+                return m_Pipeline;
             }
 
-            VKPipeline::operator VkPipelineLayout*()
+            VKPipeline::operator VkPipeline*()
             {
-                return &m_PipelineLayout;
+                return &m_Pipeline;
             }
         }
     }
