@@ -337,6 +337,21 @@ namespace Hatchit
 
                 m_Pipeline.Initialize(m_Device, m_PipelineCache, pPipelineCreateInfo);
 
+                VkDescriptorPoolSize pDescPoolSize{};
+                pDescPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                pDescPoolSize.descriptorCount = 3;
+
+                std::vector<VkDescriptorPoolSize> pPoolSizes {pDescPoolSize};
+
+                VkDescriptorPoolCreateInfo pDescPoolCreateInfo{};
+                pDescPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+                pDescPoolCreateInfo.pNext = nullptr;
+                pDescPoolCreateInfo.poolSizeCount = pPoolSizes.size();
+                pDescPoolCreateInfo.pPoolSizes = pPoolSizes.data();
+                pDescPoolCreateInfo.maxSets = 1;
+
+                m_DescPool.Initialize(m_Device, pDescPoolCreateInfo);
+
             }
         }
     }
