@@ -33,6 +33,7 @@
 #include <ht_vkrenderpass.h>
 #include <ht_vkpipelinecache.h>
 #include <ht_vkframebuffer.h>
+#include <ht_vkpipeline.h>
 #include <ht_vkpipelinelayout.h>
 #include <ht_vkdescriptorsetlayout.h>
 #include <vector>
@@ -70,6 +71,7 @@ namespace Hatchit
                 VKPipelineCache m_PipelineCache;
                 VKPipelineLayout m_PipelineLayout;
                 VKDescriptorSetLayout m_DescSetLayout;
+                VKPipeline m_Pipeline;
                 std::vector<VKFrameBuffer> m_FrameBuffers;
             };
         }

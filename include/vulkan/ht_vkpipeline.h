@@ -23,6 +23,7 @@
 
 #include <ht_platform.h>
 #include <ht_vkdevice.h>
+#include <ht_vkpipelinecache.h>
 #include <ht_vulkan.h>
 
 namespace Hatchit
@@ -34,15 +35,16 @@ namespace Hatchit
             class HT_API VKPipeline
             {
             public:
-                VKPipeline(VKDevice& pDevice);
+                VKPipeline();
                 ~VKPipeline();
 
-                bool Initialize(const VkPipelineLayoutCreateInfo& pCreateInfo);
+                bool Initialize(VKDevice& pDevice, VKPipelineCache& pPipelineCache, const VkGraphicsPipelineCreateInfo& pCreateInfo);
 
-                operator VkPipelineLayout();
-                operator VkPipelineLayout*();
+                operator VkPipeline();
+                operator VkPipeline*();
             private:
-                VkPipelineLayout m_PipelineLayout;
+                VkPipeline m_Pipeline;
+                VkPipelineCache m_PipelineCache;
                 VkDevice m_Device;
             };
         }

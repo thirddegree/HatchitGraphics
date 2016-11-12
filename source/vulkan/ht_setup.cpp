@@ -274,7 +274,7 @@ namespace Hatchit
                 pipelineInputAssemblyStateCreateInfo.flags = 0;
                 pipelineInputAssemblyStateCreateInfo.primitiveRestartEnable = VK_FALSE;
 
-                VkPipelineRasterizationStateCreateInfo pipelineRasterizationStateCreateInfo;
+                VkPipelineRasterizationStateCreateInfo pipelineRasterizationStateCreateInfo{};
 
                 pipelineRasterizationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
                 pipelineRasterizationStateCreateInfo.pNext = nullptr;
@@ -285,7 +285,57 @@ namespace Hatchit
                 pipelineRasterizationStateCreateInfo.depthClampEnable = VK_FALSE;
                 pipelineRasterizationStateCreateInfo.lineWidth = 1.0f;
 
+                VkPipelineColorBlendAttachmentState pBlendAttachmentState{};
+                pBlendAttachmentState.colorWriteMask = 0xf;
+                pBlendAttachmentState.blendEnable = VK_FALSE;
 
+                VkPipelineColorBlendStateCreateInfo pBlendStateCreateInfo{};
+                pBlendStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+                pBlendStateCreateInfo.pNext = nullptr;
+                pBlendStateCreateInfo.attachmentCount = 1;
+                pBlendStateCreateInfo.pAttachments = &pBlendAttachmentState;
+
+                VkPipelineDepthStencilStateCreateInfo pDepthStateCreateInfo{};
+                pDepthStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+                pDepthStateCreateInfo.depthTestEnable = VK_TRUE;
+                pDepthStateCreateInfo.depthWriteEnable = VK_TRUE;
+                pDepthStateCreateInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+                pDepthStateCreateInfo.front = pDepthStateCreateInfo.back;
+                pDepthStateCreateInfo.back.compareOp = VK_COMPARE_OP_ALWAYS;
+
+                VkPipelineViewportStateCreateInfo pViewportStateCreateInfo{};
+                pViewportStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+                pViewportStateCreateInfo.viewportCount = 1;
+                pViewportStateCreateInfo.scissorCount = 1;
+                pViewportStateCreateInfo.flags = 0;
+
+                VkPipelineMultisampleStateCreateInfo pMultisampleStateCreateInfo{};
+                pMultisampleStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+                pMultisampleStateCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+                std::vector<VkDynamicState> pDynamicStates {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+                VkPipelineDynamicStateCreateInfo pDynamicStateCreateInfo{};
+                pDynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+                pDynamicStateCreateInfo.pDynamicStates = pDynamicStates.data();
+                pDynamicStateCreateInfo.dynamicStateCount = pDynamicStates.size();
+
+                VkGraphicsPipelineCreateInfo pPipelineCreateInfo{};
+
+                pPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+                pPipelineCreateInfo.pNext = nullptr;
+                pPipelineCreateInfo.layout = m_PipelineLayout;
+                pPipelineCreateInfo.renderPass = m_RenderPass;
+                pPipelineCreateInfo.flags = 0;
+                pPipelineCreateInfo.pVertexInputState = &m_VertexDescription.inputState;
+                pPipelineCreateInfo.pInputAssemblyState = &pipelineInputAssemblyStateCreateInfo;
+                pPipelineCreateInfo.pRasterizationState = &pipelineRasterizationStateCreateInfo;
+                pPipelineCreateInfo.pColorBlendState = &pBlendStateCreateInfo;
+                pPipelineCreateInfo.pMultisampleState = &pMultisampleStateCreateInfo;
+                pPipelineCreateInfo.pViewportState = &pViewportStateCreateInfo;
+                pPipelineCreateInfo.pDepthStencilState = &pDepthStateCreateInfo;
+                pPipelineCreateInfo.pDynamicState = &pDynamicStateCreateInfo;
+
+                m_Pipeline.Initialize(m_Device, m_PipelineCache, pPipelineCreateInfo);
 
             }
         }
