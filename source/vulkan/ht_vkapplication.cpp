@@ -298,7 +298,7 @@ namespace Hatchit
             bool VKApplication::SetupDebugCallback() {
                 VkResult err;
 
-                PFN_vkDebugReportCallbackEXT callback;
+                /*PFN_vkDebugReportCallbackEXT callback;
                 callback = VKApplication::DebugCallback;
 
                 VkDebugReportCallbackCreateInfoEXT dbgCreateInfo;
@@ -318,7 +318,7 @@ namespace Hatchit
                     default:
                         HT_DEBUG_PRINTF("ERROR: An unknown error occured!\n");
                         return false;
-                }
+                }*/
 
                 return true;
             }
