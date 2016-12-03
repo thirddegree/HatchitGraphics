@@ -21,6 +21,7 @@
  */
 
 #include <ht_vkapplication.h>
+#include <ht_vkdebug.h>
 #include <ht_debug.h>
 #include <cassert>
 #include <algorithm>
@@ -128,8 +129,8 @@ namespace Hatchit
                 }
 
 
-                if(!SetupDebugCallback())
-                    return false;
+                VKDebug::SetupCallback(m_instance, VK_DEBUG_REPORT_ERROR_BIT_EXT |
+                                                   VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_NULL_HANDLE);
 
                 return true;
             }
@@ -298,27 +299,7 @@ namespace Hatchit
             bool VKApplication::SetupDebugCallback() {
                 VkResult err;
 
-                /*PFN_vkDebugReportCallbackEXT callback;
-                callback = VKApplication::DebugCallback;
 
-                VkDebugReportCallbackCreateInfoEXT dbgCreateInfo;
-                dbgCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
-                dbgCreateInfo.pNext = NULL;
-                dbgCreateInfo.pfnCallback = callback;
-                dbgCreateInfo.pUserData = NULL;
-                dbgCreateInfo.flags =
-                        VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
-                err = vkCreateDebugReportCallbackEXT(m_instance, &dbgCreateInfo, NULL, &m_debugReportCallback);
-                switch (err) {
-                    case VK_SUCCESS:
-                        break;
-                    case VK_ERROR_OUT_OF_HOST_MEMORY:
-                        HT_DEBUG_PRINTF("ERROR: Out of host memory!\n");
-                        return false;
-                    default:
-                        HT_DEBUG_PRINTF("ERROR: An unknown error occured!\n");
-                        return false;
-                }*/
 
                 return true;
             }
