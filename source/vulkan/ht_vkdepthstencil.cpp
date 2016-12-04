@@ -13,6 +13,7 @@
 **/
 
 #include <ht_vkdepthstencil.h>
+#include <ht_vkdevice.h>
 
 namespace Hatchit
 {

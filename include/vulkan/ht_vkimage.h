@@ -24,16 +24,15 @@
 
 #include <ht_platform.h>
 #include <ht_vulkan.h>
-#include <ht_vkdevice.h>
 
 namespace Hatchit
 {
     namespace Graphics
     {
-        class VKDevice;
-
         namespace Vulkan
         {
+            class VKDevice;
+
             class HT_API VKImage
             {
             public:
