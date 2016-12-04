@@ -24,15 +24,18 @@ namespace Hatchit
             VKFence::VKFence()
             {
                 m_fence = VK_NULL_HANDLE;
+                m_device = VK_NULL_HANDLE;
             }
 
             VKFence::~VKFence()
             {
-
+                vkDestroyFence(m_device, m_fence, nullptr);
             }
 
             bool VKFence::Initialize(VKDevice &device, VkFenceCreateFlags flags)
             {
+                m_device = device;
+
                 VkResult err = VK_SUCCESS;
 
                 VkFenceCreateInfo info = {};
@@ -52,6 +55,8 @@ namespace Hatchit
 
             bool VKFence::Initialize(VKDevice &device, const VkFenceCreateInfo &info)
             {
+                m_device = device;
+
                 VkResult err = VK_SUCCESS;
 
                 err = vkCreateFence(device, &info, nullptr, &m_fence);

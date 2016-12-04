@@ -45,6 +45,10 @@ namespace Hatchit
         {
             std::string VKErrorString(VkResult code);
 
+            uint32_t    VKMemoryTypeIndex(uint32_t bits,
+                                          VkPhysicalDeviceMemoryProperties deviceMemoryProperties,
+                                          VkMemoryPropertyFlags properties);
+
             template<typename T>
             bool GetInstanceProcAddr(VkInstance instance, const char* entry, T** func)
             {

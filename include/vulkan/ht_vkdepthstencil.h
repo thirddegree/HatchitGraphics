@@ -14,16 +14,9 @@
 
 #pragma once
 
-/**
- * \file ht_vksemaphore.h
- * \brief VKSemaphore class definition
- * \author Matt Guerrette (direct3Dtutorials@gmail.com)
- *
- * This file contains definition for VKSemaphore class
- */
-
 #include <ht_platform.h>
 #include <ht_vulkan.h>
+#include <ht_vkimage.h>
 
 namespace Hatchit
 {
@@ -33,20 +26,22 @@ namespace Hatchit
         {
             class VKDevice;
 
-            class HT_API VKSemaphore
+            class HT_API VKDepthStencil
             {
             public:
-                VKSemaphore();
+                VKDepthStencil();
 
-                ~VKSemaphore();
+                ~VKDepthStencil();
 
-                bool Initialize(VKDevice& device);
-                bool Initialize(VKDevice& device, const VkSemaphoreCreateInfo& info);
+                bool Initialize(VKDevice& device, uint32_t width, uint32_t height);
 
-                operator VkSemaphore();
+                VKImage& GetImage();
+
             private:
-                VkDevice    m_device;
-                VkSemaphore m_semaphore;
+                VkDevice m_device;
+                VKImage  m_buffer;
+
+                static bool SupportedDepthFormat(VkPhysicalDevice physicalDevice, VkFormat* format);
             };
         }
     }

@@ -37,7 +37,8 @@ namespace Hatchit
 
                 operator VkFence();
             private:
-                VkFence m_fence;
+                VkDevice m_device;
+                VkFence  m_fence;
             };
         }
     }

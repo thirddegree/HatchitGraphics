@@ -89,6 +89,31 @@ namespace Hatchit
 #undef VK_RES_CASE
             }
 
+            uint32_t VKMemoryTypeIndex(uint32_t bits,
+                                       VkPhysicalDeviceMemoryProperties deviceMemoryProperties,
+                                       VkMemoryPropertyFlags properties)
+            {
+                /**
+                 * Iterate all memory types to find the index
+                 * that matches all requested memory properties
+                 */
+                 for(uint32_t i = 0; i < deviceMemoryProperties.memoryTypeCount; i++)
+                 {
+                    if((bits & 1) == 1) //Check if bit is set
+                    {
+                        if((deviceMemoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
+                        {
+                            return i;
+                        }
+                    }
+                    bits >>= 1; //Move to next bit
+                 }
+
+                HT_ERROR_PRINTF("Vulkan::VKMemoryTypeIndex(): Failed to find memory index.\n");
+
+                return 0;
+            }
+
         }
     }
 }

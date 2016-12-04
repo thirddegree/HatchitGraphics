@@ -24,15 +24,18 @@ namespace Hatchit
             VKSemaphore::VKSemaphore()
             {
                 m_semaphore = VK_NULL_HANDLE;
+                m_device = VK_NULL_HANDLE;
             }
 
             VKSemaphore::~VKSemaphore()
             {
-
+                vkDestroySemaphore(m_device, m_semaphore, nullptr);
             }
 
             bool VKSemaphore::Initialize(VKDevice &device)
             {
+                m_device = device;
+
                 VkResult err = VK_SUCCESS;
 
                 VkSemaphoreCreateInfo info = {};
@@ -51,6 +54,8 @@ namespace Hatchit
 
             bool VKSemaphore::Initialize(VKDevice &device, const VkSemaphoreCreateInfo &info)
             {
+                m_device = device;
+
                 VkResult err = VK_SUCCESS;
 
                 err = vkCreateSemaphore(device, &info, nullptr, &m_semaphore);
