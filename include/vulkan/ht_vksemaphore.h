@@ -15,11 +15,11 @@
 #pragma once
 
 /**
- * \file ht_vkcommandbuffer.h
- * \brief VKCommandBuffer class definition
+ * \file ht_vksemaphore.h
+ * \brief VKSemaphore class definition
  * \author Matt Guerrette (direct3Dtutorials@gmail.com)
  *
- * This file contains definition for VKCommandBuffer class
+ * This file contains definition for VKSemaphore class
  */
 
 #include <ht_platform.h>
@@ -32,28 +32,20 @@ namespace Hatchit
         namespace Vulkan
         {
             class VKDevice;
-            class VKCommandPool;
 
-            class HT_API VKCommandBuffer
+            class HT_API VKSemaphore
             {
             public:
-                VKCommandBuffer();
+                VKSemaphore();
 
-                ~VKCommandBuffer();
+                ~VKSemaphore();
 
-                bool Begin(void);
-                bool Begin(const VkCommandBufferBeginInfo* pInfo);
-                bool End(void);
+                bool Initialize(VKDevice& device);
+                bool Initialize(VKDevice& device, const VkSemaphoreCreateInfo& info);
 
-                operator VkCommandBuffer();
-                operator VkCommandBuffer*();
+                operator VkSemaphore();
             private:
-                VkDevice                m_vkDevice;
-                VkCommandPool           m_vkCommandPool;
-                VkCommandBuffer         m_vkCommandBuffer;
-                bool                    m_isBegin;
-
-                friend class VKCommandPool;
+                VkSemaphore m_semaphore;
             };
         }
     }

@@ -344,6 +344,51 @@ namespace Hatchit
                 return true;
             }
 
+            bool VKSwapChain::AcquireNextImage(VkSemaphore semaphore, uint32_t *index)
+            {
+                VkResult err = VK_SUCCESS;
+
+                err = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, index);
+                if(err != VK_SUCCESS)
+                {
+                    HT_ERROR_PRINTF("VKSwapChain::AcquireNextImage: Failed to acquire image index. %s\n",
+                        VKErrorString(err));
+                    return false;
+                }
+
+                return true;
+            }
+
+            bool VKSwapChain::QueuePresent(VkQueue queue, uint32_t index, VkSemaphore semaphore)
+            {
+                VkResult err = VK_SUCCESS;
+
+                VkPresentInfoKHR info = {};
+                info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+                info.pNext = nullptr;
+                info.swapchainCount = 1;
+                info.pSwapchains = &m_swapchain;
+                info.pImageIndices = &index;
+                /**
+                 * Check if wait semaphore has been provided
+                 * to wait for before presenting image
+                 */
+                 if(semaphore != VK_NULL_HANDLE)
+                 {
+                     info.pWaitSemaphores = &semaphore;
+                     info.waitSemaphoreCount = 1;
+                 }
+
+                err = vkQueuePresentKHR(queue, &info);
+                if(err != VK_SUCCESS)
+                {
+                    HT_DEBUG_PRINTF("VKSwapChain::QueuePresent() Failed to queue swapchain for present.\n");
+                    return false;
+                }
+
+                return true;
+            }
+
             uint32_t VKSwapChain::GetImageCount() const
             {
                 return m_scImgCount;

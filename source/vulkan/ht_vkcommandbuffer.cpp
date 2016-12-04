@@ -42,6 +42,31 @@ namespace Hatchit {
                 vkFreeCommandBuffers(m_vkDevice, m_vkCommandPool, 1, &m_vkCommandBuffer);
             }
 
+            bool VKCommandBuffer::Begin(void)
+            {
+                if (m_isBegin)
+                {
+                    HT_ERROR_PRINTF("VKCommandBuffer::Begin(): Command buffer must not already be recording.\n");
+                    return false;
+                }
+
+                VkResult err = VK_SUCCESS;
+
+                VkCommandBufferBeginInfo info = {};
+                info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+                info.pNext = nullptr;
+
+                err = vkBeginCommandBuffer(m_vkCommandBuffer, &info);
+                if (err != VK_SUCCESS)
+                {
+                    HT_ERROR_PRINTF("VKCommandBuffer::Begin(): Failed to begin command buffer recording. %s\n", VKErrorString(err));
+                    return false;
+                }
+
+                m_isBegin = true;
+                return true;
+            }
+
             bool VKCommandBuffer::Begin(const VkCommandBufferBeginInfo* pInfo)
             {
                 if (!pInfo)
