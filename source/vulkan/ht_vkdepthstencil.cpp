@@ -77,8 +77,9 @@ namespace Hatchit
 
                 VkMemoryRequirements memRequirements;
 
-                m_buffer.Initialize(device, &image, &imageView);
-
+                m_buffer.InitializeImage(device, image);
+                m_buffer.AllocateAndBindMemory(device);
+                m_buffer.InitializeView(device, imageView);
 
 
                 return true;

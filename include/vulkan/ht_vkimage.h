@@ -33,6 +33,17 @@ namespace Hatchit
         {
             class VKDevice;
 
+            /**
+            * \class VKImage
+            * \brief Vulkan image wrapper
+            *
+            * This class wraps functionality associated with VkImage and VkImageView
+            *
+            * NOTE:
+            *   Currently there is no support for creation of multiple views for
+            *   subresource access to the image. The will have to be an implementation
+            *   for this in the future, but for now it is not necessary.
+            */
             class HT_API VKImage
             {
             public:
@@ -40,11 +51,15 @@ namespace Hatchit
 
                 ~VKImage();
 
-                bool Initialize(VKDevice& device,
-                    const VkImageCreateInfo* pImageInfo, 
-                    VkImageViewCreateInfo* pImageViewInfo);
+                bool InitializeImage(VKDevice& device,
+                    const VkImageCreateInfo& info);
+                bool InitializeView(VKDevice& device,
+                    VkImageViewCreateInfo& info);
 
                 bool AllocateAndBindMemory(VKDevice& pDevice);
+
+                const VkImage&      GetImage() const;
+                const VkImageView&  GetImageView() const;
 
                 operator VkImage();
                 operator VkImageView();

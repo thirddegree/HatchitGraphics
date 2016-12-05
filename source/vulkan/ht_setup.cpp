@@ -87,9 +87,10 @@ namespace Hatchit
 
                 VkMemoryRequirements memReqs;
 
-                m_ImageDepth.Initialize(m_Device, &pCreateInfoImage, &pDepthView);
+                m_ImageDepth.InitializeImage(m_Device, pCreateInfoImage);
                 /* TODO: Maybe change to get from the correct place */
                 m_ImageDepth.AllocateAndBindMemory(m_Device);
+                m_ImageDepth.InitializeView(m_Device, pDepthView);
 
 
                 /* Preparing the renderpass, this also, changes drastically depending on the aproach, maybe we should talk on the design */
