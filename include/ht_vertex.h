@@ -30,12 +30,12 @@ namespace Hatchit
         class Vertex
         {
         public:
+            Vertex(const glm::vec3& pPosition, const glm::vec3& pNormal, const glm::vec3& pColor)
+                : Position{pPosition}, Normal{pNormal}, Color{pColor} {}
+
             glm::vec3 Position;
             glm::vec3 Normal;
             glm::vec3 Color;
-
-            Vertex(const glm::vec3& pPosition, const glm::vec3& pNormal, const glm::vec3& pColor)
-                : Position{pPosition}, Normal{pNormal}, Color{pColor} {}
         };
     }
 }
