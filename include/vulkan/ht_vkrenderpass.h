@@ -1,4 +1,3 @@
-
 /**
  **    Hatchit Engine
  **    Copyright(c) 2015-2016 Third-Degree
@@ -26,26 +25,29 @@
 #include <ht_vkdevice.h>
 #include <ht_vulkan.h>
 
+#include <ht_fileresource.h>
+
 namespace Hatchit
 {
     namespace Graphics
     {
         namespace Vulkan
         {
-            class HT_API VKRenderPass
+            class HT_API VKRenderPass : public Resource::FileResource<VKRenderPass>
             {
             public:
-                VKRenderPass();
+                VKRenderPass(uint64_t id);
+
                 ~VKRenderPass();
 
                 operator VkRenderPass();
                 operator VkRenderPass*();
 
-                virtual bool Initialize(VKDevice& pDevice, const VkRenderPassCreateInfo& pCreateInfo);
+                bool Initialize(VKDevice& device, const VkRenderPassCreateInfo& info);
 
             protected:
-                VkRenderPass m_RenderPass;
-                VkDevice m_Device;
+                VkRenderPass m_renderpass;
+                VkDevice     m_device;
             };
         }
     }

@@ -29,22 +29,39 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            VKRenderPass::VKRenderPass() : m_Device{VK_NULL_HANDLE}, m_RenderPass{VK_NULL_HANDLE}
+            VKRenderPass::VKRenderPass(uint64_t id)
+                : Hatchit::Resource::FileResource<VKRenderPass>(id)
             {
+                m_device = VK_NULL_HANDLE;
+                m_renderpass = VK_NULL_HANDLE;
             }
 
             VKRenderPass::~VKRenderPass()
             {
-                vkDestroyRenderPass(m_Device, m_RenderPass, nullptr);
+                vkDestroyRenderPass(m_device, m_renderpass, nullptr);
             }
 
-            bool VKRenderPass::Initialize(VKDevice& pDevice, const VkRenderPassCreateInfo& pCreateInfo)
+            bool VKRenderPass::Initialize(VKDevice& device, const VkRenderPassCreateInfo& info)
             {
-                m_Device = pDevice;
+                /**
+                * Initializing this resource will require
+                * a handle to a RenderPass file resource which describes the various inputs
+                * and outputs of a renderpass.
+                * 
+                * The outputs and input of a renderpass are rendertarget objects. A renderpass
+                * is one step in potentially a multipass or "deferred" renderer. Exposing
+                * this concept through files would allow the user to control their rendering
+                * pipeline at a more granular level than hiding it internally.
+                *
+                * At least, that is what the original design philosophy is trying to achieve...
+                */
+                
+
+                m_device = device;
 
                 VkResult err = VK_SUCCESS;
 
-                err = vkCreateRenderPass(m_Device, &pCreateInfo, nullptr, &m_RenderPass);
+                err = vkCreateRenderPass(m_device, &info, nullptr, &m_renderpass);
 
                 if ( err != VK_SUCCESS )
                 {
@@ -57,12 +74,12 @@ namespace Hatchit
 
             VKRenderPass::operator VkRenderPass()
             {
-                return m_RenderPass;
+                return m_renderpass;
             }
 
             VKRenderPass::operator VkRenderPass*()
             {
-                return &m_RenderPass;
+                return &m_renderpass;
             }
         }
     }

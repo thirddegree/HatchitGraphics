@@ -31,6 +31,7 @@ namespace Hatchit
         {
             Setup::Setup()
             {
+
             }
 
             Setup::~Setup()
@@ -161,7 +162,7 @@ namespace Hatchit
                 renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
                 renderPassInfo.pDependencies = dependencies.data();
 
-                m_RenderPass.Initialize(m_Device, renderPassInfo);
+                //m_RenderPass.Initialize(m_Device, renderPassInfo);
 
                 VkPipelineCacheCreateInfo pPipelineCacheCreateInfo {};
                 pPipelineCacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
@@ -173,7 +174,7 @@ namespace Hatchit
                 VkFramebufferCreateInfo pFrameBufferInfo{};
                 pFrameBufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
                 pFrameBufferInfo.pNext = nullptr;
-                pFrameBufferInfo.renderPass = m_RenderPass;
+                //pFrameBufferInfo.renderPass = m_RenderPass;
                 pFrameBufferInfo.attachmentCount = 2;
                 pFrameBufferInfo.pAttachments = pFrameAttachments.data();
                 pFrameBufferInfo.width = m_ScreenWidth;
@@ -325,7 +326,7 @@ namespace Hatchit
                 pPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
                 pPipelineCreateInfo.pNext = nullptr;
                 pPipelineCreateInfo.layout = m_PipelineLayout;
-                pPipelineCreateInfo.renderPass = m_RenderPass;
+                //pPipelineCreateInfo.renderPass = m_RenderPass;
                 pPipelineCreateInfo.flags = 0;
                 pPipelineCreateInfo.pVertexInputState = &m_VertexDescription.inputState;
                 pPipelineCreateInfo.pInputAssemblyState = &pipelineInputAssemblyStateCreateInfo;

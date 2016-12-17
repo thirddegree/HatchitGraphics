@@ -68,7 +68,7 @@ namespace Hatchit
                 uint32_t m_ScreenHeight;
                 uint32_t m_ScreenWidth;
                 VKImage m_ImageDepth;
-                VKRenderPass m_RenderPass;
+                //VKRenderPass m_RenderPass;
                 VKPipelineCache m_PipelineCache;
                 VKPipelineLayout m_PipelineLayout;
                 VKDescriptorSetLayout m_DescSetLayout;
