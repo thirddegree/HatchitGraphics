@@ -61,10 +61,10 @@ namespace Hatchit
                 m_swapchain = VK_NULL_HANDLE;
             }
 
-            bool VKSwapChain::Initialize(const uint32_t pHeight, const uint32_t pWidth, VKApplication& instance, VKDevice& device)
+            bool VKSwapChain::Initialize(const uint32_t width, const uint32_t height, VKApplication& instance, VKDevice& device)
             {
-                m_width = pWidth;
-                m_height = pHeight;
+                m_width = width;
+                m_height = height;
                 m_instance = instance;
                 m_device = device;
 
@@ -94,6 +94,13 @@ namespace Hatchit
                     return false;
                 }
 #elif defined(HT_SYS_LINUX)
+                /**
+                * NOTE:
+                * There may also need to be a case where the underlying windowing
+                * kit we are using does not link Xlib, but instead Xcb. One such
+                * case I can think of is Qt, which I believe used Xcb for the Linux
+                * windowing API.
+                */
                 VkXlibSurfaceCreateInfoKHR creationInfo;
                 creationInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
                 creationInfo.pNext = nullptr;

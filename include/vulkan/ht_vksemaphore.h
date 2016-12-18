@@ -33,6 +33,14 @@ namespace Hatchit
         {
             class VKDevice;
 
+            /**
+            * \class VKSemaphore
+            * \brief Defines a Vulkan semaphore object
+            *
+            * Vulkan semaphore object used for synchronization
+            * of commands registered and executed between CPU threads
+            * and the GPU.
+            */
             class HT_API VKSemaphore
             {
             public:
@@ -40,9 +48,23 @@ namespace Hatchit
 
                 ~VKSemaphore();
 
+                /**
+                * \brief Initializes semapahore from default params.
+                */
                 bool Initialize(VKDevice& device);
+
+                /**
+                * \brief Initializes semaphore from params.
+                * \param info Creation parameters structure.
+                */
                 bool Initialize(VKDevice& device, const VkSemaphoreCreateInfo& info);
 
+                /**
+                * \brief Cast conversion operator
+                *
+                * Allows access to internal VkSemapahore handle through
+                * cast conversion.
+                */
                 operator VkSemaphore();
             private:
                 VkDevice    m_device;

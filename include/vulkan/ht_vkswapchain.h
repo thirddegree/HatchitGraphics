@@ -49,7 +49,7 @@ namespace Hatchit
                
                 ~VKSwapChain();
 
-                bool Initialize(const uint32_t pHeight, const uint32_t pWidth, VKApplication& instance, VKDevice& device);
+                bool Initialize(const uint32_t width, const uint32_t height, VKApplication& instance, VKDevice& device);
 
                 bool AcquireNextImage(VkSemaphore semaphore, uint32_t* index);
                 bool QueuePresent(VkQueue queue, uint32_t index, VkSemaphore semaphore = VK_NULL_HANDLE);
