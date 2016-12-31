@@ -21,7 +21,7 @@
  */
 
 #include <ht_vksetup.h>
-#include <ht_mesh.h>
+#include <ht_vertex.h>
 
 namespace Hatchit
 {
