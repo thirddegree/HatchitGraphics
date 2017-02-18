@@ -115,12 +115,12 @@ namespace Hatchit {
                 return m_vkPhysicalDevice;
             }
 
-            bool VKDevice::EnumeratePhysicalDevices(VKApplication & instance, uint32_t index)
+            bool VKDevice::EnumeratePhysicalDevices(VKApplication& instance, uint32_t index)
             {
                 VkResult err = VK_SUCCESS;
 
                 uint32_t numDevices = 0;
-                err = vkEnumeratePhysicalDevices(instance, &numDevices, nullptr);
+                err = vkEnumeratePhysicalDevices(static_cast<VkInstance>(instance), &numDevices, nullptr);
                 if (numDevices <= 0 || err != VK_SUCCESS)
                 {
                     HT_ERROR_PRINTF("VKDevice::EnumeratePhysicalDevices() Vulkan encountered error enumerating devices.\n");
@@ -134,7 +134,7 @@ namespace Hatchit {
                 }
 
                 std::vector<VkPhysicalDevice> devices(numDevices);
-                err = vkEnumeratePhysicalDevices(instance, &numDevices, devices.data());
+                err = vkEnumeratePhysicalDevices(static_cast<VkInstance>(instance), &numDevices, devices.data());
                 if (err != VK_SUCCESS)
                 {
                     HT_ERROR_PRINTF("VKDevice::EnumeratePhysicalDevices() Vulkan encountered error enumerating devices.\n");
@@ -194,7 +194,7 @@ namespace Hatchit {
                     VK_FORMAT_D16_UNORM
                 };
 
-                for ( std::vector<VkFormat>::iterator it = pFormats.begin(); it != pFormats.end(); ++it)
+                for (auto it = pFormats.begin(); it != pFormats.end(); ++it)
                 {
                     VkFormatProperties formatProp;
                     vkGetPhysicalDeviceFormatProperties(m_vkPhysicalDevice, *it, &formatProp);
@@ -204,14 +204,14 @@ namespace Hatchit {
                         pFormat = *it;
                         return true;
                     }
-
-                    return false;
                 }
+
+                return false;
             }
 
-            uint32_t VKDevice::GetMemoryType(uint32_t pTypeBits, VkMemoryPropertyFlags pProperties, VkBool32 *pMemTypeFound)
+            uint32_t VKDevice::GetMemoryType(uint32_t pTypeBits, VkMemoryPropertyFlags pProperties, VkBool32 *pMemTypeFound) const
             {
-                for ( size_t i = 0; i < m_vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++ )
+                for (uint32_t i = 0; i < m_vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++ )
                 {
                     if ((( pTypeBits & 1) == 1 ) && ( m_vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & pProperties) == pProperties )
                     {
@@ -223,14 +223,12 @@ namespace Hatchit {
 
                     pTypeBits >>= 1;
                 }
-
+                
+                HT_ERROR_PRINTF("VKDevice::GetMemoryType() Could not find a matching memory type.\n");
                 if ( pMemTypeFound )
-                {
                     *pMemTypeFound = false;
-                    return 0;
-                }
-                else
-                    HT_ERROR_PRINTF("VKDevice::GetMemoryType() Could not find a matching memory type.\n");
+
+                return 0;
             }
         }
     }

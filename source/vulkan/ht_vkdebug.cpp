@@ -73,7 +73,8 @@ namespace Hatchit
                 /**
                  * Determine log severity
                  */
-                Debug::LogSeverity severity;
+                Debug::LogSeverity severity = Debug::LogSeverity::None;
+
                 if(flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
                     severity = Debug::LogSeverity::Error;
                 if(flags & VK_DEBUG_REPORT_WARNING_BIT_EXT)
@@ -120,6 +121,9 @@ namespace Hatchit
                     {
                         HT_PERF_PRINTF("[Layer: %s] [Code: %d] : %s\n", layerPrefix, msgCode, msg);
                     } break;
+
+                    default: 
+                        break;
                 }
 
                 /**

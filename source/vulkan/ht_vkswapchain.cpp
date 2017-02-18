@@ -65,7 +65,7 @@ namespace Hatchit
             {
                 m_width = width;
                 m_height = height;
-                m_instance = instance;
+                m_instance = static_cast<VkInstance>(instance);
                 m_device = device;
 
                 VkResult err = VK_SUCCESS;
@@ -87,7 +87,7 @@ namespace Hatchit
                 creationInfo.hinstance = hInstance;
                 creationInfo.hwnd = window;
 
-                err = vkCreateWin32SurfaceKHR(instance, &creationInfo, nullptr, &m_surface);
+                err = vkCreateWin32SurfaceKHR(static_cast<VkInstance>(instance), &creationInfo, nullptr, &m_surface);
                 if (err != VK_SUCCESS)
                 {
                     HT_ERROR_PRINTF("VKSwapChain::Initialize() [%s] Could not create VkSurface for Win32 window\n", VKErrorString(err));

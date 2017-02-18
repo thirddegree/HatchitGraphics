@@ -24,7 +24,6 @@
 
 #include <ht_platform.h>
 #include <ht_vulkan.h>
-#include <ht_string.h>
 #include <vector>
 
 namespace Hatchit
@@ -37,58 +36,52 @@ namespace Hatchit
 
             /**
              * \class VKApplication
-             * \brief Defines a Vulkan application instance
-             *
-             * A Vulkan application instance stores the per-application vulkan states
+             * \brief Defines a Vulkan application instance.
+             * 
+             *  A Vulkan application instance stores the per-application vulkan states.
              */
             class HT_API VKApplication
             {
             public:
                 VKApplication();
-                VKApplication(const VkApplicationInfo& info);
+                explicit VKApplication(const VkApplicationInfo& info);
 
                 ~VKApplication();
 
                 bool Initialize(void* window, void* display);
-                bool IsValid();
+                bool IsValid() const;
 
-                const std::string   Name()              const;
-                const uint32_t      Version()           const;
-                const std::string   EngineName()        const;
-                const uint32_t      EngineVersion()     const;
-                const uint32_t      APIVersion()        const;
+                std::string   Name()              const;
+                uint32_t      Version()           const;
+                std::string   EngineName()        const;
+                uint32_t      EngineVersion()     const;
+                uint32_t      APIVersion()        const;
 
-                const uint32_t      EnabledLayerCount() const;
-                const uint32_t      EnabledExtensionCount() const;
+                uint32_t      EnabledLayerCount() const;
+                uint32_t      EnabledExtensionCount() const;
 
                 const std::vector<std::string>& EnabledLayerNames() const;
                 const std::vector<std::string>& EnabledExtensionNames() const;
 
-                VKDevice* const     Device(uint32_t index);
+                void* NativeWindow() const;
+                void* NativeDisplay() const;
 
-                void* NativeWindow();
-                void* NativeDisplay();
-
-                operator VkInstance();
+                explicit operator VkInstance() const;
 
             private:
                 VkInstance                          m_instance;
                 VkApplicationInfo                   m_info;
                 VkSurfaceKHR                        m_window;
-                void*                               m_nativeWindow;  //Windows: HWND, Linux: Xlib Window
-                void*                               m_nativeDisplay; //Linux only
-
+                void*                               m_nativeWindow;
+                void*                               m_nativeDisplay;
                 std::vector<std::string>            m_layers;
                 std::vector<std::string>            m_extensions;
 
-                std::vector<VKDevice*>              m_devices;
-
-                VkDebugReportCallbackEXT m_debugReportCallback;
+                VkDebugReportCallbackEXT            m_debugReportCallback;
 
             private:
                 bool CheckInstanceLayers();
                 bool CheckInstanceExtensions();
-                bool SetupDebugCallback();
 
                 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType,
                     uint64_t srcObject, size_t location, int32_t msgCode,

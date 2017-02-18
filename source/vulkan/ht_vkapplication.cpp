@@ -32,7 +32,12 @@ namespace Hatchit
     namespace Graphics
     {
         namespace Vulkan {
-            VKApplication::VKApplication() {
+            VKApplication::VKApplication():
+                m_window(VK_NULL_HANDLE),
+                m_nativeWindow(nullptr),
+                m_nativeDisplay(nullptr), 
+                m_debugReportCallback(VK_NULL_HANDLE)
+            {
                 m_instance = VK_NULL_HANDLE;
                 m_info = {};
 
@@ -43,11 +48,14 @@ namespace Hatchit
                     // threading, parameter_validation, device_limits, object_tracker, image, core_validation, swapchain, and unique_objects
                     "VK_LAYER_LUNARG_standard_validation"
                 };
-
-
             }
 
-            VKApplication::VKApplication(const VkApplicationInfo &info) {
+            VKApplication::VKApplication(const VkApplicationInfo &info):
+                m_window(VK_NULL_HANDLE),
+                m_nativeWindow(nullptr),
+                m_nativeDisplay(nullptr),
+                m_debugReportCallback(VK_NULL_HANDLE)
+            {
                 m_instance = VK_NULL_HANDLE;
                 m_info = info;
                 m_window = VK_NULL_HANDLE;
@@ -64,8 +72,12 @@ namespace Hatchit
 
             }
 
-            VKApplication::~VKApplication() {
-
+            VKApplication::~VKApplication() 
+            {
+                /**
+                 * Destroy Vulkan instance
+                 */
+                vkDestroyInstance(m_instance, nullptr);
             }
 
             bool VKApplication::Initialize(void* window, void* display) {
@@ -135,70 +147,73 @@ namespace Hatchit
                 return true;
             }
 
-            bool VKApplication::IsValid() {
+            bool VKApplication::IsValid() const
+            {
                 return m_instance != VK_NULL_HANDLE;
             }
 
-            const std::string VKApplication::Name() const {
+            std::string VKApplication::Name() const 
+            {
                 return m_info.pApplicationName;
             }
 
-            const uint32_t VKApplication::Version() const {
+            uint32_t VKApplication::Version() const 
+            {
                 return m_info.applicationVersion;
             }
 
-            const std::string VKApplication::EngineName() const {
+            std::string VKApplication::EngineName() const 
+            {
                 return m_info.pEngineName;
             }
 
-            const uint32_t VKApplication::EngineVersion() const {
+            uint32_t VKApplication::EngineVersion() const 
+            {
                 return m_info.engineVersion;
             }
 
-            const uint32_t VKApplication::APIVersion() const {
+            uint32_t VKApplication::APIVersion() const 
+            {
                 return m_info.apiVersion;
             }
 
-            const uint32_t VKApplication::EnabledLayerCount() const {
+            uint32_t VKApplication::EnabledLayerCount() const 
+            {
                 return static_cast<uint32_t>(m_layers.size());
             }
 
-            const uint32_t VKApplication::EnabledExtensionCount() const {
+            uint32_t VKApplication::EnabledExtensionCount() const 
+            {
                 return static_cast<uint32_t>(m_extensions.size());
             }
 
-            const std::vector<std::string>& VKApplication::EnabledLayerNames() const{
+            const std::vector<std::string>& VKApplication::EnabledLayerNames() const
+            {
                 return m_layers;
             }
 
-            const std::vector<std::string>& VKApplication::EnabledExtensionNames() const {
+            const std::vector<std::string>& VKApplication::EnabledExtensionNames() const 
+            {
                 return m_extensions;
             }
 
-            VKDevice *const VKApplication::Device(uint32_t index) {
-                if (index > m_devices.size() || index < 0)
-                    return nullptr;
-
-                return nullptr;
-            }
-
-            VKApplication::operator VkInstance()
+            VKApplication::operator VkInstance() const
             {
                 return m_instance;
             }
 
-            void* VKApplication::NativeWindow(){
+            void* VKApplication::NativeWindow() const
+            {
                 return m_nativeWindow;
             }
 
-            void* VKApplication::NativeDisplay() {
+            void* VKApplication::NativeDisplay() const
+            {
                 return m_nativeDisplay;
             }
 
-            
-
-
-            bool VKApplication::CheckInstanceLayers() {
+            bool VKApplication::CheckInstanceLayers() 
+            {
 
                 VkResult err;
 
@@ -206,7 +221,7 @@ namespace Hatchit
                  * Check the requested Vulkan layers against available
                  */
                 uint32_t instanceLayerCnt = 0;
-                err = vkEnumerateInstanceLayerProperties(&instanceLayerCnt, NULL);
+                err = vkEnumerateInstanceLayerProperties(&instanceLayerCnt, nullptr);
 
                 std::vector<VkLayerProperties> instanceLayers(instanceLayerCnt);
                 err = vkEnumerateInstanceLayerProperties(&instanceLayerCnt, instanceLayers.data());
@@ -233,16 +248,16 @@ namespace Hatchit
                 return true;
             }
 
-            bool VKApplication::CheckInstanceExtensions() {
-
+            bool VKApplication::CheckInstanceExtensions() 
+            {
                 VkResult err = VK_SUCCESS;
 
                 uint32_t instanceExtCnt = 0;
-                err = vkEnumerateInstanceExtensionProperties(NULL, &instanceExtCnt, NULL);
+                err = vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtCnt, nullptr);
                 assert(!err);
 
                 std::vector<VkExtensionProperties> instanceExtensions(instanceExtCnt);
-                err = vkEnumerateInstanceExtensionProperties(NULL, &instanceExtCnt, instanceExtensions.data());
+                err = vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtCnt, instanceExtensions.data());
                 assert(!err);
 
                 for (auto &ext : instanceExtensions) {
@@ -281,9 +296,6 @@ namespace Hatchit
                 {
                     HT_WARNING_PRINTF("WARNING: [%s] Code %d : %s\n", pLayerPrefix, msgCode, pMsg);
                 }
-                else {
-                    return false;
-                }
 
                 /*
                 * false indicates that layer should not bail-out of an
@@ -296,13 +308,6 @@ namespace Hatchit
 
             }
 
-            bool VKApplication::SetupDebugCallback() {
-                VkResult err;
-
-
-
-                return true;
-            }
         }
     }
 }

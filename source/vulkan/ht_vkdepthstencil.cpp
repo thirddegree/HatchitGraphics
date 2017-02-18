@@ -75,15 +75,25 @@ namespace Hatchit
                 imageView.subresourceRange.baseArrayLayer = 0;
                 imageView.subresourceRange.layerCount = 1;
 
-                VkMemoryRequirements memRequirements;
+                if (!m_buffer.InitializeImage(device, image))
+                {
+                    HT_ERROR_PRINTF("Failed to initialize depth stencil image.\n");
+                    return false;
+                }
 
-                m_buffer.InitializeImage(device, image);
-                m_buffer.AllocateAndBindMemory(device);
-                m_buffer.InitializeView(device, imageView);
+                if (!m_buffer.AllocateAndBindMemory(device))
+                {
+                    HT_ERROR_PRINTF("Failed to allocate/bind memory for depth stencil.\n");
+                    return false;
+                }
 
+                if (!m_buffer.InitializeView(device, imageView))
+                {
+                    HT_ERROR_PRINTF("Failed to initialize depth stencil view.\n");
+                    return false;
+                }
 
                 return true;
-
             }
 
             bool VKDepthStencil::SupportedDepthFormat(VkPhysicalDevice physicalDevice, VkFormat *format)

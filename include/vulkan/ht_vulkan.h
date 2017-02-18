@@ -25,7 +25,6 @@
 
 #include <ht_platform.h>
 #include <ht_debug.h>
-#include <ht_string.h>
 
 #ifdef HT_SYS_WINDOWS
 #define VK_USE_PLATFORM_WIN32_KHR 1
