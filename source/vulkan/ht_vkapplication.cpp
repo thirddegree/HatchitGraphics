@@ -35,8 +35,7 @@ namespace Hatchit
             VKApplication::VKApplication():
                 m_window(VK_NULL_HANDLE),
                 m_nativeWindow(nullptr),
-                m_nativeDisplay(nullptr), 
-                m_debugReportCallback(VK_NULL_HANDLE)
+                m_nativeDisplay(nullptr)
             {
                 m_instance = VK_NULL_HANDLE;
                 m_info = {};
@@ -53,8 +52,7 @@ namespace Hatchit
             VKApplication::VKApplication(const VkApplicationInfo &info):
                 m_window(VK_NULL_HANDLE),
                 m_nativeWindow(nullptr),
-                m_nativeDisplay(nullptr),
-                m_debugReportCallback(VK_NULL_HANDLE)
+                m_nativeDisplay(nullptr)
             {
                 m_instance = VK_NULL_HANDLE;
                 m_info = info;
@@ -74,6 +72,8 @@ namespace Hatchit
 
             VKApplication::~VKApplication() 
             {
+                VKDebug::FreeCallback(m_instance);
+
                 /**
                  * Destroy Vulkan instance
                  */
@@ -99,8 +99,6 @@ namespace Hatchit
                  */
                 if (!CheckInstanceExtensions())
                     return false;
-
-
 
                 m_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
                 m_info.pNext = nullptr;
@@ -281,33 +279,6 @@ namespace Hatchit
 
                 return true;
             }
-
-            VKAPI_ATTR VkBool32 VKAPI_CALL VKApplication::DebugCallback(VkFlags msgFlags,
-                                                                        VkDebugReportObjectTypeEXT objType,
-                                                                        uint64_t srcObject, size_t location,
-                                                                        int32_t msgCode, const char *pLayerPrefix,
-                                                                        const char *pMsg, void *pUserData)
-            {
-                if (msgFlags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
-                {
-                    HT_ERROR_PRINTF("ERROR: [%s] Code %d : %s\n", pLayerPrefix, msgCode, pMsg);
-                }
-                else if (msgFlags & VK_DEBUG_REPORT_WARNING_BIT_EXT)
-                {
-                    HT_WARNING_PRINTF("WARNING: [%s] Code %d : %s\n", pLayerPrefix, msgCode, pMsg);
-                }
-
-                /*
-                * false indicates that layer should not bail-out of an
-                * API call that had validation failures. This may mean that the
-                * app dies inside the driver due to invalid parameter(s).
-                * That's what would happen without validation layers, so we'll
-                * keep that behavior here.
-                */
-                return false;
-
-            }
-
         }
     }
 }

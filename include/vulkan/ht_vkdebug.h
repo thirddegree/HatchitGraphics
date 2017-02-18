@@ -14,10 +14,16 @@
 
 #pragma once
 
-#include <ht_platform.h>
-#include <ht_singleton.h>
-#include <ht_vulkan.h>
+/**
+ * \file ht_vkdebug.h
+ * \brief VKDebug class definition
+ * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ * 
+ * This file contains definition for VKDebug class
+ */
 
+#include <ht_platform.h>
+#include <ht_vulkan.h>
 
 namespace Hatchit
 {
@@ -25,26 +31,46 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            class VKDebug : public Core::Singleton<VKDebug>
+            /**
+             * \class VKDebug
+             * \brief Defines a Vulkan debug wrapper singleton
+             * 
+             * Vulkan debug wrapper that initializes the debug
+             * callback functions
+             */
+            class HT_API VKDebug
             {
             public:
+                /**
+                 * \brief Instance function for singleton access
+                 * \returns VKDebug class instance
+                 */
+                static VKDebug& instance();
+
+                /**
+                 * \brief Initializes the Vulkan debug callback
+                 */
+                static void SetupCallback(VkInstance instance,
+                                          VkDebugReportFlagsEXT flags,
+                                          VkDebugReportCallbackEXT callback);
+
+                /**
+                 * \brief Unintializes the VUlkan debug callback
+                 */
+                static void FreeCallback(VkInstance instance);
+
+            private:
                 VKDebug();
 
                 ~VKDebug();
 
-
-                static void SetupCallback(VkInstance instance,
-                                          VkDebugReportFlagsEXT flags,
-                                          VkDebugReportCallbackEXT callback);
-                static void FreeCallback(VkInstance instance);
-
-            private:
-                static PFN_vkCreateDebugReportCallbackEXT   _CreateDebugReportCallback;
-                static PFN_vkDestroyDebugReportCallbackEXT  _DestroyDebugReportCallback;
-                static PFN_vkDebugReportMessageEXT          _BreakCallback;
-                static VkDebugReportCallbackEXT             _Callback;
+                PFN_vkCreateDebugReportCallbackEXT   _CreateDebugReportCallback;
+                PFN_vkDestroyDebugReportCallbackEXT  _DestroyDebugReportCallback;
+                PFN_vkDebugReportMessageEXT          _BreakCallback;
+                VkDebugReportCallbackEXT             _Callback;
 
 
+                
                 static VkBool32 MessageCallback(VkDebugReportFlagsEXT flags,
                                                 VkDebugReportObjectTypeEXT objType,
                                                 uint64_t srcObject,

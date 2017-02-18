@@ -34,9 +34,14 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            VKSwapChain::VKSwapChain()
-                : m_width{0}, m_height{0}, m_surface{VK_NULL_HANDLE}, m_swapchain{VK_NULL_HANDLE}, m_device{VK_NULL_HANDLE}, m_instance{VK_NULL_HANDLE}
+            VKSwapChain::VKSwapChain():
+                m_swapchain(VK_NULL_HANDLE),
+                m_instance(VK_NULL_HANDLE),
+                m_device(VK_NULL_HANDLE),
+                m_surface(VK_NULL_HANDLE),
+                m_width(0), m_height(0), m_queueFamilyIndex(0), m_scImgCount(0)
             {
+
             }
 
             VKSwapChain::~VKSwapChain()
@@ -76,9 +81,9 @@ namespace Hatchit
                 */
 #ifdef HT_SYS_WINDOWS
                 //Get HINSTANCE from HWND
-                HWND window = (HWND)instance.NativeWindow();
+                HWND window = static_cast<HWND>(instance.NativeWindow());
                 HINSTANCE hInstance;
-                hInstance = (HINSTANCE)GetWindowLongPtr(window, GWLP_HINSTANCE);
+                hInstance = reinterpret_cast<HINSTANCE>(GetWindowLongPtr(window, GWLP_HINSTANCE));
 
                 VkWin32SurfaceCreateInfoKHR creationInfo = {};
                 creationInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
@@ -351,7 +356,7 @@ namespace Hatchit
                 return true;
             }
 
-            bool VKSwapChain::AcquireNextImage(VkSemaphore semaphore, uint32_t *index)
+            bool VKSwapChain::AcquireNextImage(VkSemaphore semaphore, uint32_t *index) const
             {
                 VkResult err = VK_SUCCESS;
 
@@ -366,7 +371,7 @@ namespace Hatchit
                 return true;
             }
 
-            bool VKSwapChain::QueuePresent(VkQueue queue, uint32_t index, VkSemaphore semaphore)
+            bool VKSwapChain::QueuePresent(VkQueue queue, uint32_t index, VkSemaphore semaphore) const
             {
                 VkResult err = VK_SUCCESS;
 
@@ -406,7 +411,7 @@ namespace Hatchit
                 return m_buffers;
             }
 
-            bool VKSwapChain::IsValid()
+            bool VKSwapChain::IsValid() const
             {
                 return m_swapchain != VK_NULL_HANDLE; 
             }

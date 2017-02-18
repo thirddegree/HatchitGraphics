@@ -39,7 +39,7 @@ namespace Hatchit {
 
             VKDevice::~VKDevice()
             {
-
+                vkDestroyDevice(m_vkDevice, nullptr);
             }
 
             bool VKDevice::Initialize(VKApplication& instance, uint32_t index) {

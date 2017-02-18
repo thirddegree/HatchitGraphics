@@ -51,10 +51,10 @@ namespace Hatchit
 
                 bool Initialize(const uint32_t width, const uint32_t height, VKApplication& instance, VKDevice& device);
 
-                bool AcquireNextImage(VkSemaphore semaphore, uint32_t* index);
-                bool QueuePresent(VkQueue queue, uint32_t index, VkSemaphore semaphore = VK_NULL_HANDLE);
+                bool AcquireNextImage(VkSemaphore semaphore, uint32_t* index) const;
+                bool QueuePresent(VkQueue queue, uint32_t index, VkSemaphore semaphore = VK_NULL_HANDLE) const;
 
-                bool IsValid();
+                bool IsValid() const;
 
                 uint32_t QueueFamilyIndex() const;
                 uint32_t GetImageCount() const;

@@ -21,11 +21,6 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            PFN_vkCreateDebugReportCallbackEXT  VKDebug::_CreateDebugReportCallback = VK_NULL_HANDLE;
-            PFN_vkDestroyDebugReportCallbackEXT VKDebug::_DestroyDebugReportCallback = VK_NULL_HANDLE;
-            PFN_vkDebugReportMessageEXT         VKDebug::_BreakCallback = VK_NULL_HANDLE;
-            VkDebugReportCallbackEXT            VKDebug::_Callback = VK_NULL_HANDLE;
-
             VKDebug::VKDebug()
             {
                 _CreateDebugReportCallback = VK_NULL_HANDLE;
@@ -39,29 +34,40 @@ namespace Hatchit
 
             }
 
+            VKDebug& VKDebug::instance()
+            {
+                static VKDebug _instance;
+
+                return _instance;
+            }
+
             void VKDebug::SetupCallback(VkInstance instance,
                                         VkDebugReportFlagsEXT flags,
                                         VkDebugReportCallbackEXT callback)
             {
-                _CreateDebugReportCallback = reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>(vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT"));
-                _DestroyDebugReportCallback = reinterpret_cast<PFN_vkDestroyDebugReportCallbackEXT>(vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT"));
-                _BreakCallback = reinterpret_cast<PFN_vkDebugReportMessageEXT>(vkGetInstanceProcAddr(instance, "vkDebugReportMessageEXT"));
+                VKDebug& _instance = VKDebug::instance();
+
+                _instance._CreateDebugReportCallback = reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>(vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT"));
+                _instance._DestroyDebugReportCallback = reinterpret_cast<PFN_vkDestroyDebugReportCallbackEXT>(vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT"));
+                _instance._BreakCallback = reinterpret_cast<PFN_vkDebugReportMessageEXT>(vkGetInstanceProcAddr(instance, "vkDebugReportMessageEXT"));
 
                 VkDebugReportCallbackCreateInfoEXT info = {};
                 info.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
                 info.pfnCallback = reinterpret_cast<PFN_vkDebugReportCallbackEXT>(VKDebug::MessageCallback);
                 info.flags = flags;
 
-                VkResult err = _CreateDebugReportCallback(instance,
+                VkResult err = _instance._CreateDebugReportCallback(instance,
                                 &info,
-                                nullptr, (callback != VK_NULL_HANDLE) ? &callback : &_Callback);
+                                nullptr, (callback != VK_NULL_HANDLE) ? &callback : &_instance._Callback);
                 assert(!err);
             }
 
             void VKDebug::FreeCallback(VkInstance instance)
             {
-                if(_Callback != VK_NULL_HANDLE)
-                    _DestroyDebugReportCallback(instance, _Callback, nullptr);
+                VKDebug& _instance = VKDebug::instance();
+
+                if(_instance._Callback != VK_NULL_HANDLE)
+                    _instance._DestroyDebugReportCallback(instance, _instance._Callback, nullptr);
             }
 
             VkBool32 VKDebug::MessageCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType,

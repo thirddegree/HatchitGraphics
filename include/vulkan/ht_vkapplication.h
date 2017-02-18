@@ -43,29 +43,131 @@ namespace Hatchit
             class HT_API VKApplication
             {
             public:
+                /**
+                 * \brief Default constructor
+                 */
                 VKApplication();
+
+                /**
+                 * \brief Constructs application instance
+                 * 
+                 * Constructs Vulkan application instance with specified
+                 * parameters from VkApplicationInfo structure
+                 * 
+                 * \param info Application parameters
+                 */
                 explicit VKApplication(const VkApplicationInfo& info);
 
+                /**
+                 * \brief Destructor
+                 * 
+                 * \note 
+                 *      Any Vulkan objects created using this
+                 *      application instance MUST be destroyed
+                 *      prior to calling this destructor.
+                 */
                 ~VKApplication();
 
+                /**
+                 * \brief Initialize application instance
+                 * 
+                 * Initializes Vulkan application instance
+                 * 
+                 * \param window  Handle to window
+                 * \param display [Linux] Handle to Xlib display port
+                 */
                 bool Initialize(void* window, void* display);
+
+                /**
+                 * \brief Utility to check if instance has been initialized
+                 * 
+                 * \returns [true] initialized : [false] unitialized
+                 */
                 bool IsValid() const;
 
+                /**
+                 * \brief Gets instance name
+                 * 
+                 * \returns name
+                 */
                 std::string   Name()              const;
+
+                /**
+                 * \brief Gets instance version
+                 * 
+                 * \returns version
+                 */
                 uint32_t      Version()           const;
+
+                /**
+                 * \brief Gets instance engine name
+                 * 
+                 * \returns engine name
+                 */
                 std::string   EngineName()        const;
+
+                /**
+                 * \brief Gets instance engine version
+                 * 
+                 * \returns engine version
+                 */
                 uint32_t      EngineVersion()     const;
+
+                /**
+                 * \brief Gets instance API version
+                 * 
+                 * \returns API version
+                 */
                 uint32_t      APIVersion()        const;
 
+                /**
+                 * \brief Gets enabled layer count
+                 * 
+                 * \returns enabled layer count 
+                 */
                 uint32_t      EnabledLayerCount() const;
+
+                /**
+                 * \brief Gets enabled extension count
+                 * 
+                 * \returns enabled extension count
+                 */
                 uint32_t      EnabledExtensionCount() const;
 
+                /**
+                 * \brief Gets enabled layer names
+                 * 
+                 * \returns enabled layer names
+                 */
                 const std::vector<std::string>& EnabledLayerNames() const;
+
+                /**
+                 * \brief Gets enabled extension names
+                 * 
+                 * \returns enabled extension names
+                 */
                 const std::vector<std::string>& EnabledExtensionNames() const;
 
+                /**
+                 * \brief Gets native window handle
+                 * 
+                 * \returns native window handle
+                 */
                 void* NativeWindow() const;
+                
+                /**
+                 * \brief Gets native display handle [Linux]
+                 * 
+                 * \returns native display handle
+                 * 
+                 */
                 void* NativeDisplay() const;
 
+                /**
+                 * \brief Explicit cast from VKApplication to VkInstance
+                 * 
+                 * \return underlying VkInstance handle
+                 */
                 explicit operator VkInstance() const;
 
             private:
@@ -77,15 +179,9 @@ namespace Hatchit
                 std::vector<std::string>            m_layers;
                 std::vector<std::string>            m_extensions;
 
-                VkDebugReportCallbackEXT            m_debugReportCallback;
-
-            private:
+                
                 bool CheckInstanceLayers();
                 bool CheckInstanceExtensions();
-
-                static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType,
-                    uint64_t srcObject, size_t location, int32_t msgCode,
-                    const char *pLayerPrefix, const char *pMsg, void *pUserData);
             };
         }
     }
