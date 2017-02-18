@@ -115,7 +115,7 @@ namespace Hatchit
                 creationInfo.dpy = (Display*)instance.NativeDisplay();
                 creationInfo.window = (Window)instance.NativeWindow();
 
-                err = vkCreateXlibSurfaceKHR(instance, &creationInfo, nullptr, &m_surface);
+                err = vkCreateXlibSurfaceKHR(m_vkInstance, &creationInfo, nullptr, &m_vkSurface);
 
                 if (err != VK_SUCCESS)
                 {

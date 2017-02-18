@@ -79,7 +79,7 @@ namespace Hatchit
                 /**
                  * Determine log severity
                  */
-                Debug::LogSeverity severity = Debug::LogSeverity::None;
+                Debug::LogSeverity severity;
 
                 if(flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
                     severity = Debug::LogSeverity::Error;
