@@ -35,10 +35,11 @@ namespace Hatchit
         namespace Vulkan
         {
             VKSwapChain::VKSwapChain():
-                m_swapchain(VK_NULL_HANDLE),
-                m_instance(VK_NULL_HANDLE),
-                m_device(VK_NULL_HANDLE),
-                m_surface(VK_NULL_HANDLE),
+                m_vkSwapChain(VK_NULL_HANDLE),
+                m_vkInstance(VK_NULL_HANDLE),
+                m_vkDevice(VK_NULL_HANDLE),
+                m_vkPhysicalDevice(VK_NULL_HANDLE),
+                m_vkSurface(VK_NULL_HANDLE),
                 m_width(0), m_height(0), m_queueFamilyIndex(0), m_scImgCount(0)
             {
 
@@ -50,28 +51,29 @@ namespace Hatchit
                 * Free Vulkan resource memory
                 */
 
-                if (m_swapchain != VK_NULL_HANDLE)
+                if (m_vkSwapChain != VK_NULL_HANDLE)
                 {
                     for (auto buffer : m_buffers)
-                        vkDestroyImageView(m_device, buffer.imageView, nullptr);
+                        vkDestroyImageView(m_vkDevice, buffer.imageView, nullptr);
                 }
 
-                if (m_surface != VK_NULL_HANDLE)
+                if (m_vkSurface != VK_NULL_HANDLE)
                 {
-                    vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
-                    vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+                    vkDestroySwapchainKHR(m_vkDevice, m_vkSwapChain, nullptr);
+                    vkDestroySurfaceKHR(m_vkInstance, m_vkSurface, nullptr);
                 }
 
-                m_surface = VK_NULL_HANDLE;
-                m_swapchain = VK_NULL_HANDLE;
+                m_vkSurface = VK_NULL_HANDLE;
+                m_vkSwapChain = VK_NULL_HANDLE;
             }
 
             bool VKSwapChain::Initialize(const uint32_t width, const uint32_t height, VKApplication& instance, VKDevice& device)
             {
                 m_width = width;
                 m_height = height;
-                m_instance = static_cast<VkInstance>(instance);
-                m_device = device;
+                m_vkInstance = static_cast<VkInstance>(instance);
+                m_vkDevice = static_cast<VkDevice>(device);
+                m_vkPhysicalDevice = static_cast<VkPhysicalDevice>(device);
 
                 VkResult err = VK_SUCCESS;
 
@@ -92,7 +94,7 @@ namespace Hatchit
                 creationInfo.hinstance = hInstance;
                 creationInfo.hwnd = window;
 
-                err = vkCreateWin32SurfaceKHR(static_cast<VkInstance>(instance), &creationInfo, nullptr, &m_surface);
+                err = vkCreateWin32SurfaceKHR(static_cast<VkInstance>(instance), &creationInfo, nullptr, &m_vkSurface);
                 if (err != VK_SUCCESS)
                 {
                     HT_ERROR_PRINTF("VKSwapChain::Initialize() [%s] Could not create VkSurface for Win32 window\n", VKErrorString(err));
@@ -129,7 +131,7 @@ namespace Hatchit
                 * we have a valid logical device to present with
                 */
                 uint32_t queueCount = 0;
-                vkGetPhysicalDeviceQueueFamilyProperties(device, &queueCount, nullptr);
+                vkGetPhysicalDeviceQueueFamilyProperties(m_vkPhysicalDevice, &queueCount, nullptr);
                 if (queueCount < 1)
                 {
                     HT_ERROR_PRINTF("VKSwapChain::Initialize(): Invalid queue count.\n");
@@ -137,11 +139,11 @@ namespace Hatchit
                 }
 
                 std::vector<VkQueueFamilyProperties> queueProperties(queueCount);
-                vkGetPhysicalDeviceQueueFamilyProperties(device, &queueCount, queueProperties.data());
+                vkGetPhysicalDeviceQueueFamilyProperties(m_vkPhysicalDevice, &queueCount, queueProperties.data());
                 
                 std::vector<VkBool32> supportsPresent(queueCount);
                 for (uint32_t i = 0; i < queueCount; i++)
-                    vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &supportsPresent[i]);
+                    vkGetPhysicalDeviceSurfaceSupportKHR(m_vkPhysicalDevice, i, m_vkSurface, &supportsPresent[i]);
 
                 // Search for a graphics and a present queue in the array of queue
                 // families, try to find one that supports both
@@ -190,14 +192,14 @@ namespace Hatchit
                 m_queueFamilyIndex = graphicsQueueNodeIndex; //store queue family index for pool creation.
 
                 uint32_t formatCount = 0;
-                vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &formatCount, nullptr);
+                vkGetPhysicalDeviceSurfaceFormatsKHR(m_vkPhysicalDevice, m_vkSurface, &formatCount, nullptr);
                 std::vector<VkSurfaceFormatKHR> surfaceFormats(formatCount);
-                vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &formatCount, surfaceFormats.data());
+                vkGetPhysicalDeviceSurfaceFormatsKHR(m_vkPhysicalDevice, m_vkSurface, &formatCount, surfaceFormats.data());
 
                 uint32_t presentCount = 0;
-                vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &presentCount, nullptr);
+                vkGetPhysicalDeviceSurfacePresentModesKHR(m_vkPhysicalDevice, m_vkSurface, &presentCount, nullptr);
                 std::vector<VkPresentModeKHR> presentModes(presentCount);
-                vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &presentCount, presentModes.data());
+                vkGetPhysicalDeviceSurfacePresentModesKHR(m_vkPhysicalDevice, m_vkSurface, &presentCount, presentModes.data());
 
                 if ( surfaceFormats.empty() || presentModes.empty() )
                 {
@@ -250,7 +252,7 @@ namespace Hatchit
                 }
 
                 VkSurfaceCapabilitiesKHR surfaceCapabilities;
-                vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_surface, &surfaceCapabilities); 
+                vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_vkPhysicalDevice, m_vkSurface, &surfaceCapabilities);
 
                 uint32_t imageCount = surfaceCapabilities.minImageCount + 1 <= surfaceCapabilities.maxImageCount ?
                     surfaceCapabilities.minImageCount + 1 : surfaceCapabilities.maxImageCount;
@@ -267,7 +269,7 @@ namespace Hatchit
                 VkSwapchainCreateInfoKHR createSwapChainInfo = {};
                 createSwapChainInfo.pNext = nullptr;
                 createSwapChainInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-                createSwapChainInfo.surface = m_surface;
+                createSwapChainInfo.surface = m_vkSurface;
                 createSwapChainInfo.minImageCount = imageCount;
                 createSwapChainInfo.imageColorSpace = choosenSurfaceFormat.colorSpace;
                 /* I do believe in the first version we are not goig to enable occulus, vive and others... */
@@ -292,7 +294,7 @@ namespace Hatchit
                 else
                     createSwapChainInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-                if ( vkCreateSwapchainKHR(device, &createSwapChainInfo, nullptr, &m_swapchain) != VK_SUCCESS )
+                if ( vkCreateSwapchainKHR(m_vkDevice, &createSwapChainInfo, nullptr, &m_vkSwapChain) != VK_SUCCESS )
                 {
                     HT_ERROR_PRINTF("VKSwapChain::Initialize(): Failed to create swapchain.\n");
                     return false;
@@ -305,7 +307,7 @@ namespace Hatchit
                 */
 
                 m_scImgCount = 0;
-                err = vkGetSwapchainImagesKHR(device, m_swapchain, &m_scImgCount, nullptr);
+                err = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapChain, &m_scImgCount, nullptr);
                 if (err != VK_SUCCESS)
                 {
                     HT_ERROR_PRINTF("VKSwapChain::Initialize(): Failed to query swapchain image count. %s\n", VKErrorString(err));
@@ -313,7 +315,7 @@ namespace Hatchit
                 }
 
                 std::vector<VkImage> images(m_scImgCount);
-                err = vkGetSwapchainImagesKHR(device, m_swapchain, &m_scImgCount, images.data());
+                err = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapChain, &m_scImgCount, images.data());
                 if (err != VK_SUCCESS)
                 {
                     HT_ERROR_PRINTF("VKSwapChain::Initialize(): Failed to query swapchain images. %s\n", VKErrorString(err));
@@ -344,7 +346,7 @@ namespace Hatchit
 
                     m_buffers[i].image = images[i];
 
-                    err = vkCreateImageView(device, &colorAttachmentView, nullptr, &m_buffers[i].imageView);
+                    err = vkCreateImageView(m_vkDevice, &colorAttachmentView, nullptr, &m_buffers[i].imageView);
                     if (err != VK_SUCCESS)
                     {
                         HT_ERROR_PRINTF("VKSwapChain::Initialize(): Failed to create image view. %s\n", VKErrorString(err));
@@ -360,7 +362,7 @@ namespace Hatchit
             {
                 VkResult err = VK_SUCCESS;
 
-                err = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, index);
+                err = vkAcquireNextImageKHR(m_vkDevice, m_vkSwapChain, UINT64_MAX, semaphore, VK_NULL_HANDLE, index);
                 if(err != VK_SUCCESS)
                 {
                     HT_ERROR_PRINTF("VKSwapChain::AcquireNextImage: Failed to acquire image index. %s\n",
@@ -379,7 +381,7 @@ namespace Hatchit
                 info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
                 info.pNext = nullptr;
                 info.swapchainCount = 1;
-                info.pSwapchains = &m_swapchain;
+                info.pSwapchains = &m_vkSwapChain;
                 info.pImageIndices = &index;
                 /**
                  * Check if wait semaphore has been provided
@@ -413,7 +415,7 @@ namespace Hatchit
 
             bool VKSwapChain::IsValid() const
             {
-                return m_swapchain != VK_NULL_HANDLE; 
+                return m_vkSwapChain != VK_NULL_HANDLE;
             }
 
             uint32_t VKSwapChain::QueueFamilyIndex() const

@@ -34,7 +34,6 @@ namespace Hatchit {
                 m_vkDevice = VK_NULL_HANDLE;
                 m_vkCommandPool = VK_NULL_HANDLE;
                 m_vkCommandBuffer = VK_NULL_HANDLE;
-                m_isBegin = false;
             }
 
             VKCommandBuffer::~VKCommandBuffer()
@@ -42,14 +41,8 @@ namespace Hatchit {
                 vkFreeCommandBuffers(m_vkDevice, m_vkCommandPool, 1, &m_vkCommandBuffer);
             }
 
-            bool VKCommandBuffer::Begin(void)
+            bool VKCommandBuffer::Begin(void) const
             {
-                if (m_isBegin)
-                {
-                    HT_ERROR_PRINTF("VKCommandBuffer::Begin(): Command buffer must not already be recording.\n");
-                    return false;
-                }
-
                 VkResult err = VK_SUCCESS;
 
                 VkCommandBufferBeginInfo info = {};
@@ -63,20 +56,13 @@ namespace Hatchit {
                     return false;
                 }
 
-                m_isBegin = true;
                 return true;
             }
 
-            bool VKCommandBuffer::Begin(const VkCommandBufferBeginInfo* pInfo)
+            bool VKCommandBuffer::Begin(const VkCommandBufferBeginInfo* pInfo) const
             {
                 if (!pInfo)
                     return false;
-
-                if (m_isBegin)
-                {
-                    HT_ERROR_PRINTF("VKCommandBuffer::Begin(): Command buffer must not already be recording.\n");
-                    return false;
-                }
 
                 VkResult err = VK_SUCCESS;
                 
@@ -87,18 +73,11 @@ namespace Hatchit {
                     return false;
                 }
 
-                m_isBegin = true;
                 return true;
             }
 
-            bool VKCommandBuffer::End()
+            bool VKCommandBuffer::End() const
             {
-                if (!m_isBegin)
-                {
-                    HT_ERROR_PRINTF("VKCommandBuffer::End(): Command buffer must be recording.\n");
-                    return false;
-                }
-
                 VkResult err = VK_SUCCESS;
 
                 err = vkEndCommandBuffer(m_vkCommandBuffer);
@@ -107,12 +86,11 @@ namespace Hatchit {
                     HT_ERROR_PRINTF("VKCommandBuffer::End(): Failed to end command buffer recording. %s\n", VKErrorString(err));
                     return false;
                 }
-                m_isBegin = false;
 
                 return true;
             }
 
-            VKCommandBuffer::operator VkCommandBuffer()
+            VKCommandBuffer::operator VkCommandBuffer() const
             {
                 return m_vkCommandBuffer;
             }

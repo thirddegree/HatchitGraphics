@@ -65,10 +65,10 @@ namespace Hatchit
                 * Allows access to internal VkSemapahore handle through
                 * cast conversion.
                 */
-                operator VkSemaphore();
+                explicit operator VkSemaphore() const;
             private:
-                VkDevice    m_device;
-                VkSemaphore m_semaphore;
+                VkDevice    m_vkDevice;
+                VkSemaphore m_vkSemaphore;
             };
         }
     }

@@ -46,11 +46,11 @@ namespace Hatchit {
 
             bool VKImage::InitializeImage(VKDevice& device, const VkImageCreateInfo& info)
             {
-                m_vkDevice = device;
+                m_vkDevice = static_cast<VkDevice>(device);
                 
                 VkResult err = VK_SUCCESS;
 
-                err = vkCreateImage(device, &info, nullptr, &m_vkImage);
+                err = vkCreateImage(m_vkDevice, &info, nullptr, &m_vkImage);
                 if (err != VK_SUCCESS)
                 {
                     HT_ERROR_PRINTF("VKImage::Initialize(): Failed to create image. %s\n", VKErrorString(err));
@@ -66,7 +66,7 @@ namespace Hatchit {
                 VkResult err = VK_SUCCESS;
 
                 info.image = m_vkImage;
-                err = vkCreateImageView(device, &info, nullptr, &m_vkImageView);
+                err = vkCreateImageView(m_vkDevice, &info, nullptr, &m_vkImageView);
                 if (err != VK_SUCCESS)
                 {
                     HT_ERROR_PRINTF("VKImage::Initialize(): Failed to create image view. %s\n", VKErrorString(err));
@@ -85,13 +85,13 @@ namespace Hatchit {
                 memAllocateInfo.memoryTypeIndex = 0;
 
                 VkMemoryRequirements memoryRequirement = {};
-                vkGetImageMemoryRequirements(pDevice, m_vkImage, &memoryRequirement);
+                vkGetImageMemoryRequirements(m_vkDevice, m_vkImage, &memoryRequirement);
                 memAllocateInfo.allocationSize = memoryRequirement.size;
                 memAllocateInfo.memoryTypeIndex = pDevice.GetMemoryType(memoryRequirement.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
                 VkResult err = VK_SUCCESS;
 
-                err = vkAllocateMemory(pDevice, &memAllocateInfo, nullptr, &m_vkMemory);
+                err = vkAllocateMemory(m_vkDevice, &memAllocateInfo, nullptr, &m_vkMemory);
 
                 if (err != VK_SUCCESS)
                 {
@@ -99,7 +99,7 @@ namespace Hatchit {
                     return false;
                 }
 
-                err = vkBindImageMemory(pDevice, m_vkImage, m_vkMemory, 0);
+                err = vkBindImageMemory(m_vkDevice, m_vkImage, m_vkMemory, 0);
 
                 if (err != VK_SUCCESS)
                 {
@@ -110,17 +110,17 @@ namespace Hatchit {
                 return true;
             }
 
-            VKImage::operator VkImage()
+            VKImage::operator VkImage() const
             {
                 return m_vkImage;
             }
 
-            VKImage::operator VkImageView()
+            VKImage::operator VkImageView() const
             {
                 return m_vkImageView;
             }
 
-            VKImage::operator VkDeviceMemory()
+            VKImage::operator VkDeviceMemory() const
             {
                 return m_vkMemory;
             }

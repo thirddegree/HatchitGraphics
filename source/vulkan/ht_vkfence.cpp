@@ -23,18 +23,18 @@ namespace Hatchit
         {
             VKFence::VKFence()
             {
-                m_fence = VK_NULL_HANDLE;
-                m_device = VK_NULL_HANDLE;
+                m_vkFence = VK_NULL_HANDLE;
+                m_vkDevice = VK_NULL_HANDLE;
             }
 
             VKFence::~VKFence()
             {
-                vkDestroyFence(m_device, m_fence, nullptr);
+                vkDestroyFence(m_vkDevice, m_vkFence, nullptr);
             }
 
             bool VKFence::Initialize(VKDevice &device, VkFenceCreateFlags flags)
             {
-                m_device = device;
+                m_vkDevice = static_cast<VkDevice>(device);
 
                 VkResult err = VK_SUCCESS;
 
@@ -43,7 +43,7 @@ namespace Hatchit
                 info.pNext = nullptr;
                 info.flags = flags;
 
-                err = vkCreateFence(device, &info, nullptr, &m_fence);
+                err = vkCreateFence(m_vkDevice, &info, nullptr, &m_vkFence);
                 if(err != VK_SUCCESS)
                 {
                     HT_ERROR_PRINTF("VKFence::Initialize(): Failed to create fence.\n");
@@ -55,11 +55,11 @@ namespace Hatchit
 
             bool VKFence::Initialize(VKDevice &device, const VkFenceCreateInfo &info)
             {
-                m_device = device;
+                m_vkDevice = static_cast<VkDevice>(device);
 
                 VkResult err = VK_SUCCESS;
 
-                err = vkCreateFence(device, &info, nullptr, &m_fence);
+                err = vkCreateFence(m_vkDevice, &info, nullptr, &m_vkFence);
                 if(err != VK_SUCCESS)
                 {
                     HT_ERROR_PRINTF("VKFence::Initialize(): Failed to create fence.\n");
@@ -67,6 +67,11 @@ namespace Hatchit
                 }
 
                 return true;
+            }
+
+            VKFence::operator VkFence() const
+            {
+                return m_vkFence;
             }
         }
     }

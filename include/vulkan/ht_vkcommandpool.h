@@ -52,11 +52,11 @@ namespace Hatchit
 
                 bool Initialize(VKDevice& device, uint32_t queueFamilyIndex);
 
-                bool Reset(VkCommandPoolResetFlags flags = 0);
+                bool Reset(VkCommandPoolResetFlags flags = 0) const;
 
-                bool AllocateCommandBuffers(VkCommandBufferLevel level, uint32_t count, VKCommandBuffer* pCommandBuffers);
+                bool AllocateCommandBuffers(VkCommandBufferLevel level, uint32_t count, VKCommandBuffer* pCommandBuffers) const;
 
-                operator VkCommandPool();
+                explicit operator VkCommandPool() const;
             private:
                 VkDevice      m_vkDevice;
                 VkCommandPool m_vkCommandPool;

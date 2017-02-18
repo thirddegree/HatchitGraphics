@@ -21,20 +21,20 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            VKSemaphore::VKSemaphore()
+            VKSemaphore::VKSemaphore():
+                m_vkDevice(VK_NULL_HANDLE), m_vkSemaphore(VK_NULL_HANDLE)
             {
-                m_semaphore = VK_NULL_HANDLE;
-                m_device = VK_NULL_HANDLE;
             }
 
             VKSemaphore::~VKSemaphore()
             {
-                vkDestroySemaphore(m_device, m_semaphore, nullptr);
+                if(m_vkSemaphore != VK_NULL_HANDLE)
+                    vkDestroySemaphore(m_vkDevice, m_vkSemaphore, nullptr);
             }
 
             bool VKSemaphore::Initialize(VKDevice &device)
             {
-                m_device = device;
+                m_vkDevice = static_cast<VkDevice>(device);
 
                 VkResult err = VK_SUCCESS;
 
@@ -42,7 +42,7 @@ namespace Hatchit
                 info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
                 info.pNext = nullptr;
 
-                err = vkCreateSemaphore(device, &info, nullptr, &m_semaphore);
+                err = vkCreateSemaphore(m_vkDevice, &info, nullptr, &m_vkSemaphore);
                 if(err != VK_SUCCESS)
                 {
                     HT_ERROR_PRINTF("VKSemaphore::Initialize(): Failed to create semaphore.\n");
@@ -54,11 +54,11 @@ namespace Hatchit
 
             bool VKSemaphore::Initialize(VKDevice &device, const VkSemaphoreCreateInfo &info)
             {
-                m_device = device;
+                m_vkDevice = static_cast<VkDevice>(device);
 
                 VkResult err = VK_SUCCESS;
 
-                err = vkCreateSemaphore(device, &info, nullptr, &m_semaphore);
+                err = vkCreateSemaphore(m_vkDevice, &info, nullptr, &m_vkSemaphore);
                 if(err != VK_SUCCESS)
                 {
                     HT_ERROR_PRINTF("VKSemaphore::Initialize(): Failed to create semaphore.\n");
@@ -66,6 +66,11 @@ namespace Hatchit
                 }
 
                 return true;
+            }
+
+            VKSemaphore::operator VkSemaphore() const
+            {
+                return m_vkSemaphore;
             }
         }
     }

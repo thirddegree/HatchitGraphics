@@ -61,9 +61,9 @@ namespace Hatchit
                 const VkImage&      GetImage() const;
                 const VkImageView&  GetImageView() const;
 
-                operator VkImage();
-                operator VkImageView();
-                operator VkDeviceMemory();
+                explicit operator VkImage() const;
+                explicit operator VkImageView() const;
+                explicit operator VkDeviceMemory() const;
             protected:
                 VkDevice    m_vkDevice;
                 VkImage     m_vkImage;

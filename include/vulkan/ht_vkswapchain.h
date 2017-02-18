@@ -61,11 +61,11 @@ namespace Hatchit
                 std::vector<Buffer>& GetBuffers();
 
             private:
-                VkSwapchainKHR m_swapchain;
-                VkInstance     m_instance;
-                VkDevice       m_device;
-
-                VkSurfaceKHR    m_surface;
+                VkSwapchainKHR      m_vkSwapChain;;
+                VkInstance          m_vkInstance;
+                VkDevice            m_vkDevice;
+                VkPhysicalDevice    m_vkPhysicalDevice;
+                VkSurfaceKHR        m_vkSurface;
 
                 std::vector<Buffer> m_buffers;
 

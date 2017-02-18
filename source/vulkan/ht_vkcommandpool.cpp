@@ -42,14 +42,14 @@ namespace Hatchit {
                     vkDestroyCommandPool(m_vkDevice, m_vkCommandPool, nullptr);
             }
 
-            VKCommandPool::operator VkCommandPool()
+            VKCommandPool::operator VkCommandPool() const
             {
                 return m_vkCommandPool;
             }
 
             bool VKCommandPool::Initialize(VKDevice& device, uint32_t queueFamilyIndex)
             {
-                m_vkDevice = device;
+                m_vkDevice = static_cast<VkDevice>(device);
 
                 VkResult err = VK_SUCCESS;
 
@@ -62,7 +62,7 @@ namespace Hatchit {
                 cInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
                 cInfo.queueFamilyIndex = queueFamilyIndex;
 
-                err = vkCreateCommandPool(device, &cInfo, nullptr, &m_vkCommandPool);
+                err = vkCreateCommandPool(m_vkDevice, &cInfo, nullptr, &m_vkCommandPool);
                 if (err != VK_SUCCESS)
                 {
                     HT_ERROR_PRINTF("VKCommandPool::Initialize(): Failed to create command pool. %s\n", VKErrorString(err));
@@ -72,7 +72,7 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKCommandPool::Reset(VkCommandPoolResetFlags flags)
+            bool VKCommandPool::Reset(VkCommandPoolResetFlags flags) const
             {
                 VkResult err = VK_SUCCESS;
                 
@@ -89,7 +89,7 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKCommandPool::AllocateCommandBuffers(VkCommandBufferLevel level, uint32_t count, VKCommandBuffer* pCommandBuffers)
+            bool VKCommandPool::AllocateCommandBuffers(VkCommandBufferLevel level, uint32_t count, VKCommandBuffer* pCommandBuffers) const
             {
                 if (!pCommandBuffers)
                     return false;
@@ -99,7 +99,7 @@ namespace Hatchit {
                 VkCommandBufferAllocateInfo aInfo = {};
                 aInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
                 aInfo.pNext = nullptr;
-                aInfo.commandPool = *this;
+                aInfo.commandPool = static_cast<VkCommandPool>(*this);
                 aInfo.commandBufferCount = count;
                 aInfo.level = level;
                 
@@ -115,7 +115,7 @@ namespace Hatchit {
                 {
                     pCommandBuffers[i].m_vkCommandBuffer = buffers[i];
                     pCommandBuffers[i].m_vkDevice = m_vkDevice;
-                    pCommandBuffers[i].m_vkCommandPool = *this;
+                    pCommandBuffers[i].m_vkCommandPool = static_cast<VkCommandPool>(*this);
                 }
 
                 return true;

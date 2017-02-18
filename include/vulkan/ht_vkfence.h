@@ -35,10 +35,10 @@ namespace Hatchit
                 bool Initialize(VKDevice& device, VkFenceCreateFlags flags = VK_FENCE_CREATE_SIGNALED_BIT);
                 bool Initialize(VKDevice& device, const VkFenceCreateInfo& info);
 
-                operator VkFence();
+                explicit operator VkFence() const;
             private:
-                VkDevice m_device;
-                VkFence  m_fence;
+                VkDevice m_vkDevice;
+                VkFence  m_vkFence;
             };
         }
     }

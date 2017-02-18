@@ -41,17 +41,16 @@ namespace Hatchit
 
                 ~VKCommandBuffer();
 
-                bool Begin(void);
-                bool Begin(const VkCommandBufferBeginInfo* pInfo);
-                bool End(void);
+                bool Begin(void) const;
+                bool Begin(const VkCommandBufferBeginInfo* pInfo) const;
+                bool End(void) const;
 
-                operator VkCommandBuffer();
-                operator VkCommandBuffer*();
+                explicit operator VkCommandBuffer() const;
+                explicit operator VkCommandBuffer*();
             private:
                 VkDevice                m_vkDevice;
                 VkCommandPool           m_vkCommandPool;
                 VkCommandBuffer         m_vkCommandBuffer;
-                bool                    m_isBegin;
 
                 friend class VKCommandPool;
             };

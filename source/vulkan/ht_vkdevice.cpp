@@ -23,13 +23,14 @@
 #include <ht_vkdevice.h>
 #include <ht_vkapplication.h>
 #include <ht_debug.h>
-
 #include <vector>
-#include <algorithm>
 
-namespace Hatchit {
-    namespace Graphics {
-        namespace Vulkan {
+namespace Hatchit 
+{
+    namespace Graphics 
+    {
+        namespace Vulkan 
+        {
 
             VKDevice::VKDevice()
             {
@@ -42,7 +43,8 @@ namespace Hatchit {
                 vkDestroyDevice(m_vkDevice, nullptr);
             }
 
-            bool VKDevice::Initialize(VKApplication& instance, uint32_t index) {
+            bool VKDevice::Initialize(VKApplication& instance, uint32_t index) 
+            {
 
                 if (!EnumeratePhysicalDevices(instance, index))
                     return false;
@@ -101,16 +103,17 @@ namespace Hatchit {
                 return true;
             }
 
-            const VkPhysicalDeviceProperties& VKDevice::Properties() const {
+            const VkPhysicalDeviceProperties& VKDevice::Properties() const 
+            {
                 return m_vkPhysicalDeviceProperties;
             }
 
-            VKDevice::operator VkDevice()
+            VKDevice::operator VkDevice() const
             {
                 return m_vkDevice;
             }
 
-            VKDevice::operator VkPhysicalDevice()
+            VKDevice::operator VkPhysicalDevice() const
             {
                 return m_vkPhysicalDevice;
             }

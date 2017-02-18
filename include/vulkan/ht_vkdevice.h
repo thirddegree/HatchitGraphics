@@ -23,9 +23,7 @@
  */
 
 #include <ht_platform.h>
-#include <ht_string.h>
 #include <ht_vulkan.h>
-#include <set>
 
 namespace Hatchit
 {
@@ -67,8 +65,8 @@ namespace Hatchit
                 /* Get the type memoty index considering the memory property flags */
                 uint32_t GetMemoryType(uint32_t pTypeBits, VkMemoryPropertyFlags pProperties, VkBool32* pMemTypeFound = nullptr) const;
 
-                operator VkDevice();
-                operator VkPhysicalDevice();
+                explicit operator VkDevice() const;
+                explicit operator VkPhysicalDevice() const;
 
             private:
                 VkDevice                            m_vkDevice;
