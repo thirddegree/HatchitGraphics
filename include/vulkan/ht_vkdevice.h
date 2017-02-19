@@ -49,28 +49,89 @@ namespace Hatchit
                     uint32_t compute;
                 };
             public:
+
+                /**
+                 * @brief Constructs device
+                 */
                 VKDevice();
 
+                /**
+                 * @brief Destructs device
+                 *
+                 * Destroys underlying Vulkan logical device
+                 */
                 ~VKDevice();
 
 
+                /**
+                 * @brief Initialize Vulkan logical device
+                 * @param instance Vulkan application instance
+                 * @param index Physical device index
+                 * @return [true] : success
+                 * @return [false] : failure
+                 */
                 bool Initialize(VKApplication& instance, uint32_t index);
 
+                /**
+                 * @brief Gets physical device properties
+                 * @return physical device properties
+                 */
                 const VkPhysicalDeviceProperties& GetProperties() const;
 
-                /* Searches for available depth formats on the device based on the precision
+                /**Searches for available depth formats on the device based on the precision
                 *  then sets it on pFormat, return true if formar found, false otherwise.
                 */
-                bool GetSupportedDepthFormat(VkFormat& pFormat) const;
+
+                /**
+                 * @brief Gets supported depth format
+                 *
+                 * Searches for available depth formats on the device based
+                 * on the precision and then sets the result in format.
+                 *
+                 * @param format Vulkan format result
+                 * @return [true] : found
+                 * @return [false] : not found
+                 */
+                bool GetSupportedDepthFormat(VkFormat& format) const;
 
                 /* Get the type memoty index considering the memory property flags */
-                uint32_t GetMemoryType(uint32_t pTypeBits, VkMemoryPropertyFlags pProperties, VkBool32* pMemTypeFound = nullptr) const;
 
+                /**
+                 * @brief Gets the memory type index
+                 *
+                 * Gets the memory type index considering the memory property
+                 * flags provided
+                 *
+                 * @param bits Specific bit to check
+                 * @param properties Properties to constrain search
+                 * @param memTypeFound Optional flag pointer set to true if memory index found.
+                 * @return index of memory type
+                 */
+                uint32_t GetMemoryType(uint32_t bits, VkMemoryPropertyFlags properties, VkBool32* memTypeFound = nullptr) const;
+
+                /**
+                 * @brief Gets queue count of logical device
+                 * @return queue count
+                 */
                 uint32_t GetQueueCount();
 
+                /**
+                 * @brief Gets queue family index information
+                 * @param flags Queue family bits to check
+                 * @return queue family with indices
+                 */
                 QueueFamily GetQueueFamily(VkQueueFlagBits flags);
 
+                /**
+                 * @brief Conversion operator to VkDevice
+                 * @return underlying VkDevice handle
+                 */
                 explicit operator VkDevice() const;
+
+                /**
+                 * @brief Conversion operator to VkPhysicalDevice
+                 * @return underlying VkPhysicalDevice handle
+                 */
                 explicit operator VkPhysicalDevice() const;
 
             private:
