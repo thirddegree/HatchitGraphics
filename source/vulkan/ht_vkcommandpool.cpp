@@ -89,7 +89,7 @@ namespace Hatchit {
                 return true;
             }
 
-            bool VKCommandPool::AllocateCommandBuffers(VkCommandBufferLevel level, uint32_t count, VKCommandBuffer* pCommandBuffers) const
+            bool VKCommandPool::AllocateCommandBuffers(VkCommandBufferLevel level, uint32_t count, VKCommandBuffer** pCommandBuffers) const
             {
                 if (!pCommandBuffers)
                     return false;
@@ -111,11 +111,14 @@ namespace Hatchit {
                     return false;
                 }
 
-                for (uint32_t i = 0; i < count; i++)
-                {
-                    pCommandBuffers[i].m_vkCommandBuffer = buffers[i];
-                    pCommandBuffers[i].m_vkDevice = m_vkDevice;
-                    pCommandBuffers[i].m_vkCommandPool = static_cast<VkCommandPool>(*this);
+                for (uint32_t i = 0; i < count; i++) {
+
+                    if (!pCommandBuffers[i]) {
+                        pCommandBuffers[i] = new VKCommandBuffer;
+                        pCommandBuffers[i]->m_vkCommandBuffer = buffers[i];
+                        pCommandBuffers[i]->m_vkDevice = m_vkDevice;
+                        pCommandBuffers[i]->m_vkCommandPool = static_cast<VkCommandPool>(*this);
+                    }
                 }
 
                 return true;

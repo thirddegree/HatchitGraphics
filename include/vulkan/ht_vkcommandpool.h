@@ -54,7 +54,7 @@ namespace Hatchit
 
                 bool Reset(VkCommandPoolResetFlags flags = 0) const;
 
-                bool AllocateCommandBuffers(VkCommandBufferLevel level, uint32_t count, VKCommandBuffer* pCommandBuffers) const;
+                bool AllocateCommandBuffers(VkCommandBufferLevel level, uint32_t count, VKCommandBuffer** pCommandBuffers) const;
 
                 explicit operator VkCommandPool() const;
             private:
