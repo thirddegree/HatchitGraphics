@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015-2016 Third-Degree
+**    Copyright(c) 2015-2017 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -13,10 +13,10 @@
 **/
 
 /**
- * \file ht_vkswapchain.cpp
- * \brief VKSwapChain class implementation
- * \author Matt Guerrette (direct3Dtutorials@gmail.com)
- * \author jkvargas (https://github.com/jkvargas)
+ * @file ht_vkswapchain.cpp
+ * @brief VKSwapChain class implementation
+ * @author Matt Guerrette (direct3Dtutorials@gmail.com)
+ * @author jkvargas (https://github.com/jkvargas)
  *
  * This file contains implementation for VKSwapChain class
  */
@@ -24,7 +24,6 @@
 #include <ht_vkswapchain.h>
 #include <ht_vkapplication.h>
 #include <ht_vkdevice.h>
-#include <ht_debug.h>
 
 #include <algorithm>
 
@@ -40,7 +39,7 @@ namespace Hatchit
                 m_vkDevice(VK_NULL_HANDLE),
                 m_vkPhysicalDevice(VK_NULL_HANDLE),
                 m_vkSurface(VK_NULL_HANDLE),
-                m_width(0), m_height(0), m_queueFamilyIndex(0), m_scImgCount(0)
+                m_width(0), m_height(0), m_bufferCount(0)
             {
 
             }
@@ -77,7 +76,7 @@ namespace Hatchit
 
                 VkResult err = VK_SUCCESS;
 
-                /*
+                /**
                 *  Initialize swapchain surface depending
                 *  on platform (Win32, Linux)
                 */
@@ -102,7 +101,6 @@ namespace Hatchit
                 }
 #elif defined(HT_SYS_LINUX)
                 /**
-                * NOTE:
                 * There may also need to be a case where the underlying windowing
                 * kit we are using does not link Xlib, but instead Xcb. One such
                 * case I can think of is Qt, which I believe used Xcb for the Linux
@@ -130,66 +128,33 @@ namespace Hatchit
                 * the physical device queue properties. This is to make sure
                 * we have a valid logical device to present with
                 */
-                uint32_t queueCount = 0;
-                vkGetPhysicalDeviceQueueFamilyProperties(m_vkPhysicalDevice, &queueCount, nullptr);
-                if (queueCount < 1)
-                {
-                    HT_ERROR_PRINTF("VKSwapChain::Initialize(): Invalid queue count.\n");
-                    return false;
-                }
+                uint32_t queueCount = device.GetQueueCount();
 
-                std::vector<VkQueueFamilyProperties> queueProperties(queueCount);
-                vkGetPhysicalDeviceQueueFamilyProperties(m_vkPhysicalDevice, &queueCount, queueProperties.data());
-                
                 std::vector<VkBool32> supportsPresent(queueCount);
                 for (uint32_t i = 0; i < queueCount; i++)
                     vkGetPhysicalDeviceSurfaceSupportKHR(m_vkPhysicalDevice, i, m_vkSurface, &supportsPresent[i]);
 
-                // Search for a graphics and a present queue in the array of queue
-                // families, try to find one that supports both
-                uint32_t graphicsQueueNodeIndex = UINT32_MAX;
+                /**
+                 * Search for a queue in array that supports present
+                 */
                 uint32_t presentQueueNodeIndex = UINT32_MAX;
                 for (uint32_t i = 0; i < queueCount; i++)
                 {
-                    if ((queueProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0)
+                    if (supportsPresent[i] == VK_TRUE)
                     {
-                        if (graphicsQueueNodeIndex == UINT32_MAX)
-                        {
-                            graphicsQueueNodeIndex = i;
-                        }
-
-                        if (supportsPresent[i] == VK_TRUE)
-                        {
-                            graphicsQueueNodeIndex = i;
-                            presentQueueNodeIndex = i;
-                            break;
-                        }
-                    }
-                }
-                if (presentQueueNodeIndex == UINT32_MAX)
-                {
-                    // If there's no queue that supports both present and graphics
-                    // try to find a separate present queue
-                    for (uint32_t i = 0; i < queueCount; ++i)
-                    {
-                        if (supportsPresent[i] == VK_TRUE)
-                        {
-                            presentQueueNodeIndex = i;
-                            break;
-                        }
+                        presentQueueNodeIndex = i;
+                        break;
                     }
                 }
 
                 /**
-                *   Exit if there is neither a graphics nor a present queue available
-                */
-                if (graphicsQueueNodeIndex == UINT32_MAX || presentQueueNodeIndex == UINT32_MAX)
+                 * Exit if there is not a present queue available
+                 */
+                if (presentQueueNodeIndex == UINT32_MAX)
                 {
                     HT_ERROR_PRINTF("VKSwapChain::Initialize(): Could not find a graphics and/or presenting queue!\n");
                     return false;
                 }
-
-                m_queueFamilyIndex = graphicsQueueNodeIndex; //store queue family index for pool creation.
 
                 uint32_t formatCount = 0;
                 vkGetPhysicalDeviceSurfaceFormatsKHR(m_vkPhysicalDevice, m_vkSurface, &formatCount, nullptr);
@@ -283,16 +248,9 @@ namespace Hatchit
                 createSwapChainInfo.imageExtent = extent;
                 createSwapChainInfo.imageFormat = VK_FORMAT_B8G8R8A8_UNORM;
                 createSwapChainInfo.flags = 0;
-
-                if ( graphicsQueueNodeIndex != presentQueueNodeIndex )
-                {
-                    createSwapChainInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-                    createSwapChainInfo.queueFamilyIndexCount = 2;
-                    uint32_t familiesIndices[2] = {graphicsQueueNodeIndex, presentQueueNodeIndex};
-                    createSwapChainInfo.pQueueFamilyIndices = familiesIndices;
-                }
-                else
-                    createSwapChainInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+                createSwapChainInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+                createSwapChainInfo.queueFamilyIndexCount = 0;
+                createSwapChainInfo.pQueueFamilyIndices = nullptr;
 
                 if ( vkCreateSwapchainKHR(m_vkDevice, &createSwapChainInfo, nullptr, &m_vkSwapChain) != VK_SUCCESS )
                 {
@@ -305,25 +263,24 @@ namespace Hatchit
                 * the swapchain image count, query for the image info and creating the ImageView create
                 * structure.
                 */
-
-                m_scImgCount = 0;
-                err = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapChain, &m_scImgCount, nullptr);
+                m_bufferCount = 0;
+                err = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapChain, &m_bufferCount, nullptr);
                 if (err != VK_SUCCESS)
                 {
                     HT_ERROR_PRINTF("VKSwapChain::Initialize(): Failed to query swapchain image count. %s\n", VKErrorString(err));
                     return false;
                 }
 
-                std::vector<VkImage> images(m_scImgCount);
-                err = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapChain, &m_scImgCount, images.data());
+                std::vector<VkImage> images(m_bufferCount);
+                err = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapChain, &m_bufferCount, images.data());
                 if (err != VK_SUCCESS)
                 {
                     HT_ERROR_PRINTF("VKSwapChain::Initialize(): Failed to query swapchain images. %s\n", VKErrorString(err));
                     return false;
                 }
 
-                m_buffers.resize(m_scImgCount);
-                for (uint32_t i = 0; i < m_scImgCount; i++)
+                m_buffers.resize(m_bufferCount);
+                for (uint32_t i = 0; i < m_bufferCount; i++)
                 {
                     VkImageViewCreateInfo colorAttachmentView = {};
                     colorAttachmentView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -403,9 +360,9 @@ namespace Hatchit
                 return true;
             }
 
-            uint32_t VKSwapChain::GetImageCount() const
+            uint32_t VKSwapChain::GetBufferCount() const
             {
-                return m_scImgCount;
+                return m_bufferCount;
             }
 
             std::vector<VKSwapChain::Buffer>& VKSwapChain::GetBuffers()
@@ -418,10 +375,6 @@ namespace Hatchit
                 return m_vkSwapChain != VK_NULL_HANDLE;
             }
 
-            uint32_t VKSwapChain::QueueFamilyIndex() const
-            {
-                return m_queueFamilyIndex;
-            }
         }
     }
 }

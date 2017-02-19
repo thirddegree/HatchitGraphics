@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015-2016 Third-Degree
+**    Copyright(c) 2015-2017 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -13,16 +13,15 @@
 **/
 
 /**
- * \file ht_vkapplication.cpp
- * \brief VKApplication class implementation
- * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ * @file ht_vkapplication.cpp
+ * @brief VKApplication class implementation
+ * @author Matt Guerrette (direct3Dtutorials@gmail.com)
  *
  * This file contains the implementation for VKApplication class
  */
 
 #include <ht_vkapplication.h>
 #include <ht_vkdebug.h>
-#include <ht_debug.h>
 #include <cassert>
 #include <algorithm>
 #include <iterator>

@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015-2016 Third-Degree
+**    Copyright(c) 2015-2017 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -13,9 +13,9 @@
 **/
 
 /**
- * \file ht_vkdevice.cpp
- * \brief VKDevice class implementation
- * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ * @file ht_vkdevice.cpp
+ * @brief VKDevice class implementation
+ * @author Matt Guerrette (direct3Dtutorials@gmail.com)
  *
  * This file contains implementation for VKDevice class
  */
@@ -36,6 +36,8 @@ namespace Hatchit
             {
                 m_vkDevice = VK_NULL_HANDLE;
                 m_vkPhysicalDevice = VK_NULL_HANDLE;
+
+                m_queueCount = 0;
             }
 
             VKDevice::~VKDevice()
@@ -52,7 +54,7 @@ namespace Hatchit
                 if (!QueryPhysicalDeviceInfo())
                     return false;
 
-                /*
+                /**
                 * Query information about device queue family
                 */
                 uint32_t queueCount = 0;
@@ -64,19 +66,24 @@ namespace Hatchit
                 m_vkQueueFamilyProperties.resize(queueCount);
                 vkGetPhysicalDeviceQueueFamilyProperties(m_vkPhysicalDevice, &queueCount, m_vkQueueFamilyProperties.data());
 
-                QueueFamily queueFamily = QueryQueueFamily(VK_QUEUE_GRAPHICS_BIT);
 
+                /**
+                 * Now we want to create our logical device.
+                 * For this device, alonside it we will create
+                 * a graphics queue
+                 */
+                QueueFamily queueFamily = GetQueueFamily(VK_QUEUE_GRAPHICS_BIT);
                 VkResult err = VK_SUCCESS;
 
-                float QueueProperties[] = { 0.0f };
 
+                m_queueCount = 1; //For now, queue count is 1
+                float QueueProperties[] = { 0.0f };
                 VkDeviceQueueCreateInfo queue = {};
                 queue.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
                 queue.pNext = nullptr;
                 queue.queueFamilyIndex = queueFamily.graphics;
-                queue.queueCount = 1;
+                queue.queueCount = m_queueCount;
                 queue.pQueuePriorities = QueueProperties;
-
 
                 std::vector<VkDeviceQueueCreateInfo> queueInfos;
                 queueInfos.push_back(queue);
@@ -103,9 +110,14 @@ namespace Hatchit
                 return true;
             }
 
-            const VkPhysicalDeviceProperties& VKDevice::Properties() const 
+            const VkPhysicalDeviceProperties& VKDevice::GetProperties() const
             {
                 return m_vkPhysicalDeviceProperties;
+            }
+
+            uint32_t VKDevice::GetQueueCount()
+            {
+                return m_queueCount;
             }
 
             VKDevice::operator VkDevice() const
@@ -167,16 +179,31 @@ namespace Hatchit
                 return true;
             }
 
-            VKDevice::QueueFamily VKDevice::QueryQueueFamily(VkQueueFlagBits flags)
+            VKDevice::QueueFamily VKDevice::GetQueueFamily(VkQueueFlagBits flags)
             {
                 QueueFamily family = {};
 
-                /*Find family index for graphics bit*/
+                /**
+                 * Find family index for graphics bit
+                 */
                 if (flags & VK_QUEUE_GRAPHICS_BIT)
                 {
                     for (uint32_t i = 0; i < m_vkQueueFamilyProperties.size(); i++) {
                         if (m_vkQueueFamilyProperties[i].queueFlags & flags) {
                             family.graphics = i;
+                            break;
+                        }
+                    }
+                }
+
+                /**
+                 * Find family index for compute bit
+                 */
+                if (flags & VK_QUEUE_COMPUTE_BIT)
+                {
+                    for(uint32_t i = 0; i < m_vkQueueFamilyProperties.size(); i++) {
+                        if(m_vkQueueFamilyProperties[i].queueFlags & flags) {
+                            family.compute = i;
                             break;
                         }
                     }

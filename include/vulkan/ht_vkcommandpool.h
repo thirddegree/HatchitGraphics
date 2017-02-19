@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015-2016 Third-Degree
+**    Copyright(c) 2015-2017 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -15,17 +15,15 @@
 #pragma once
 
 /**
- * \file ht_vkcommandpool.h
- * \brief VKCommandPool definition
- * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ * @file ht_vkcommandpool.h
+ * @brief VKCommandPool definition
+ * @author Matt Guerrette (direct3Dtutorials@gmail.com)
  *
  * This file contains definition for VKCommandPool class
  */
 
 #include <ht_platform.h>
 #include <ht_vulkan.h>
-
-
 
 namespace Hatchit
 {
@@ -37,8 +35,8 @@ namespace Hatchit
             class VKCommandBuffer;
 
             /**
-             * \class VKCommandPool
-             * \brief Vulkan command pool wrapper
+             * @class VKCommandPool
+             * @brief Vulkan command pool wrapper
              *
              * This class wraps functionality associated with VkCommandPool,
              * command buffer generation and management.
@@ -49,6 +47,8 @@ namespace Hatchit
                 VKCommandPool();
 
                 ~VKCommandPool();
+
+                bool Initialize(VKDevice& device);
 
                 bool Initialize(VKDevice& device, uint32_t queueFamilyIndex);
 

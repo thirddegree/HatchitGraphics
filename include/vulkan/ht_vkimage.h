@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015-2016 Third-Degree
+**    Copyright(c) 2015-2017 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -15,9 +15,9 @@
 #pragma once
 
 /**
- * \file ht_vkimage.h
- * \brief VKImage class definition
- * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ * @file ht_vkimage.h
+ * @brief VKImage class definition
+ * @author Matt Guerrette (direct3Dtutorials@gmail.com)
  *
  * This file contains definition for VKImage class
  */
@@ -34,12 +34,12 @@ namespace Hatchit
             class VKDevice;
 
             /**
-            * \class VKImage
-            * \brief Vulkan image wrapper
+            * @class VKImage
+            * @brief Vulkan image wrapper
             *
             * This class wraps functionality associated with VkImage and VkImageView
             *
-            * NOTE:
+            * @note
             *   Currently there is no support for creation of multiple views for
             *   subresource access to the image. The will have to be an implementation
             *   for this in the future, but for now it is not necessary.

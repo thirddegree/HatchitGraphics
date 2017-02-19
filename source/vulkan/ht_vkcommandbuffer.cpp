@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015-2016 Third-Degree
+**    Copyright(c) 2015-2017 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -13,15 +13,14 @@
 **/
 
 /**
- * \file ht_vkcommandbuffer.cpp
- * \brief VKCommandBuffer class implementation
- * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ * @file ht_vkcommandbuffer.cpp
+ * @brief VKCommandBuffer class implementation
+ * @author Matt Guerrette (direct3Dtutorials@gmail.com)
  *
  * This file contains implementation for VKCommandBuffer class
  */
 
 #include <ht_vkcommandbuffer.h>
-#include <ht_vkdevice.h>
 
 namespace Hatchit {
     

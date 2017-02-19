@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015-2016 Third-Degree
+**    Copyright(c) 2015-2017 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -15,9 +15,9 @@
 #pragma once
 
 /**
- * \file ht_vkdebug.h
- * \brief VKDebug class definition
- * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ * @file ht_vkdebug.h
+ * @brief VKDebug class definition
+ * @author Matt Guerrette (direct3Dtutorials@gmail.com)
  * 
  * This file contains definition for VKDebug class
  */
@@ -32,8 +32,8 @@ namespace Hatchit
         namespace Vulkan
         {
             /**
-             * \class VKDebug
-             * \brief Defines a Vulkan debug wrapper singleton
+             * @class VKDebug
+             * @brief Defines a Vulkan debug wrapper singleton
              * 
              * Vulkan debug wrapper that initializes the debug
              * callback functions
@@ -42,20 +42,20 @@ namespace Hatchit
             {
             public:
                 /**
-                 * \brief Instance function for singleton access
-                 * \returns VKDebug class instance
+                 * @brief Instance function for singleton access
+                 * @returns VKDebug class instance
                  */
                 static VKDebug& instance();
 
                 /**
-                 * \brief Initializes the Vulkan debug callback
+                 * @brief Initializes the Vulkan debug callback
                  */
                 static void SetupCallback(VkInstance instance,
                                           VkDebugReportFlagsEXT flags,
                                           VkDebugReportCallbackEXT callback);
 
                 /**
-                 * \brief Unintializes the VUlkan debug callback
+                 * @brief Unintializes the Vulkan debug callback
                  */
                 static void FreeCallback(VkInstance instance);
 

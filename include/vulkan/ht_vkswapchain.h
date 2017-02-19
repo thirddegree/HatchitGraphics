@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015-2016 Third-Degree
+**    Copyright(c) 2015-2017 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -15,10 +15,10 @@
 #pragma once
 
 /**
- * \file ht_vkswapchain.h
- * \brief VKSwapChain class definition
- * \author Matt Guerrette (direct3Dtutorials@gmail.com)
- * \author jkvargas (https://github.com/jkvargas)
+ * @file ht_vkswapchain.h
+ * @brief VKSwapChain class definition
+ * @author Matt Guerrette (direct3Dtutorials@gmail.com)
+ * @author jkvargas (https://github.com/jkvargas)
  *
  * This file contains definition for VKSwapChain class
  */
@@ -37,6 +37,13 @@ namespace Hatchit
             class VKApplication;
             class VKDevice;
 
+            /**
+             * @class VKSwapChain
+             * @brief Defines a Vulkan swapchain
+             *
+             * A Vulkan swapchain that holds the associated image buffers
+             * used in screen output
+             */
             class HT_API VKSwapChain
             {
                 struct Buffer
@@ -45,19 +52,66 @@ namespace Hatchit
                     VkImageView imageView;
                 };
             public:
+
+                /**
+                 * @brief Constructs swapchain
+                 */
                 VKSwapChain();
-               
+
+                /**
+                 * @brief Destructs swapchain
+                 *
+                 */
                 ~VKSwapChain();
 
+                /**
+                 * @brief Initialize swapchain buffers
+                 *
+                 * @param width Width of swapchain buffers, usually matches surface Window
+                 * @param height Height of swapchain buffers, usually matches surface Window
+                 * @param instance Vulkan application instance
+                 * @param device Vulkan logical device
+                 * @return [true] success
+                 * @return [false] failure
+                 */
                 bool Initialize(const uint32_t width, const uint32_t height, VKApplication& instance, VKDevice& device);
 
+                /**
+                 * @brief Acquires index of next swapchain buffer
+                 * @param semaphore Semaphore object to signal
+                 * @param index Index value set with next image
+                 * @return [true] : success
+                 * @return [false] : failure
+                 */
                 bool AcquireNextImage(VkSemaphore semaphore, uint32_t* index) const;
+
+                /**
+                 * @brief Queues swapchain image for presenting
+                 * @param queue Presentable queue to submit
+                 * @param index Index of swapchain image to present
+                 * @param semaphore Semaphore to signal for synchronization
+                 * @return [true] : success
+                 * @return [false] : failure
+                 */
                 bool QueuePresent(VkQueue queue, uint32_t index, VkSemaphore semaphore = VK_NULL_HANDLE) const;
 
+                /**
+                 * @brief Checks if valid swapchain handle exists
+                 * @return [true] : exists
+                 * @return [false] : non-exist
+                 */
                 bool IsValid() const;
 
-                uint32_t QueueFamilyIndex() const;
-                uint32_t GetImageCount() const;
+                /**
+                 * @brief Gets number of swapchain buffers
+                 * @return swapchain buffer count
+                 */
+                uint32_t GetBufferCount() const;
+
+                /**
+                 * @brief Gets collection of swapchain buffers
+                 * @return swapchain buffers
+                 */
                 std::vector<Buffer>& GetBuffers();
 
             private:
@@ -71,8 +125,7 @@ namespace Hatchit
 
                 uint32_t m_width;
                 uint32_t m_height;
-                uint32_t m_queueFamilyIndex;
-                uint32_t m_scImgCount;
+                uint32_t m_bufferCount;
             };
         }
     }

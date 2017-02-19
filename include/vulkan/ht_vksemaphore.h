@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015-2016 Third-Degree
+**    Copyright(c) 2015-2017 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -15,9 +15,9 @@
 #pragma once
 
 /**
- * \file ht_vksemaphore.h
- * \brief VKSemaphore class definition
- * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ * @file ht_vksemaphore.h
+ * @brief VKSemaphore class definition
+ * @author Matt Guerrette (direct3Dtutorials@gmail.com)
  *
  * This file contains definition for VKSemaphore class
  */
@@ -34,13 +34,13 @@ namespace Hatchit
             class VKDevice;
 
             /**
-            * \class VKSemaphore
-            * \brief Defines a Vulkan semaphore object
-            *
-            * Vulkan semaphore object used for synchronization
-            * of commands registered and executed between CPU threads
-            * and the GPU.
-            */
+             * @class VKSemaphore
+             * @brief Defines a Vulkan semaphore object
+             *
+             * Vulkan semaphore object used for synchronization
+             * of commands registered and executed between CPU threads
+             * and the GPU.
+             */
             class HT_API VKSemaphore
             {
             public:
@@ -49,22 +49,27 @@ namespace Hatchit
                 ~VKSemaphore();
 
                 /**
-                * \brief Initializes semapahore from default params.
-                */
+                 * @brief Initializes semapahore from default params.
+                 *
+                 * @return [true] : success
+                 * @return [false] : failure
+                 */
                 bool Initialize(VKDevice& device);
 
                 /**
-                * \brief Initializes semaphore from params.
-                * \param info Creation parameters structure.
-                */
+                 * @brief Initializes semaphore from params.
+                 * @param info Creation parameters structure.
+                 * @return [true] : success
+                 * @return [false] : failure
+                 */
                 bool Initialize(VKDevice& device, const VkSemaphoreCreateInfo& info);
 
                 /**
-                * \brief Cast conversion operator
-                *
-                * Allows access to internal VkSemapahore handle through
-                * cast conversion.
-                */
+                 * @brief Cast conversion operator
+                 *
+                 * Allows access to internal VkSemapahore handle through
+                 * cast conversion.
+                 */
                 explicit operator VkSemaphore() const;
             private:
                 VkDevice    m_vkDevice;

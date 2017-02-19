@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015-2016 Third-Degree
+**    Copyright(c) 2015-2017 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -11,6 +11,14 @@
 **    will be met: https://www.gnu.org/licenses/lgpl.html
 **
 **/
+
+/**
+ * @file ht_vkfence.cpp
+ * @brief VKFence class implementation
+ * @author Matt Guerrette (direct3Dtutorials@gmail.com)
+ *
+ * This file contains implementation for VKFence class
+ */
 
 #include <ht_vkfence.h>
 #include <ht_vkdevice.h>

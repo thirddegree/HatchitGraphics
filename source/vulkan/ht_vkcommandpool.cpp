@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015-2016 Third-Degree
+**    Copyright(c) 2015-2017 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -13,9 +13,9 @@
 **/
 
 /**
- * \file ht_vkcommandpool.cpp
- * \brief VKCommandPool class implementation
- * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ * @file ht_vkcommandpool.cpp
+ * @brief VKCommandPool class implementation
+ * @author Matt Guerrette (direct3Dtutorials@gmail.com)
  *
  * This file contains implementation for VKCommandPool class
  */
@@ -45,6 +45,11 @@ namespace Hatchit {
             VKCommandPool::operator VkCommandPool() const
             {
                 return m_vkCommandPool;
+            }
+
+            bool VKCommandPool::Initialize(VKDevice &device)
+            {
+                return Initialize(device, device.GetQueueFamily(VK_QUEUE_GRAPHICS_BIT).graphics);
             }
 
             bool VKCommandPool::Initialize(VKDevice& device, uint32_t queueFamilyIndex)

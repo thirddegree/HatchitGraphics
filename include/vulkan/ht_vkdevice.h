@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015-2016 Third-Degree
+**    Copyright(c) 2015-2017 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -15,9 +15,9 @@
 #pragma once
 
 /**
- * \file ht_vkdevice.h
- * \brief VKDevice class definition
- * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ * @file ht_vkdevice.h
+ * @brief VKDevice class definition
+ * @author Matt Guerrette (direct3Dtutorials@gmail.com)
  *
  * This file contains definition for VKDevice class
  */
@@ -34,8 +34,8 @@ namespace Hatchit
             class VKApplication;
 
             /**
-             * \class VKDevice
-             * \brief Vulkan device wrapper
+             * @class VKDevice
+             * @brief Vulkan device wrapper
              *
              * This class wraps the functionality associated with interfacing with a GPU device
              * using Vulkan. Since there can be multiple active devices, this class represents a single
@@ -53,9 +53,10 @@ namespace Hatchit
 
                 ~VKDevice();
 
+
                 bool Initialize(VKApplication& instance, uint32_t index);
 
-                const VkPhysicalDeviceProperties& Properties() const;
+                const VkPhysicalDeviceProperties& GetProperties() const;
 
                 /* Searches for available depth formats on the device based on the precision
                 *  then sets it on pFormat, return true if formar found, false otherwise.
@@ -65,21 +66,26 @@ namespace Hatchit
                 /* Get the type memoty index considering the memory property flags */
                 uint32_t GetMemoryType(uint32_t pTypeBits, VkMemoryPropertyFlags pProperties, VkBool32* pMemTypeFound = nullptr) const;
 
+                uint32_t GetQueueCount();
+
+                QueueFamily GetQueueFamily(VkQueueFlagBits flags);
+
                 explicit operator VkDevice() const;
                 explicit operator VkPhysicalDevice() const;
 
             private:
-                VkDevice                            m_vkDevice;
-                VkPhysicalDevice                    m_vkPhysicalDevice;
-                VkPhysicalDeviceFeatures            m_vkPhysicalDeviceFeatures;
-                VkPhysicalDeviceProperties          m_vkPhysicalDeviceProperties;
-                VkPhysicalDeviceMemoryProperties    m_vkPhysicalDeviceMemoryProperties;
+                VkDevice                             m_vkDevice;
+                VkPhysicalDevice                     m_vkPhysicalDevice;
+                VkPhysicalDeviceFeatures             m_vkPhysicalDeviceFeatures;
+                VkPhysicalDeviceProperties           m_vkPhysicalDeviceProperties;
+                VkPhysicalDeviceMemoryProperties     m_vkPhysicalDeviceMemoryProperties;
+
+                uint32_t                             m_queueCount;
 
                 std::vector<VkQueueFamilyProperties> m_vkQueueFamilyProperties;
 
                 bool EnumeratePhysicalDevices(VKApplication& instance, uint32_t index);
                 bool QueryPhysicalDeviceInfo();
-                QueueFamily QueryQueueFamily(VkQueueFlagBits flags);
             };
         }
     }

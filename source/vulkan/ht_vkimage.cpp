@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015-2016 Third-Degree
+**    Copyright(c) 2015-2017 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -13,11 +13,11 @@
 **/
 
 /**
- * \file ht_vkimage.cpp
- * \brief VKImage class implementation
- * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ * @file ht_vkimage.cpp
+ * @brief VKImage class implementation
+ * @author Matt Guerrette (direct3Dtutorials@gmail.com)
  *
- * This file contains implementation for VKIMage class
+ * This file contains implementation for VKImage class
  */
 
 #include <ht_vkimage.h>

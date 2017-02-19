@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015-2016 Third-Degree
+**    Copyright(c) 2015-2017 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -13,9 +13,9 @@
 **/
 
 /**
- * \file ht_vulkan.cpp
- * \brief Vulkan utility implementation file
- * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ * @file ht_vulkan.cpp
+ * @brief Vulkan utility implementation file
+ * @author Matt Guerrette (direct3Dtutorials@gmail.com)
  *
  * This file contains implementation for various Vulkan utilities
  */

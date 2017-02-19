@@ -1,6 +1,6 @@
 /**
 **    Hatchit Engine
-**    Copyright(c) 2015-2016 Third-Degree
+**    Copyright(c) 2015-2017 Third-Degree
 **
 **    GNU Lesser General Public License
 **    This file may be used under the terms of the GNU Lesser
@@ -15,9 +15,9 @@
 #pragma once
 
 /**
- * \file ht_vkapplication.h
- * \brief VKApplication class definition
- * \author Matt Guerrette (direct3Dtutorials@gmail.com)
+ * @file ht_vkapplication.h
+ * @brief VKApplication class definition
+ * @author Matt Guerrette (direct3Dtutorials@gmail.com)
  *
  * This file contains definition for VKApplication class
  */
@@ -35,8 +35,8 @@ namespace Hatchit
             class VKDevice;
 
             /**
-             * \class VKApplication
-             * \brief Defines a Vulkan application instance.
+             * @class VKApplication
+             * @brief Defines a Vulkan application instance.
              * 
              *  A Vulkan application instance stores the per-application vulkan states.
              */
@@ -44,24 +44,24 @@ namespace Hatchit
             {
             public:
                 /**
-                 * \brief Default constructor
+                 * @brief Default constructor
                  */
                 VKApplication();
 
                 /**
-                 * \brief Constructs application instance
+                 * @brief Constructs application instance
                  * 
                  * Constructs Vulkan application instance with specified
                  * parameters from VkApplicationInfo structure
                  * 
-                 * \param info Application parameters
+                 * @param info Application parameters
                  */
                 explicit VKApplication(const VkApplicationInfo& info);
 
                 /**
-                 * \brief Destructor
+                 * @brief Destructor
                  * 
-                 * \note 
+                 * @note
                  *      Any Vulkan objects created using this
                  *      application instance MUST be destroyed
                  *      prior to calling this destructor.
@@ -69,104 +69,107 @@ namespace Hatchit
                 ~VKApplication();
 
                 /**
-                 * \brief Initialize application instance
+                 * @brief Initialize application instance
                  * 
                  * Initializes Vulkan application instance
                  * 
-                 * \param window  Handle to window
-                 * \param display [Linux] Handle to Xlib display port
+                 * @param window  Handle to window
+                 * @param display [Linux] Handle to Xlib display port
+                 * @return [true] : success
+                 * @return [false] : failure
                  */
                 bool Initialize(void* window, void* display);
 
                 /**
-                 * \brief Utility to check if instance has been initialized
+                 * @brief Utility to check if instance has been initialized
                  * 
-                 * \returns [true] initialized : [false] unitialized
+                 * @return [true] : initialized
+                 * @return [false] : unitialized
                  */
                 bool IsValid() const;
 
                 /**
-                 * \brief Gets instance name
+                 * @brief Gets instance name
                  * 
-                 * \returns name
+                 * @returns name
                  */
                 std::string   Name()              const;
 
                 /**
-                 * \brief Gets instance version
+                 * @brief Gets instance version
                  * 
-                 * \returns version
+                 * @returns version
                  */
                 uint32_t      Version()           const;
 
                 /**
-                 * \brief Gets instance engine name
+                 * @brief Gets instance engine name
                  * 
-                 * \returns engine name
+                 * @returns engine name
                  */
                 std::string   EngineName()        const;
 
                 /**
-                 * \brief Gets instance engine version
+                 * @brief Gets instance engine version
                  * 
-                 * \returns engine version
+                 * @returns engine version
                  */
                 uint32_t      EngineVersion()     const;
 
                 /**
-                 * \brief Gets instance API version
+                 * @brief Gets instance API version
                  * 
-                 * \returns API version
+                 * @returns API version
                  */
                 uint32_t      APIVersion()        const;
 
                 /**
-                 * \brief Gets enabled layer count
+                 * @brief Gets enabled layer count
                  * 
-                 * \returns enabled layer count 
+                 * @returns enabled layer count
                  */
                 uint32_t      EnabledLayerCount() const;
 
                 /**
-                 * \brief Gets enabled extension count
+                 * @brief Gets enabled extension count
                  * 
-                 * \returns enabled extension count
+                 * @returns enabled extension count
                  */
                 uint32_t      EnabledExtensionCount() const;
 
                 /**
-                 * \brief Gets enabled layer names
+                 * @brief Gets enabled layer names
                  * 
-                 * \returns enabled layer names
+                 * @returns enabled layer names
                  */
                 const std::vector<std::string>& EnabledLayerNames() const;
 
                 /**
-                 * \brief Gets enabled extension names
+                 * @brief Gets enabled extension names
                  * 
-                 * \returns enabled extension names
+                 * @returns enabled extension names
                  */
                 const std::vector<std::string>& EnabledExtensionNames() const;
 
                 /**
-                 * \brief Gets native window handle
+                 * @brief Gets native window handle
                  * 
-                 * \returns native window handle
+                 * @returns native window handle
                  */
                 void* NativeWindow() const;
                 
                 /**
-                 * \brief Gets native display handle [Linux]
+                 * @brief Gets native display handle [Linux]
                  * 
-                 * \returns native display handle
+                 * @returns native display handle
                  * 
                  */
                 void* NativeDisplay() const;
 
                 /**
-                 * \brief Explicit cast from VKApplication to VkInstance
+                 * @brief Explicit cast from VKApplication to VkInstance
                  * 
-                 * \return underlying VkInstance handle
+                 * @return underlying VkInstance handle
                  */
                 explicit operator VkInstance() const;
 
