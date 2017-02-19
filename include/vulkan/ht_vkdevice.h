@@ -78,10 +78,6 @@ namespace Hatchit
                  */
                 const VkPhysicalDeviceProperties& GetProperties() const;
 
-                /**Searches for available depth formats on the device based on the precision
-                *  then sets it on pFormat, return true if formar found, false otherwise.
-                */
-
                 /**
                  * @brief Gets supported depth format
                  *
