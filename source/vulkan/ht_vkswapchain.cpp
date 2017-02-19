@@ -190,6 +190,7 @@ namespace Hatchit
 
                 if ( !choosenFormatFound )
                     choosenSurfaceFormat = surfaceFormats[0];
+                m_surfaceFormat = choosenSurfaceFormat.format;
 
                 /*
                 * We need to discuss the policy to choose the present modes yet
@@ -246,7 +247,7 @@ namespace Hatchit
                 createSwapChainInfo.clipped = VK_TRUE;
                 createSwapChainInfo.oldSwapchain = VK_NULL_HANDLE; //We will need to handle creating from previous
                 createSwapChainInfo.imageExtent = extent;
-                createSwapChainInfo.imageFormat = VK_FORMAT_B8G8R8A8_UNORM;
+                createSwapChainInfo.imageFormat = choosenSurfaceFormat.format;
                 createSwapChainInfo.flags = 0;
                 createSwapChainInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
                 createSwapChainInfo.queueFamilyIndexCount = 0;
@@ -375,6 +376,10 @@ namespace Hatchit
                 return m_vkSwapChain != VK_NULL_HANDLE;
             }
 
+            VkFormat VKSwapChain::GetSurfaceFormat() const
+            {
+                return m_surfaceFormat;
+            }
         }
     }
 }

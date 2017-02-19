@@ -21,24 +21,26 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            VKDepthStencil::VKDepthStencil()
+            VKDepthStencil::VKDepthStencil(): 
+                m_vkDevice(VK_NULL_HANDLE),
+                m_buffer(std::make_unique<VKImage>())
             {
-
             }
 
             VKDepthStencil::~VKDepthStencil()
             {
-
+                
             }
 
-            bool VKDepthStencil::Initialize(VKDevice &device, uint32_t width, uint32_t height) {
-                m_device = device;
+            bool VKDepthStencil::Initialize(VKDevice &device, uint32_t width, uint32_t height) 
+            {
+                m_vkDevice = static_cast<VkDevice>(device);
 
                 /**
                  * Query supported depth format
                  */
                 VkFormat depthFormat;
-                SupportedDepthFormat(device, &depthFormat);
+                device.GetSupportedDepthFormat(depthFormat);
 
                 /**
                  * Setup image info
@@ -56,12 +58,6 @@ namespace Hatchit
                 image.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
                 image.flags = 0;
 
-                VkMemoryAllocateInfo alloc = {};
-                alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-                alloc.pNext = nullptr;
-                alloc.allocationSize = 0;
-                alloc.memoryTypeIndex = 0;
-
                 VkImageViewCreateInfo imageView = {};
                 imageView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
                 imageView.pNext = nullptr;
@@ -75,19 +71,21 @@ namespace Hatchit
                 imageView.subresourceRange.baseArrayLayer = 0;
                 imageView.subresourceRange.layerCount = 1;
 
-                if (!m_buffer.InitializeImage(device, image))
+
+
+                if (!m_buffer->InitializeImage(device, image))
                 {
                     HT_ERROR_PRINTF("Failed to initialize depth stencil image.\n");
                     return false;
                 }
 
-                if (!m_buffer.AllocateAndBindMemory(device))
+                if (!m_buffer->AllocateAndBindMemory(device))
                 {
                     HT_ERROR_PRINTF("Failed to allocate/bind memory for depth stencil.\n");
                     return false;
                 }
 
-                if (!m_buffer.InitializeView(device, imageView))
+                if (!m_buffer->InitializeView(device, imageView))
                 {
                     HT_ERROR_PRINTF("Failed to initialize depth stencil view.\n");
                     return false;
@@ -96,38 +94,9 @@ namespace Hatchit
                 return true;
             }
 
-            bool VKDepthStencil::SupportedDepthFormat(VkPhysicalDevice physicalDevice, VkFormat *format)
+            VKImage& VKDepthStencil::GetImage() const
             {
-                std::vector<VkFormat> formats = {
-                        VK_FORMAT_D32_SFLOAT_S8_UINT,
-                        VK_FORMAT_D32_SFLOAT,
-                        VK_FORMAT_D24_UNORM_S8_UINT,
-                        VK_FORMAT_D16_UNORM_S8_UINT,
-                        VK_FORMAT_D16_UNORM
-                };
-
-
-                for(auto& fmt : formats)
-                {
-                    VkFormatProperties properties;
-                    vkGetPhysicalDeviceFormatProperties(physicalDevice, fmt, &properties);
-
-                    /**
-                     * Format MUST support depth stencil attachment
-                     */
-                     if(properties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
-                     {
-                         *format = fmt;
-                         return true;
-                     }
-                }
-
-                return false;
-            }
-
-            VKImage& VKDepthStencil::GetImage()
-            {
-                return m_buffer;
+                return *m_buffer;
             }
         }
     }

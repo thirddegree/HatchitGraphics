@@ -102,6 +102,13 @@ namespace Hatchit
                  */
                 bool IsValid() const;
 
+
+                /**
+                 * @brief Gets format of swapchain surface
+                 * @return surface format
+                 */
+                VkFormat GetSurfaceFormat() const;
+
                 /**
                  * @brief Gets number of swapchain buffers
                  * @return swapchain buffer count
@@ -126,6 +133,7 @@ namespace Hatchit
                 uint32_t m_width;
                 uint32_t m_height;
                 uint32_t m_bufferCount;
+                VkFormat m_surfaceFormat;
             };
         }
     }

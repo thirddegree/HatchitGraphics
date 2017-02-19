@@ -56,19 +56,20 @@ namespace Hatchit
                 bool InitializeView(VKDevice& device,
                     VkImageViewCreateInfo& info);
 
-                bool AllocateAndBindMemory(VKDevice& pDevice);
+                bool AllocateAndBindMemory(VKDevice& device);
 
-                const VkImage&      GetImage() const;
-                const VkImageView&  GetImageView() const;
+                VkImage         GetImage()      const;
+                VkImageView     GetImageView()  const;
+                VkDeviceMemory  GetMemory()     const;
 
                 explicit operator VkImage() const;
                 explicit operator VkImageView() const;
                 explicit operator VkDeviceMemory() const;
             protected:
-                VkDevice    m_vkDevice;
-                VkImage     m_vkImage;
-                VkDeviceMemory m_vkMemory;
-                VkImageView m_vkImageView;
+                VkDevice        m_vkDevice;
+                VkImage         m_vkImage;
+                VkDeviceMemory  m_vkMemory;
+                VkImageView     m_vkImageView;
             };
         }
     }

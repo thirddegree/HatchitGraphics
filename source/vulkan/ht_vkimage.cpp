@@ -39,9 +39,16 @@ namespace Hatchit {
 
             VKImage::~VKImage()
             {
-                vkDestroyImageView(m_vkDevice, m_vkImageView, nullptr);
-                vkDestroyImage(m_vkDevice, m_vkImage, nullptr);
-                vkFreeMemory(m_vkDevice, m_vkMemory, nullptr);
+                if(m_vkImageView != VK_NULL_HANDLE)
+                    vkDestroyImageView(m_vkDevice, m_vkImageView, nullptr);
+                if(m_vkImage != VK_NULL_HANDLE)
+                    vkDestroyImage(m_vkDevice, m_vkImage, nullptr);
+                if(m_vkMemory != VK_NULL_HANDLE)
+                    vkFreeMemory(m_vkDevice, m_vkMemory, nullptr);
+
+                m_vkImage = VK_NULL_HANDLE;
+                m_vkImageView = VK_NULL_HANDLE;
+                m_vkMemory = VK_NULL_HANDLE;
             }
 
             bool VKImage::InitializeImage(VKDevice& device, const VkImageCreateInfo& info)
@@ -125,16 +132,20 @@ namespace Hatchit {
                 return m_vkMemory;
             }
 
-            const VkImage& VKImage::GetImage() const
+            VkImage VKImage::GetImage() const
             {
                 return m_vkImage;
             }
 
-            const VkImageView& VKImage::GetImageView() const
+            VkImageView VKImage::GetImageView() const
             {
                 return m_vkImageView;
             }
-           
+
+            VkDeviceMemory VKImage::GetMemory() const
+            {
+                return m_vkMemory;
+            }
         }
     }
 }

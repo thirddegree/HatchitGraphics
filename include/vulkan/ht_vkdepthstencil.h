@@ -35,13 +35,11 @@ namespace Hatchit
 
                 bool Initialize(VKDevice& device, uint32_t width, uint32_t height);
 
-                VKImage& GetImage();
+                VKImage& GetImage() const;
 
             private:
-                VkDevice m_device;
-                VKImage  m_buffer;
-
-                static bool SupportedDepthFormat(VkPhysicalDevice physicalDevice, VkFormat* format);
+                VkDevice                  m_vkDevice;
+                std::unique_ptr<VKImage>  m_buffer;
             };
         }
     }

@@ -38,8 +38,10 @@ namespace Hatchit {
 
             VKCommandPool::~VKCommandPool()
             {
-                if (m_vkCommandPool != VK_NULL_HANDLE)
+                if (m_vkCommandPool != VK_NULL_HANDLE) {
                     vkDestroyCommandPool(m_vkDevice, m_vkCommandPool, nullptr);
+                    m_vkCommandPool = VK_NULL_HANDLE;
+                }
             }
 
             VKCommandPool::operator VkCommandPool() const
