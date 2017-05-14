@@ -16,20 +16,12 @@
 
 #include <ht_platform.h>
 
-#ifdef DX11_SUPPORT
-#include <d3d11.h>
-#endif
-
-#ifdef DX12_SUPPORT
 #include <d3d12.h>
 #include <d3d12sdklayers.h>
 #include <d3dx12.h>
-#endif
 
 #include <dxgi1_4.h>
 #include <d3dcompiler.h>
-
-#include <ht_math.h>
 
 #ifndef HT_D3D12_DEBUGNAME
     #if defined(_DEBUG) || defined(D3D12_ASSIGN_DEBUG_NAMES)

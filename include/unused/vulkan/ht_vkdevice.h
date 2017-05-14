@@ -16,9 +16,9 @@
 
 #include <ht_platform.h>
 #include <ht_device.h>
+#include <ht_string.h>
 #include <ht_vulkan.h>
-#include <ht_debug.h>
-#include <vector>
+#include <set>
 
 namespace Hatchit
 {
@@ -26,67 +26,51 @@ namespace Hatchit
     {
         namespace Vulkan
         {
-            class HT_API VKDevice : public IDevice
+            class VKApplication;
+
+            /**
+             * \class VKDevice
+             * \brief Vulkan device wrapper
+             *
+             * This class wraps the functionality associated with interfacing with a GPU device
+             * using Vulkan. Since there can be multiple active devices, this class represents a single
+             * device instance.
+             */
+            class HT_API VKDevice
             {
+                struct QueueFamily
+                {
+                    uint32_t graphics;
+                    uint32_t compute;
+                };
             public:
                 VKDevice();
 
                 ~VKDevice();
 
-                bool VInitialize()          override;
-                void VReportDeviceInfo()    override;
+                bool Initialize(VKApplication& instance, uint32_t index);
 
-                void SetValidation(bool validate);
 
-                const std::vector<VkDevice>&                            GetVKDevices() const;
-                const std::vector<VkPhysicalDevice>&                    GetVKPhysicalDevices() const;
-                const std::vector<VkPhysicalDeviceFeatures>&            GetVKPhysicalDeviceFeatures() const;
-                const std::vector<VkPhysicalDeviceMemoryProperties>&    GetVKPhysicalDeviceMemoryProperties() const;
-                const VkInstance&                                       GetVKInstance() const;
+                const VkPhysicalDeviceProperties& Properties() const;
+
+                operator VkDevice();
+                operator VkPhysicalDevice();
 
             private:
-                std::vector<VkDevice>                           m_devices;
-                std::vector<VkPhysicalDevice>                   m_gpus;
-                std::vector<VkPhysicalDeviceFeatures>           m_gpuFeatures;
-                std::vector<VkPhysicalDeviceMemoryProperties>   m_gpuMemoryProps;
-                VkInstance                                      m_instance;
+                VkDevice                            m_vkDevice;
+                VkPhysicalDevice                    m_vkPhysicalDevice;
+                VkPhysicalDeviceFeatures            m_vkPhysicalDeviceFeatures;
+                VkPhysicalDeviceProperties          m_vkPhysicalDeviceProperties;
+                VkPhysicalDeviceMemoryProperties    m_vkPhysicalDeviceMemoryProperties;
 
-                bool    m_initialized;
-                bool    m_validate;
+                std::vector<VkQueueFamilyProperties> m_vkQueueFamilyProperties;
 
-                VkDebugReportCallbackEXT m_debugReportCallback;
+                
 
-                //The various known layer names for different SDK versions
-                std::vector<const char*> m_layerNames1013;
-                std::vector<const char*> m_layerNames1011;
-                std::vector<const char*> m_layerNames108;
-                std::vector<const char*> m_layerNames105;
-                std::vector<const char*> m_layerNames103;
-
-                //Collection of possible name collections
-                std::vector<std::vector<const char*>> m_layerNamesCollection;
-
-                //The actual extension and layer names to check 
-                std::vector<const char*> m_enabledExtensionNames;
-                std::vector<const char*> m_enabledLayerNames;
-
-                bool setupInstance();
-                bool enumeratePhysicalDevices();
-                bool queryDeviceCapabilities();
-                bool setupDevices();
-                bool setupProcAddresses();
-                bool setupDebugCallback();
-
-                bool checkInstanceLayers();
-                bool checkInstanceExtensions();
-                bool checkDeviceLayers(const VkPhysicalDevice& gpu);
-                bool checkDeviceExtensions(const VkPhysicalDevice& gpu);
-
-                bool checkLayers(std::vector<const char*> layerNames, std::vector <VkLayerProperties> layers);
-
-                static VKAPI_ATTR VkBool32 VKAPI_CALL debugFunction(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType,
-                    uint64_t srcObject, size_t location, int32_t msgCode,
-                    const char *pLayerPrefix, const char *pMsg, void *pUserData);
+                bool EnumeratePhysicalDevices(VKApplication& instance, uint32_t index);
+                bool QueryPhysicalDeviceInfo();
+                QueueFamily QueryQueueFamily(VkQueueFlagBits flags);
+            
             };
         }
     }
